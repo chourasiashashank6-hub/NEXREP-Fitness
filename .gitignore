@@ -10,3 +10,6 @@ venv/
 
 # Logs
 *.log
+
+# Local env (never commit secrets)
+.env
