@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from src.db.session import Base
 
@@ -16,6 +17,21 @@ class User(Base):
     goals = Column(String(255), default="Stay consistent")
     goal_tag = Column(String(128), default="Fat Loss")
     difficulty = Column(String(64), default="Beginner")
+
+    onboarding = relationship("UserOnboarding", back_populates="user", uselist=False)
+
+
+class UserOnboarding(Base):
+    """Full onboarding wizard payload + computed targets, keyed by user."""
+
+    __tablename__ = "user_onboarding"
+
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    onboarding_json = Column(JSONB, nullable=False)
+    targets_json = Column(JSONB, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="onboarding")
 
 
 class Workout(Base):

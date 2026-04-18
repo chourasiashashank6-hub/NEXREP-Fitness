@@ -61,6 +61,13 @@ class ChatRequest(BaseModel):
     context: dict | None = None
 
 
+class OnboardingUpsertRequest(BaseModel):
+    """Client sends full wizard state plus computed nutrition targets."""
+
+    onboarding: dict
+    targets: dict
+
+
 class WorkoutOut(BaseModel):
     id: int
     type: str

@@ -4,12 +4,13 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from src.db.session import Base, engine, get_db
-from src.models.models import Activity, Meal, User, Workout, WorkoutCatalog
+from src.models.models import Activity, Meal, User, UserOnboarding, Workout, WorkoutCatalog
 from src.schemas.schemas import (
     ActivityRequest,
     ChatRequest,
     LoginRequest,
     MealRequest,
+    OnboardingUpsertRequest,
     ProfileRequest,
     SignupRequest,
     WorkoutRequest,
@@ -23,10 +24,16 @@ app = FastAPI(title="Fitness API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/health")
+def health():
+    """Lightweight check that the API process is up (use before login from the app)."""
+    return {"status": "ok"}
 
 
 @app.on_event("startup")
@@ -118,6 +125,26 @@ def build_recommendation(row: WorkoutCatalog) -> str:
     return f"{sets} sets x {reps} reps, rest {rest}s"
 
 
+def apply_onboarding_personal_to_user(user: User, onboarding: dict) -> None:
+    """Keep core User profile loosely aligned with onboarding personal data."""
+    personal = onboarding.get("personal") or {}
+    name = personal.get("name")
+    if isinstance(name, str) and name.strip():
+        user.name = name.strip()[:120]
+    if personal.get("age") is not None:
+        try:
+            user.age = int(personal["age"])
+        except (TypeError, ValueError):
+            pass
+    try:
+        if personal.get("unit_system") == "imperial" and personal.get("weight_lb") is not None:
+            user.weight = float(personal["weight_lb"]) * 0.45359237
+        elif personal.get("weight_kg") is not None:
+            user.weight = float(personal["weight_kg"])
+    except (TypeError, ValueError):
+        pass
+
+
 @app.post("/signup")
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
@@ -141,6 +168,40 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
+
+
+@app.get("/onboarding/me")
+def get_my_onboarding(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Onboarding not found")
+    return {"onboarding": row.onboarding_json, "targets": row.targets_json}
+
+
+@app.put("/onboarding/me")
+def put_my_onboarding(
+    payload: OnboardingUpsertRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not isinstance(payload.onboarding, dict) or not isinstance(payload.targets, dict):
+        raise HTTPException(status_code=422, detail="Invalid payload")
+    apply_onboarding_personal_to_user(current_user, payload.onboarding)
+    row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
+    if row:
+        row.onboarding_json = payload.onboarding
+        row.targets_json = payload.targets
+    else:
+        row = UserOnboarding(
+            user_id=current_user.id,
+            onboarding_json=payload.onboarding,
+            targets_json=payload.targets,
+        )
+        db.add(row)
+    db.add(current_user)
+    db.commit()
+    db.refresh(row)
+    return {"onboarding": row.onboarding_json, "targets": row.targets_json}
 
 
 @app.get("/summary")
