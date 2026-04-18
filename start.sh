@@ -12,7 +12,17 @@ docker compose up -d
 echo "==> Waiting for database…"
 sleep 2
 
-echo "==> Starting API on http://127.0.0.1:8000 (background)"
+echo "==> Freeing port 8000 (if an old API is still running, /api/calories returns 404 — Calorie Log needs the latest server)"
+if command -v lsof >/dev/null 2>&1; then
+  PIDS=$(lsof -ti :8000 2>/dev/null || true)
+  if [[ -n "${PIDS}" ]]; then
+    # shellcheck disable=2086
+    kill -9 ${PIDS} 2>/dev/null || true
+    sleep 1
+  fi
+fi
+
+echo "==> Starting API on http://0.0.0.0:8000 (localhost:8000 from your machine) (background)"
 (
   cd "$ROOT/server"
   if [[ ! -d .venv ]]; then python3 -m venv .venv; fi
@@ -21,7 +31,7 @@ echo "==> Starting API on http://127.0.0.1:8000 (background)"
   pip install -q -r requirements.txt
   if [[ ! -f .env ]]; then cp .env.example .env 2>/dev/null || true; fi
   python seed.py
-  exec uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload
+  exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 ) &
 sleep 2
 

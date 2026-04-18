@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from src.db.session import Base, engine, get_db
 from src.models.models import Activity, Meal, User, UserOnboarding, Workout, WorkoutCatalog
+from src.models.nutrition_calories import DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
 from src.schemas.schemas import (
     ActivityRequest,
     ChatRequest,
@@ -18,6 +19,7 @@ from src.schemas.schemas import (
 from src.services.auth_service import create_access_token, hash_password, verify_password
 from src.services.score_service import compute_discipline_score
 from src.utils.auth import get_current_user
+from src.routes.calories import router as calories_api_router
 
 app = FastAPI(title="Fitness API", version="1.0.0")
 
@@ -28,6 +30,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(calories_api_router, prefix="/api/calories")
+# Alternate prefix so clients can discover working routes if /api/* is blocked or an old binary omits the first mount.
+app.include_router(calories_api_router, prefix="/v1/calories")
 
 
 @app.get("/health")

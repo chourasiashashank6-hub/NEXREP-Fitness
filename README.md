@@ -35,8 +35,17 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-uvicorn src.main:app --reload
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+If the **Calories** tab shows “Not Found” for `/api/calories`, an **old** API process is usually still bound to port **8000** (its OpenAPI at `http://localhost:8000/docs` will **not** list `POST /api/calories/daily-log`). Free the port and restart, for example:
+
+```bash
+lsof -ti :8000 | xargs kill -9
+cd server && source .venv/bin/activate && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+From the repo root, `bash start.sh` also frees port 8000 before starting the API.
 
 Seed demo data (optional, in another terminal):
 
