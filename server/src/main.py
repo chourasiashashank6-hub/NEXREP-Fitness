@@ -1,9 +1,13 @@
 from datetime import datetime, timedelta
+import json
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from sqlalchemy import text
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Body, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from src.db.session import Base, engine, get_db
+from src.core.config import settings
 from src.models.models import Activity, Meal, User, UserOnboarding, Workout, WorkoutCatalog
 from src.models.nutrition_calories import DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
 from src.schemas.schemas import (
@@ -17,6 +21,7 @@ from src.schemas.schemas import (
     WorkoutRequest,
 )
 from src.services.auth_service import create_access_token, hash_password, verify_password
+from src.services.food_catalog_service import ensure_food_catalog_schema, load_food_catalog_from_sql_if_empty
 from src.services.score_service import compute_discipline_score
 from src.utils.auth import get_current_user
 from src.routes.calories import router as calories_api_router
@@ -46,6 +51,8 @@ def health():
 def startup():
     Base.metadata.create_all(bind=engine)
     apply_schema_updates()
+    ensure_food_catalog_schema(engine)
+    load_food_catalog_from_sql_if_empty(engine)
 
 
 def apply_schema_updates() -> None:
@@ -122,6 +129,124 @@ def normalize_optional_filter(value: str | None) -> str | None:
     if lowered in {"select choice", "select_choice", "default", "no choice", "no_choice", "none"}:
         return None
     return cleaned
+
+
+def _parse_body_part_from_notes(notes: str | None) -> str | None:
+    if not notes:
+        return None
+    marker = "body_part="
+    idx = notes.lower().find(marker)
+    if idx < 0:
+        return None
+    raw = notes[idx + len(marker):].split(";")[0].strip()
+    return raw or None
+
+
+def _muscles_from_body_part(body_part: str | None) -> list[str]:
+    if not body_part:
+        return []
+    lowered = body_part.strip().lower()
+    out: list[str] = []
+    if "chest" in lowered:
+        out.append("Chest")
+    if "shoulder" in lowered:
+        out.append("Shoulders")
+    if "tricep" in lowered:
+        out.append("Triceps")
+    if "back" in lowered:
+        out.append("Back")
+    if "leg" in lowered or "quad" in lowered or "hamstring" in lowered or "glute" in lowered:
+        out.append("Legs")
+    if "bicep" in lowered or "arm" in lowered:
+        out.append("Biceps")
+    # Deduplicate while preserving order.
+    return [m for i, m in enumerate(out) if m not in out[:i]]
+
+
+def _infer_muscles_from_workout(workout: Workout, db: Session) -> list[str]:
+    # 1) Most reliable source: workout catalog body_part for the exact exercise.
+    catalog_row = (
+        db.query(WorkoutCatalog)
+        .filter(func.lower(WorkoutCatalog.exercise_name) == (workout.exercise_name or "").strip().lower())
+        .first()
+    )
+    mapped = _muscles_from_body_part(catalog_row.body_part if catalog_row else None)
+    if mapped:
+        return mapped
+
+    # 2) Explicit body_part encoded in notes by workout logger.
+    from_notes = _parse_body_part_from_notes(workout.notes)
+    mapped = _muscles_from_body_part(from_notes)
+    if mapped:
+        return mapped
+
+    # 3) Unknown mapping: return empty so we don't fabricate muscle load.
+    return []
+
+
+def _relative_label(dt: datetime | None) -> str:
+    if not dt:
+        return "Not trained recently"
+    diff_hours = max(0, int((datetime.utcnow() - dt).total_seconds() // 3600))
+    if diff_hours < 24:
+        return "Today"
+    days = max(1, round(diff_hours / 24))
+    if days == 1:
+        return "Yesterday"
+    return f"{days} days ago"
+
+
+def _groq_workout_coach(payload: dict) -> dict:
+    if not settings.GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY missing on server")
+
+    system_prompt = (
+        "You are an expert workout and recovery coach. "
+        "Return ONLY valid JSON with exact keys: insightText, readinessScore, readinessLabel, readinessDescription, readinessFactors. "
+        "readinessScore must be 0-100 integer. "
+        "readinessFactors must be exactly 3 items with keys label and type where type in [good, warning, bad, info]. "
+        "Insight should be concise (2-4 sentences), practical, and mention which muscles to prioritize or avoid today."
+    )
+
+    req = Request(
+        "https://api.groq.com/openai/v1/chat/completions",
+        data=json.dumps(
+            {
+                "model": settings.GROQ_MODEL or "llama-3.3-70b-versatile",
+                "temperature": 0.3,
+                "max_tokens": 420,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": json.dumps(payload)},
+                ],
+            }
+        ).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+            "Accept": "application/json",
+            "User-Agent": "fitness-workout-coach/1.0",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(req, timeout=30) as resp:
+            raw = json.loads(resp.read().decode("utf-8"))
+    except HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Groq HTTP {e.code}: {body[:260]}") from e
+    except URLError as e:
+        raise RuntimeError(f"Groq network error: {e.reason}") from e
+
+    content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
+    if not content:
+        raise RuntimeError("Groq returned empty workout insight")
+    clean = content.replace("```json", "").replace("```", "").strip()
+    parsed = json.loads(clean)
+    if not isinstance(parsed, dict):
+        raise RuntimeError("Groq returned invalid workout JSON")
+    return parsed
 
 
 def build_recommendation(row: WorkoutCatalog) -> str:
@@ -313,8 +438,12 @@ def add_workout(
 
 
 @app.get("/workout/history")
-def workout_history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    since = datetime.utcnow() - timedelta(hours=24)
+def workout_history(
+    hours: int = Query(default=24, ge=1, le=24 * 30),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    since = datetime.utcnow() - timedelta(hours=hours)
     items = (
         db.query(Workout)
         .filter(Workout.user_id == current_user.id, Workout.date >= since)
@@ -344,6 +473,122 @@ def workout_history(current_user: User = Depends(get_current_user), db: Session 
             }
             for i in items
         ]
+    }
+
+
+@app.post("/workout/coach/insight")
+def workout_coach_insight(
+    body: dict = Body(default={}),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _ = current_user
+    payload = body if isinstance(body, dict) else {}
+    workout_data = payload.get("workoutData") if isinstance(payload.get("workoutData"), dict) else {}
+    if not workout_data:
+        recent = (
+            db.query(Workout)
+            .filter(Workout.user_id == current_user.id)
+            .order_by(Workout.date.desc())
+            .limit(30)
+            .all()
+        )
+        workout_data = {
+            "recentWorkouts": [
+                {
+                    "date": i.date.isoformat(),
+                    "type": i.type,
+                    "musclesTrained": [],
+                    "durationMin": i.duration or 0,
+                }
+                for i in recent[:5]
+            ],
+            "weeklyVolume": [],
+            "muscleGroups": [],
+            "lastWorkoutDate": recent[0].date.isoformat() if recent else "No workout yet",
+            "totalWeeklySets": int(sum((i.sets or 0) for i in recent)),
+            "targetWeeklySets": 84,
+        }
+    try:
+        return _groq_workout_coach(workout_data)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Workout AI insight generation failed: {str(e)}") from e
+
+
+@app.get("/workout/coach/data")
+def workout_coach_data(
+    days: int = Query(default=14, ge=1, le=90),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    base_muscles = ["Chest", "Shoulders", "Triceps", "Back", "Legs", "Biceps"]
+    since = datetime.utcnow() - timedelta(days=days)
+
+    rows = (
+        db.query(Workout)
+        .filter(Workout.user_id == current_user.id, Workout.date >= since)
+        .order_by(Workout.date.desc())
+        .all()
+    )
+    if not rows:
+        return {
+            "recentWorkouts": [],
+            "weeklyVolume": [{"muscle": m, "sets": 0, "targetSets": 14, "color": c} for m, c in zip(base_muscles, ["#4ADE80", "#FBBF24", "#A78BFA", "#60A5FA", "#F87171", "#2DD4BF"])],
+            "muscleGroups": [{"name": m, "status": "fresh", "recoveryPercent": 90, "lastTrainedLabel": "Not trained recently"} for m in base_muscles],
+            "lastWorkoutDate": "No workout yet",
+            "totalWeeklySets": 0,
+            "targetWeeklySets": 84,
+        }
+
+    week_since = datetime.utcnow() - timedelta(days=7)
+    by_muscle_sets: dict[str, int] = {m: 0 for m in base_muscles}
+    last_trained: dict[str, datetime] = {}
+    for w in rows:
+        muscles = _infer_muscles_from_workout(w, db)
+        sets = max(0, int(w.sets or 0))
+        for m in muscles:
+            if m not in by_muscle_sets:
+                continue
+            if w.date >= week_since:
+                by_muscle_sets[m] += sets
+            if m not in last_trained or w.date > last_trained[m]:
+                last_trained[m] = w.date
+
+    palette = {
+        "Chest": "#4ADE80",
+        "Shoulders": "#FBBF24",
+        "Triceps": "#A78BFA",
+        "Back": "#60A5FA",
+        "Legs": "#F87171",
+        "Biceps": "#2DD4BF",
+    }
+    weekly_volume = [{"muscle": m, "sets": by_muscle_sets[m], "targetSets": 14, "color": palette[m]} for m in base_muscles]
+    muscle_groups = []
+    for m in base_muscles:
+        dt = last_trained.get(m)
+        hours = (datetime.utcnow() - dt).total_seconds() / 3600 if dt else 168
+        recovery = max(12, min(96, round((min(168, hours) / 168) * 100)))
+        status = "sore" if recovery < 28 else "tired" if recovery < 52 else "ready" if recovery < 76 else "fresh"
+        muscle_groups.append({"name": m, "status": status, "recoveryPercent": recovery, "lastTrainedLabel": _relative_label(dt)})
+
+    recent_workouts = [
+        {
+            "date": _relative_label(w.date),
+            "type": w.type,
+            "musclesTrained": _infer_muscles_from_workout(w, db),
+            "durationMin": int(w.duration or 0),
+        }
+        for w in rows[:5]
+    ]
+    total_weekly_sets = sum(v["sets"] for v in weekly_volume)
+    target_weekly_sets = sum(v["targetSets"] for v in weekly_volume)
+    return {
+        "recentWorkouts": recent_workouts,
+        "weeklyVolume": weekly_volume,
+        "muscleGroups": muscle_groups,
+        "lastWorkoutDate": _relative_label(rows[0].date),
+        "totalWeeklySets": total_weekly_sets,
+        "targetWeeklySets": target_weekly_sets,
     }
 
 

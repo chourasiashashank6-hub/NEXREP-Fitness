@@ -26,3 +26,9 @@ class MealCreateRequest(BaseModel):
 class WaterPatchRequest(BaseModel):
     water_l: Decimal = Field(..., ge=0)
     date: str | None = None
+
+
+class FoodLookupRequest(BaseModel):
+    food_id: int | None = Field(default=None, gt=0)
+    food_name: str | None = Field(default=None, min_length=1, max_length=200)
+    quantity_g: Decimal = Field(..., gt=0)
