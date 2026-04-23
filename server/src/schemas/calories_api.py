@@ -21,6 +21,11 @@ class MealCreateRequest(BaseModel):
     protein_per_100g: Decimal = Field(default=Decimal("0"), ge=0)
     carbs_per_100g: Decimal = Field(default=Decimal("0"), ge=0)
     fat_per_100g: Decimal = Field(default=Decimal("0"), ge=0)
+    fiber_per_100g: Decimal = Field(default=Decimal("0"), ge=0)
+
+
+class MealUpdateRequest(BaseModel):
+    quantity_g: Decimal = Field(..., gt=0)
 
 
 class WaterPatchRequest(BaseModel):

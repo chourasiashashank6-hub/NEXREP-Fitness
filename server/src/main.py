@@ -19,6 +19,7 @@ from src.schemas.schemas import (
     ProfileRequest,
     SignupRequest,
     WorkoutRequest,
+    WorkoutUpdateRequest,
 )
 from src.services.auth_service import create_access_token, hash_password, verify_password
 from src.services.food_catalog_service import ensure_food_catalog_schema, load_food_catalog_from_sql_if_empty
@@ -62,6 +63,11 @@ def apply_schema_updates() -> None:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS goal_tag VARCHAR(128) DEFAULT 'Fat Loss'"))
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS difficulty VARCHAR(64) DEFAULT 'Beginner'"))
+        conn.execute(text("ALTER TABLE daily_nutrition_logs ADD COLUMN IF NOT EXISTS total_fiber_g NUMERIC(6,2) DEFAULT 0"))
+        conn.execute(text("ALTER TABLE daily_nutrition_logs ADD COLUMN IF NOT EXISTS target_fiber_g NUMERIC(6,2) DEFAULT 30"))
+        conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS fiber_per_100g NUMERIC(6,2) DEFAULT 0"))
+        conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS total_fiber_g NUMERIC(6,2) DEFAULT 0"))
+        conn.execute(text("ALTER TABLE IF EXISTS user_calorie_targets ADD COLUMN IF NOT EXISTS target_fiber_g NUMERIC(6,2) DEFAULT 30"))
 
 
 def estimate_workout_calories(payload: WorkoutRequest) -> int:
@@ -275,6 +281,62 @@ def apply_onboarding_personal_to_user(user: User, onboarding: dict) -> None:
     except (TypeError, ValueError):
         pass
 
+    goal_type_labels = {
+        "fat_loss": "Fat Loss",
+        "muscle_gain": "Muscle Gain",
+        "strength": "Strength",
+        "recomp": "Recomp",
+        "maintain": "Maintain",
+    }
+
+    # Sync profile goal_tag with onboarding primary goal.
+    goal_candidates = [
+        goal_type_labels.get((onboarding.get("goal") or {}).get("type"))
+        if isinstance(onboarding.get("goal"), dict)
+        else None,
+        onboarding.get("primary_goal"),
+        onboarding.get("primaryGoal"),
+        onboarding.get("goal_tag"),
+        onboarding.get("goalTag"),
+    ]
+    goals_section = onboarding.get("goals") if isinstance(onboarding.get("goals"), dict) else {}
+    goal_candidates.extend(
+        [
+            goals_section.get("primary_goal"),
+            goals_section.get("primaryGoal"),
+            goals_section.get("goal_tag"),
+            goals_section.get("goalTag"),
+            goals_section.get("goal"),
+            goals_section.get("selectedGoal"),
+        ]
+    )
+    for goal in goal_candidates:
+        if isinstance(goal, str) and goal.strip():
+            user.goal_tag = goal.strip()[:128]
+            break
+
+    # Keep profile free-text goals aligned with primary goal from onboarding.
+    if user.goal_tag:
+        user.goals = user.goal_tag
+
+    # Sync profile difficulty from onboarding choices.
+    goal = onboarding.get("goal") if isinstance(onboarding.get("goal"), dict) else {}
+    activity = onboarding.get("activity") if isinstance(onboarding.get("activity"), dict) else {}
+    goal_pace = (goal.get("pace") or "").strip().lower() if isinstance(goal.get("pace"), str) else ""
+    activity_level = (activity.get("level") or "").strip().lower() if isinstance(activity.get("level"), str) else ""
+    workouts_per_week = activity.get("workouts_per_week")
+
+    if goal_pace == "aggressive" or activity_level in {"very_active", "extremely_active"}:
+        user.difficulty = "Advanced"
+    elif (
+        goal_pace == "moderate"
+        or activity_level == "moderately_active"
+        or (isinstance(workouts_per_week, (int, float)) and workouts_per_week >= 4)
+    ):
+        user.difficulty = "Intermediate"
+    elif goal_pace == "slow" or activity_level in {"sedentary", "lightly_active"}:
+        user.difficulty = "Beginner"
+
 
 @app.post("/signup")
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
@@ -437,6 +499,155 @@ def add_workout(
     return {"id": workout.id}
 
 
+def _delete_workout_impl(
+    workout_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    workout = (
+        db.query(Workout)
+        .filter(Workout.id == workout_id, Workout.user_id == current_user.id)
+        .first()
+    )
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+
+    expected_title = f"{(workout.type or '').title()}: {workout.exercise_name}"
+    lower_bound = workout.date - timedelta(minutes=10) if workout.date else None
+    upper_bound = workout.date + timedelta(minutes=10) if workout.date else None
+
+    activity_query = db.query(Activity).filter(
+        Activity.user_id == current_user.id,
+        Activity.kind == "exercise",
+        Activity.title == expected_title,
+    )
+    if lower_bound and upper_bound:
+        activity_query = activity_query.filter(
+            Activity.created_at >= lower_bound,
+            Activity.created_at <= upper_bound,
+        )
+    if workout.duration is not None:
+        activity_query = activity_query.filter(Activity.duration == workout.duration)
+
+    linked_activity = activity_query.order_by(Activity.created_at.desc()).first()
+    if not linked_activity:
+        linked_activity = (
+            db.query(Activity)
+            .filter(
+                Activity.user_id == current_user.id,
+                Activity.kind == "exercise",
+                Activity.title == expected_title,
+            )
+            .order_by(Activity.created_at.desc())
+            .first()
+        )
+
+    if linked_activity:
+        db.delete(linked_activity)
+    db.delete(workout)
+    db.commit()
+    return {"deleted": True, "workout_id": workout_id}
+
+
+def _find_linked_activity(db: Session, current_user: User, workout: Workout) -> Activity | None:
+    expected_title = f"{(workout.type or '').title()}: {workout.exercise_name}"
+    lower_bound = workout.date - timedelta(minutes=10) if workout.date else None
+    upper_bound = workout.date + timedelta(minutes=10) if workout.date else None
+
+    activity_query = db.query(Activity).filter(
+        Activity.user_id == current_user.id,
+        Activity.kind == "exercise",
+        Activity.title == expected_title,
+    )
+    if lower_bound and upper_bound:
+        activity_query = activity_query.filter(
+            Activity.created_at >= lower_bound,
+            Activity.created_at <= upper_bound,
+        )
+    if workout.duration is not None:
+        activity_query = activity_query.filter(Activity.duration == workout.duration)
+
+    linked_activity = activity_query.order_by(Activity.created_at.desc()).first()
+    if not linked_activity:
+        linked_activity = (
+            db.query(Activity)
+            .filter(
+                Activity.user_id == current_user.id,
+                Activity.kind == "exercise",
+                Activity.title == expected_title,
+            )
+            .order_by(Activity.created_at.desc())
+            .first()
+        )
+    return linked_activity
+
+
+@app.delete("/workout/{workout_id}")
+def delete_workout(
+    workout_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return _delete_workout_impl(workout_id, current_user, db)
+
+
+@app.post("/workout/{workout_id}/delete")
+def delete_workout_post(
+    workout_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return _delete_workout_impl(workout_id, current_user, db)
+
+
+@app.patch("/workout/{workout_id}")
+def update_workout(
+    workout_id: int,
+    payload: WorkoutUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    workout = (
+        db.query(Workout)
+        .filter(Workout.id == workout_id, Workout.user_id == current_user.id)
+        .first()
+    )
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+
+    if payload.sets is not None:
+        if payload.sets <= 0:
+            raise HTTPException(status_code=422, detail="sets must be > 0")
+        workout.sets = payload.sets
+    if payload.reps is not None:
+        if payload.reps <= 0:
+            raise HTTPException(status_code=422, detail="reps must be > 0")
+        workout.reps = payload.reps
+    if payload.duration is not None:
+        if payload.duration <= 0:
+            raise HTTPException(status_code=422, detail="duration must be > 0")
+        workout.duration = payload.duration
+
+    calories = estimate_workout_calories(
+        WorkoutRequest(
+            type=workout.type,
+            exerciseName=workout.exercise_name,
+            sets=workout.sets,
+            reps=workout.reps,
+            duration=workout.duration,
+        )
+    )
+    linked_activity = _find_linked_activity(db, current_user, workout)
+    if linked_activity:
+        linked_activity.duration = workout.duration
+        linked_activity.calories = calories
+
+    db.add(workout)
+    db.commit()
+    db.refresh(workout)
+    return {"updated": True, "id": workout.id}
+
+
 @app.get("/workout/history")
 def workout_history(
     hours: int = Query(default=24, ge=1, le=24 * 30),
@@ -474,6 +685,26 @@ def workout_history(
             for i in items
         ]
     }
+
+
+@app.get("/workout/total-burn")
+def workout_total_burn(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    rows = db.query(Workout).filter(Workout.user_id == current_user.id).all()
+    total = 0
+    for row in rows:
+        total += estimate_workout_calories(
+            WorkoutRequest(
+                type=row.type,
+                exerciseName=row.exercise_name,
+                sets=row.sets,
+                reps=row.reps,
+                duration=row.duration,
+            )
+        )
+    return {"totalCaloriesBurned": int(total), "sessionCount": len(rows)}
 
 
 @app.post("/workout/coach/insight")
@@ -750,6 +981,14 @@ def chat(payload: ChatRequest, current_user: User = Depends(get_current_user), d
 
 @app.get("/profile")
 def profile(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Re-apply onboarding mapping on read so legacy users stay in sync.
+    onboarding_row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
+    if onboarding_row and isinstance(onboarding_row.onboarding_json, dict):
+        apply_onboarding_personal_to_user(current_user, onboarding_row.onboarding_json)
+        db.add(current_user)
+        db.commit()
+        db.refresh(current_user)
+
     workouts = db.query(Workout).filter(Workout.user_id == current_user.id).count()
     meals = db.query(Meal).filter(Meal.user_id == current_user.id).count()
     activity_logs = db.query(Activity).filter(Activity.user_id == current_user.id).count()

@@ -295,7 +295,7 @@ def lookup_food_scaled(db: Session, *, food_id: int | None, food_name: str | Non
             db.execute(
                 text(
                     """
-                    SELECT fi.food_id, fi.food_name, fc.category_name, fi.calories_per_100g, fi.protein_g, fi.carbs_g, fi.fat_g
+                    SELECT fi.food_id, fi.food_name, fc.category_name, fi.calories_per_100g, fi.protein_g, fi.carbs_g, fi.fat_g, fi.fiber_g
                     FROM food_items fi
                     JOIN food_categories fc ON fc.category_id = fi.category_id
                     WHERE fi.food_id = :fid
@@ -312,7 +312,7 @@ def lookup_food_scaled(db: Session, *, food_id: int | None, food_name: str | Non
             db.execute(
                 text(
                     """
-                    SELECT fi.food_id, fi.food_name, fc.category_name, fi.calories_per_100g, fi.protein_g, fi.carbs_g, fi.fat_g
+                    SELECT fi.food_id, fi.food_name, fc.category_name, fi.calories_per_100g, fi.protein_g, fi.carbs_g, fi.fat_g, fi.fiber_g
                     FROM food_items fi
                     JOIN food_categories fc ON fc.category_id = fi.category_id
                     WHERE LOWER(fi.food_name) = LOWER(:name)
@@ -332,6 +332,7 @@ def lookup_food_scaled(db: Session, *, food_id: int | None, food_name: str | Non
     p100 = _to_decimal(row["protein_g"])
     c100 = _to_decimal(row["carbs_g"])
     f100 = _to_decimal(row["fat_g"])
+    fi100 = _to_decimal(row["fiber_g"])
     factor = quantity_g / Decimal("100")
     return {
         "food_id": int(row["food_id"]),
@@ -343,11 +344,13 @@ def lookup_food_scaled(db: Session, *, food_id: int | None, food_name: str | Non
             "protein_g": p100,
             "carbs_g": c100,
             "fat_g": f100,
+            "fiber_g": fi100,
         },
         "scaled": {
             "calories": (cal100 * factor),
             "protein_g": (p100 * factor),
             "carbs_g": (c100 * factor),
             "fat_g": (f100 * factor),
+            "fiber_g": (fi100 * factor),
         },
     }

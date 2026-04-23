@@ -16,7 +16,7 @@ from src.db.session import get_db
 from src.core.config import settings
 from src.models.models import User, UserOnboarding
 from src.models.nutrition_calories import DailyNutritionLog, MealEntry, WaterIntakeLog
-from src.schemas.calories_api import DailyLogEnsureRequest, FoodLookupRequest, MealCreateRequest, WaterPatchRequest
+from src.schemas.calories_api import DailyLogEnsureRequest, FoodLookupRequest, MealCreateRequest, MealUpdateRequest, WaterPatchRequest
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.utils.auth import get_current_user
 
@@ -29,6 +29,7 @@ DEFAULT_TARGETS = {
     "target_protein_g": Decimal("158"),
     "target_carbs_g": Decimal("210"),
     "target_fat_g": Decimal("70"),
+    "target_fiber_g": Decimal("30"),
     "target_water_l": Decimal("2.5"),
     "protein_pct": 30,
     "carbs_pct": 40,
@@ -417,6 +418,7 @@ def _targets_from_onboarding_json(targets: dict[str, Any] | None) -> dict[str, A
         "target_protein_g": _to_decimal(macros.get("protein_g"), DEFAULT_TARGETS["target_protein_g"]),
         "target_carbs_g": _to_decimal(macros.get("carbs_g"), DEFAULT_TARGETS["target_carbs_g"]),
         "target_fat_g": _to_decimal(macros.get("fat_g"), DEFAULT_TARGETS["target_fat_g"]),
+        "target_fiber_g": _to_decimal(macros.get("fiber_g"), DEFAULT_TARGETS["target_fiber_g"]),
         "target_water_l": _to_decimal(macros.get("water_l"), DEFAULT_TARGETS["target_water_l"]),
         "protein_pct": int(macros.get("protein_pct") or DEFAULT_TARGETS["protein_pct"]),
         "carbs_pct": int(macros.get("carbs_pct") or DEFAULT_TARGETS["carbs_pct"]),
@@ -435,7 +437,7 @@ def resolve_user_targets(db: Session, user_id: int) -> dict[str, Any]:
             db.execute(
                 text(
                     """
-                    SELECT target_calories, target_protein_g, target_carbs_g, target_fat_g, target_water_l,
+                    SELECT target_calories, target_protein_g, target_carbs_g, target_fat_g, target_fiber_g, target_water_l,
                            protein_pct, carbs_pct, fat_pct
                     FROM user_calorie_targets
                     WHERE user_id = :uid AND is_current = true
@@ -453,6 +455,7 @@ def resolve_user_targets(db: Session, user_id: int) -> dict[str, Any]:
                 "target_protein_g": _to_decimal(row["target_protein_g"], DEFAULT_TARGETS["target_protein_g"]),
                 "target_carbs_g": _to_decimal(row["target_carbs_g"], DEFAULT_TARGETS["target_carbs_g"]),
                 "target_fat_g": _to_decimal(row["target_fat_g"], DEFAULT_TARGETS["target_fat_g"]),
+                "target_fiber_g": _to_decimal(row["target_fiber_g"], DEFAULT_TARGETS["target_fiber_g"]),
                 "target_water_l": _to_decimal(row["target_water_l"], DEFAULT_TARGETS["target_water_l"]),
                 "protein_pct": int(row["protein_pct"] or DEFAULT_TARGETS["protein_pct"]),
                 "carbs_pct": int(row["carbs_pct"] or DEFAULT_TARGETS["carbs_pct"]),
@@ -501,6 +504,7 @@ def _get_or_create_daily_log(db: Session, user: User, log_date: date) -> DailyNu
         log.target_protein_g = t["target_protein_g"]
         log.target_carbs_g = t["target_carbs_g"]
         log.target_fat_g = t["target_fat_g"]
+        log.target_fiber_g = t["target_fiber_g"]
         log.target_water_l = t["target_water_l"]
         db.flush()
         _ensure_water_row(db, user.id, log_date, t["target_water_l"])
@@ -514,11 +518,13 @@ def _get_or_create_daily_log(db: Session, user: User, log_date: date) -> DailyNu
         target_protein_g=t["target_protein_g"],
         target_carbs_g=t["target_carbs_g"],
         target_fat_g=t["target_fat_g"],
+        target_fiber_g=t["target_fiber_g"],
         target_water_l=t["target_water_l"],
         total_calories=Decimal("0"),
         total_protein_g=Decimal("0"),
         total_carbs_g=Decimal("0"),
         total_fat_g=Decimal("0"),
+        total_fiber_g=Decimal("0"),
         total_water_l=Decimal("0"),
         calories_remaining=Decimal(str(t["target_calories"])),
         is_goal_met=False,
@@ -537,15 +543,17 @@ def recalculate_daily_log(db: Session, log: DailyNutritionLog) -> None:
             func.coalesce(func.sum(MealEntry.total_protein_g), 0),
             func.coalesce(func.sum(MealEntry.total_carbs_g), 0),
             func.coalesce(func.sum(MealEntry.total_fat_g), 0),
+            func.coalesce(func.sum(MealEntry.total_fiber_g), 0),
         )
         .filter(MealEntry.log_id == log.log_id)
         .one()
     )
-    tc, tp, tcarbs, tf = (Decimal(str(x)) for x in sums)
+    tc, tp, tcarbs, tf, tfi = (Decimal(str(x)) for x in sums)
     log.total_calories = tc
     log.total_protein_g = tp
     log.total_carbs_g = tcarbs
     log.total_fat_g = tf
+    log.total_fiber_g = tfi
     log.calories_remaining = Decimal(log.target_calories) - tc
     log.is_goal_met = bool(tc >= Decimal(log.target_calories) and tp >= Decimal(log.target_protein_g))
 
@@ -568,10 +576,12 @@ def _serialize_meal(m: MealEntry) -> dict[str, Any]:
         "protein_per_100g": float(m.protein_per_100g),
         "carbs_per_100g": float(m.carbs_per_100g),
         "fat_per_100g": float(m.fat_per_100g),
+        "fiber_per_100g": float(m.fiber_per_100g),
         "total_calories": float(m.total_calories),
         "total_protein_g": float(m.total_protein_g),
         "total_carbs_g": float(m.total_carbs_g),
         "total_fat_g": float(m.total_fat_g),
+        "total_fiber_g": float(m.total_fiber_g),
         "logged_at": m.logged_at.isoformat() if m.logged_at else None,
     }
 
@@ -602,11 +612,13 @@ def _serialize_day(db: Session, user: User, log_date: date) -> dict[str, Any]:
             "total_protein_g": float(log.total_protein_g),
             "total_carbs_g": float(log.total_carbs_g),
             "total_fat_g": float(log.total_fat_g),
+            "total_fiber_g": float(log.total_fiber_g),
             "total_water_l": float(log.total_water_l),
             "target_calories": log.target_calories,
             "target_protein_g": float(log.target_protein_g),
             "target_carbs_g": float(log.target_carbs_g),
             "target_fat_g": float(log.target_fat_g),
+            "target_fiber_g": float(log.target_fiber_g),
             "target_water_l": float(log.target_water_l),
             "calories_remaining": float(log.calories_remaining),
             "is_goal_met": log.is_goal_met,
@@ -647,11 +659,13 @@ def add_meal_entry(payload: MealCreateRequest, current_user: User = Depends(get_
     p100 = payload.protein_per_100g
     carb100 = payload.carbs_per_100g
     f100 = payload.fat_per_100g
+    fi100 = payload.fiber_per_100g
 
     total_calories = (c100 / Decimal("100")) * q
     total_protein_g = (p100 / Decimal("100")) * q
     total_carbs_g = (carb100 / Decimal("100")) * q
     total_fat_g = (f100 / Decimal("100")) * q
+    total_fiber_g = (fi100 / Decimal("100")) * q
 
     entry = MealEntry(
         log_id=log.log_id,
@@ -663,10 +677,12 @@ def add_meal_entry(payload: MealCreateRequest, current_user: User = Depends(get_
         protein_per_100g=p100,
         carbs_per_100g=carb100,
         fat_per_100g=f100,
+        fiber_per_100g=fi100,
         total_calories=total_calories,
         total_protein_g=total_protein_g,
         total_carbs_g=total_carbs_g,
         total_fat_g=total_fat_g,
+        total_fiber_g=total_fiber_g,
     )
     db.add(entry)
     db.flush()
@@ -689,6 +705,34 @@ def delete_meal_entry(meal_id: int, current_user: User = Depends(get_current_use
     recalculate_daily_log(db, log)
     db.commit()
     return _serialize_day(db, current_user, log_date)
+
+
+@router.patch("/meals/{meal_id}")
+def update_meal_entry(
+    meal_id: int,
+    payload: MealUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    meal = db.query(MealEntry).filter(MealEntry.meal_id == meal_id, MealEntry.user_id == current_user.id).first()
+    if not meal:
+        raise HTTPException(status_code=404, detail="Meal not found")
+    log = db.query(DailyNutritionLog).filter(DailyNutritionLog.log_id == meal.log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Daily log missing")
+
+    q = payload.quantity_g
+    meal.quantity_g = q
+    meal.total_calories = (Decimal(meal.calories_per_100g) / Decimal("100")) * q
+    meal.total_protein_g = (Decimal(meal.protein_per_100g) / Decimal("100")) * q
+    meal.total_carbs_g = (Decimal(meal.carbs_per_100g) / Decimal("100")) * q
+    meal.total_fat_g = (Decimal(meal.fat_per_100g) / Decimal("100")) * q
+    meal.total_fiber_g = (Decimal(meal.fiber_per_100g) / Decimal("100")) * q
+
+    db.flush()
+    recalculate_daily_log(db, log)
+    db.commit()
+    return _serialize_day(db, current_user, log.log_date)
 
 
 @router.patch("/water")

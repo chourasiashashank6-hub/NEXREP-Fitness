@@ -39,6 +39,13 @@ class WorkoutRequest(BaseModel):
     notes: str | None = None
 
 
+class WorkoutUpdateRequest(BaseModel):
+    sets: int | None = None
+    reps: int | None = None
+    duration: int | None = None
+    timeTaken: str | None = None
+
+
 class MealRequest(BaseModel):
     name: str
     calories: int
