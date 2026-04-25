@@ -63,6 +63,29 @@ def apply_schema_updates() -> None:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS goal_tag VARCHAR(128) DEFAULT 'Fat Loss'"))
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS difficulty VARCHAR(64) DEFAULT 'Beginner'"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()"))
+        conn.execute(
+            text(
+                """
+                UPDATE users u
+                SET created_at = COALESCE(
+                    (SELECT MIN(w.date) FROM workouts w WHERE w.user_id = u.id),
+                    (SELECT MIN(m.date) FROM meals m WHERE m.user_id = u.id),
+                    (SELECT MIN(a.created_at) FROM activities a WHERE a.user_id = u.id),
+                    u.created_at,
+                    NOW()
+                )
+                WHERE
+                    u.created_at IS NULL
+                    OR u.created_at > COALESCE(
+                        (SELECT MIN(w.date) FROM workouts w WHERE w.user_id = u.id),
+                        (SELECT MIN(m.date) FROM meals m WHERE m.user_id = u.id),
+                        (SELECT MIN(a.created_at) FROM activities a WHERE a.user_id = u.id),
+                        u.created_at
+                    )
+                """
+            )
+        )
         conn.execute(text("ALTER TABLE daily_nutrition_logs ADD COLUMN IF NOT EXISTS total_fiber_g NUMERIC(6,2) DEFAULT 0"))
         conn.execute(text("ALTER TABLE daily_nutrition_logs ADD COLUMN IF NOT EXISTS target_fiber_g NUMERIC(6,2) DEFAULT 30"))
         conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS fiber_per_100g NUMERIC(6,2) DEFAULT 0"))
@@ -1003,6 +1026,7 @@ def profile(current_user: User = Depends(get_current_user), db: Session = Depend
         "goals": current_user.goals,
         "goalTag": current_user.goal_tag,
         "difficulty": current_user.difficulty,
+        "createdAt": current_user.created_at.isoformat() if current_user.created_at else None,
         "disciplineScore": score,
     }
 
@@ -1034,5 +1058,6 @@ def update_profile(
         "goals": current_user.goals,
         "goalTag": current_user.goal_tag,
         "difficulty": current_user.difficulty,
+        "createdAt": current_user.created_at.isoformat() if current_user.created_at else None,
         "disciplineScore": score,
     }

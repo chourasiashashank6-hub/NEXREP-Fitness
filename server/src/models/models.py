@@ -17,6 +17,7 @@ class User(Base):
     goals = Column(String(255), default="Stay consistent")
     goal_tag = Column(String(128), default="Fat Loss")
     difficulty = Column(String(64), default="Beginner")
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     onboarding = relationship("UserOnboarding", back_populates="user", uselist=False)
 
