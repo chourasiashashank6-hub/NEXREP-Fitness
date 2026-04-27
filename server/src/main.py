@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import json
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-from sqlalchemy import text
+from sqlalchemy import func, text
 from fastapi import Body, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -138,12 +138,49 @@ def met_from_difficulty_and_volume(difficulty: str | None, sets: int | None, rep
 
 
 def estimate_workout_calories_via_met(payload: WorkoutRequest, body_weight_kg: float) -> int:
-    time_in_hours = parse_time_taken_to_hours(payload.timeTaken)
-    if time_in_hours is None or time_in_hours <= 0:
-        return estimate_workout_calories(payload)
+    parsed_time_in_hours = parse_time_taken_to_hours(payload.timeTaken)
     met_value = payload.metValue if payload.metValue and payload.metValue > 0 else met_from_difficulty_and_volume(payload.difficulty, payload.sets, payload.reps)
-    # Requested formula: calorie_burnt = met_value * body_weight(kg) * time(in hrs)
-    calories = met_value * body_weight_kg * time_in_hours
+
+    # Explicit influence from both sets and reps independently so changes are
+    # visible even when total volume is similar.
+    sets = max(1, int(payload.sets or 1))
+    reps = max(1, int(payload.reps or 1))
+    volume = sets * reps
+
+    # Approximate training time from volume:
+    # ~2.2 sec per rep + ~45 sec rest between sets.
+    active_seconds = sets * reps * 2.2
+    rest_seconds = max(0, sets - 1) * 45
+    expected_seconds = max(60, int(round(active_seconds + rest_seconds)))
+    expected_time_hours = expected_seconds / 3600.0
+
+    # Keep MET baseline tied to expected workload time so longer logged time
+    # does not artificially increase calories for identical volume.
+    base_calories = met_value * body_weight_kg * expected_time_hours
+
+    # Baseline around common template 3 sets x 12 reps.
+    baseline_sets = 3
+    baseline_reps = 12
+
+    # Independent multipliers:
+    # - more sets => more total work/rest overhead and session strain
+    # - higher reps => longer time-under-tension per set
+    set_multiplier = 1.0 + ((sets - baseline_sets) * 0.09)
+    rep_multiplier = 1.0 + ((reps - baseline_reps) * 0.025)
+    set_multiplier = max(0.65, min(2.0, set_multiplier))
+    rep_multiplier = max(0.70, min(1.8, rep_multiplier))
+
+    # Additional explicit volume calories so integer rounding does not hide
+    # differences in nearby inputs.
+    volume_bonus_kcal = max(0, volume - (baseline_sets * baseline_reps)) * 0.8
+
+    pace_multiplier = 1.0
+    if parsed_time_in_hours is not None and parsed_time_in_hours > 0:
+        actual_seconds = max(1, int(round(parsed_time_in_hours * 3600)))
+        pace_ratio = expected_seconds / actual_seconds
+        pace_multiplier = max(0.75, min(1.40, pace_ratio ** 0.6))
+
+    calories = (base_calories * set_multiplier * rep_multiplier * pace_multiplier) + volume_bonus_kcal
     return max(1, int(round(calories)))
 
 
@@ -169,6 +206,54 @@ def _parse_body_part_from_notes(notes: str | None) -> str | None:
         return None
     raw = notes[idx + len(marker):].split(";")[0].strip()
     return raw or None
+
+
+def _parse_value_from_notes(notes: str | None, key: str) -> str | None:
+    if not notes or not key:
+        return None
+    marker = f"{key}="
+    idx = notes.lower().find(marker.lower())
+    if idx < 0:
+        return None
+    raw = notes[idx + len(marker):].split(";")[0].strip()
+    return raw or None
+
+
+def _estimate_saved_workout_calories(
+    workout: Workout,
+    user_weight_kg: float,
+    db: Session,
+    override_time_taken: str | None = None,
+) -> int:
+    catalog_row = (
+        db.query(WorkoutCatalog)
+        .filter(func.lower(WorkoutCatalog.exercise_name) == (workout.exercise_name or "").strip().lower())
+        .first()
+    )
+    derived_difficulty = (
+        catalog_row.difficulty
+        if catalog_row and catalog_row.difficulty
+        else _parse_value_from_notes(workout.notes, "difficulty")
+    )
+    derived_met = (
+        float(catalog_row.met_value)
+        if catalog_row and catalog_row.met_value is not None and catalog_row.met_value > 0
+        else None
+    )
+    effective_time_taken = override_time_taken or (f"{int(workout.duration)}:00" if workout.duration else None)
+    return estimate_workout_calories_via_met(
+        WorkoutRequest(
+            type=workout.type,
+            exerciseName=workout.exercise_name,
+            sets=workout.sets,
+            reps=workout.reps,
+            duration=workout.duration,
+            difficulty=derived_difficulty,
+            metValue=derived_met,
+            timeTaken=effective_time_taken,
+        ),
+        user_weight_kg or 70,
+    )
 
 
 def _muscles_from_body_part(body_part: str | None) -> list[str]:
@@ -486,6 +571,20 @@ def add_activity(
     return {"id": item.id}
 
 
+@app.post("/workout/estimate")
+def estimate_workout_calories_endpoint(
+    payload: WorkoutRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Same MET-based model as POST /workout, without persisting — for UI previews."""
+    return {
+        "estimatedCalories": estimate_workout_calories_via_met(
+            payload,
+            float(current_user.weight or 70),
+        ),
+    }
+
+
 @app.post("/workout")
 def add_workout(
     payload: WorkoutRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
@@ -651,14 +750,11 @@ def update_workout(
             raise HTTPException(status_code=422, detail="duration must be > 0")
         workout.duration = payload.duration
 
-    calories = estimate_workout_calories(
-        WorkoutRequest(
-            type=workout.type,
-            exerciseName=workout.exercise_name,
-            sets=workout.sets,
-            reps=workout.reps,
-            duration=workout.duration,
-        )
+    calories = _estimate_saved_workout_calories(
+        workout,
+        current_user.weight or 70,
+        db,
+        override_time_taken=payload.timeTaken,
     )
     linked_activity = _find_linked_activity(db, current_user, workout)
     if linked_activity:
@@ -668,7 +764,15 @@ def update_workout(
     db.add(workout)
     db.commit()
     db.refresh(workout)
-    return {"updated": True, "id": workout.id}
+    return {
+        "updated": True,
+        "id": workout.id,
+        "sets": workout.sets,
+        "reps": workout.reps,
+        "duration": workout.duration,
+        "caloriesBurned": calories,
+        "timeTaken": payload.timeTaken if payload.timeTaken else (f"{int(workout.duration)}:00" if workout.duration else None),
+    }
 
 
 @app.get("/workout/history")
@@ -694,15 +798,8 @@ def workout_history(
                 "reps": i.reps,
                 "duration": i.duration,
                 "notes": i.notes,
-                "caloriesBurned": estimate_workout_calories(
-                    WorkoutRequest(
-                        type=i.type,
-                        exerciseName=i.exercise_name,
-                        sets=i.sets,
-                        reps=i.reps,
-                        duration=i.duration,
-                    )
-                ),
+                "bodyPart": _parse_body_part_from_notes(i.notes),
+                "caloriesBurned": _estimate_saved_workout_calories(i, current_user.weight or 70, db),
                 "date": i.date.isoformat(),
             }
             for i in items
@@ -718,15 +815,7 @@ def workout_total_burn(
     rows = db.query(Workout).filter(Workout.user_id == current_user.id).all()
     total = 0
     for row in rows:
-        total += estimate_workout_calories(
-            WorkoutRequest(
-                type=row.type,
-                exerciseName=row.exercise_name,
-                sets=row.sets,
-                reps=row.reps,
-                duration=row.duration,
-            )
-        )
+        total += _estimate_saved_workout_calories(row, current_user.weight or 70, db)
     return {"totalCaloriesBurned": int(total), "sessionCount": len(rows)}
 
 

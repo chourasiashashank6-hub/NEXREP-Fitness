@@ -36,6 +36,13 @@ DEFAULT_TARGETS = {
     "fat_pct": 30,
 }
 
+PROTEIN_PER_KG = {
+    "muscle_gain": 2.0,
+    "weight_loss": 2.2,
+    "maintenance": 1.6,
+    "default": 1.8,
+}
+
 
 def _num(v: Any) -> float:
     try:
@@ -47,6 +54,95 @@ def _num(v: Any) -> float:
 def _normalize_insight_text(text: str) -> str:
     cleaned = " ".join((text or "").replace("\n", " ").split()).strip()
     return cleaned
+
+
+def _normalize_goal(goal: str | None) -> str:
+    g = (goal or "").strip().lower().replace(" ", "_")
+    if "muscle" in g or g == "gain":
+        return "muscle_gain"
+    if "fat" in g or "loss" in g:
+        return "weight_loss"
+    if "maint" in g:
+        return "maintenance"
+    return "default"
+
+
+def calculate_protein_target_g(body_weight_kg: float, goal: str) -> float:
+    factor = PROTEIN_PER_KG.get(goal, PROTEIN_PER_KG["default"])
+    return round(body_weight_kg * factor)
+
+
+def fallback_macro_pct(target_calories: int) -> dict[str, int]:
+    if target_calories <= 2000:
+        return {"protein_pct": 30, "carbs_pct": 40, "fat_pct": 30}
+    if target_calories <= 2500:
+        return {"protein_pct": 27, "carbs_pct": 43, "fat_pct": 30}
+    if target_calories <= 3000:
+        return {"protein_pct": 23, "carbs_pct": 47, "fat_pct": 30}
+    return {"protein_pct": 20, "carbs_pct": 50, "fat_pct": 30}
+
+
+def calculate_macro_targets(target_calories: int, body_weight_kg: float, goal: str) -> dict[str, int]:
+    safe_target_calories = max(1, int(target_calories or DEFAULT_TARGETS["target_calories"]))
+    normalized_goal = _normalize_goal(goal)
+
+    # Step 1: protein in grams (body-weight based)
+    protein_g = calculate_protein_target_g(body_weight_kg, normalized_goal)
+
+    # Step 2: cap protein calories at 35%
+    protein_calories = protein_g * 4
+    protein_calories = min(protein_calories, safe_target_calories * 0.35)
+    protein_g = round(protein_calories / 4)
+
+    # Step 3: split remaining calories between carbs and fats
+    remaining_calories = safe_target_calories - protein_calories
+    carbs_calories = remaining_calories * 0.60
+    fat_calories = remaining_calories * 0.40
+
+    carbs_g = round(carbs_calories / 4)
+    fat_g = round(fat_calories / 9)
+
+    return {
+        "target_protein_g": int(protein_g),
+        "target_carbs_g": int(carbs_g),
+        "target_fat_g": int(fat_g),
+        "protein_pct": int(round((protein_calories / safe_target_calories) * 100)),
+        "carbs_pct": int(round((carbs_calories / safe_target_calories) * 100)),
+        "fat_pct": int(round((fat_calories / safe_target_calories) * 100)),
+    }
+
+
+def _default_targets_for_user(target_calories: int, body_weight_kg: float | None, goal: str | None) -> dict[str, Any]:
+    safe_target_calories = max(1, int(target_calories or DEFAULT_TARGETS["target_calories"]))
+    resolved_weight = float(body_weight_kg or 0)
+
+    if resolved_weight > 0:
+        macro_targets = calculate_macro_targets(safe_target_calories, resolved_weight, goal or "default")
+    else:
+        pct = fallback_macro_pct(safe_target_calories)
+        protein_calories = safe_target_calories * (pct["protein_pct"] / 100)
+        carbs_calories = safe_target_calories * (pct["carbs_pct"] / 100)
+        fat_calories = safe_target_calories * (pct["fat_pct"] / 100)
+        macro_targets = {
+            "target_protein_g": int(round(protein_calories / 4)),
+            "target_carbs_g": int(round(carbs_calories / 4)),
+            "target_fat_g": int(round(fat_calories / 9)),
+            "protein_pct": pct["protein_pct"],
+            "carbs_pct": pct["carbs_pct"],
+            "fat_pct": pct["fat_pct"],
+        }
+
+    return {
+        "target_calories": safe_target_calories,
+        "target_protein_g": Decimal(str(macro_targets["target_protein_g"])),
+        "target_carbs_g": Decimal(str(macro_targets["target_carbs_g"])),
+        "target_fat_g": Decimal(str(macro_targets["target_fat_g"])),
+        "target_fiber_g": DEFAULT_TARGETS["target_fiber_g"],
+        "target_water_l": DEFAULT_TARGETS["target_water_l"],
+        "protein_pct": int(macro_targets["protein_pct"]),
+        "carbs_pct": int(macro_targets["carbs_pct"]),
+        "fat_pct": int(macro_targets["fat_pct"]),
+    }
 
 
 def _fallback_coach(day_payload: dict[str, Any]) -> dict[str, Any]:
@@ -427,10 +523,31 @@ def _targets_from_onboarding_json(targets: dict[str, Any] | None) -> dict[str, A
     return out
 
 
-def resolve_user_targets(db: Session, user_id: int) -> dict[str, Any]:
+def _adapt_existing_targets_for_user(existing_targets: dict[str, Any], user: User) -> dict[str, Any]:
+    """
+    Keep existing calorie/fiber/water targets, but recompute macro grams/% with
+    adaptive logic so legacy users get updated macro guidance.
+    """
+    target_calories = int(existing_targets.get("target_calories") or DEFAULT_TARGETS["target_calories"])
+    goal = (getattr(user, "goal_tag", None) or getattr(user, "goals", None) or "default")
+    adaptive = _default_targets_for_user(target_calories, user.weight, goal)
+    return {
+        "target_calories": target_calories,
+        "target_protein_g": adaptive["target_protein_g"],
+        "target_carbs_g": adaptive["target_carbs_g"],
+        "target_fat_g": adaptive["target_fat_g"],
+        "target_fiber_g": _to_decimal(existing_targets.get("target_fiber_g"), DEFAULT_TARGETS["target_fiber_g"]),
+        "target_water_l": _to_decimal(existing_targets.get("target_water_l"), DEFAULT_TARGETS["target_water_l"]),
+        "protein_pct": int(adaptive["protein_pct"]),
+        "carbs_pct": int(adaptive["carbs_pct"]),
+        "fat_pct": int(adaptive["fat_pct"]),
+    }
+
+
+def resolve_user_targets(db: Session, user: User) -> dict[str, Any]:
     """
     Prefer user_calorie_targets when present (is_current = true);
-    otherwise use user_onboarding.targets_json; else defaults (2100 kcal, 2.5L, 30/40/30).
+    otherwise use user_onboarding.targets_json; else adaptive defaults.
     """
     try:
         row = (
@@ -444,13 +561,13 @@ def resolve_user_targets(db: Session, user_id: int) -> dict[str, Any]:
                     LIMIT 1
                     """
                 ),
-                {"uid": user_id},
+                {"uid": user.id},
             )
             .mappings()
             .first()
         )
         if row:
-            return {
+            persisted_targets = {
                 "target_calories": int(row["target_calories"] or DEFAULT_TARGETS["target_calories"]),
                 "target_protein_g": _to_decimal(row["target_protein_g"], DEFAULT_TARGETS["target_protein_g"]),
                 "target_carbs_g": _to_decimal(row["target_carbs_g"], DEFAULT_TARGETS["target_carbs_g"]),
@@ -461,14 +578,17 @@ def resolve_user_targets(db: Session, user_id: int) -> dict[str, Any]:
                 "carbs_pct": int(row["carbs_pct"] or DEFAULT_TARGETS["carbs_pct"]),
                 "fat_pct": int(row["fat_pct"] or DEFAULT_TARGETS["fat_pct"]),
             }
+            return _adapt_existing_targets_for_user(persisted_targets, user)
     except Exception:
         # Missing table, wrong schema, or aborted transaction — fall back to onboarding / defaults.
         db.rollback()
 
-    ob = db.query(UserOnboarding).filter(UserOnboarding.user_id == user_id).first()
+    ob = db.query(UserOnboarding).filter(UserOnboarding.user_id == user.id).first()
     if ob and isinstance(ob.targets_json, dict):
-        return _targets_from_onboarding_json(ob.targets_json)
-    return dict(DEFAULT_TARGETS)
+        onboarding_targets = _targets_from_onboarding_json(ob.targets_json)
+        return _adapt_existing_targets_for_user(onboarding_targets, user)
+    goal = (getattr(user, "goal_tag", None) or getattr(user, "goals", None) or "default")
+    return _default_targets_for_user(DEFAULT_TARGETS["target_calories"], user.weight, goal)
 
 
 def _macro_label(t: dict[str, Any]) -> str:
@@ -498,7 +618,7 @@ def _get_or_create_daily_log(db: Session, user: User, log_date: date) -> DailyNu
         .filter(DailyNutritionLog.user_id == user.id, DailyNutritionLog.log_date == log_date)
         .first()
     )
-    t = resolve_user_targets(db, user.id)
+    t = resolve_user_targets(db, user)
     if log:
         log.target_calories = t["target_calories"]
         log.target_protein_g = t["target_protein_g"]
@@ -599,7 +719,7 @@ def _serialize_day(db: Session, user: User, log_date: date) -> dict[str, Any]:
         .all()
     )
     water = db.query(WaterIntakeLog).filter(WaterIntakeLog.user_id == user.id, WaterIntakeLog.log_date == log_date).first()
-    t = resolve_user_targets(db, user.id)
+    t = resolve_user_targets(db, user)
 
     return {
         "date": log_date.isoformat(),
