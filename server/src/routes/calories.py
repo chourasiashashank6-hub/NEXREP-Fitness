@@ -15,8 +15,16 @@ from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.core.config import settings
 from src.models.models import User, UserOnboarding
-from src.models.nutrition_calories import DailyNutritionLog, MealEntry, WaterIntakeLog
-from src.schemas.calories_api import DailyLogEnsureRequest, FoodLookupRequest, MealCreateRequest, MealUpdateRequest, WaterPatchRequest
+from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog
+from src.schemas.calories_api import (
+    DailyLogEnsureRequest,
+    AIFoodMealCreateRequest,
+    FoodImageAnalyzeRequest,
+    FoodLookupRequest,
+    MealCreateRequest,
+    MealUpdateRequest,
+    WaterPatchRequest,
+)
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.utils.auth import get_current_user
 
@@ -189,6 +197,224 @@ def _fallback_coach(day_payload: dict[str, Any]) -> dict[str, Any]:
         "Prioritize high-protein, high-fiber, low-calorie choices for remaining meals and keep hydration steady."
     )
     return {"insight": insight, "alerts": alerts[:4], "source": "fallback"}
+
+
+def _extract_json_object(raw: str) -> dict[str, Any]:
+    text = (raw or "").strip()
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
+    # Fallback: find the first balanced JSON object to survive model outputs like:
+    #   { ... }\n\nExtra notes...
+    # or multiple JSON blobs back-to-back.
+    start = text.find("{")
+    if start >= 0:
+        depth = 0
+        in_string = False
+        escaped = False
+        for i in range(start, len(text)):
+            ch = text[i]
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif ch == "\\":
+                    escaped = True
+                elif ch == '"':
+                    in_string = False
+                continue
+            if ch == '"':
+                in_string = True
+                continue
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    candidate = text[start : i + 1]
+                    parsed = json.loads(candidate)
+                    if isinstance(parsed, dict):
+                        return parsed
+                    break
+    raise ValueError("Malformed JSON response from model")
+
+
+def _to_safe_float(v: Any) -> float:
+    try:
+        return max(0.0, round(float(v or 0), 1))
+    except Exception:
+        return 0.0
+
+
+def _normalize_food_analysis_payload(parsed: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(parsed.get("error"), str) and parsed["error"].strip():
+        raise ValueError(parsed["error"].strip())
+    food_name = str(parsed.get("foodName") or "").strip()
+    if not food_name:
+        raise ValueError("Could not detect food from this image.")
+    confidence_raw = str(parsed.get("confidence") or "medium").strip().lower()
+    confidence = confidence_raw if confidence_raw in {"low", "medium", "high"} else "medium"
+    serving = str(parsed.get("estimatedServingSize") or "").strip() or "100g"
+    return {
+        "foodName": food_name,
+        "estimatedServingSize": serving,
+        "calories": _to_safe_float(parsed.get("calories")),
+        "protein": _to_safe_float(parsed.get("protein")),
+        "carbs": _to_safe_float(parsed.get("carbs")),
+        "fats": _to_safe_float(parsed.get("fats")),
+        "fibre": _to_safe_float(parsed.get("fibre")),
+        "confidence": confidence,
+    }
+
+
+def _groq_food_image_analysis(base64: str, mime_type: str | None) -> dict[str, Any]:
+    if not settings.GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY missing on server")
+    # Use a vision-capable model explicitly. settings.GROQ_MODEL may point to text-only models
+    # (used elsewhere for coach text generation), which reject multimodal `content` arrays.
+    model_name = "meta-llama/llama-4-scout-17b-16e-instruct"
+    image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
+    system_prompt = (
+        "You are a strict nutrition expert AI for meal photo analysis. "
+        "Do NOT miss any visible food item in the image. "
+        "You must account for every detectable food component (including sides, toppings, sauces, oils, and drinks if visible) "
+        "and return combined totals for the entire image. "
+        "Return ONLY one valid JSON object with keys: "
+        "foodName, estimatedServingSize, calories, protein, carbs, fats, fibre, confidence. "
+        "foodName should summarize the full meal (all detected items). "
+        "estimatedServingSize should describe total serving for the full meal. "
+        "calories/protein/carbs/fats/fibre must be TOTALS for all detected items together, not per-item or per-100g. "
+        "confidence must be one of low|medium|high. "
+        "If no food is visible, return {\"error\":\"No food detected\"}. "
+        "No markdown, no code fences, no extra text."
+    )
+    req = Request(
+        "https://api.groq.com/openai/v1/chat/completions",
+        data=json.dumps(
+            {
+                "model": model_name,
+                "temperature": 0.1,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Analyze this food image and estimate nutrition values."},
+                            {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
+                        ],
+                    },
+                ],
+            }
+        ).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+            "Accept": "application/json",
+            "User-Agent": "fitness-food-analyzer/1.0",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(req, timeout=40) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+    except HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")
+        if e.code == 400 and "messages[1].content must be a string" in body:
+            raise RuntimeError(
+                "The configured Groq model is text-only for this account. "
+                "Use a vision-capable Groq model/key for food image analysis."
+            ) from e
+        if e.code == 429:
+            raise RuntimeError("Too many requests, try again in a moment.") from e
+        raise RuntimeError(f"Groq HTTP {e.code}: {body[:260]}") from e
+    except URLError as e:
+        raise RuntimeError(f"Groq network error: {e.reason}") from e
+
+    raw = (payload.get("choices") or [{}])[0].get("message", {}).get("content", "")
+    if not raw:
+        raise RuntimeError("Groq returned empty content")
+    parsed = _extract_json_object(raw)
+    return _normalize_food_analysis_payload(parsed)
+
+
+def _gemini_food_image_analysis(base64: str, mime_type: str | None) -> dict[str, Any]:
+    if not settings.GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY missing on server")
+    image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
+    model_candidates = [
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-latest",
+        "gemini-2.0-flash",
+    ]
+    last_err: str | None = None
+    payload: dict[str, Any] | None = None
+    for model_name in model_candidates:
+        req = Request(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?"
+            + urlencode({"key": settings.GEMINI_API_KEY}),
+            data=json.dumps(
+                {
+                    "contents": [
+                        {
+                            "parts": [
+                                {
+                                    "text": (
+                                        "Analyze this meal photo strictly. "
+                                        "Do NOT miss any visible food item. "
+                                        "You must include all detectable components (main dish, side items, toppings, sauces, oils, drinks if visible) "
+                                        "and compute combined totals for the entire image. "
+                                        "Return ONLY valid JSON with keys: "
+                                        "foodName, estimatedServingSize, calories, protein, carbs, fats, fibre, confidence. "
+                                        "foodName should summarize all detected items in one meal name. "
+                                        "estimatedServingSize must describe total serving for all items combined. "
+                                        "calories/protein/carbs/fats/fibre must be TOTALS for the full image. "
+                                        "confidence must be one of low|medium|high. "
+                                        'If no food is visible, return {"error":"No food detected"}. '
+                                        "No markdown, no extra text."
+                                    )
+                                },
+                                {"inline_data": {"mime_type": image_mime, "data": base64}},
+                            ]
+                        }
+                    ],
+                    "generationConfig": {
+                        "temperature": 0.1,
+                        "responseMimeType": "application/json",
+                        "maxOutputTokens": 400,
+                    },
+                }
+            ).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(req, timeout=40) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+                break
+        except HTTPError as e:
+            body = e.read().decode("utf-8", errors="ignore")
+            if e.code == 404 and ("not found" in body.lower() or "not supported" in body.lower()):
+                last_err = f"{model_name}: unavailable"
+                continue
+            raise RuntimeError(f"Gemini HTTP {e.code}: {body[:260]}") from e
+        except URLError as e:
+            raise RuntimeError(f"Gemini network error: {e.reason}") from e
+
+    if payload is None:
+        raise RuntimeError(f"No compatible Gemini model available. Last tried: {last_err or 'unknown'}")
+    raw = (
+        (payload.get("candidates") or [{}])[0]
+        .get("content", {})
+        .get("parts", [{}])[0]
+        .get("text", "")
+    )
+    if not raw:
+        raise RuntimeError("Gemini returned empty content")
+    parsed = _extract_json_object(raw)
+    return _normalize_food_analysis_payload(parsed)
 
 
 def _gemini_coach(db: Session, day_payload: dict[str, Any]) -> dict[str, Any]:
@@ -690,6 +916,7 @@ def _serialize_meal(m: MealEntry) -> dict[str, Any]:
         "meal_id": m.meal_id,
         "log_id": m.log_id,
         "meal_type": m.meal_type,
+        "source_type": m.source_type or "database",
         "food_name": m.food_name,
         "quantity_g": float(m.quantity_g),
         "calories_per_100g": float(m.calories_per_100g),
@@ -787,10 +1014,13 @@ def add_meal_entry(payload: MealCreateRequest, current_user: User = Depends(get_
     total_fat_g = (f100 / Decimal("100")) * q
     total_fiber_g = (fi100 / Decimal("100")) * q
 
+    source_type = payload.source_type if payload.source_type in {"database", "camera_ai"} else "database"
+
     entry = MealEntry(
         log_id=log.log_id,
         user_id=current_user.id,
         meal_type=payload.meal_type,
+        source_type=source_type,
         food_name=payload.food_name.strip()[:200],
         quantity_g=q,
         calories_per_100g=c100,
@@ -907,6 +1137,72 @@ def lookup_food_nutrition(
     if not found:
         raise HTTPException(status_code=404, detail="Food not found.")
     return found
+
+
+@router.post("/foods/analyze-image")
+def analyze_food_image(
+    payload: FoodImageAnalyzeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _ = current_user
+    _ = db
+    try:
+        return _groq_food_image_analysis(payload.base64, payload.mime_type)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    except RuntimeError as e:
+        groq_error = str(e)
+        try:
+            return _gemini_food_image_analysis(payload.base64, payload.mime_type)
+        except Exception as ge:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Food image analysis failed: {groq_error} | Gemini fallback failed: {str(ge)}",
+            ) from ge
+
+
+@router.post("/foods/ai-meals")
+def create_ai_meal_entry(
+    payload: AIFoodMealCreateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    confidence = (payload.confidence or "medium").strip().lower()
+    if confidence not in {"low", "medium", "high"}:
+        confidence = "medium"
+
+    row = AIFoodMealEntry(
+        user_id=current_user.id,
+        meal_type=payload.meal_type,
+        food_name=payload.food_name.strip()[:200],
+        quantity_g=payload.quantity_g,
+        calories=payload.calories,
+        protein=payload.protein,
+        carbs=payload.carbs,
+        fat=payload.fat,
+        fibre=payload.fibre,
+        confidence=confidence,
+        estimated_serving_size=(payload.estimated_serving_size or "").strip()[:120] or None,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {
+        "ai_meal_id": row.ai_meal_id,
+        "saved": True,
+        "meal_type": row.meal_type,
+        "food_name": row.food_name,
+        "quantity_g": float(row.quantity_g),
+        "calories": float(row.calories),
+        "protein": float(row.protein),
+        "carbs": float(row.carbs),
+        "fat": float(row.fat),
+        "fibre": float(row.fibre),
+        "confidence": row.confidence,
+        "estimated_serving_size": row.estimated_serving_size,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+    }
 
 
 @router.get("/coach/insight")

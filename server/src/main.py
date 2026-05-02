@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from src.db.session import Base, engine, get_db
 from src.core.config import settings
 from src.models.models import Activity, Meal, User, UserOnboarding, Workout, WorkoutCatalog
-from src.models.nutrition_calories import DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
+from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
 from src.schemas.schemas import (
     ActivityRequest,
     ChatRequest,
@@ -90,6 +90,7 @@ def apply_schema_updates() -> None:
         conn.execute(text("ALTER TABLE daily_nutrition_logs ADD COLUMN IF NOT EXISTS target_fiber_g NUMERIC(6,2) DEFAULT 30"))
         conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS fiber_per_100g NUMERIC(6,2) DEFAULT 0"))
         conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS total_fiber_g NUMERIC(6,2) DEFAULT 0"))
+        conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS source_type VARCHAR(24) DEFAULT 'database'"))
         conn.execute(text("ALTER TABLE IF EXISTS user_calorie_targets ADD COLUMN IF NOT EXISTS target_fiber_g NUMERIC(6,2) DEFAULT 30"))
 
 

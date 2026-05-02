@@ -40,6 +40,7 @@ class MealEntry(Base):
     log_id = Column(Integer, ForeignKey("daily_nutrition_logs.log_id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     meal_type = Column(String(32), nullable=False)
+    source_type = Column(String(24), nullable=False, default="database")
     food_name = Column(String(200), nullable=False)
     quantity_g = Column(Numeric(8, 2), nullable=False)
     calories_per_100g = Column(Numeric(7, 2), nullable=False)
@@ -68,3 +69,21 @@ class WaterIntakeLog(Base):
     target_water_l = Column(Numeric(4, 2), default=2.5)
     is_target_met = Column(Boolean, default=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AIFoodMealEntry(Base):
+    __tablename__ = "ai_food_meal_entries"
+
+    ai_meal_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    meal_type = Column(String(32), nullable=False)
+    food_name = Column(String(200), nullable=False)
+    quantity_g = Column(Numeric(8, 2), nullable=False)
+    calories = Column(Numeric(8, 2), default=0)
+    protein = Column(Numeric(8, 2), default=0)
+    carbs = Column(Numeric(8, 2), default=0)
+    fat = Column(Numeric(8, 2), default=0)
+    fibre = Column(Numeric(8, 2), default=0)
+    confidence = Column(String(16), default="medium")
+    estimated_serving_size = Column(String(120), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

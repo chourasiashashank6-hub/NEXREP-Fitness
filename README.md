@@ -76,6 +76,40 @@ npm run android
 npm run web
 ```
 
+### Groq Food Photo Recognition Setup (Calorie Tab)
+
+1) Create a Groq API key from [console.groq.com](https://console.groq.com).
+
+2) Add your key in `mobile/.env`:
+
+```env
+GROQ_API_KEY=your_key_here
+EXPO_PUBLIC_GROQ_API_KEY=your_key_here
+```
+
+3) Install mobile dependencies (already added in this repo):
+
+```bash
+cd mobile
+npm install
+```
+
+4) iOS native sync after adding picker/plugin:
+
+```bash
+npx expo prebuild
+cd ios && pod install
+```
+
+5) Android native sync:
+
+```bash
+cd mobile
+npx expo prebuild
+```
+
+Expo config already includes camera + media permissions in `mobile/app.json`.
+
 If testing on a physical device, set `EXPO_PUBLIC_API_URL` in `mobile/.env` to your machine's LAN IP:
 
 ```env
