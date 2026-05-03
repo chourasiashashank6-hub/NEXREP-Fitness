@@ -13,6 +13,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class SyncPasswordRequest(BaseModel):
+    """After Firebase password reset or when DB password is stale but Firebase sign-in works."""
+
+    id_token: str
+    new_password: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

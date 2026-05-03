@@ -18,10 +18,12 @@ from src.schemas.schemas import (
     OnboardingUpsertRequest,
     ProfileRequest,
     SignupRequest,
+    SyncPasswordRequest,
     WorkoutRequest,
     WorkoutUpdateRequest,
 )
 from src.services.auth_service import create_access_token, hash_password, verify_password
+from src.services.firebase_token import email_from_firebase_id_token
 from src.services.food_catalog_service import ensure_food_catalog_schema, load_food_catalog_from_sql_if_empty
 from src.services.score_service import compute_discipline_score
 from src.utils.auth import get_current_user
@@ -469,6 +471,21 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
+
+
+@app.post("/auth/sync-password")
+def sync_password_after_firebase(payload: SyncPasswordRequest, db: Session = Depends(get_db)):
+    """Update stored password to match Firebase after reset or first-time alignment."""
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    email = email_from_firebase_id_token(payload.id_token.strip())
+    user = db.query(User).filter(func.lower(User.email) == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="No fitness account for this email. Sign up first.")
+    user.password_hash = hash_password(payload.new_password)
+    db.commit()
+    db.refresh(user)
     return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
 
 
