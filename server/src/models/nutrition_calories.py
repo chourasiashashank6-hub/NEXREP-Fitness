@@ -76,6 +76,7 @@ class AIFoodMealEntry(Base):
 
     ai_meal_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    log_date = Column(Date, nullable=False, index=True)
     meal_type = Column(String(32), nullable=False)
     food_name = Column(String(200), nullable=False)
     quantity_g = Column(Numeric(8, 2), nullable=False)

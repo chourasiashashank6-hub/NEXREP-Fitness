@@ -93,6 +93,9 @@ def apply_schema_updates() -> None:
         conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS fiber_per_100g NUMERIC(6,2) DEFAULT 0"))
         conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS total_fiber_g NUMERIC(6,2) DEFAULT 0"))
         conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS source_type VARCHAR(24) DEFAULT 'database'"))
+        conn.execute(text("ALTER TABLE ai_food_meal_entries ADD COLUMN IF NOT EXISTS log_date DATE"))
+        conn.execute(text("UPDATE ai_food_meal_entries SET log_date = COALESCE(log_date, DATE(created_at), CURRENT_DATE)"))
+        conn.execute(text("ALTER TABLE ai_food_meal_entries ALTER COLUMN log_date SET NOT NULL"))
         conn.execute(text("ALTER TABLE IF EXISTS user_calorie_targets ADD COLUMN IF NOT EXISTS target_fiber_g NUMERIC(6,2) DEFAULT 30"))
 
 

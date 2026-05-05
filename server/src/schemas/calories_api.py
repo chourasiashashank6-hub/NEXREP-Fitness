@@ -46,6 +46,7 @@ class FoodImageAnalyzeRequest(BaseModel):
 
 
 class AIFoodMealCreateRequest(BaseModel):
+    log_date: str | None = None
     meal_type: MealTypeLiteral
     food_name: str = Field(..., min_length=1, max_length=200)
     quantity_g: Decimal = Field(..., gt=0)

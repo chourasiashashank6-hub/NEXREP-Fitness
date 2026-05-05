@@ -883,7 +883,7 @@ def _get_or_create_daily_log(db: Session, user: User, log_date: date) -> DailyNu
 
 
 def recalculate_daily_log(db: Session, log: DailyNutritionLog) -> None:
-    sums = (
+    meal_sums = (
         db.query(
             func.coalesce(func.sum(MealEntry.total_calories), 0),
             func.coalesce(func.sum(MealEntry.total_protein_g), 0),
@@ -894,7 +894,22 @@ def recalculate_daily_log(db: Session, log: DailyNutritionLog) -> None:
         .filter(MealEntry.log_id == log.log_id)
         .one()
     )
-    tc, tp, tcarbs, tf, tfi = (Decimal(str(x)) for x in sums)
+    ai_sums = (
+        db.query(
+            func.coalesce(func.sum(AIFoodMealEntry.calories), 0),
+            func.coalesce(func.sum(AIFoodMealEntry.protein), 0),
+            func.coalesce(func.sum(AIFoodMealEntry.carbs), 0),
+            func.coalesce(func.sum(AIFoodMealEntry.fat), 0),
+            func.coalesce(func.sum(AIFoodMealEntry.fibre), 0),
+        )
+        .filter(AIFoodMealEntry.user_id == log.user_id, AIFoodMealEntry.log_date == log.log_date)
+        .one()
+    )
+    tc = Decimal(str(meal_sums[0])) + Decimal(str(ai_sums[0]))
+    tp = Decimal(str(meal_sums[1])) + Decimal(str(ai_sums[1]))
+    tcarbs = Decimal(str(meal_sums[2])) + Decimal(str(ai_sums[2]))
+    tf = Decimal(str(meal_sums[3])) + Decimal(str(ai_sums[3]))
+    tfi = Decimal(str(meal_sums[4])) + Decimal(str(ai_sums[4]))
     log.total_calories = tc
     log.total_protein_g = tp
     log.total_carbs_g = tcarbs
@@ -933,6 +948,30 @@ def _serialize_meal(m: MealEntry) -> dict[str, Any]:
     }
 
 
+def _serialize_ai_meal(m: AIFoodMealEntry) -> dict[str, Any]:
+    qty = float(m.quantity_g or 0)
+    safe_qty = qty if qty > 0 else 1.0
+    return {
+        "meal_id": -(int(m.ai_meal_id)),
+        "log_id": None,
+        "meal_type": m.meal_type,
+        "source_type": "camera_ai",
+        "food_name": m.food_name,
+        "quantity_g": qty,
+        "calories_per_100g": float((Decimal(str(m.calories or 0)) * Decimal("100")) / Decimal(str(safe_qty))),
+        "protein_per_100g": float((Decimal(str(m.protein or 0)) * Decimal("100")) / Decimal(str(safe_qty))),
+        "carbs_per_100g": float((Decimal(str(m.carbs or 0)) * Decimal("100")) / Decimal(str(safe_qty))),
+        "fat_per_100g": float((Decimal(str(m.fat or 0)) * Decimal("100")) / Decimal(str(safe_qty))),
+        "fiber_per_100g": float((Decimal(str(m.fibre or 0)) * Decimal("100")) / Decimal(str(safe_qty))),
+        "total_calories": float(m.calories or 0),
+        "total_protein_g": float(m.protein or 0),
+        "total_carbs_g": float(m.carbs or 0),
+        "total_fat_g": float(m.fat or 0),
+        "total_fiber_g": float(m.fibre or 0),
+        "logged_at": m.created_at.isoformat() if m.created_at else None,
+    }
+
+
 def _serialize_day(db: Session, user: User, log_date: date) -> dict[str, Any]:
     log = _get_or_create_daily_log(db, user, log_date)
     recalculate_daily_log(db, log)
@@ -943,6 +982,12 @@ def _serialize_day(db: Session, user: User, log_date: date) -> dict[str, Any]:
         db.query(MealEntry)
         .filter(MealEntry.log_id == log.log_id)
         .order_by(MealEntry.logged_at.asc(), MealEntry.meal_id.asc())
+        .all()
+    )
+    ai_meals = (
+        db.query(AIFoodMealEntry)
+        .filter(AIFoodMealEntry.user_id == user.id, AIFoodMealEntry.log_date == log_date)
+        .order_by(AIFoodMealEntry.created_at.asc(), AIFoodMealEntry.ai_meal_id.asc())
         .all()
     )
     water = db.query(WaterIntakeLog).filter(WaterIntakeLog.user_id == user.id, WaterIntakeLog.log_date == log_date).first()
@@ -975,7 +1020,7 @@ def _serialize_day(db: Session, user: User, log_date: date) -> dict[str, Any]:
             "target_water_l": float(water.target_water_l) if water else float(log.target_water_l),
             "is_target_met": bool(water.is_target_met) if water else False,
         },
-        "meals": [_serialize_meal(m) for m in meals],
+        "meals": ([_serialize_meal(m) for m in meals] + [_serialize_ai_meal(m) for m in ai_meals]),
     }
 
 
@@ -1053,6 +1098,25 @@ def delete_meal_entry(meal_id: int, current_user: User = Depends(get_current_use
     db.delete(meal)
     db.flush()
     recalculate_daily_log(db, log)
+    db.commit()
+    return _serialize_day(db, current_user, log_date)
+
+
+@router.delete("/foods/ai-meals/{ai_meal_id}")
+def delete_ai_meal_entry(ai_meal_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    meal = db.query(AIFoodMealEntry).filter(AIFoodMealEntry.ai_meal_id == ai_meal_id, AIFoodMealEntry.user_id == current_user.id).first()
+    if not meal:
+        raise HTTPException(status_code=404, detail="AI meal not found")
+    log_date = meal.log_date
+    db.delete(meal)
+    db.flush()
+    log = (
+        db.query(DailyNutritionLog)
+        .filter(DailyNutritionLog.user_id == current_user.id, DailyNutritionLog.log_date == log_date)
+        .first()
+    )
+    if log:
+        recalculate_daily_log(db, log)
     db.commit()
     return _serialize_day(db, current_user, log_date)
 
@@ -1168,12 +1232,16 @@ def create_ai_meal_entry(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    log_date = _parse_log_date(payload.log_date)
+    _get_or_create_daily_log(db, current_user, log_date)
+    db.flush()
     confidence = (payload.confidence or "medium").strip().lower()
     if confidence not in {"low", "medium", "high"}:
         confidence = "medium"
 
     row = AIFoodMealEntry(
         user_id=current_user.id,
+        log_date=log_date,
         meal_type=payload.meal_type,
         food_name=payload.food_name.strip()[:200],
         quantity_g=payload.quantity_g,
@@ -1188,6 +1256,7 @@ def create_ai_meal_entry(
     db.add(row)
     db.commit()
     db.refresh(row)
+    day_payload = _serialize_day(db, current_user, log_date)
     return {
         "ai_meal_id": row.ai_meal_id,
         "saved": True,
@@ -1202,6 +1271,7 @@ def create_ai_meal_entry(
         "confidence": row.confidence,
         "estimated_serving_size": row.estimated_serving_size,
         "created_at": row.created_at.isoformat() if row.created_at else None,
+        "day": day_payload,
     }
 
 
