@@ -82,6 +82,11 @@ class OnboardingUpsertRequest(BaseModel):
     targets: dict
 
 
+class FeedbackRequest(BaseModel):
+    subject: str
+    body: str
+
+
 class WorkoutOut(BaseModel):
     id: int
     type: str

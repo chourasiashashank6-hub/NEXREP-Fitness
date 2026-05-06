@@ -1,4 +1,8 @@
 from pydantic_settings import BaseSettings
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+ENV_FILE = BASE_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -12,9 +16,16 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.0-flash"
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    FEEDBACK_TO_EMAIL: str = "admin@nexrep.in"
+    FEEDBACK_SMTP_HOST: str = ""
+    FEEDBACK_SMTP_PORT: int = 587
+    FEEDBACK_SMTP_USERNAME: str = ""
+    FEEDBACK_SMTP_PASSWORD: str = ""
+    FEEDBACK_SMTP_USE_TLS: bool = True
+    FEEDBACK_FROM_EMAIL: str = ""
 
     class Config:
-        env_file = ".env"
+        env_file = str(ENV_FILE)
 
 
 settings = Settings()

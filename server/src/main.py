@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 import json
+import smtplib
+from email.message import EmailMessage
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from sqlalchemy import func, text
@@ -13,6 +15,7 @@ from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, Me
 from src.schemas.schemas import (
     ActivityRequest,
     ChatRequest,
+    FeedbackRequest,
     LoginRequest,
     MealRequest,
     OnboardingUpsertRequest,
@@ -223,6 +226,45 @@ def _parse_value_from_notes(notes: str | None, key: str) -> str | None:
         return None
     raw = notes[idx + len(marker):].split(";")[0].strip()
     return raw or None
+
+
+def send_feedback_email(*, sender_name: str, sender_email: str | None, subject: str, body: str) -> None:
+    smtp_host = settings.FEEDBACK_SMTP_HOST.strip()
+    smtp_username = settings.FEEDBACK_SMTP_USERNAME.strip()
+    smtp_password = settings.FEEDBACK_SMTP_PASSWORD.strip()
+    from_email = settings.FEEDBACK_FROM_EMAIL.strip() or smtp_username
+
+    if not smtp_host or not smtp_username or not smtp_password or not from_email:
+        raise RuntimeError("Feedback email is not configured on server")
+
+    message = EmailMessage()
+    message["Subject"] = f"[NexRep Feedback] {subject.strip()}"
+    message["From"] = from_email
+    message["To"] = settings.FEEDBACK_TO_EMAIL.strip() or "admin@nexrep.in"
+    if sender_email:
+        message["Reply-To"] = sender_email
+    message.set_content(
+        "\n".join(
+            [
+                f"Sender Name: {sender_name}",
+                f"Sender Email: {sender_email or 'N/A'}",
+                "",
+                "Message:",
+                body.strip(),
+            ]
+        )
+    )
+
+    smtp_port = int(settings.FEEDBACK_SMTP_PORT)
+    if settings.FEEDBACK_SMTP_USE_TLS:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.send_message(message)
+    else:
+        with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=20) as server:
+            server.login(smtp_username, smtp_password)
+            server.send_message(message)
 
 
 def _estimate_saved_workout_calories(
@@ -1171,3 +1213,33 @@ def update_profile(
         "createdAt": current_user.created_at.isoformat() if current_user.created_at else None,
         "disciplineScore": score,
     }
+
+
+@app.post("/feedback")
+def submit_feedback(payload: FeedbackRequest, current_user: User = Depends(get_current_user)):
+    subject = (payload.subject or "").strip()
+    body = (payload.body or "").strip()
+    if not subject:
+        raise HTTPException(status_code=400, detail="Subject is required")
+    if not body:
+        raise HTTPException(status_code=400, detail="Message body is required")
+
+    try:
+        send_feedback_email(
+            sender_name=(current_user.name or "NexRep User").strip(),
+            sender_email=current_user.email,
+            subject=subject,
+            body=body,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Feedback email is not configured. Set FEEDBACK_SMTP_HOST, FEEDBACK_SMTP_USERNAME, "
+                "FEEDBACK_SMTP_PASSWORD (and optional FEEDBACK_FROM_EMAIL) in server/.env, then restart backend."
+            ),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Could not send feedback: {exc}") from exc
+
+    return {"ok": True}
