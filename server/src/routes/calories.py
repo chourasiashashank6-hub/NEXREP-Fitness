@@ -3,9 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 import json
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -14,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from src.db.session import get_db
 from src.core.config import settings
+from src.core.http_client import ExternalHTTPError, post_json
 from src.models.models import User, UserOnboarding
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog
 from src.schemas.calories_api import (
@@ -153,50 +152,446 @@ def _default_targets_for_user(target_calories: int, body_weight_kg: float | None
     }
 
 
+CALORIE_COACH_SYSTEM_PROMPT = (
+    "You are an elite sports nutrition coach inside a premium calorie tracking app.\n"
+    "Return ONLY a valid JSON object with these exact keys:\n\n"
+    '1. "insight" — string, 3-4 concise sentences covering: calorie status vs goal, macro balance assessment, '
+    "hydration status, and one specific next-meal recommendation using foods from the provided dataset with realistic portions.\n\n"
+    '2. "bodyImpact" — string, 2-3 sentences about how today\'s current intake is likely affecting: energy levels, '
+    "mental clarity, muscle recovery, digestion, or metabolic rate. Be practical and evidence-based. No fear language or diagnoses.\n\n"
+    '3. "mealPlan" — array of exactly 3 objects, each with keys:\n'
+    '   - "meal": string (e.g. "Lunch", "Evening Snack", "Dinner")\n'
+    '   - "items": string (specific foods with quantities from the dataset)\n'
+    '   - "calories": number (estimated kcal for this meal)\n'
+    '   - "protein": number (grams)\n'
+    '   - "carbs": number (grams)\n'
+    '   - "fat": number (grams)\n'
+    "   These 3 meals should roughly fill the remaining calorie and macro gaps for the day.\n\n"
+    '4. "macroVerdict" — object with exactly 3 keys:\n'
+    '   - "protein": object with "status" (one of "low", "on_track", "high") and "tip" (one sentence actionable fix)\n'
+    '   - "carbs": object with "status" and "tip"\n'
+    '   - "fat": object with "status" and "tip"\n\n'
+    '5. "hydrationPlan" — object with keys:\n'
+    '   - "currentMl": number (from user data)\n'
+    '   - "targetMl": number (recommended daily total, typically 2500-3500 based on activity)\n'
+    '   - "remainingMl": number\n'
+    '   - "nextAction": string (e.g. "Drink 500ml water before your next meal")\n\n'
+    '6. "dailyScore" — integer 0-100 representing overall nutrition quality today. Factor in calorie adherence (40%), '
+    "macro balance (30%), hydration (15%), meal timing/frequency (15%).\n\n"
+    '7. "scoreLabel" — string, one of: "Needs Work", "Getting There", "Solid Day", "Excellent", "Perfect"\n\n'
+    '8. "alerts" — array of exactly 4 objects with keys: "type", "icon", "title", "subtitle". '
+    'Types must be: "calorie", "hydration", "meal", "nutrition".\n\n'
+    "Rules:\n"
+    "- Suggest only foods from the provided food_dataset_reference with approximate quantities.\n"
+    "- No markdown, no bullets, no headings, no emojis in any string value.\n"
+    "- All numbers must be realistic integers, not strings.\n"
+    "- If remaining_calories <= 0, mealPlan should contain only very light options (salad, herbal tea, etc.) totaling under 200 kcal.\n"
+    "- If no meals logged, provide a complete full-day plan across breakfast, lunch, dinner."
+)
+
+
+def _macro_status(consumed: float, target: float) -> str:
+    if target <= 0:
+        return "on_track"
+    ratio = consumed / target
+    if ratio < 0.7:
+        return "low"
+    if ratio > 1.15:
+        return "high"
+    return "on_track"
+
+
+def _score_label(score: int) -> str:
+    if score >= 90:
+        return "Perfect"
+    if score >= 81:
+        return "Excellent"
+    if score >= 61:
+        return "Solid Day"
+    if score >= 31:
+        return "Getting There"
+    return "Needs Work"
+
+
+def _user_coach_profile(db: Session, user: User) -> dict[str, Any]:
+    weight = float(user.weight or 70)
+    goal = "maintain"
+    activity = "moderate"
+    ob = db.query(UserOnboarding).filter(UserOnboarding.user_id == user.id).first()
+    if ob and isinstance(ob.onboarding_json, dict):
+        oj = ob.onboarding_json
+        g = oj.get("goal")
+        if isinstance(g, dict):
+            goal = str(g.get("primary") or g.get("type") or goal).lower().replace(" ", "_")
+        act = oj.get("activity")
+        if isinstance(act, dict):
+            activity = str(act.get("level") or activity).lower().replace(" ", "_")
+    elif user.goal_tag:
+        goal = str(user.goal_tag).lower().replace(" ", "_")
+    return {"user_weight_kg": round(weight, 1), "goal": goal, "activity_level": activity}
+
+
+def _coach_macro_targets(log: dict[str, Any], profile_weight: float) -> dict[str, int]:
+    daily_goal = int(log.get("target_calories") or 2100)
+    pt = float(log.get("target_protein_g") or 0)
+    if pt > 0:
+        water_target = int(round(float(log.get("target_water_l") or 0) * 1000))
+        if water_target <= 0:
+            water_target = max(2500, int(profile_weight * 35))
+        return {
+            "protein_target_g": int(round(pt)),
+            "carbs_target_g": int(round(float(log.get("target_carbs_g") or 0))),
+            "fat_target_g": int(round(float(log.get("target_fat_g") or 0))),
+            "water_target_ml": water_target,
+        }
+    return {
+        "protein_target_g": round(daily_goal * 0.30 / 4),
+        "carbs_target_g": round(daily_goal * 0.50 / 4),
+        "fat_target_g": round(daily_goal * 0.20 / 9),
+        "water_target_ml": max(2500, int(profile_weight * 35)),
+    }
+
+
+def _format_meal_time(logged_at: str | None, meal_type: str | None) -> str:
+    if logged_at:
+        try:
+            raw = logged_at.replace("Z", "+00:00")
+            dt = datetime.fromisoformat(raw)
+            return dt.strftime("%I:%M %p").lstrip("0")
+        except Exception:
+            pass
+    return str(meal_type or "Meal")
+
+
+def _build_coach_user_msg(db: Session, user: User, day_payload: dict[str, Any]) -> dict[str, Any]:
+    log = day_payload.get("log", {})
+    water = day_payload.get("water", {})
+    meals = day_payload.get("meals") or []
+    profile = _user_coach_profile(db, user)
+    macros = _coach_macro_targets(log, profile["user_weight_kg"])
+    daily_goal = int(log.get("target_calories") or 2100)
+    consumed = int(round(_num(log.get("total_calories"))))
+    water_ml = int(round(_num(water.get("total_water_l")) * 1000))
+
+    dataset_rows: list[dict[str, Any]] = []
+    try:
+        refs = (
+            db.execute(
+                text(
+                    """
+                    SELECT food_name, calories_per_100g, protein_g, carbs_g, fat_g
+                    FROM food_items
+                    ORDER BY food_id ASC
+                    LIMIT 60
+                    """
+                )
+            )
+            .mappings()
+            .all()
+        )
+        dataset_rows.extend(
+            [
+                {
+                    "food": r["food_name"],
+                    "cal_per_100g": float(r["calories_per_100g"] or 0),
+                    "protein_per_100g": float(r["protein_g"] or 0),
+                    "carbs_per_100g": float(r["carbs_g"] or 0),
+                    "fat_per_100g": float(r["fat_g"] or 0),
+                }
+                for r in refs
+            ]
+        )
+    except Exception:
+        db.rollback()
+
+    for m in meals[:15]:
+        if isinstance(m, dict):
+            dataset_rows.append(
+                {
+                    "food": m.get("food_name"),
+                    "cal_per_100g": m.get("calories_per_100g"),
+                    "protein_per_100g": m.get("protein_per_100g"),
+                    "carbs_per_100g": m.get("carbs_per_100g"),
+                    "fat_per_100g": m.get("fat_per_100g"),
+                }
+            )
+
+    meals_eaten = [
+        {
+            "name": m.get("food_name") or "Meal",
+            "calories": int(round(_num(m.get("total_calories")))),
+            "time": _format_meal_time(m.get("logged_at"), m.get("meal_type")),
+        }
+        for m in meals[:15]
+        if isinstance(m, dict)
+    ]
+
+    return {
+        "time_of_day": datetime.now().strftime("%I:%M %p").lstrip("0"),
+        "consumed_calories": consumed,
+        "daily_goal": daily_goal,
+        "remaining_calories": daily_goal - consumed,
+        "protein_g": int(round(_num(log.get("total_protein_g")))),
+        "protein_target_g": macros["protein_target_g"],
+        "carbs_g": int(round(_num(log.get("total_carbs_g")))),
+        "carbs_target_g": macros["carbs_target_g"],
+        "fat_g": round(_num(log.get("total_fat_g")), 1),
+        "fat_target_g": macros["fat_target_g"],
+        "fibre_g": int(round(_num(log.get("total_fiber_g")))),
+        "water_ml": water_ml,
+        "water_target_ml": macros["water_target_ml"],
+        "meals_logged": len(meals),
+        "meals_target": 3,
+        "user_weight_kg": profile["user_weight_kg"],
+        "activity_level": profile["activity_level"],
+        "goal": profile["goal"],
+        "food_dataset_reference": dataset_rows,
+        "meals_eaten_today": meals_eaten,
+        "rules": [
+            "If remaining_calories <= 0 suggest stopping intake or very light options.",
+            "If no meals logged, suggest a full-day plan.",
+            "Use approximate quantities.",
+            "Prioritize foods from the dataset. If dataset is insufficient, use common Indian foods.",
+            "mealPlan must fill the remaining macro gaps realistically.",
+        ],
+    }
+
+
+def _normalize_coach_response(parsed: dict[str, Any], day_payload: dict[str, Any]) -> dict[str, Any]:
+    log = day_payload.get("log", {})
+    water = day_payload.get("water", {})
+    c = _num(log.get("total_calories"))
+    t = _num(log.get("target_calories"))
+    p = _num(log.get("total_protein_g"))
+    pt = _num(log.get("target_protein_g")) or round(t * 0.30 / 4)
+    carbs = _num(log.get("total_carbs_g"))
+    ct = _num(log.get("target_carbs_g")) or round(t * 0.50 / 4)
+    fat = _num(log.get("total_fat_g"))
+    ft = _num(log.get("target_fat_g")) or round(t * 0.20 / 9)
+    water_ml = int(round(_num(water.get("total_water_l")) * 1000))
+    water_target = int(round(_num(log.get("target_water_l")) * 1000)) or 2500
+    if water_target <= 0:
+        water_target = 2500
+    remaining = int(round(t - c))
+    meals_count = len(day_payload.get("meals") or [])
+
+    def macro_tip(name: str, consumed_v: float, target_v: float) -> dict[str, str]:
+        status = _macro_status(consumed_v, target_v)
+        if status == "low":
+            tip = f"Add a {name}-rich food to your next meal to close the gap."
+        elif status == "high":
+            tip = f"Keep {name} lighter in remaining meals today."
+        else:
+            tip = f"{name.capitalize()} intake is on track for today."
+        return {"status": status, "tip": tip}
+
+    cal_adherence = max(0, 100 - abs(remaining) / max(t, 1) * 40) if remaining >= 0 else max(0, 60 - abs(remaining) / 50)
+    macro_bal = (
+        (100 if _macro_status(p, pt) == "on_track" else 50)
+        + (100 if _macro_status(carbs, ct) == "on_track" else 50)
+        + (100 if _macro_status(fat, ft) == "on_track" else 50)
+    ) / 3
+    hyd_score = min(100, (water_ml / max(water_target, 1)) * 100)
+    meal_score = min(100, (meals_count / 3) * 100)
+    daily_score = int(round(cal_adherence * 0.4 + macro_bal * 0.3 + hyd_score * 0.15 + meal_score * 0.15))
+
+    default_insight = (
+        f"You have consumed {int(round(c))} kcal with {remaining} kcal remaining. "
+        f"Protein is {int(round(p))}g of {int(round(pt))}g target. "
+        "Prioritize balanced meals and steady hydration for the rest of today."
+    )
+    body_default = (
+        "At your current intake, energy may feel lower until you add more protein and calories. "
+        "Steady hydration will support digestion and recovery through the day."
+    )
+
+    mv = parsed.get("macroVerdict") if isinstance(parsed.get("macroVerdict"), dict) else {}
+    hp = parsed.get("hydrationPlan") if isinstance(parsed.get("hydrationPlan"), dict) else {}
+
+    meal_plan_raw = parsed.get("mealPlan") if isinstance(parsed.get("mealPlan"), list) else []
+    meal_plan: list[dict[str, Any]] = []
+    for item in meal_plan_raw[:3]:
+        if not isinstance(item, dict):
+            continue
+        meal_plan.append(
+            {
+                "meal": str(item.get("meal") or "Meal"),
+                "items": str(item.get("items") or "Balanced meal from your food log"),
+                "calories": int(_num(item.get("calories"))),
+                "protein": int(_num(item.get("protein"))),
+                "carbs": int(_num(item.get("carbs"))),
+                "fat": int(_num(item.get("fat"))),
+            }
+        )
+
+    alerts_raw = parsed.get("alerts") if isinstance(parsed.get("alerts"), list) else []
+    alerts: list[dict[str, str]] = []
+    for a in alerts_raw[:4]:
+        if isinstance(a, dict) and a.get("title"):
+            alerts.append(
+                {
+                    "type": str(a.get("type") or "info"),
+                    "icon": str(a.get("icon") or ""),
+                    "title": str(a.get("title") or ""),
+                    "subtitle": str(a.get("subtitle") or ""),
+                }
+            )
+
+    if len(alerts) < 4:
+        fallback_alerts = [
+            {
+                "type": "calorie",
+                "icon": "calorie",
+                "title": "Calorie Alert",
+                "subtitle": f"You are {remaining} calories away from your daily goal" if remaining > 0 else "Daily calorie goal reached",
+            },
+            {
+                "type": "hydration",
+                "icon": "hydration",
+                "title": "Hydration Alert",
+                "subtitle": f"You have logged {water_ml} ml water today",
+            },
+            {
+                "type": "meal",
+                "icon": "meal",
+                "title": "Meal Alert",
+                "subtitle": f"You have logged {meals_count} meal(s) so far today",
+            },
+            {
+                "type": "nutrition",
+                "icon": "nutrition",
+                "title": "Nutrition Alert",
+                "subtitle": f"Protein intake is {int(round(p))}g — add a protein-rich snack" if p < pt * 0.7 else f"Protein at {int(round(p))}g looks solid",
+            },
+        ]
+        for fa in fallback_alerts:
+            if len(alerts) >= 4:
+                break
+            if not any(x.get("type") == fa["type"] for x in alerts):
+                alerts.append(fa)
+
+    def pick_macro(key: str, consumed_v: float, target_v: float) -> dict[str, str]:
+        block = mv.get(key) if isinstance(mv.get(key), dict) else {}
+        status = str(block.get("status") or _macro_status(consumed_v, target_v))
+        if status not in ("low", "on_track", "high"):
+            status = _macro_status(consumed_v, target_v)
+        tip = str(block.get("tip") or macro_tip(key, consumed_v, target_v)["tip"])
+        return {"status": status, "tip": tip}
+
+    current_ml = int(_num(hp.get("currentMl")) or water_ml)
+    target_ml = int(_num(hp.get("targetMl")) or water_target)
+    remaining_ml = int(_num(hp.get("remainingMl")) or max(0, target_ml - current_ml))
+
+    return {
+        "insight": _normalize_insight_text(str(parsed.get("insight") or default_insight)),
+        "bodyImpact": str(parsed.get("bodyImpact") or body_default),
+        "mealPlan": meal_plan,
+        "macroVerdict": {
+            "protein": pick_macro("protein", p, pt),
+            "carbs": pick_macro("carbs", carbs, ct),
+            "fat": pick_macro("fat", fat, ft),
+        },
+        "hydrationPlan": {
+            "currentMl": current_ml,
+            "targetMl": target_ml,
+            "remainingMl": remaining_ml,
+            "nextAction": str(hp.get("nextAction") or f"Drink {min(500, remaining_ml)}ml before your next meal"),
+        },
+        "dailyScore": int(_num(parsed.get("dailyScore")) or daily_score),
+        "scoreLabel": str(parsed.get("scoreLabel") or _score_label(daily_score)),
+        "alerts": alerts[:4],
+    }
+
+
 def _fallback_coach(day_payload: dict[str, Any]) -> dict[str, Any]:
     log = day_payload.get("log", {})
     water = day_payload.get("water", {})
     c = _num(log.get("total_calories"))
     t = _num(log.get("target_calories"))
     p = _num(log.get("total_protein_g"))
-    pt = _num(log.get("target_protein_g"))
+    pt = _num(log.get("target_protein_g")) or round(t * 0.30 / 4)
     carbs = _num(log.get("total_carbs_g"))
+    ct = _num(log.get("target_carbs_g")) or round(t * 0.50 / 4)
     fat = _num(log.get("total_fat_g"))
+    ft = _num(log.get("target_fat_g")) or round(t * 0.20 / 9)
     water_ml = int(round(_num(water.get("total_water_l")) * 1000))
+    water_target = int(round(_num(log.get("target_water_l")) * 1000)) or 2500
     remaining = int(round(t - c))
-    meals = len(day_payload.get("meals") or [])
+    meals_count = len(day_payload.get("meals") or [])
 
-    alerts: list[dict[str, str]] = []
-    if water_ml < 600:
-        alerts.append({"type": "critical", "icon": "💧", "title": "Hydration low", "subtitle": "Drink water now"})
-    elif water_ml < 1200:
-        alerts.append({"type": "warning", "icon": "💧", "title": "Low hydration", "subtitle": "Increase water intake"})
-    else:
-        alerts.append({"type": "success", "icon": "💧", "title": "Water good", "subtitle": "Hydration on track"})
+    per_meal_cal = max(0, int(remaining / 3)) if remaining > 0 else 80
+    meal_plan = [
+        {
+            "meal": "Lunch" if meals_count < 2 else "Evening Snack",
+            "items": "Dal (150g) + 2 roti + mixed vegetables",
+            "calories": per_meal_cal,
+            "protein": max(12, int((pt - p) / 3)),
+            "carbs": max(20, int((ct - carbs) / 3)),
+            "fat": max(5, int((ft - fat) / 3)),
+        },
+        {
+            "meal": "Evening Snack",
+            "items": "Paneer (80g) or 2 boiled eggs + fruit",
+            "calories": per_meal_cal,
+            "protein": max(10, int((pt - p) / 3)),
+            "carbs": max(15, int((ct - carbs) / 3)),
+            "fat": max(4, int((ft - fat) / 3)),
+        },
+        {
+            "meal": "Dinner",
+            "items": "Grilled chicken or tofu (120g) + rice (80g) + salad",
+            "calories": per_meal_cal,
+            "protein": max(15, int((pt - p) / 3)),
+            "carbs": max(25, int((ct - carbs) / 3)),
+            "fat": max(6, int((ft - fat) / 3)),
+        },
+    ]
+    if remaining <= 0:
+        meal_plan = [
+            {"meal": "Light option", "items": "Herbal tea + cucumber salad", "calories": 60, "protein": 2, "carbs": 8, "fat": 1},
+            {"meal": "Optional", "items": "Clear soup (1 cup)", "calories": 80, "protein": 4, "carbs": 10, "fat": 2},
+            {"meal": "Optional", "items": "Greek yogurt (100g) if hungry", "calories": 90, "protein": 10, "carbs": 6, "fat": 3},
+        ]
 
-    if pt > 0 and p < pt * 0.7:
-        alerts.append({"type": "critical", "icon": "🥩", "title": "Protein gap", "subtitle": "Add lean protein"})
-    else:
-        alerts.append({"type": "info", "icon": "🥗", "title": "Macros tracked", "subtitle": "Keep balanced meals"})
-
-    if remaining < -200:
-        alerts.append({"type": "critical", "icon": "⚠️", "title": "Over target", "subtitle": "Keep meals very light"})
-    elif remaining < 0:
-        alerts.append({"type": "warning", "icon": "⚖️", "title": "Near limit", "subtitle": "Prefer low-cal foods"})
-    else:
-        alerts.append({"type": "success", "icon": "✅", "title": "Calories OK", "subtitle": f"{remaining} kcal left"})
-
-    if meals == 0:
-        alerts.append({"type": "info", "icon": "📝", "title": "No meals logged", "subtitle": "Start with first meal"})
-    else:
-        alerts.append({"type": "success", "icon": "🧾", "title": "Logs updated", "subtitle": f"{meals} meal(s) recorded"})
-
-    insight = (
-        f"You have consumed {int(round(c))} kcal so far with {int(round(remaining))} kcal remaining. "
-        f"Protein is {int(round(p))}g, carbs {int(round(carbs))}g, fat {int(round(fat))}g. "
-        "Prioritize high-protein, high-fiber, low-calorie choices for remaining meals and keep hydration steady."
+    base = _normalize_coach_response(
+        {
+            "insight": (
+                f"You have consumed {int(round(c))} kcal with {remaining} kcal remaining. "
+                f"Macros: {int(round(p))}g protein, {int(round(carbs))}g carbs, {round(fat, 1)}g fat. "
+                "Use the meal plan below to close your gaps steadily."
+            ),
+            "bodyImpact": (
+                "Low protein so far may reduce muscle recovery and afternoon energy. "
+                "Adding hydration and a protein-focused meal will improve focus and digestion."
+            ),
+            "mealPlan": meal_plan,
+        },
+        day_payload,
     )
-    return {"insight": insight, "alerts": alerts[:4], "source": "fallback"}
+    base["source"] = "fallback"
+    return base
+
+
+def _ai_provider_fallback_error(err: str) -> bool:
+    lowered = err.lower()
+    return (
+        "groq http 403" in lowered
+        or "error code: 1010" in lowered
+        or "ssl" in lowered
+        or "certificate" in lowered
+        or "network error" in lowered
+        or "timed out" in lowered
+    )
+
+
+def _groq_model_unavailable(status_code: int, body: str) -> bool:
+    lower = body.lower()
+    return status_code in (400, 404) and (
+        "decommissioned" in lower
+        or "no longer supported" in lower
+        or "model_not_found" in lower
+        or "not found" in lower
+    )
 
 
 def _extract_json_object(raw: str) -> dict[str, Any]:
@@ -291,10 +686,16 @@ def _groq_food_image_analysis(base64: str, mime_type: str | None) -> dict[str, A
         "If no food is visible, return {\"error\":\"No food detected\"}. "
         "No markdown, no code fences, no extra text."
     )
-    req = Request(
-        "https://api.groq.com/openai/v1/chat/completions",
-        data=json.dumps(
-            {
+    try:
+        payload = post_json(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Accept": "application/json",
+                "User-Agent": "fitness-food-analyzer/1.0",
+            },
+            payload={
                 "model": model_name,
                 "temperature": 0.1,
                 "messages": [
@@ -307,31 +708,19 @@ def _groq_food_image_analysis(base64: str, mime_type: str | None) -> dict[str, A
                         ],
                     },
                 ],
-            }
-        ).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-            "Accept": "application/json",
-            "User-Agent": "fitness-food-analyzer/1.0",
-        },
-        method="POST",
-    )
-    try:
-        with urlopen(req, timeout=40) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-    except HTTPError as e:
-        body = e.read().decode("utf-8", errors="ignore")
-        if e.code == 400 and "messages[1].content must be a string" in body:
+            },
+            timeout=40,
+        )
+    except ExternalHTTPError as e:
+        body = e.body
+        if e.status_code == 400 and "messages[1].content must be a string" in body:
             raise RuntimeError(
                 "The configured Groq model is text-only for this account. "
                 "Use a vision-capable Groq model/key for food image analysis."
             ) from e
-        if e.code == 429:
+        if e.status_code == 429:
             raise RuntimeError("Too many requests, try again in a moment.") from e
-        raise RuntimeError(f"Groq HTTP {e.code}: {body[:260]}") from e
-    except URLError as e:
-        raise RuntimeError(f"Groq network error: {e.reason}") from e
+        raise RuntimeError(f"Groq HTTP {e.status_code}: {body[:260]}") from e
 
     raw = (payload.get("choices") or [{}])[0].get("message", {}).get("content", "")
     if not raw:
@@ -352,11 +741,15 @@ def _gemini_food_image_analysis(base64: str, mime_type: str | None) -> dict[str,
     last_err: str | None = None
     payload: dict[str, Any] | None = None
     for model_name in model_candidates:
-        req = Request(
+        url = (
             f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?"
-            + urlencode({"key": settings.GEMINI_API_KEY}),
-            data=json.dumps(
-                {
+            + urlencode({"key": settings.GEMINI_API_KEY})
+        )
+        try:
+            payload = post_json(
+                url,
+                headers={"Content-Type": "application/json"},
+                payload={
                     "contents": [
                         {
                             "parts": [
@@ -385,23 +778,15 @@ def _gemini_food_image_analysis(base64: str, mime_type: str | None) -> dict[str,
                         "responseMimeType": "application/json",
                         "maxOutputTokens": 400,
                     },
-                }
-            ).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urlopen(req, timeout=40) as resp:
-                payload = json.loads(resp.read().decode("utf-8"))
-                break
-        except HTTPError as e:
-            body = e.read().decode("utf-8", errors="ignore")
-            if e.code == 404 and ("not found" in body.lower() or "not supported" in body.lower()):
+                },
+                timeout=40,
+            )
+            break
+        except ExternalHTTPError as e:
+            if e.status_code == 404 and ("not found" in e.body.lower() or "not supported" in e.body.lower()):
                 last_err = f"{model_name}: unavailable"
                 continue
-            raise RuntimeError(f"Gemini HTTP {e.code}: {body[:260]}") from e
-        except URLError as e:
-            raise RuntimeError(f"Gemini network error: {e.reason}") from e
+            raise RuntimeError(f"Gemini HTTP {e.status_code}: {e.body[:260]}") from e
 
     if payload is None:
         raise RuntimeError(f"No compatible Gemini model available. Last tried: {last_err or 'unknown'}")
@@ -417,91 +802,15 @@ def _gemini_food_image_analysis(base64: str, mime_type: str | None) -> dict[str,
     return _normalize_food_analysis_payload(parsed)
 
 
-def _gemini_coach(db: Session, day_payload: dict[str, Any]) -> dict[str, Any]:
+def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[str, Any]:
     if not settings.GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY missing on server")
 
-    now_local = datetime.now().strftime("%I:%M %p")
-    log = day_payload.get("log", {})
-    water = day_payload.get("water", {})
-    meals = day_payload.get("meals") or []
-
-    dataset_rows: list[dict[str, Any]] = []
-    # Include reference rows from normalized food catalog for realistic suggestions.
-    try:
-        refs = (
-            db.execute(
-                text(
-                    """
-                    SELECT food_name, calories_per_100g, protein_g, carbs_g, fat_g
-                    FROM food_items
-                    ORDER BY food_id ASC
-                    LIMIT 60
-                    """
-                )
-            )
-            .mappings()
-            .all()
-        )
-        dataset_rows.extend(
-            [
-                {
-                    "food": r["food_name"],
-                    "cal_per_100g": float(r["calories_per_100g"] or 0),
-                    "protein_per_100g": float(r["protein_g"] or 0),
-                    "carbs_per_100g": float(r["carbs_g"] or 0),
-                    "fat_per_100g": float(r["fat_g"] or 0),
-                }
-                for r in refs
-            ]
-        )
-    except Exception:
-        db.rollback()
-
-    # Also include today's actually logged meals for personalization.
-    for m in meals[:15]:
-        dataset_rows.append(
-            {
-                "food": m.get("food_name"),
-                "cal_per_100g": m.get("calories_per_100g"),
-                "protein_per_100g": m.get("protein_per_100g"),
-                "carbs_per_100g": m.get("carbs_per_100g"),
-                "fat_per_100g": m.get("fat_per_100g"),
-            }
-        )
-
-    system_prompt = (
-        "You are an expert nutrition coach inside a calorie tracker app. "
-        "Return ONLY valid JSON object with keys: insight and alerts. "
-        "Insight must be concise and fit in max 4 short lines on a mobile card. "
-        "Use 2-4 short plain-language sentences that still include: calorie status, macros, hydration, and next best action. "
-        "Also include body-impact health factors in the insight, such as likely effects on energy, recovery, digestion, hydration, or muscle retention based on today's intake. "
-        "Mention these effects carefully and practically (no fear language, no medical diagnosis). "
-        "Mention concrete, realistic foods and quantities where useful. "
-        "No markdown, no bullets, no headings, no emojis in insight. "
-        "alerts must be exactly 4 items with keys: type/icon/title/subtitle."
-    )
-    user_msg = {
-        "time_of_day": now_local,
-        "consumed_calories": log.get("total_calories", 0),
-        "daily_goal": log.get("target_calories", 0),
-        "remaining_calories": (log.get("target_calories", 0) or 0) - (log.get("total_calories", 0) or 0),
-        "protein_g": log.get("total_protein_g", 0),
-        "carbs_g": log.get("total_carbs_g", 0),
-        "fat_g": log.get("total_fat_g", 0),
-        "water_ml": int(round((_num(water.get("total_water_l"))) * 1000)),
-        "meals_logged": len(meals),
-        "food_dataset_reference": dataset_rows,
-        "rules": [
-            "If remaining_calories <= 0 suggest stopping intake or very light options.",
-            "If no meals logged, suggest a full-day plan.",
-            "Use approximate quantities."
-        ],
-    }
+    user_msg = _build_coach_user_msg(db, user, day_payload)
 
     prompt_text = (
-        f"{system_prompt}\n\n"
-        "Return only JSON object with keys insight and alerts.\n\n"
+        f"{CALORIE_COACH_SYSTEM_PROMPT}\n\n"
+        "Return only the JSON object described above.\n\n"
         f"DATA:\n{json.dumps(user_msg)}"
     )
 
@@ -516,37 +825,30 @@ def _gemini_coach(db: Session, day_payload: dict[str, Any]) -> dict[str, Any]:
     payload: dict[str, Any] | None = None
     last_err: str | None = None
     for model_name in model_candidates:
-        req = Request(
+        url = (
             f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?"
-            + urlencode({"key": settings.GEMINI_API_KEY}),
-            data=json.dumps(
-                {
+            + urlencode({"key": settings.GEMINI_API_KEY})
+        )
+        try:
+            payload = post_json(
+                url,
+                headers={"Content-Type": "application/json"},
+                payload={
                     "contents": [{"parts": [{"text": prompt_text}]}],
                     "generationConfig": {
                         "temperature": 0.3,
                         "responseMimeType": "application/json",
-                        "maxOutputTokens": 500,
+                        "maxOutputTokens": 1200,
                     },
-                }
-            ).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        try:
-            with urlopen(req, timeout=30) as resp:
-                payload = json.loads(resp.read().decode("utf-8"))
-                break
-        except HTTPError as e:
-            body = e.read().decode("utf-8", errors="ignore")
-            # Try next model if provider says model not found/unsupported.
-            if e.code == 404 and ("not found" in body.lower() or "not supported" in body.lower()):
+                },
+                timeout=30,
+            )
+            break
+        except ExternalHTTPError as e:
+            if e.status_code == 404 and ("not found" in e.body.lower() or "not supported" in e.body.lower()):
                 last_err = f"{model_name}: not available"
                 continue
-            raise RuntimeError(f"Gemini HTTP {e.code}: {body[:260]}") from e
-        except URLError as e:
-            raise RuntimeError(f"Gemini network error: {e.reason}") from e
+            raise RuntimeError(f"Gemini HTTP {e.status_code}: {e.body[:260]}") from e
 
     if payload is None:
         raise RuntimeError(f"No compatible Gemini model available. Last tried: {last_err or 'unknown'}")
@@ -561,91 +863,18 @@ def _gemini_coach(db: Session, day_payload: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Gemini returned empty content")
     clean = raw.replace("```json", "").replace("```", "").strip()
     parsed = json.loads(clean)
-    alerts = parsed.get("alerts") if isinstance(parsed, dict) else None
-    if not isinstance(parsed, dict) or not isinstance(parsed.get("insight"), str) or not isinstance(alerts, list):
+    if not isinstance(parsed, dict):
         raise RuntimeError("Gemini invalid JSON shape")
-    return {"insight": _normalize_insight_text(parsed["insight"]), "alerts": alerts[:4], "source": "gemini"}
+    out = _normalize_coach_response(parsed, day_payload)
+    out["source"] = "gemini"
+    return out
 
 
-def _groq_coach(db: Session, day_payload: dict[str, Any]) -> dict[str, Any]:
+def _groq_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[str, Any]:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing on server")
 
-    now_local = datetime.now().strftime("%I:%M %p")
-    log = day_payload.get("log", {})
-    water = day_payload.get("water", {})
-    meals = day_payload.get("meals") or []
-
-    dataset_rows: list[dict[str, Any]] = []
-    try:
-        refs = (
-            db.execute(
-                text(
-                    """
-                    SELECT food_name, calories_per_100g, protein_g, carbs_g, fat_g
-                    FROM food_items
-                    ORDER BY food_id ASC
-                    LIMIT 60
-                    """
-                )
-            )
-            .mappings()
-            .all()
-        )
-        dataset_rows.extend(
-            [
-                {
-                    "food": r["food_name"],
-                    "cal_per_100g": float(r["calories_per_100g"] or 0),
-                    "protein_per_100g": float(r["protein_g"] or 0),
-                    "carbs_per_100g": float(r["carbs_g"] or 0),
-                    "fat_per_100g": float(r["fat_g"] or 0),
-                }
-                for r in refs
-            ]
-        )
-    except Exception:
-        db.rollback()
-
-    for m in meals[:15]:
-        dataset_rows.append(
-            {
-                "food": m.get("food_name"),
-                "cal_per_100g": m.get("calories_per_100g"),
-                "protein_per_100g": m.get("protein_per_100g"),
-                "carbs_per_100g": m.get("carbs_per_100g"),
-                "fat_per_100g": m.get("fat_per_100g"),
-            }
-        )
-
-    system_prompt = (
-        "You are an expert nutrition coach inside a calorie tracker app. "
-        "Return ONLY valid JSON object with keys: insight and alerts. "
-        "Insight must be concise and fit in max 4 short lines on a mobile card. "
-        "Use 2-4 short plain-language sentences that still include: calorie status, macros, hydration, and next best action. "
-        "Also include body-impact health factors in the insight, such as likely effects on energy, recovery, digestion, hydration, or muscle retention based on today's intake. "
-        "Mention these effects carefully and practically (no fear language, no medical diagnosis). "
-        "Mention concrete, realistic foods and quantities from the provided dataset. "
-        "No markdown, no bullets, no headings, no emojis in insight. "
-        "alerts must be exactly 4 items with keys: type/icon/title/subtitle."
-    )
-    user_msg = {
-        "time_of_day": now_local,
-        "consumed_calories": log.get("total_calories", 0),
-        "daily_goal": log.get("target_calories", 0),
-        "remaining_calories": (log.get("target_calories", 0) or 0) - (log.get("total_calories", 0) or 0),
-        "protein_g": log.get("total_protein_g", 0),
-        "carbs_g": log.get("total_carbs_g", 0),
-        "fat_g": log.get("total_fat_g", 0),
-        "water_ml": int(round((_num(water.get("total_water_l"))) * 1000)),
-        "meals_logged": len(meals),
-        "food_dataset_reference": dataset_rows,
-        "rules": [
-            "If remaining_calories <= 0 suggest stopping intake or very light options.",
-            "If no meals logged, suggest a full-day plan.",
-            "Use approximate quantities.",
-        ],
-    }
+    user_msg = _build_coach_user_msg(db, user, day_payload)
 
     model_candidates = [
         settings.GROQ_MODEL.strip() if settings.GROQ_MODEL else "",
@@ -657,47 +886,33 @@ def _groq_coach(db: Session, day_payload: dict[str, Any]) -> dict[str, Any]:
     payload: dict[str, Any] | None = None
     last_err: str | None = None
     for model_name in model_candidates:
-        req = Request(
-            "https://api.groq.com/openai/v1/chat/completions",
-            data=json.dumps(
-                {
+        try:
+            payload = post_json(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                    "Accept": "application/json",
+                    "User-Agent": "fitness-ai-coach/1.0",
+                },
+                payload={
                     "model": model_name,
                     "temperature": 0.3,
-                    "max_tokens": 220,
+                    "max_tokens": 800,
                     "response_format": {"type": "json_object"},
                     "messages": [
-                        {"role": "system", "content": system_prompt},
+                        {"role": "system", "content": CALORIE_COACH_SYSTEM_PROMPT},
                         {"role": "user", "content": json.dumps(user_msg)},
                     ],
-                }
-            ).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                "Accept": "application/json",
-                "User-Agent": "fitness-ai-coach/1.0",
-            },
-            method="POST",
-        )
-        try:
-            with urlopen(req, timeout=30) as resp:
-                payload = json.loads(resp.read().decode("utf-8"))
-                break
-        except HTTPError as e:
-            body = e.read().decode("utf-8", errors="ignore")
-            lower = body.lower()
-            # Model decommissioned/unsupported -> try next candidate.
-            if e.code in (400, 404) and (
-                "decommissioned" in lower
-                or "no longer supported" in lower
-                or "model_not_found" in lower
-                or "not found" in lower
-            ):
+                },
+                timeout=45,
+            )
+            break
+        except ExternalHTTPError as e:
+            if _groq_model_unavailable(e.status_code, e.body):
                 last_err = f"{model_name}: unavailable"
                 continue
-            raise RuntimeError(f"Groq HTTP {e.code}: {body[:260]}") from e
-        except URLError as e:
-            raise RuntimeError(f"Groq network error: {e.reason}") from e
+            raise RuntimeError(f"Groq HTTP {e.status_code}: {e.body[:260]}") from e
 
     if payload is None:
         raise RuntimeError(f"No compatible Groq model available. Last tried: {last_err or 'unknown'}")
@@ -707,10 +922,11 @@ def _groq_coach(db: Session, day_payload: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Groq returned empty content")
     clean = raw.replace("```json", "").replace("```", "").strip()
     parsed = json.loads(clean)
-    alerts = parsed.get("alerts") if isinstance(parsed, dict) else None
-    if not isinstance(parsed, dict) or not isinstance(parsed.get("insight"), str) or not isinstance(alerts, list):
+    if not isinstance(parsed, dict):
         raise RuntimeError("Groq invalid JSON shape")
-    return {"insight": _normalize_insight_text(parsed["insight"]), "alerts": alerts[:4], "source": "groq"}
+    out = _normalize_coach_response(parsed, day_payload)
+    out["source"] = "groq"
+    return out
 
 
 def _to_decimal(v: Any, default: Decimal) -> Decimal:
@@ -1283,17 +1499,12 @@ def coach_calorie_insight(
     today = datetime.utcnow().date()
     day_payload = _serialize_day(db, current_user, today)
     try:
-        return _groq_coach(db, day_payload)
+        return _groq_coach(db, day_payload, current_user)
     except Exception as e:
         err = str(e)
-        # Groq can be blocked by Cloudflare policy (HTTP 403 / code 1010) in some regions/networks.
-        # In that case, transparently fallback to Gemini so the user still gets insights.
-        if "Groq HTTP 403" in err or "error code: 1010" in err:
+        if settings.GEMINI_API_KEY and _ai_provider_fallback_error(err):
             try:
-                return _gemini_coach(db, day_payload)
-            except Exception as ge:
-                raise HTTPException(
-                    status_code=502,
-                    detail=f"AI insight generation failed: Groq blocked ({err}) | Gemini failed: {str(ge)}",
-                ) from ge
-        raise HTTPException(status_code=502, detail=f"AI insight generation failed: {err}") from e
+                return _gemini_coach(db, day_payload, current_user)
+            except Exception:
+                pass
+        return _fallback_coach(day_payload)

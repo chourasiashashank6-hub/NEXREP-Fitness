@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
 import json
+from typing import Any
 import smtplib
 from email.message import EmailMessage
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from src.core.http_client import ExternalHTTPError, post_json
 from sqlalchemy import func, text
 from fastapi import Body, Depends, FastAPI, HTTPException, Query
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from src.db.session import Base, engine, get_db
@@ -16,6 +17,7 @@ from src.schemas.schemas import (
     ActivityRequest,
     ChatRequest,
     FeedbackRequest,
+    FirebaseLoginRequest,
     LoginRequest,
     MealRequest,
     OnboardingUpsertRequest,
@@ -28,6 +30,7 @@ from src.schemas.schemas import (
 from src.services.auth_service import create_access_token, hash_password, verify_password
 from src.services.firebase_token import email_from_firebase_id_token
 from src.services.food_catalog_service import ensure_food_catalog_schema, load_food_catalog_from_sql_if_empty
+from src.services.workout_catalog_service import load_workout_catalog_if_empty
 from src.services.score_service import compute_discipline_score
 from src.utils.auth import get_current_user
 from src.routes.calories import router as calories_api_router
@@ -47,6 +50,12 @@ app.include_router(calories_api_router, prefix="/api/calories")
 app.include_router(calories_api_router, prefix="/v1/calories")
 
 
+@app.get("/")
+def root():
+    """Open http://127.0.0.1:8000 in a browser — redirects to interactive API docs."""
+    return RedirectResponse(url="/docs")
+
+
 @app.get("/health")
 def health():
     """Lightweight check that the API process is up (use before login from the app)."""
@@ -59,6 +68,7 @@ def startup():
     apply_schema_updates()
     ensure_food_catalog_schema(engine)
     load_food_catalog_from_sql_if_empty(engine)
+    load_workout_catalog_if_empty(engine)
 
 
 def apply_schema_updates() -> None:
@@ -358,48 +368,229 @@ def _relative_label(dt: datetime | None) -> str:
     return f"{days} days ago"
 
 
+WORKOUT_COACH_SYSTEM_PROMPT = (
+    "You are an elite strength and conditioning coach inside a premium workout tracking app.\n"
+    "Return ONLY valid JSON with these exact keys:\n\n"
+    '1. "insightText" — string, 3-4 sentences. State which muscles are ready to train, which to avoid, '
+    'suggest a specific workout split for today (e.g. "Push day: chest, shoulders, triceps"), and mention one recovery tip.\n\n'
+    '2. "todaysPlan" — object with keys:\n'
+    '   - "splitName": string (e.g. "Push Day", "Pull Day", "Legs", "Upper Body", "Active Recovery")\n'
+    '   - "focusMuscles": array of strings (muscles to target today)\n'
+    '   - "avoidMuscles": array of strings (muscles still recovering)\n'
+    '   - "exercises": array of exactly 4-6 objects, each with:\n'
+    '     - "name": string (exercise name)\n'
+    '     - "sets": number\n'
+    '     - "reps": string (e.g. "8-12", "15", "to failure")\n'
+    '     - "muscle": string (primary muscle targeted)\n'
+    '     - "note": string (one-line coaching cue)\n'
+    '   - "estimatedDuration": string (e.g. "45-55 min")\n\n'
+    '3. "readinessScore" — integer 0-100.\n\n'
+    '4. "readinessLabel" — one of: "Rest day recommended", "Light activity only", "Train moderately", '
+    '"Ready to push", "Peak readiness"\n\n'
+    '5. "readinessDescription" — string, 1-2 sentences explaining the score.\n\n'
+    '6. "readinessFactors" — array of exactly 4 objects with keys:\n'
+    '   - "label": string\n'
+    '   - "type": one of "good", "warning", "bad", "info"\n\n'
+    '7. "weeklyProgress" — object with keys:\n'
+    '   - "completedSets": number\n'
+    '   - "targetSets": number\n'
+    '   - "percentComplete": number (0-100)\n'
+    '   - "insight": string (one sentence)\n\n'
+    '8. "recoveryTips" — array of exactly 3 objects with keys:\n'
+    '   - "icon": one of "sleep", "water", "stretch", "food", "rest"\n'
+    '   - "title": string (short, 3-5 words)\n'
+    '   - "description": string (one actionable sentence)\n\n'
+    "Rules:\n"
+    "- Base exercise selection on which muscles are fresh (recoveryPercent > 70).\n"
+    "- If all muscles are sore (recoveryPercent < 40), recommend active recovery with mobility/stretching exercises.\n"
+    "- Do not suggest training a muscle group that was trained less than 48 hours ago unless it is marked as fresh.\n"
+    "- exercises should be real, standard gym exercises — no made-up names.\n"
+    "- No markdown, no bullets, no emojis in any string value."
+)
+
+
+def _workout_readiness_label(score: int) -> str:
+    if score >= 85:
+        return "Peak readiness"
+    if score >= 76:
+        return "Ready to push"
+    if score >= 51:
+        return "Train moderately"
+    if score >= 31:
+        return "Light activity only"
+    return "Rest day recommended"
+
+
+def _default_workout_exercises(focus: list[str]) -> list[dict[str, Any]]:
+    muscle = focus[0] if focus else "Chest"
+    catalog: dict[str, list[dict[str, Any]]] = {
+        "Chest": [
+            {"name": "Barbell Bench Press", "sets": 4, "reps": "8-12", "muscle": "Chest", "note": "Drive through your feet and keep shoulder blades pinned."},
+            {"name": "Incline Dumbbell Press", "sets": 3, "reps": "10-12", "muscle": "Upper Chest", "note": "Squeeze at the top for one second."},
+            {"name": "Cable Fly", "sets": 3, "reps": "12-15", "muscle": "Chest", "note": "Keep a slight bend in the elbows."},
+            {"name": "Tricep Pushdown", "sets": 3, "reps": "12-15", "muscle": "Triceps", "note": "Keep elbows pinned to your sides."},
+        ],
+        "Back": [
+            {"name": "Lat Pulldown", "sets": 4, "reps": "8-12", "muscle": "Back", "note": "Pull elbows down toward your hips."},
+            {"name": "Seated Cable Row", "sets": 3, "reps": "10-12", "muscle": "Back", "note": "Pause briefly at full contraction."},
+            {"name": "Face Pull", "sets": 3, "reps": "15", "muscle": "Rear Delts", "note": "Externally rotate at the end."},
+            {"name": "Barbell Curl", "sets": 3, "reps": "10-12", "muscle": "Biceps", "note": "Avoid swinging the torso."},
+        ],
+        "Legs": [
+            {"name": "Barbell Back Squat", "sets": 4, "reps": "6-10", "muscle": "Legs", "note": "Brace core and track knees over toes."},
+            {"name": "Romanian Deadlift", "sets": 3, "reps": "8-10", "muscle": "Hamstrings", "note": "Hinge until you feel hamstring stretch."},
+            {"name": "Leg Press", "sets": 3, "reps": "12-15", "muscle": "Legs", "note": "Do not lock knees at the top."},
+            {"name": "Walking Lunges", "sets": 3, "reps": "12 each", "muscle": "Legs", "note": "Keep torso upright."},
+        ],
+    }
+    if muscle in catalog:
+        return catalog[muscle]
+    return catalog["Chest"]
+
+
+def _normalize_workout_coach_response(parsed: dict, payload: dict) -> dict:
+    groups = payload.get("muscleGroups") if isinstance(payload.get("muscleGroups"), list) else []
+    sore = [g.get("name") for g in groups if isinstance(g, dict) and g.get("status") == "sore" and g.get("name")]
+    fresh = [g.get("name") for g in groups if isinstance(g, dict) and g.get("status") == "fresh" and g.get("name")]
+    percents = [
+        int(g.get("recoveryPercent") or 0)
+        for g in groups
+        if isinstance(g, dict) and isinstance(g.get("recoveryPercent"), (int, float))
+    ]
+    score = int(parsed.get("readinessScore") or 0)
+    if score <= 0:
+        score = round(sum(percents) / len(percents)) if percents else 68
+    score = max(0, min(100, score))
+
+    completed = int(payload.get("totalWeeklySets") or 0)
+    target = int(payload.get("targetWeeklySets") or 84)
+    if target <= 0:
+        target = 84
+    pct = int(parsed.get("weeklyProgress", {}).get("percentComplete") if isinstance(parsed.get("weeklyProgress"), dict) else 0)
+    if pct <= 0:
+        pct = round((completed / target) * 100) if target else 0
+
+    plan_raw = parsed.get("todaysPlan") if isinstance(parsed.get("todaysPlan"), dict) else {}
+    focus = plan_raw.get("focusMuscles") if isinstance(plan_raw.get("focusMuscles"), list) else fresh[:3]
+    avoid = plan_raw.get("avoidMuscles") if isinstance(plan_raw.get("avoidMuscles"), list) else sore[:3]
+    if not focus:
+        focus = ["Chest", "Shoulders", "Triceps"] if not sore else ["Legs"]
+
+    exercises_raw = plan_raw.get("exercises") if isinstance(plan_raw.get("exercises"), list) else []
+    exercises: list[dict[str, Any]] = []
+    for ex in exercises_raw[:6]:
+        if not isinstance(ex, dict):
+            continue
+        exercises.append(
+            {
+                "name": str(ex.get("name") or "Exercise"),
+                "sets": int(ex.get("sets") or 3),
+                "reps": str(ex.get("reps") or "10-12"),
+                "muscle": str(ex.get("muscle") or focus[0] if focus else "General"),
+                "note": str(ex.get("note") or "Control the tempo on each rep."),
+            }
+        )
+    if len(exercises) < 4:
+        exercises = _default_workout_exercises([str(m) for m in focus if m])
+
+    factors_raw = parsed.get("readinessFactors") if isinstance(parsed.get("readinessFactors"), list) else []
+    factors: list[dict[str, str]] = []
+    for f in factors_raw[:4]:
+        if isinstance(f, dict) and f.get("label"):
+            t = str(f.get("type") or "info")
+            if t not in ("good", "warning", "bad", "info"):
+                t = "info"
+            factors.append({"label": str(f["label"]), "type": t})
+    while len(factors) < 4:
+        defaults = [
+            {"label": f"{fresh[0]} fresh" if fresh else "Recovery acceptable", "type": "good"},
+            {"label": f"{sore[0]} sore" if sore else "Low muscle soreness", "type": "bad" if sore else "good"},
+            {"label": f"Weekly volume {pct}% complete", "type": "warning" if pct < 50 else "info"},
+            {"label": "Prioritize sleep tonight", "type": "info"},
+        ]
+        factors.append(defaults[len(factors)])
+
+    tips_raw = parsed.get("recoveryTips") if isinstance(parsed.get("recoveryTips"), list) else []
+    tips: list[dict[str, str]] = []
+    for t in tips_raw[:3]:
+        if isinstance(t, dict) and t.get("title"):
+            icon = str(t.get("icon") or "rest")
+            if icon not in ("sleep", "water", "stretch", "food", "rest"):
+                icon = "rest"
+            tips.append({"icon": icon, "title": str(t["title"]), "description": str(t.get("description") or "")})
+    if len(tips) < 3:
+        tips.extend(
+            [
+                {"icon": "sleep", "title": "Sleep 7-8 hours", "description": "Recovery improves with consistent sleep tonight."},
+                {"icon": "water", "title": "Hydrate well", "description": "Drink water through the day to reduce soreness."},
+                {"icon": "stretch", "title": "Mobility work", "description": "Add 10 minutes of stretching for tight muscle groups."},
+            ][len(tips) : 3]
+        )
+
+    wp = parsed.get("weeklyProgress") if isinstance(parsed.get("weeklyProgress"), dict) else {}
+    insight_default = (
+        f"{' and '.join(fresh)} are ready for quality work. " if fresh else ""
+    ) + (f"Avoid heavy loading on {' and '.join(sore)} today. " if sore else "") + "Focus on controlled sets and progression."
+
+    return {
+        "insightText": str(parsed.get("insightText") or insight_default),
+        "todaysPlan": {
+            "splitName": str(plan_raw.get("splitName") or ("Push Day" if "Chest" in focus else "Training Day")),
+            "focusMuscles": [str(m) for m in focus[:6]],
+            "avoidMuscles": [str(m) for m in avoid[:6]],
+            "exercises": exercises[:6],
+            "estimatedDuration": str(plan_raw.get("estimatedDuration") or "45-55 min"),
+        },
+        "readinessScore": score,
+        "readinessLabel": str(parsed.get("readinessLabel") or _workout_readiness_label(score)),
+        "readinessDescription": str(
+            parsed.get("readinessDescription")
+            or ("Recovery looks favorable for focused training." if score >= 70 else "Manage intensity and prioritize recovering muscles.")
+        ),
+        "readinessFactors": factors[:4],
+        "weeklyProgress": {
+            "completedSets": int(wp.get("completedSets") or completed),
+            "targetSets": int(wp.get("targetSets") or target),
+            "percentComplete": int(wp.get("percentComplete") or pct),
+            "insight": str(wp.get("insight") or f"You are at {pct}% of your weekly set target."),
+        },
+        "recoveryTips": tips[:3],
+    }
+
+
+def _fallback_workout_coach(payload: dict) -> dict:
+    out = _normalize_workout_coach_response({}, payload)
+    out["source"] = "fallback"
+    return out
+
+
 def _groq_workout_coach(payload: dict) -> dict:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing on server")
 
-    system_prompt = (
-        "You are an expert workout and recovery coach. "
-        "Return ONLY valid JSON with exact keys: insightText, readinessScore, readinessLabel, readinessDescription, readinessFactors. "
-        "readinessScore must be 0-100 integer. "
-        "readinessFactors must be exactly 3 items with keys label and type where type in [good, warning, bad, info]. "
-        "Insight should be concise (2-4 sentences), practical, and mention which muscles to prioritize or avoid today."
-    )
-
-    req = Request(
-        "https://api.groq.com/openai/v1/chat/completions",
-        data=json.dumps(
-            {
+    try:
+        raw = post_json(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Accept": "application/json",
+                "User-Agent": "fitness-workout-coach/1.0",
+            },
+            payload={
                 "model": settings.GROQ_MODEL or "llama-3.3-70b-versatile",
                 "temperature": 0.3,
-                "max_tokens": 420,
+                "max_tokens": 900,
                 "response_format": {"type": "json_object"},
                 "messages": [
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": WORKOUT_COACH_SYSTEM_PROMPT},
                     {"role": "user", "content": json.dumps(payload)},
                 ],
-            }
-        ).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-            "Accept": "application/json",
-            "User-Agent": "fitness-workout-coach/1.0",
-        },
-        method="POST",
-    )
-    try:
-        with urlopen(req, timeout=30) as resp:
-            raw = json.loads(resp.read().decode("utf-8"))
-    except HTTPError as e:
-        body = e.read().decode("utf-8", errors="ignore")
-        raise RuntimeError(f"Groq HTTP {e.code}: {body[:260]}") from e
-    except URLError as e:
-        raise RuntimeError(f"Groq network error: {e.reason}") from e
+            },
+            timeout=60,
+        )
+    except ExternalHTTPError as e:
+        raise RuntimeError(f"Groq HTTP {e.status_code}: {e.body[:260]}") from e
 
     content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
     if not content:
@@ -408,7 +599,9 @@ def _groq_workout_coach(payload: dict) -> dict:
     parsed = json.loads(clean)
     if not isinstance(parsed, dict):
         raise RuntimeError("Groq returned invalid workout JSON")
-    return parsed
+    out = _normalize_workout_coach_response(parsed, payload)
+    out["source"] = "groq"
+    return out
 
 
 def build_recommendation(row: WorkoutCatalog) -> str:
@@ -496,13 +689,14 @@ def apply_onboarding_personal_to_user(user: User, onboarding: dict) -> None:
 
 @app.post("/signup")
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == payload.email).first()
+    email = payload.email.strip().lower()
+    existing = db.query(User).filter(func.lower(User.email) == email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
         name=payload.name,
-        email=payload.email,
+        email=email,
         password_hash=hash_password(payload.password),
     )
     db.add(user)
@@ -513,9 +707,37 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
 
 @app.post("/login")
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
+    email = payload.email.strip().lower()
+    user = db.query(User).filter(func.lower(User.email) == email).first()
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
+
+
+@app.post("/auth/firebase-login")
+def firebase_login(payload: FirebaseLoginRequest, db: Session = Depends(get_db)):
+    """
+    After the client signs in with Firebase, verify the ID token and issue our JWT.
+    Creates a local fitness account if the user exists in Firebase but not in Postgres yet.
+    """
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    email = email_from_firebase_id_token(payload.id_token.strip())
+    user = db.query(User).filter(func.lower(User.email) == email).first()
+    if not user:
+        display_name = (payload.name or "").strip() or email.split("@")[0]
+        user = User(
+            name=display_name,
+            email=email,
+            password_hash=hash_password(payload.password),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not verify_password(payload.password, user.password_hash):
+        user.password_hash = hash_password(payload.password)
+        db.commit()
+        db.refresh(user)
     return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
 
 
@@ -917,8 +1139,8 @@ def workout_coach_insight(
         }
     try:
         return _groq_workout_coach(workout_data)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Workout AI insight generation failed: {str(e)}") from e
+    except Exception:
+        return _fallback_workout_coach(workout_data)
 
 
 @app.get("/workout/coach/data")
