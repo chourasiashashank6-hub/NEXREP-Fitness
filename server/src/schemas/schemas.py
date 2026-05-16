@@ -20,6 +20,14 @@ class SyncPasswordRequest(BaseModel):
     new_password: str
 
 
+class FirebaseLoginRequest(BaseModel):
+    """Login using a Firebase ID token (client already authenticated with Firebase)."""
+
+    id_token: str
+    password: str
+    name: str | None = None
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -76,7 +84,13 @@ class ChatRequest(BaseModel):
 
 
 class OnboardingUpsertRequest(BaseModel):
-    """Client sends full wizard state plus computed nutrition targets."""
+    """Client sends full wizard state plus computed nutrition targets.
+
+    Expected onboarding keys include:
+    - dietary.meals_per_day (1-6)
+    - activity.workouts_per_week, activity.level, activity.workout_types
+    - goal.type, goal.difficulty, goal.focus_muscle (optional)
+    """
 
     onboarding: dict
     targets: dict

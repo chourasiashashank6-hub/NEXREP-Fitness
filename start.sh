@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # One-command dev stack: Postgres → API (background) → Expo web (foreground).
 # From anywhere, run:
-#   cd "/Users/vishay_11/Desktop/fitness" && bash start.sh
+#   cd "/path/to/fitness" && bash start.sh
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 cd "$ROOT"
+
+# Files from zip/WhatsApp often carry quarantine flags → "bad interpreter: Operation not permitted"
+if command -v xattr >/dev/null 2>&1; then
+  xattr -cr "$ROOT/server" "$ROOT/mobile" 2>/dev/null || true
+fi
 
 echo "==> Starting Postgres (Docker)"
 docker compose up -d
@@ -22,21 +27,36 @@ if command -v lsof >/dev/null 2>&1; then
   fi
 fi
 
+venv_python() {
+  echo "$ROOT/server/.venv/bin/python3"
+}
+
+venv_ok() {
+  local py
+  py="$(venv_python)"
+  [[ -x "$py" ]] && "$py" -c "import sys" 2>/dev/null
+}
+
 echo "==> Starting API on http://0.0.0.0:8000 (localhost:8000 from your machine) (background)"
 (
   cd "$ROOT/server"
-  if [[ ! -d .venv ]]; then python3 -m venv .venv; fi
-  # shellcheck disable=1091
-  source .venv/bin/activate
-  pip install -q -r requirements.txt
+  if ! venv_ok; then
+    echo "    Recreating Python venv (old copy from another machine is invalid here)…"
+    rm -rf .venv
+    python3 -m venv .venv
+  fi
+  PY="$(venv_python)"
+  "$PY" -m pip install -q -r requirements.txt
   if [[ ! -f .env ]]; then cp .env.example .env 2>/dev/null || true; fi
-  python seed.py
-  exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+  "$PY" seed.py
+  exec "$PY" -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 ) &
-sleep 2
+sleep 3
 
 echo "==> Starting Expo web (open the URL Metro prints; Ctrl+C stops Expo only)"
 cd "$ROOT/mobile"
-if [[ ! -d node_modules ]]; then npm install; fi
+if [[ ! -d node_modules ]] || [[ ! -x node_modules/.bin/expo ]]; then
+  npm install
+fi
 if [[ ! -f .env ]]; then cp .env.example .env 2>/dev/null || true; fi
-exec npm run web
+exec npx expo start --web

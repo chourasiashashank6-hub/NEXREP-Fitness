@@ -13,6 +13,14 @@ from src.db.session import Base, engine, get_db
 from src.core.config import settings
 from src.models.models import Activity, Meal, User, UserOnboarding, Workout, WorkoutCatalog
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
+from src.models.meal_plan import (  # noqa: F401
+    DailyMealPlanEntry,
+    DailyWorkoutPlanEntry,
+    MonthlyMealPlan,
+    MonthlyWorkoutPlan,
+)
+from src.routes.meal_planner import router as meal_planner_router
+from src.routes.workout_planner import router as workout_planner_router
 from src.schemas.schemas import (
     ActivityRequest,
     ChatRequest,
@@ -48,6 +56,8 @@ app.add_middleware(
 app.include_router(calories_api_router, prefix="/api/calories")
 # Alternate prefix so clients can discover working routes if /api/* is blocked or an old binary omits the first mount.
 app.include_router(calories_api_router, prefix="/v1/calories")
+app.include_router(meal_planner_router)
+app.include_router(workout_planner_router)
 
 
 @app.get("/")
@@ -110,6 +120,18 @@ def apply_schema_updates() -> None:
         conn.execute(text("UPDATE ai_food_meal_entries SET log_date = COALESCE(log_date, DATE(created_at), CURRENT_DATE)"))
         conn.execute(text("ALTER TABLE ai_food_meal_entries ALTER COLUMN log_date SET NOT NULL"))
         conn.execute(text("ALTER TABLE IF EXISTS user_calorie_targets ADD COLUMN IF NOT EXISTS target_fiber_g NUMERIC(6,2) DEFAULT 30"))
+        conn.execute(text("ALTER TABLE monthly_workout_plans ADD COLUMN IF NOT EXISTS focus_muscles_json TEXT"))
+        conn.execute(
+            text(
+                """
+                UPDATE monthly_workout_plans
+                SET focus_muscles_json = to_json(ARRAY[focus_muscle])::text
+                WHERE focus_muscles_json IS NULL
+                  AND focus_muscle IS NOT NULL
+                  AND focus_muscle <> ''
+                """
+            )
+        )
 
 
 def estimate_workout_calories(payload: WorkoutRequest) -> int:
@@ -400,6 +422,21 @@ WORKOUT_COACH_SYSTEM_PROMPT = (
     '   - "icon": one of "sleep", "water", "stretch", "food", "rest"\n'
     '   - "title": string (short, 3-5 words)\n'
     '   - "description": string (one actionable sentence)\n\n'
+    '9. "coachingTips" — array of exactly 4 objects with keys:\n'
+    '   - "icon": one of "lightning", "repeat", "droplet", "moon", "target", "fire", "clock", "shield", "chart", "dumbbell"\n'
+    '   - "title": string, max 5 words, punchy and specific (NOT generic)\n'
+    '   - "body": string, exactly 1-2 sentences, actionable and specific to THIS user\'s data.\n'
+    '     Reference actual muscles, actual numbers, or actual patterns from the user\'s workout data.\n'
+    '   - "category": one of "recovery", "volume", "technique", "nutrition", "mindset", "programming"\n'
+    '   - "priority": one of "high", "medium", "low" — based on how urgently the user needs this advice right now\n\n'
+    "Coaching tips rules:\n"
+    "- Reference specific muscle groups that are sore or undertrained.\n"
+    "- Reference actual set counts vs targets.\n"
+    "- Reference how long ago the user last trained.\n"
+    "- Reference any imbalances in weekly volume (e.g. lots of push, no pull).\n"
+    "- If readinessScore < 50, at least 2 tips should be about recovery.\n"
+    "- If readinessScore > 75, at least 2 tips should be about training optimization.\n"
+    "- Tips must NOT repeat advice already in insightText or recoveryTips.\n\n"
     "Rules:\n"
     "- Base exercise selection on which muscles are fresh (recoveryPercent > 70).\n"
     "- If all muscles are sore (recoveryPercent < 40), recommend active recovery with mobility/stretching exercises.\n"
@@ -407,6 +444,168 @@ WORKOUT_COACH_SYSTEM_PROMPT = (
     "- exercises should be real, standard gym exercises — no made-up names.\n"
     "- No markdown, no bullets, no emojis in any string value."
 )
+
+
+COACHING_TIP_ICONS = frozenset(
+    {"lightning", "repeat", "droplet", "moon", "target", "fire", "clock", "shield", "chart", "dumbbell"}
+)
+COACHING_TIP_CATEGORIES = frozenset({"recovery", "volume", "technique", "nutrition", "mindset", "programming"})
+COACHING_TIP_PRIORITIES = frozenset({"high", "medium", "low"})
+
+
+def _build_fallback_coaching_tips(workout_data: dict, readiness_score: int = 70) -> list[dict[str, str]]:
+    tips: list[dict[str, str]] = []
+    muscle_groups = workout_data.get("muscleGroups") if isinstance(workout_data.get("muscleGroups"), list) else []
+    weekly_volume = workout_data.get("weeklyVolume") if isinstance(workout_data.get("weeklyVolume"), list) else []
+
+    sore_muscles = [
+        str(m.get("name"))
+        for m in muscle_groups
+        if isinstance(m, dict) and m.get("status") == "sore" and m.get("name")
+    ]
+    if sore_muscles:
+        sore_list = ", ".join(sore_muscles)
+        tips.append(
+            {
+                "icon": "moon",
+                "title": f"Rest {sore_muscles[0]} today",
+                "body": (
+                    f"{sore_list} {'is' if len(sore_muscles) == 1 else 'are'} still recovering. "
+                    f"Avoid training {'it' if len(sore_muscles) == 1 else 'them'} today and prioritize sleep for faster repair."
+                ),
+                "category": "recovery",
+                "priority": "high",
+            }
+        )
+
+    undertrained = [
+        m
+        for m in weekly_volume
+        if isinstance(m, dict)
+        and int(m.get("sets") or 0) < int(m.get("targetSets") or 14) * 0.5
+    ]
+    if undertrained:
+        muscle_name = str(undertrained[0].get("muscle") or "muscle")
+        current = int(undertrained[0].get("sets") or 0)
+        target = int(undertrained[0].get("targetSets") or 14)
+        tips.append(
+            {
+                "icon": "target",
+                "title": f"Close the {muscle_name} gap",
+                "body": (
+                    f"You have only {current} sets for {muscle_name} this week vs a {target}-set target. "
+                    f"Add a {muscle_name.lower()}-focused session before the week ends."
+                ),
+                "category": "volume",
+                "priority": "high",
+            }
+        )
+
+    if readiness_score < 50 and len([t for t in tips if t.get("category") == "recovery"]) < 2:
+        tips.append(
+            {
+                "icon": "moon",
+                "title": "Prioritize recovery today",
+                "body": (
+                    f"Your readiness score is {readiness_score}/100. Keep today's session light and aim for 7-8 hours of sleep tonight."
+                ),
+                "category": "recovery",
+                "priority": "high",
+            }
+        )
+
+    if readiness_score > 75:
+        fresh = [
+            str(m.get("name"))
+            for m in muscle_groups
+            if isinstance(m, dict) and m.get("status") == "fresh" and m.get("name")
+        ]
+        if fresh:
+            tips.append(
+                {
+                    "icon": "fire",
+                    "title": f"Push {fresh[0]} volume",
+                    "body": (
+                        f"{fresh[0]} is fresh and ready — use this session to add quality sets while form stays crisp."
+                    ),
+                    "category": "programming",
+                    "priority": "medium",
+                }
+            )
+
+    tips.append(
+        {
+            "icon": "dumbbell",
+            "title": "Slow the eccentric",
+            "body": "For any exercise today, slow the lowering phase to 3 seconds. This increases time under tension without adding weight.",
+            "category": "technique",
+            "priority": "medium",
+        }
+    )
+    tips.append(
+        {
+            "icon": "droplet",
+            "title": "Hydrate before training",
+            "body": "Drink 500ml of water 30 minutes before your session. Even slight dehydration reduces strength output measurably.",
+            "category": "nutrition",
+            "priority": "low",
+        }
+    )
+
+    if not tips:
+        tips.append(
+            {
+                "icon": "target",
+                "title": "Log workouts for insights",
+                "body": "Start logging your workouts to get personalized coaching tips based on your actual training data.",
+                "category": "programming",
+                "priority": "high",
+            }
+        )
+
+    return tips[:4]
+
+
+def _parse_coaching_tips(raw_tips: list, payload: dict, readiness_score: int) -> list[dict[str, str]]:
+    tips: list[dict[str, str]] = []
+    for t in raw_tips[:4]:
+        if not isinstance(t, dict) or not t.get("title"):
+            continue
+        icon = str(t.get("icon") or "lightning")
+        if icon not in COACHING_TIP_ICONS:
+            icon = "lightning"
+        category = str(t.get("category") or "programming")
+        if category not in COACHING_TIP_CATEGORIES:
+            category = "programming"
+        priority = str(t.get("priority") or "medium")
+        if priority not in COACHING_TIP_PRIORITIES:
+            priority = "medium"
+        body = str(t.get("body") or t.get("description") or "").strip()
+        if not body:
+            continue
+        tips.append(
+            {
+                "icon": icon,
+                "title": str(t["title"])[:80],
+                "body": body,
+                "category": category,
+                "priority": priority,
+            }
+        )
+    if len(tips) < 4:
+        fallback = _build_fallback_coaching_tips(payload, readiness_score)
+        seen_titles = {x["title"].lower() for x in tips}
+        for item in fallback:
+            if len(tips) >= 4:
+                break
+            if item["title"].lower() in seen_titles:
+                continue
+            tips.append(item)
+            seen_titles.add(item["title"].lower())
+    while len(tips) < 4:
+        filler = _build_fallback_coaching_tips(payload, readiness_score)
+        tips.append(filler[len(tips) % len(filler)])
+    return tips[:4]
 
 
 def _workout_readiness_label(score: int) -> str:
@@ -555,6 +754,11 @@ def _normalize_workout_coach_response(parsed: dict, payload: dict) -> dict:
             "insight": str(wp.get("insight") or f"You are at {pct}% of your weekly set target."),
         },
         "recoveryTips": tips[:3],
+        "coachingTips": _parse_coaching_tips(
+            parsed.get("coachingTips") if isinstance(parsed.get("coachingTips"), list) else [],
+            payload,
+            score,
+        ),
     }
 
 
@@ -580,7 +784,7 @@ def _groq_workout_coach(payload: dict) -> dict:
             payload={
                 "model": settings.GROQ_MODEL or "llama-3.3-70b-versatile",
                 "temperature": 0.3,
-                "max_tokens": 900,
+                "max_tokens": 1200,
                 "response_format": {"type": "json_object"},
                 "messages": [
                     {"role": "system", "content": WORKOUT_COACH_SYSTEM_PROMPT},

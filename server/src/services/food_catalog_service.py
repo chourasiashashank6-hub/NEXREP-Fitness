@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import os
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-DEFAULT_SQL_PATH = "/Users/vishay_11/Desktop/food_database_final.sql"
+_SERVER_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_SQL_PATH = str(_SERVER_ROOT / "sql" / "food_database_final.sql")
 
 
 def _to_decimal(value: Any, fallback: str = "0") -> Decimal:
