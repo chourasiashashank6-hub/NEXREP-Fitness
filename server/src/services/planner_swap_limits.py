@@ -8,6 +8,11 @@ SWAP_LIMIT_PER_DAY = 5
 class SwapLimitExceeded(Exception):
     """Raised when user exceeds daily swap quota."""
 
+
+class DayRegenLimitExceeded(Exception):
+    """Raised when user exceeds monthly full-day regeneration quota."""
+
+
 _meal_swap_counts: dict[str, int] = {}
 _exercise_swap_counts: dict[str, int] = {}
 

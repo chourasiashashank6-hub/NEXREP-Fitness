@@ -121,20 +121,10 @@ def post_regenerate_remaining(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    focus_muscles = _normalize_focus_muscles(body.focus_muscles)
-    try:
-        plan = regenerate_remaining_workouts(
-            db,
-            current_user,
-            from_day=body.from_day,
-            focus_muscles=focus_muscles,
-            local_date=local_date,
-        )
-        return workout_plan_current_response(plan, local_date)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except LookupError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    raise HTTPException(
+        status_code=403,
+        detail="Full workout plan regeneration is not available. You can swap individual exercises.",
+    )
 
 
 @router.post("/swap-exercise")
@@ -168,9 +158,7 @@ def delete_current(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    today = parse_local_date(local_date)
-    plan = get_existing_workout_plan(db, current_user.id, today.month, today.year)
-    if not plan:
-        raise HTTPException(status_code=404, detail="No workout plan for this month")
-    delete_workout_plan(db, plan)
-    return {"deleted": True}
+    raise HTTPException(
+        status_code=403,
+        detail="Workout plans cannot be deleted.",
+    )

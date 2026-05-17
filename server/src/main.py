@@ -120,6 +120,50 @@ def apply_schema_updates() -> None:
         conn.execute(text("UPDATE ai_food_meal_entries SET log_date = COALESCE(log_date, DATE(created_at), CURRENT_DATE)"))
         conn.execute(text("ALTER TABLE ai_food_meal_entries ALTER COLUMN log_date SET NOT NULL"))
         conn.execute(text("ALTER TABLE IF EXISTS user_calorie_targets ADD COLUMN IF NOT EXISTS target_fiber_g NUMERIC(6,2) DEFAULT 30"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS target_kcal INTEGER"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS target_protein_g INTEGER"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS target_carbs_g INTEGER"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS target_fat_g INTEGER"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS target_fiber_g INTEGER"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS week_start_day INTEGER"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS week_end_day INTEGER"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS generation_mode VARCHAR(32) DEFAULT 'weekly'"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS day_regens_used INTEGER DEFAULT 0"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS day_regens_limit INTEGER DEFAULT 3"))
+        conn.execute(text("UPDATE monthly_meal_plans SET day_regens_used = 0 WHERE day_regens_used IS NULL"))
+        conn.execute(text("UPDATE monthly_meal_plans SET day_regens_limit = 3 WHERE day_regens_limit IS NULL"))
+        conn.execute(
+            text(
+                """
+                UPDATE monthly_meal_plans p
+                SET generation_mode = 'monthly',
+                    week_start_day = NULL,
+                    week_end_day = DATE_PART(
+                        'day',
+                        (MAKE_DATE(p.year, p.month, 1) + INTERVAL '1 month - 1 day')::date
+                    )::integer
+                WHERE p.generation_mode IS NULL
+                   OR (p.generation_mode = 'weekly' AND p.week_start_day IS NULL)
+                """
+            )
+        )
+        conn.execute(text("ALTER TABLE monthly_meal_plans DROP CONSTRAINT IF EXISTS uq_meal_plan_user_month"))
+        conn.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                  IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'uq_meal_plan_user_month_week'
+                  ) THEN
+                    ALTER TABLE monthly_meal_plans
+                    ADD CONSTRAINT uq_meal_plan_user_month_week
+                    UNIQUE (user_id, month, year, week_start_day);
+                  END IF;
+                END $$;
+                """
+            )
+        )
         conn.execute(text("ALTER TABLE monthly_workout_plans ADD COLUMN IF NOT EXISTS focus_muscles_json TEXT"))
         conn.execute(
             text(

@@ -16,10 +16,22 @@ class MonthlyMealPlan(Base):
     budget_level = Column(String(32), nullable=False)
     generated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     source = Column(String(32), default="groq")
+    target_kcal = Column(Integer, nullable=True)
+    target_protein_g = Column(Integer, nullable=True)
+    target_carbs_g = Column(Integer, nullable=True)
+    target_fat_g = Column(Integer, nullable=True)
+    target_fiber_g = Column(Integer, nullable=True)
+    week_start_day = Column(Integer, nullable=True)
+    week_end_day = Column(Integer, nullable=True)
+    generation_mode = Column(String(32), nullable=False, default="weekly")
+    day_regens_used = Column(Integer, default=0, nullable=False)
+    day_regens_limit = Column(Integer, default=3, nullable=False)
 
     entries = relationship("DailyMealPlanEntry", back_populates="plan", cascade="all, delete-orphan")
 
-    __table_args__ = (UniqueConstraint("user_id", "month", "year", name="uq_meal_plan_user_month"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "month", "year", "week_start_day", name="uq_meal_plan_user_month_week"),
+    )
 
 
 class DailyMealPlanEntry(Base):
