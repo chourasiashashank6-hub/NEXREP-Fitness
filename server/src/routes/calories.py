@@ -15,6 +15,7 @@ from src.core.config import settings
 from src.core.http_client import ExternalHTTPError, post_json
 from src.models.models import User, UserOnboarding
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog
+from src.models.weight_log import WeightLog
 from src.schemas.calories_api import (
     DailyLogEnsureRequest,
     AIFoodMealCreateRequest,
@@ -28,6 +29,7 @@ from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.utils.auth import get_current_user
 
 router = APIRouter()
+goal_progress_router = APIRouter()
 
 MEAL_ORDER = ["Breakfast", "Lunch", "Dinner", "Snack", "Pre_Workout", "Post_Workout"]
 
@@ -1508,3 +1510,126 @@ def coach_calorie_insight(
             except Exception:
                 pass
         return _fallback_coach(day_payload)
+
+
+def _onboarding_weight_kg(onboarding: dict[str, Any] | None) -> float | None:
+    if not isinstance(onboarding, dict):
+        return None
+    personal = onboarding.get("personal")
+    if not isinstance(personal, dict):
+        return None
+    try:
+        if personal.get("unit_system") == "imperial" and personal.get("weight_lb") is not None:
+            return float(personal["weight_lb"]) * 0.45359237
+        if personal.get("weight_kg") is not None:
+            return float(personal["weight_kg"])
+    except (TypeError, ValueError):
+        return None
+    return None
+
+
+def _onboarding_target_weight_kg(onboarding: dict[str, Any] | None) -> float | None:
+    if not isinstance(onboarding, dict):
+        return None
+    goal = onboarding.get("goal")
+    if not isinstance(goal, dict):
+        return None
+    try:
+        if goal.get("target_weight_kg") is not None:
+            return float(goal["target_weight_kg"])
+    except (TypeError, ValueError):
+        return None
+    return _onboarding_weight_kg(onboarding)
+
+
+@goal_progress_router.get("/goal-progress")
+def get_goal_progress(
+    local_date: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Goal timeline using latest weigh-in weight when available."""
+    _ = _parse_log_date(local_date)
+
+    ob = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
+    onboarding_json = ob.onboarding_json if ob and isinstance(ob.onboarding_json, dict) else {}
+    targets_json = ob.targets_json if ob and isinstance(ob.targets_json, dict) else {}
+    timeline = targets_json.get("timeline") if isinstance(targets_json.get("timeline"), dict) else {}
+
+    onboarding_weight_kg = _onboarding_weight_kg(onboarding_json)
+    target_weight_kg = _onboarding_target_weight_kg(onboarding_json)
+
+    latest_log = (
+        db.query(WeightLog)
+        .filter(WeightLog.user_id == current_user.id)
+        .order_by(WeightLog.log_date.desc())
+        .first()
+    )
+
+    current_weight_kg = (
+        latest_log.weight_kg
+        if latest_log
+        else (current_user.weight or onboarding_weight_kg)
+    )
+    days_since_weigh_in = (
+        (date.today() - date.fromisoformat(latest_log.log_date)).days if latest_log else None
+    )
+
+    weekly_change_kg = None
+    try:
+        raw_weekly = timeline.get("weekly_change_kg") or timeline.get("weekly_delta_kg")
+        if raw_weekly is not None:
+            weekly_change_kg = float(raw_weekly)
+    except (TypeError, ValueError):
+        weekly_change_kg = None
+
+    weeks_to_goal = None
+    if (
+        current_weight_kg is not None
+        and target_weight_kg is not None
+        and weekly_change_kg is not None
+        and weekly_change_kg > 0
+    ):
+        weeks_to_goal = max(0, round(abs(current_weight_kg - target_weight_kg) / weekly_change_kg))
+
+    first_log = (
+        db.query(WeightLog)
+        .filter(WeightLog.user_id == current_user.id)
+        .order_by(WeightLog.log_date.asc())
+        .first()
+    )
+    total_change_kg = None
+    weight_change_label = None
+    if first_log and latest_log and first_log.id != latest_log.id:
+        total_change_kg = round(latest_log.weight_kg - first_log.weight_kg, 1)
+        if total_change_kg > 0:
+            weight_change_label = f"+{total_change_kg}kg total"
+        elif total_change_kg < 0:
+            weight_change_label = f"{total_change_kg}kg total"
+        else:
+            weight_change_label = "No net change"
+    elif first_log and latest_log:
+        weight_change_label = "No net change"
+        total_change_kg = 0.0
+
+    return {
+        "current_weight_kg": current_weight_kg,
+        "target_weight_kg": target_weight_kg,
+        "onboarding_weight_kg": onboarding_weight_kg,
+        "weeks_to_goal": weeks_to_goal,
+        "weekly_change_kg": weekly_change_kg,
+        "daily_delta_kcal": timeline.get("daily_delta_kcal"),
+        "exercise_share": timeline.get("exercise_share"),
+        "diet_share": timeline.get("diet_share"),
+        "exercise_delta_kcal": timeline.get("exercise_delta_kcal"),
+        "diet_delta_kcal": timeline.get("diet_delta_kcal"),
+        "pace_label": timeline.get("pace_label"),
+        "total_change_kg": total_change_kg,
+        "weight_change_label": weight_change_label,
+        "days_since_weigh_in": days_since_weigh_in,
+        "needs_weigh_in": days_since_weigh_in is None or days_since_weigh_in >= 7,
+        "timeline": {
+            **timeline,
+            "weeks_to_goal": weeks_to_goal if weeks_to_goal is not None else timeline.get("weeks_to_goal"),
+        },
+    }

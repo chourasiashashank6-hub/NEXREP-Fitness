@@ -19,6 +19,7 @@ from src.models.meal_plan import (  # noqa: F401
     MonthlyMealPlan,
     MonthlyWorkoutPlan,
 )
+from src.models.weight_log import WeightLog  # noqa: F401
 from src.routes.meal_planner import router as meal_planner_router
 from src.routes.workout_planner import router as workout_planner_router
 from src.schemas.schemas import (
@@ -41,7 +42,8 @@ from src.services.food_catalog_service import ensure_food_catalog_schema, load_f
 from src.services.workout_catalog_service import load_workout_catalog_if_empty
 from src.services.score_service import compute_discipline_score
 from src.utils.auth import get_current_user
-from src.routes.calories import router as calories_api_router
+from src.routes.calories import goal_progress_router, router as calories_api_router
+from src.routes.weight_log import router as weight_router
 
 app = FastAPI(title="Fitness API", version="1.0.0")
 
@@ -56,6 +58,8 @@ app.add_middleware(
 app.include_router(calories_api_router, prefix="/api/calories")
 # Alternate prefix so clients can discover working routes if /api/* is blocked or an old binary omits the first mount.
 app.include_router(calories_api_router, prefix="/v1/calories")
+app.include_router(goal_progress_router, prefix="/api")
+app.include_router(weight_router)
 app.include_router(meal_planner_router)
 app.include_router(workout_planner_router)
 
