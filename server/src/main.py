@@ -1,15 +1,16 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import json
 from typing import Any
 import smtplib
 from email.message import EmailMessage
 from src.core.http_client import ExternalHTTPError, post_json
 from sqlalchemy import func, text
-from fastapi import Body, Depends, FastAPI, HTTPException, Query
+from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from src.db.session import Base, engine, get_db
+from src.db.session import Base, SessionLocal, engine, get_db
+from src.models import admin_models  # noqa: F401 — registers admin analytics tables
 from src.core.config import settings
 from src.models.models import Activity, Meal, User, UserOnboarding, Workout, WorkoutCatalog
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
@@ -39,11 +40,16 @@ from src.schemas.schemas import (
 from src.services.auth_service import create_access_token, hash_password, verify_password
 from src.services.firebase_token import email_from_firebase_id_token
 from src.services.food_catalog_service import ensure_food_catalog_schema, load_food_catalog_from_sql_if_empty
+from src.services.global_exercises_service import load_global_exercises_if_empty
 from src.services.workout_catalog_service import load_workout_catalog_if_empty
 from src.services.score_service import compute_discipline_score
 from src.utils.auth import get_current_user
 from src.routes.calories import goal_progress_router, router as calories_api_router
 from src.routes.weight_log import router as weight_router
+from src.routes.payments import router as payments_router
+from src.routes.admin import router as admin_router
+from src.services.ai_logger import log_groq_call
+from src.utils.auth import decode_user_id_from_token
 
 app = FastAPI(title="Fitness API", version="1.0.0")
 
@@ -62,6 +68,65 @@ app.include_router(goal_progress_router, prefix="/api")
 app.include_router(weight_router)
 app.include_router(meal_planner_router)
 app.include_router(workout_planner_router)
+app.include_router(payments_router)
+app.include_router(admin_router)
+
+
+_ACTIVITY_SKIP_PATHS = {
+    "/",
+    "/docs",
+    "/openapi.json",
+    "/redoc",
+    "/health",
+    "/signup",
+    "/login",
+    "/auth/firebase-login",
+    "/auth/sync-password",
+    "/api/admin/auth/login",
+    "/api/payments/razorpay/webhook",
+}
+
+
+@app.middleware("http")
+async def track_user_activity(request: Request, call_next):
+    response = await call_next(request)
+
+    if request.url.path in _ACTIVITY_SKIP_PATHS:
+        return response
+
+    try:
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return response
+        token = auth_header.split(" ", 1)[1]
+        user_id = decode_user_id_from_token(token)
+        if not user_id:
+            return response
+
+        today = date.today()
+        db = SessionLocal()
+        try:
+            db.execute(
+                text(
+                    """
+                    INSERT INTO user_activity_logs (user_id, event_date)
+                    VALUES (:uid, :dt)
+                    ON CONFLICT (user_id, event_date) DO NOTHING
+                    """
+                ),
+                {"uid": user_id, "dt": today},
+            )
+            db.execute(
+                text("UPDATE users SET last_active_at = NOW() WHERE id = :uid"),
+                {"uid": user_id},
+            )
+            db.commit()
+        finally:
+            db.close()
+    except Exception:
+        pass
+
+    return response
 
 
 @app.get("/")
@@ -83,6 +148,7 @@ def startup():
     ensure_food_catalog_schema(engine)
     load_food_catalog_from_sql_if_empty(engine)
     load_workout_catalog_if_empty(engine)
+    load_global_exercises_if_empty(engine)
 
 
 def apply_schema_updates() -> None:
@@ -136,6 +202,10 @@ def apply_schema_updates() -> None:
         conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS day_regens_limit INTEGER DEFAULT 3"))
         conn.execute(text("UPDATE monthly_meal_plans SET day_regens_used = 0 WHERE day_regens_used IS NULL"))
         conn.execute(text("UPDATE monthly_meal_plans SET day_regens_limit = 3 WHERE day_regens_limit IS NULL"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_id VARCHAR(32) NOT NULL DEFAULT 'free'"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMPTZ NULL"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ NULL"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ NULL"))
         conn.execute(
             text(
                 """
@@ -816,10 +886,11 @@ def _fallback_workout_coach(payload: dict) -> dict:
     return out
 
 
-def _groq_workout_coach(payload: dict) -> dict:
+def _groq_workout_coach(payload: dict, user_id: int | None = None) -> dict:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing on server")
 
+    model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
     try:
         raw = post_json(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -830,7 +901,7 @@ def _groq_workout_coach(payload: dict) -> dict:
                 "User-Agent": "fitness-workout-coach/1.0",
             },
             payload={
-                "model": settings.GROQ_MODEL or "llama-3.3-70b-versatile",
+                "model": model_name,
                 "temperature": 0.3,
                 "max_tokens": 1200,
                 "response_format": {"type": "json_object"},
@@ -841,6 +912,16 @@ def _groq_workout_coach(payload: dict) -> dict:
             },
             timeout=60,
         )
+        try:
+            log_groq_call(
+                user_id=user_id,
+                feature="workout_coach",
+                model=model_name,
+                endpoint="/workout/coach/insight",
+                response_json=raw,
+            )
+        except Exception:
+            pass
     except ExternalHTTPError as e:
         raise RuntimeError(f"Groq HTTP {e.status_code}: {e.body[:260]}") from e
 
@@ -1390,7 +1471,7 @@ def workout_coach_insight(
             "targetWeeklySets": 84,
         }
     try:
-        return _groq_workout_coach(workout_data)
+        return _groq_workout_coach(workout_data, user_id=current_user.id)
     except Exception:
         return _fallback_workout_coach(workout_data)
 
@@ -1540,6 +1621,7 @@ def workout_catalog(
     return {
         "items": [
             {
+                "id": r.id,
                 "type": r.type,
                 "bodyPart": r.body_part,
                 "goalTag": r.goal_tag,

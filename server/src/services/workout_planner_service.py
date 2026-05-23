@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from src.core.config import settings
 from src.core.http_client import post_json
+from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.models.meal_plan import DailyWorkoutPlanEntry, MonthlyWorkoutPlan
 from src.models.models import User, UserOnboarding
 from src.services.planner_common import (
@@ -248,10 +249,17 @@ def _onboarding_context(db: Session, user_id: int) -> tuple[dict, dict]:
     return onboarding, targets
 
 
-def _groq_workout_chunk(user_message: dict[str, Any], *, system_prompt: str | None = None) -> list[dict[str, Any]]:
+def _groq_workout_chunk(
+    user_message: dict[str, Any],
+    *,
+    system_prompt: str | None = None,
+    user_id: int | None = None,
+    endpoint: str = "/api/workout-planner/generate",
+) -> list[dict[str, Any]]:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing")
     prompt = system_prompt or WORKOUT_SYSTEM_PROMPT
+    model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
     raw = post_json(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={
@@ -259,7 +267,7 @@ def _groq_workout_chunk(user_message: dict[str, Any], *, system_prompt: str | No
             "Authorization": f"Bearer {settings.GROQ_API_KEY}",
         },
         payload={
-            "model": settings.GROQ_MODEL or "llama-3.3-70b-versatile",
+            "model": model_name,
             "temperature": 0.5,
             "max_tokens": _workout_chunk_max_tokens(int(user_message.get("exercises_per_session") or 5)),
             "response_format": {"type": "json_object"},
@@ -270,11 +278,27 @@ def _groq_workout_chunk(user_message: dict[str, Any], *, system_prompt: str | No
         },
         timeout=90,
     )
+    try:
+        log_groq_call(
+            user_id=user_id,
+            feature="workout_plan_generation",
+            model=model_name,
+            endpoint=endpoint,
+            response_json=raw,
+        )
+    except Exception:
+        pass
     content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
     return parse_groq_json_array(content)
 
 
-def _gemini_workout_chunk(user_message: dict[str, Any], *, system_prompt: str | None = None) -> list[dict[str, Any]]:
+def _gemini_workout_chunk(
+    user_message: dict[str, Any],
+    *,
+    system_prompt: str | None = None,
+    user_id: int | None = None,
+    endpoint: str = "/api/workout-planner/generate",
+) -> list[dict[str, Any]]:
     if not settings.GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY missing")
     prompt = system_prompt or WORKOUT_SYSTEM_PROMPT
@@ -293,6 +317,17 @@ def _gemini_workout_chunk(user_message: dict[str, Any], *, system_prompt: str | 
         },
         timeout=90,
     )
+    try:
+        log_gemini_call(
+            user_id=user_id,
+            feature="workout_plan_generation",
+            model=model,
+            endpoint=endpoint,
+            response_json=raw,
+            is_fallback=True,
+        )
+    except Exception:
+        pass
     parts = (raw.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
     content = parts[0].get("text", "") if parts else ""
     return parse_groq_json_array(content)
@@ -574,6 +609,7 @@ def _generate_workout_chunk(
     chunk_index: int,
     ctx: dict[str, Any],
     continue_from_split: str | None = None,
+    user_id: int | None = None,
 ) -> tuple[list[dict[str, Any]], str]:
     week_number = chunk_index + 1
     user_msg = {
@@ -600,7 +636,7 @@ def _generate_workout_chunk(
 
     for attempt in range(2):
         try:
-            raw = _groq_workout_chunk(user_msg, system_prompt=system_prompt)
+            raw = _groq_workout_chunk(user_msg, system_prompt=system_prompt, user_id=user_id)
             validated = [_validate_workout_day(d) for d in raw]
             validated = [d for d in validated if d]
             if len(validated) >= len(days):
@@ -615,7 +651,7 @@ def _generate_workout_chunk(
             if attempt == 0:
                 continue
         try:
-            raw = _gemini_workout_chunk(user_msg, system_prompt=system_prompt)
+            raw = _gemini_workout_chunk(user_msg, system_prompt=system_prompt, user_id=user_id)
             validated = [_validate_workout_day(d) for d in raw]
             validated = [d for d in validated if d]
             if len(validated) >= len(days):
@@ -675,7 +711,7 @@ def generate_workout_plan(
     all_days: list[dict[str, Any]] = []
     source = "groq"
     for idx, chunk in enumerate(month_chunks(month, year)):
-        chunk_days, chunk_source = _generate_workout_chunk(days=chunk, chunk_index=idx, ctx=ctx)
+        chunk_days, chunk_source = _generate_workout_chunk(days=chunk, chunk_index=idx, ctx=ctx, user_id=user.id)
         if chunk_source == "fallback":
             source = "fallback"
         elif chunk_source == "gemini" and source == "groq":
@@ -927,9 +963,10 @@ def get_fallback_exercise_swap(muscle: str, exclude_names: list[str]) -> dict[st
     return dict(alternatives[0])
 
 
-def _groq_swap_exercise(user_msg: dict[str, Any]) -> dict[str, Any]:
+def _groq_swap_exercise(user_msg: dict[str, Any], *, user_id: int | None = None) -> dict[str, Any]:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing")
+    model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
     raw = post_json(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={
@@ -937,7 +974,7 @@ def _groq_swap_exercise(user_msg: dict[str, Any]) -> dict[str, Any]:
             "Authorization": f"Bearer {settings.GROQ_API_KEY}",
         },
         payload={
-            "model": settings.GROQ_MODEL or "llama-3.3-70b-versatile",
+            "model": model_name,
             "temperature": 0.6,
             "max_tokens": 300,
             "response_format": {"type": "json_object"},
@@ -948,6 +985,16 @@ def _groq_swap_exercise(user_msg: dict[str, Any]) -> dict[str, Any]:
         },
         timeout=45,
     )
+    try:
+        log_groq_call(
+            user_id=user_id,
+            feature="workout_swap",
+            model=model_name,
+            endpoint="/api/workout-planner/swap-exercise",
+            response_json=raw,
+        )
+    except Exception:
+        pass
     content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
     parsed = json.loads(content.replace("```json", "").replace("```", "").strip())
     exercise = parsed.get("exercise") if isinstance(parsed, dict) else None
@@ -1002,7 +1049,7 @@ def swap_exercise(
 
     replacement: dict[str, Any] | None = None
     try:
-        replacement = _groq_swap_exercise(user_msg)
+        replacement = _groq_swap_exercise(user_msg, user_id=user.id)
     except Exception:
         replacement = None
 

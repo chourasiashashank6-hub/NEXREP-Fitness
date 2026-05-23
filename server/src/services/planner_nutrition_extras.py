@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from src.core.config import settings
 from src.core.http_client import post_json
+from src.services.ai_logger import log_groq_call
 from src.models.meal_plan import MonthlyMealPlan
 from src.models.models import User
 from src.services.planner_common import parse_local_date, safe_json_loads
@@ -197,7 +198,13 @@ def _set_cached_supplements(user_id: int, data: dict[str, Any]) -> None:
     _supplement_cache[str(user_id)] = {"data": data, "cached_at": datetime.now()}
 
 
-def _groq_protein_suggestions(system_prompt: str, user_msg: dict[str, Any]) -> list[dict[str, Any]]:
+def _groq_protein_suggestions(
+    system_prompt: str,
+    user_msg: dict[str, Any],
+    *,
+    user_id: int | None = None,
+) -> list[dict[str, Any]]:
+    model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
     raw = post_json(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={
@@ -205,7 +212,7 @@ def _groq_protein_suggestions(system_prompt: str, user_msg: dict[str, Any]) -> l
             "Authorization": f"Bearer {settings.GROQ_API_KEY}",
         },
         payload={
-            "model": settings.GROQ_MODEL or "llama-3.3-70b-versatile",
+            "model": model_name,
             "temperature": 0.4,
             "max_tokens": 600,
             "response_format": {"type": "json_object"},
@@ -216,6 +223,16 @@ def _groq_protein_suggestions(system_prompt: str, user_msg: dict[str, Any]) -> l
         },
         timeout=30,
     )
+    try:
+        log_groq_call(
+            user_id=user_id,
+            feature="protein_suggestions",
+            model=model_name,
+            endpoint="/api/meal-planner/protein-suggestions",
+            response_json=raw,
+        )
+    except Exception:
+        pass
     content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
     parsed = json.loads(content.replace("```json", "").replace("```", "").strip())
     suggestions = parsed.get("suggestions") if isinstance(parsed, dict) else None
@@ -596,7 +613,7 @@ def protein_suggestions_response(
     suggestions: list[dict[str, Any]] = []
     try:
         if settings.GROQ_API_KEY:
-            suggestions = _groq_protein_suggestions(PROTEIN_SUGGESTION_SYSTEM_PROMPT, user_msg)
+            suggestions = _groq_protein_suggestions(PROTEIN_SUGGESTION_SYSTEM_PROMPT, user_msg, user_id=user.id)
     except Exception as exc:
         logger.warning("[ProteinSuggestions] Groq failed: %s", exc)
         suggestions = []

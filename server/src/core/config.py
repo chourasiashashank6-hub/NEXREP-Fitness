@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     FEEDBACK_SMTP_PASSWORD: str = ""
     FEEDBACK_SMTP_USE_TLS: bool = True
     FEEDBACK_FROM_EMAIL: str = ""
+    RAZORPAY_KEY_ID: str = ""
+    RAZORPAY_KEY_SECRET: str = ""
+    RAZORPAY_WEBHOOK_SECRET: str = ""
+    USD_TO_INR_RATE: float = 83.5
 
     class Config:
         env_file = str(ENV_FILE)

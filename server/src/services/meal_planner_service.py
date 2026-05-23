@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from src.core.config import settings
 from src.core.http_client import post_json
+from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.models.meal_plan import DailyMealPlanEntry, MonthlyMealPlan
 from src.models.models import User, UserOnboarding
 from src.services.planner_common import (
@@ -1052,6 +1053,9 @@ def _groq_meal_chunk(
     *,
     max_tokens: int | None = None,
     temperature: float | None = None,
+    user_id: int | None = None,
+    ai_feature: str = "meal_plan_generation",
+    endpoint: str = "/api/meal-planner/generate",
 ) -> list[dict[str, Any]]:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing")
@@ -1063,6 +1067,7 @@ def _groq_meal_chunk(
     if token_limit is None:
         token_limit = 1500 if single_day else _meal_chunk_max_tokens(meals_per_day, chunk_size)
     temp = temperature if temperature is not None else (0.7 if single_day else 0.6)
+    model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
     raw = post_json(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={
@@ -1070,7 +1075,7 @@ def _groq_meal_chunk(
             "Authorization": f"Bearer {settings.GROQ_API_KEY}",
         },
         payload={
-            "model": settings.GROQ_MODEL or "llama-3.3-70b-versatile",
+            "model": model_name,
             "temperature": temp,
             "max_tokens": token_limit,
             "response_format": {"type": "json_object"},
@@ -1081,6 +1086,16 @@ def _groq_meal_chunk(
         },
         timeout=90,
     )
+    try:
+        log_groq_call(
+            user_id=user_id,
+            feature=ai_feature,
+            model=model_name,
+            endpoint=endpoint,
+            response_json=raw,
+        )
+    except Exception:
+        pass
     content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
     return parse_groq_json_array(content)
 
@@ -1091,6 +1106,9 @@ def _gemini_meal_chunk(
     *,
     max_tokens: int | None = None,
     temperature: float | None = None,
+    user_id: int | None = None,
+    ai_feature: str = "meal_plan_generation",
+    endpoint: str = "/api/meal-planner/generate",
 ) -> list[dict[str, Any]]:
     if not settings.GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY missing")
@@ -1117,6 +1135,17 @@ def _gemini_meal_chunk(
         },
         timeout=90,
     )
+    try:
+        log_gemini_call(
+            user_id=user_id,
+            feature=ai_feature,
+            model=model,
+            endpoint=endpoint,
+            response_json=raw,
+            is_fallback=True,
+        )
+    except Exception:
+        pass
     parts = (raw.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
     content = parts[0].get("text", "") if parts else ""
     return parse_groq_json_array(content)
@@ -1405,6 +1434,9 @@ def _generate_chunk_days(
     include_cheat_override: bool | None = None,
     day_offset: int | None = None,
     has_prior_context: bool = False,
+    user_id: int | None = None,
+    ai_feature: str = "meal_plan_generation",
+    endpoint: str = "/api/meal-planner/generate",
 ) -> tuple[list[dict[str, Any]], str]:
     include_cheat = include_cheat_override if include_cheat_override is not None else _include_cheat_for_chunk(chunk_index)
     system_prompt = _build_meal_system_prompt(ctx, chunk_index, has_prior_context=has_prior_context or bool(prev_breakfasts or prev_dinners))
@@ -1466,7 +1498,13 @@ def _generate_chunk_days(
 
     for attempt in range(2):
         try:
-            raw_days = _groq_meal_chunk(system_prompt, user_msg)
+            raw_days = _groq_meal_chunk(
+                system_prompt,
+                user_msg,
+                user_id=user_id,
+                ai_feature=ai_feature,
+                endpoint=endpoint,
+            )
             result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
             if result is not None:
                 _log_meal_day_counts(result, meals_per_day)
@@ -1496,6 +1534,9 @@ def _generate_chunk_days(
                 retry_msg,
                 max_tokens=retry_tokens,
                 temperature=0.5,
+                user_id=user_id,
+                ai_feature=ai_feature,
+                endpoint=endpoint,
             )
             result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
             if result is not None:
@@ -1505,7 +1546,13 @@ def _generate_chunk_days(
             if attempt == 0:
                 continue
         try:
-            raw_days = _gemini_meal_chunk(system_prompt, user_msg)
+            raw_days = _gemini_meal_chunk(
+                system_prompt,
+                user_msg,
+                user_id=user_id,
+                ai_feature=ai_feature,
+                endpoint=endpoint,
+            )
             result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
             if result is not None:
                 _log_meal_day_counts(result, meals_per_day)
@@ -1514,7 +1561,13 @@ def _generate_chunk_days(
             retry_msg["URGENT_RETRY_REASON"] = (
                 f"You MUST return EXACTLY {meals_per_day} meals for EVERY day in {days}."
             )
-            raw_days = _gemini_meal_chunk(system_prompt, retry_msg)
+            raw_days = _gemini_meal_chunk(
+                system_prompt,
+                retry_msg,
+                user_id=user_id,
+                ai_feature=ai_feature,
+                endpoint=endpoint,
+            )
             result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
             if result is not None:
                 _log_meal_day_counts(result, meals_per_day)
@@ -1805,6 +1858,7 @@ def generate_week_plan(
         include_cheat_override=include_cheat,
         day_offset=chunk_days[0] - 1 if chunk_days else 0,
         has_prior_context=bool(prev_breakfasts or prev_dinners),
+        user_id=user.id,
     )
     if not new_days:
         raise RuntimeError("AI generation failed. Try again.")
@@ -1898,6 +1952,7 @@ def regenerate_week_plan(
             prev_dinners=prev_dinners or None,
             include_cheat_override=False,
             day_offset=from_day - 1,
+            user_id=user.id,
             has_prior_context=True,
         )
     except Exception as exc:
@@ -1981,6 +2036,7 @@ def generate_meal_plan(
             ctx=ctx,
             prev_breakfasts=prev_breakfasts or None,
             prev_dinners=prev_dinners or None,
+            user_id=user.id,
         )
         if chunk_source == "fallback":
             source = "fallback"
@@ -2224,6 +2280,9 @@ def regenerate_single_day(
             prev_dinners=prev_dinners or None,
             include_cheat_override=False,
             day_offset=day - 1,
+            user_id=user.id,
+            ai_feature="meal_day_regen",
+            endpoint="/api/meal-planner/regenerate-day",
             has_prior_context=True,
         )
     except Exception as gen_exc:
@@ -2348,6 +2407,7 @@ def regenerate_remaining_meals(
             prev_dinners=prev_dinners or None,
             include_cheat_override=include_cheat,
             day_offset=chunk_days[0] - 1 if chunk_days else 0,
+            user_id=user.id,
             has_prior_context=True,
         )
         for d in new_days:
@@ -2494,7 +2554,13 @@ def _get_fallback_swap(meal_type: str, target_cal: int, target_protein: int) -> 
     return meal
 
 
-def _groq_swap_meal(system_prompt: str, user_msg: dict[str, Any]) -> dict[str, Any]:
+def _groq_swap_meal(
+    system_prompt: str,
+    user_msg: dict[str, Any],
+    *,
+    user_id: int | None = None,
+) -> dict[str, Any]:
+    model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
     raw = post_json(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={
@@ -2502,7 +2568,7 @@ def _groq_swap_meal(system_prompt: str, user_msg: dict[str, Any]) -> dict[str, A
             "Authorization": f"Bearer {settings.GROQ_API_KEY}",
         },
         payload={
-            "model": settings.GROQ_MODEL or "llama-3.3-70b-versatile",
+            "model": model_name,
             "temperature": 0.7,
             "max_tokens": 500,
             "response_format": {"type": "json_object"},
@@ -2513,6 +2579,16 @@ def _groq_swap_meal(system_prompt: str, user_msg: dict[str, Any]) -> dict[str, A
         },
         timeout=45,
     )
+    try:
+        log_groq_call(
+            user_id=user_id,
+            feature="meal_swap",
+            model=model_name,
+            endpoint="/api/meal-planner/swap-meal",
+            response_json=raw,
+        )
+    except Exception:
+        pass
     content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
     parsed = json.loads(content.replace("```json", "").replace("```", "").strip())
     meal = parsed.get("meal") if isinstance(parsed, dict) else None
@@ -2583,7 +2659,7 @@ def swap_meal(
     replacement: dict[str, Any] | None = None
     try:
         if settings.GROQ_API_KEY:
-            replacement = _groq_swap_meal(system_prompt, user_msg)
+            replacement = _groq_swap_meal(system_prompt, user_msg, user_id=user.id)
     except Exception:
         replacement = None
 

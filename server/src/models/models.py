@@ -18,6 +18,10 @@ class User(Base):
     goal_tag = Column(String(128), default="Fat Loss")
     difficulty = Column(String(64), default="Beginner")
     created_at = Column(DateTime, default=datetime.utcnow)
+    plan_id = Column(String(32), nullable=False, default="free")
+    plan_expires_at = Column(DateTime(timezone=True), nullable=True)
+    trial_ends_at = Column(DateTime(timezone=True), nullable=True)
+    last_active_at = Column(DateTime(timezone=True), nullable=True)
 
     onboarding = relationship("UserOnboarding", back_populates="user", uselist=False)
 

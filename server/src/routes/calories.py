@@ -26,6 +26,8 @@ from src.schemas.calories_api import (
     WaterPatchRequest,
 )
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
+from src.services.food_image_utils import prepare_food_image_for_vision
+from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.utils.auth import get_current_user
 
 router = APIRouter()
@@ -667,7 +669,12 @@ def _normalize_food_analysis_payload(parsed: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _groq_food_image_analysis(base64: str, mime_type: str | None) -> dict[str, Any]:
+def _groq_food_image_analysis(
+    base64: str,
+    mime_type: str | None,
+    *,
+    user_id: int | None = None,
+) -> dict[str, Any]:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing on server")
     # Use a vision-capable model explicitly. settings.GROQ_MODEL may point to text-only models
@@ -724,6 +731,17 @@ def _groq_food_image_analysis(base64: str, mime_type: str | None) -> dict[str, A
             raise RuntimeError("Too many requests, try again in a moment.") from e
         raise RuntimeError(f"Groq HTTP {e.status_code}: {body[:260]}") from e
 
+    try:
+        log_groq_call(
+            user_id=user_id,
+            feature="food_photo_analysis",
+            model=model_name,
+            endpoint="/api/calories/foods/analyze-image",
+            response_json=payload,
+        )
+    except Exception:
+        pass
+
     raw = (payload.get("choices") or [{}])[0].get("message", {}).get("content", "")
     if not raw:
         raise RuntimeError("Groq returned empty content")
@@ -731,7 +749,13 @@ def _groq_food_image_analysis(base64: str, mime_type: str | None) -> dict[str, A
     return _normalize_food_analysis_payload(parsed)
 
 
-def _gemini_food_image_analysis(base64: str, mime_type: str | None) -> dict[str, Any]:
+def _gemini_food_image_analysis(
+    base64: str,
+    mime_type: str | None,
+    *,
+    user_id: int | None = None,
+    is_fallback: bool = False,
+) -> dict[str, Any]:
     if not settings.GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY missing on server")
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
@@ -792,6 +816,17 @@ def _gemini_food_image_analysis(base64: str, mime_type: str | None) -> dict[str,
 
     if payload is None:
         raise RuntimeError(f"No compatible Gemini model available. Last tried: {last_err or 'unknown'}")
+    try:
+        log_gemini_call(
+            user_id=user_id,
+            feature="food_photo_analysis",
+            model=model_name,
+            endpoint="/api/calories/foods/analyze-image",
+            response_json=payload,
+            is_fallback=is_fallback,
+        )
+    except Exception:
+        pass
     raw = (
         (payload.get("candidates") or [{}])[0]
         .get("content", {})
@@ -826,6 +861,7 @@ def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[
 
     payload: dict[str, Any] | None = None
     last_err: str | None = None
+    used_model = model_candidates[0] if model_candidates else "gemini-2.0-flash"
     for model_name in model_candidates:
         url = (
             f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?"
@@ -845,6 +881,7 @@ def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[
                 },
                 timeout=30,
             )
+            used_model = model_name
             break
         except ExternalHTTPError as e:
             if e.status_code == 404 and ("not found" in e.body.lower() or "not supported" in e.body.lower()):
@@ -854,6 +891,19 @@ def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[
 
     if payload is None:
         raise RuntimeError(f"No compatible Gemini model available. Last tried: {last_err or 'unknown'}")
+
+    try:
+        log_gemini_call(
+            db=db,
+            user_id=user.id,
+            feature="calorie_coach",
+            model=used_model,
+            endpoint="/api/calories/coach/insight",
+            response_json=payload,
+            is_fallback=True,
+        )
+    except Exception:
+        pass
 
     raw = (
         (payload.get("candidates") or [{}])[0]
@@ -887,6 +937,7 @@ def _groq_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[st
 
     payload: dict[str, Any] | None = None
     last_err: str | None = None
+    used_model = model_candidates[0] if model_candidates else "llama-3.3-70b-versatile"
     for model_name in model_candidates:
         try:
             payload = post_json(
@@ -909,6 +960,7 @@ def _groq_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[st
                 },
                 timeout=45,
             )
+            used_model = model_name
             break
         except ExternalHTTPError as e:
             if _groq_model_unavailable(e.status_code, e.body):
@@ -918,6 +970,18 @@ def _groq_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[st
 
     if payload is None:
         raise RuntimeError(f"No compatible Groq model available. Last tried: {last_err or 'unknown'}")
+
+    try:
+        log_groq_call(
+            db=db,
+            user_id=user.id,
+            feature="calorie_coach",
+            model=used_model,
+            endpoint="/api/calories/coach/insight",
+            response_json=payload,
+        )
+    except Exception:
+        pass
 
     raw = (payload.get("choices") or [{}])[0].get("message", {}).get("content", "")
     if not raw:
@@ -1430,17 +1494,34 @@ def analyze_food_image(
     _ = current_user
     _ = db
     try:
-        return _groq_food_image_analysis(payload.base64, payload.mime_type)
+        clean_base64, image_mime = prepare_food_image_for_vision(payload.base64, payload.mime_type)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+    try:
+        return _groq_food_image_analysis(clean_base64, image_mime, user_id=current_user.id)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     except RuntimeError as e:
         groq_error = str(e)
+        lowered = groq_error.lower()
+        if "invalid image" in lowered or "image data" in lowered:
+            raise HTTPException(
+                status_code=422,
+                detail="Could not read this photo. Try a JPEG or PNG image under 4MB.",
+            ) from e
         try:
-            return _gemini_food_image_analysis(payload.base64, payload.mime_type)
+            return _gemini_food_image_analysis(clean_base64, image_mime, user_id=current_user.id, is_fallback=True)
         except Exception as ge:
+            gemini_msg = str(ge)
+            if "429" in gemini_msg or "quota" in gemini_msg.lower():
+                raise HTTPException(
+                    status_code=503,
+                    detail="Food image analysis is temporarily unavailable. Please enter nutrition manually.",
+                ) from ge
             raise HTTPException(
                 status_code=502,
-                detail=f"Food image analysis failed: {groq_error} | Gemini fallback failed: {str(ge)}",
+                detail="Could not analyze this image right now. Please try again or enter values manually.",
             ) from ge
 
 
