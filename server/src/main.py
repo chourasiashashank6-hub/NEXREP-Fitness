@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from src.db.session import Base, SessionLocal, engine, get_db
 from src.models import admin_models  # noqa: F401 — registers admin analytics tables
+from src.models.admin_models import Subscription
 from src.core.config import settings
 from src.models.models import Activity, Meal, User, UserOnboarding, Workout, WorkoutCatalog
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
@@ -43,6 +44,7 @@ from src.services.food_catalog_service import ensure_food_catalog_schema, load_f
 from src.services.global_exercises_service import load_global_exercises_if_empty
 from src.services.workout_catalog_service import load_workout_catalog_if_empty
 from src.services.score_service import compute_discipline_score
+from src.services.subscription_service import activate_subscription
 from src.utils.auth import get_current_user
 from src.routes.calories import goal_progress_router, router as calories_api_router
 from src.routes.weight_log import router as weight_router
@@ -1736,6 +1738,53 @@ def profile(current_user: User = Depends(get_current_user), db: Session = Depend
         "difficulty": current_user.difficulty,
         "createdAt": current_user.created_at.isoformat() if current_user.created_at else None,
         "disciplineScore": score,
+        "plan_id": current_user.plan_id or "free",
+    }
+
+
+DEV_TEST_EMAIL = "shashank@gmail.com"
+
+
+@app.post("/dev/subscription-toggle")
+async def dev_subscription_toggle(
+    payload: dict,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    secret = request.headers.get("X-Dev-Secret", "")
+    if secret != settings.DEV_TOGGLE_SECRET:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    if current_user.email.lower() != DEV_TEST_EMAIL.lower():
+        raise HTTPException(status_code=403, detail="Not allowed for this user")
+
+    plan_id = payload.get("plan_id", "free")
+    billing_cycle = payload.get("billing_cycle", "monthly")
+
+    if plan_id == "free":
+        current_user.plan_id = "free"
+        current_user.plan_expires_at = None
+        current_user.trial_ends_at = None
+        now = datetime.utcnow()
+        db.query(Subscription).filter(
+            Subscription.user_id == current_user.id,
+            Subscription.status.in_(["active", "trial"]),
+        ).update({"status": "cancelled", "cancelled_at": now}, synchronize_session=False)
+    else:
+        activate_subscription(
+            db=db,
+            user_id=current_user.id,
+            plan_id=plan_id,
+            billing_cycle=billing_cycle,
+        )
+
+    db.commit()
+    db.refresh(current_user)
+    return {
+        "success": True,
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "plan_id": current_user.plan_id,
     }
 
 

@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_SECRET: str = ""
     RAZORPAY_WEBHOOK_SECRET: str = ""
     USD_TO_INR_RATE: float = 83.5
+    DEV_TOGGLE_SECRET: str = "nexrep-dev-toggle-2026"
 
     class Config:
         env_file = str(ENV_FILE)
