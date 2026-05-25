@@ -1,0 +1,6 @@
+# Code owners for pull-request reviews.
+# Replace @your-github-username with real GitHub handles (or @org/team-slug).
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+/mobile/    @your-github-username
+/server/    @your-github-username

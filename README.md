@@ -1,23 +1,33 @@
 # Calm Fitness App
 
-Full-stack local fitness application with:
+Full-stack fitness application:
 
-- React Native (Expo + TypeScript) mobile frontend
-- FastAPI backend
-- PostgreSQL database
-- JWT authentication
+- **React Native (Expo + TypeScript)** — `mobile/`
+- **FastAPI backend** — `server/`
+- **PostgreSQL** — `docker-compose.yml`
+- **JWT authentication** (+ optional Firebase sign-in)
 
-## Project Structure
+## Repository structure
 
-- `mobile/` React Native app with modular architecture:
-  - `src/components`
-  - `src/screens`
-  - `src/api`
-  - `src/store`
-  - `src/theme`
-  - `src/utils`
-- `server/` FastAPI backend:
-  - `src/core`, `src/db`, `src/models`, `src/schemas`, `src/services`, `src/utils`
+```text
+fitness/
+  mobile/              ← Expo React Native app
+  server/              ← FastAPI backend
+  docker-compose.yml   ← Local PostgreSQL
+  .env.example         ← All env vars (copy into server/.env and mobile/.env)
+  README.md
+  .github/
+    CODEOWNERS
+    branch-protection.md
+```
+
+Per-app env templates also live at `server/.env.example` and `mobile/.env.example`.
+
+## Collaboration
+
+- Single Git repository (no nested `mobile/.git`).
+- Branch from `main`, open PRs, require review before merge — see [.github/branch-protection.md](.github/branch-protection.md).
+- Never commit `.env` files; use [.env.example](.env.example) as reference.
 
 ## 1) Start PostgreSQL
 
@@ -27,7 +37,7 @@ From repository root:
 docker compose up -d
 ```
 
-## 2) Run Backend
+## 2) Run backend
 
 ```bash
 cd server
@@ -35,10 +45,11 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
+# Edit .env — set JWT_SECRET, DATABASE_URL, API keys as needed
 uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-If the **Calories** tab shows “Not Found” for `/api/calories`, an **old** API process is usually still bound to port **8000** (its OpenAPI at `http://localhost:8000/docs` will **not** list `POST /api/calories/daily-log`). Free the port and restart, for example:
+If the **Calories** tab shows “Not Found” for `/api/calories`, an old API process may still be on port **8000**. Restart:
 
 ```bash
 lsof -ti :8000 | xargs kill -9
@@ -47,7 +58,7 @@ cd server && source .venv/bin/activate && uvicorn src.main:app --host 0.0.0.0 --
 
 From the repo root, `bash start.sh` also frees port 8000 before starting the API.
 
-Seed demo data (optional, in another terminal):
+Seed demo data (optional):
 
 ```bash
 cd server
@@ -60,7 +71,7 @@ Demo credentials after seed:
 - Email: `demo@fit.com`
 - Password: `demo1234`
 
-## 3) Run Mobile App
+## 3) Run mobile app
 
 ```bash
 cd mobile
@@ -69,72 +80,47 @@ cp .env.example .env
 npm run ios
 ```
 
-For Android or Expo web:
+Android or Expo web:
 
 ```bash
 npm run android
 npm run web
 ```
 
-### Groq Food Photo Recognition Setup (Calorie Tab)
+### Food photo recognition
 
-1) Create a Groq API key from [console.groq.com](https://console.groq.com).
+Groq/Gemini keys belong in **`server/.env`** only. The app calls `POST /api/calories/foods/analyze-image` on your API.
 
-2) Add your key in `mobile/.env`:
+### Physical device / LAN testing
 
-```env
-GROQ_API_KEY=your_key_here
-EXPO_PUBLIC_GROQ_API_KEY=your_key_here
-```
-
-3) Install mobile dependencies (already added in this repo):
-
-```bash
-cd mobile
-npm install
-```
-
-4) iOS native sync after adding picker/plugin:
-
-```bash
-npx expo prebuild
-cd ios && pod install
-```
-
-5) Android native sync:
-
-```bash
-cd mobile
-npx expo prebuild
-```
-
-Expo config already includes camera + media permissions in `mobile/app.json`.
-
-If testing on a physical device, set `EXPO_PUBLIC_API_URL` in `mobile/.env` to your machine's LAN IP:
+Set in `mobile/.env`:
 
 ```env
 EXPO_PUBLIC_API_URL=http://192.168.x.x:8000
 ```
 
-## Implemented Features
+Android emulator: `http://10.0.2.2:8000`
 
-- Authentication: Login/Signup + JWT token persistence
-- Home dashboard: Summary cards, add meal/exercise activity, timeline
-- Workout tracker: Add workouts + history view
-- Calorie tracker: Meal logging + progress bar + optional macros
-- AI coach chat: Chat UI + backend recommendation response
-- Profile: Editable profile + discipline score circular indicator + logout
+## Mobile layout
 
-## API Endpoints
+- `src/components`, `src/screens`, `src/api`, `src/store`, `src/theme`, `src/utils`
 
-- `POST /signup`
-- `POST /login`
-- `GET /summary`
-- `POST /activity`
-- `POST /workout`
-- `GET /workout/history`
-- `POST /meal`
-- `GET /calories`
-- `POST /ai/chat`
-- `GET /profile`
-- `PUT /profile`
+## Server layout
+
+- `src/core`, `src/db`, `src/models`, `src/schemas`, `src/services`, `src/utils`, `src/routes`
+
+## Features
+
+- Authentication: login/signup, JWT persistence, Firebase optional
+- Home dashboard, workouts, calorie tracking, AI coach
+- Profile, subscriptions (Razorpay hooks), admin analytics
+
+## API endpoints (sample)
+
+- `POST /signup`, `POST /login`
+- `GET /summary`, `POST /workout`, `GET /workout/history`
+- `GET /calories`, `POST /api/calories/*`
+- `GET /profile`, `PUT /profile`
+- `POST /ai/chat`, admin routes under `/api/admin`
+
+Interactive docs: `http://127.0.0.1:8000/docs`

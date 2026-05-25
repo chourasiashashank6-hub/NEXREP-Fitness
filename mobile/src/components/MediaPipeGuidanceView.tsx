@@ -1,0 +1,1521 @@
+import { memo, useEffect, useRef } from "react";
+import { Platform, StyleSheet, View } from "react-native";
+import { WebView } from "react-native-webview";
+import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
+
+export type MediaPipeGuidanceViewProps = {
+  selectedExerciseName?: string;
+  isActive?: boolean;
+  onReady?: () => void;
+  onError?: (message: string) => void;
+};
+
+type JointRule = {
+  label: string;
+  a: number;
+  b: number;
+  c: number;
+  min: number;
+  max: number;
+};
+
+type ExerciseRule = {
+  label: string;
+  joints: JointRule[];
+};
+
+type MovementConfig = {
+  primaryJoint: "elbow" | "knee" | "hip" | "shoulder" | "ankle";
+  downThreshold: number;
+  upThreshold: number;
+  downWhenAngleIsLower: boolean;
+};
+
+type MediaPipeExerciseRecord = {
+  movementFamily?: string;
+  exerciseName?: string;
+  bodyPosture?: string;
+  exerciseRule?: ExerciseRule | null;
+  movementConfig?: {
+    primaryJoint?: string | null;
+    downThreshold?: number | null;
+    upThreshold?: number | null;
+    downWhenAngleIsLower?: boolean | null;
+  } | null;
+  trainerChecks?: {
+    strict?: boolean;
+    notes?: string;
+  };
+};
+
+const normalizeExerciseName = (value?: string) =>
+  (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const containsAny = (name: string, terms: string[]) => terms.some((term) => name.includes(term));
+
+let cachedMediaPipeRecords: MediaPipeExerciseRecord[] | null = null;
+
+const getMediaPipeRecords = (): MediaPipeExerciseRecord[] => {
+  if (cachedMediaPipeRecords) return cachedMediaPipeRecords;
+  try {
+    const data = require("../constants/MediaPipeExercisesData.json") as { records?: unknown[] };
+    cachedMediaPipeRecords = Array.isArray(data?.records) ? (data.records as MediaPipeExerciseRecord[]) : [];
+  } catch {
+    cachedMediaPipeRecords = [];
+  }
+  return cachedMediaPipeRecords;
+};
+
+const findExerciseRecord = (selectedExerciseName?: string): MediaPipeExerciseRecord | null => {
+  const normalizedTarget = normalizeExerciseName(selectedExerciseName);
+  if (!normalizedTarget) return null;
+  const records = getMediaPipeRecords();
+  const exact = records.find((record) => normalizeExerciseName(record.exerciseName) === normalizedTarget);
+  if (exact) return exact;
+  const partial = records.find((record) => {
+    const candidate = normalizeExerciseName(record.exerciseName);
+    return candidate && (candidate.includes(normalizedTarget) || normalizedTarget.includes(candidate));
+  });
+  return partial || null;
+};
+
+function toBodyPostureRequirement(selectedExerciseName?: string, record?: MediaPipeExerciseRecord | null): string {
+  const postureValue = String(record?.bodyPosture || "").trim().toLowerCase();
+  if (postureValue === "stand_side_facing")
+    return "Body posture: Stand/position side-faced to camera";
+  if (postureValue === "sit_front_facing")
+    return "Body posture: Sit on a chair/bench, front-facing";
+  if (postureValue === "stand_front_facing")
+    return "Body posture: Stand still, front-facing";
+
+  const name = normalizeExerciseName(selectedExerciseName);
+  if (!name) return "Body posture: Stand still, front-facing";
+
+  if (containsAny(name, [
+    "seated cable row", "seated calf raise", "seated dumbbell press",
+    "machine chest press", "machine row", "machine shoulder press",
+    "machine standing", "pec deck", "lat pulldown", "leg extension",
+    "leg curl", "leg press", "concentration curl", "preacher curl",
+    "spider curl", "incline dumbbell curl", "assault bike",
+    "barbell z-press", "z press",
+  ])) return "Body posture: Sit on a chair/bench, front-facing";
+
+  if (containsAny(name, [
+    "squat", "lunge", "deadlift", "romanian", "rack pull",
+    "hip thrust", "glute bridge", "kettlebell swing", "swing",
+    "step up", "wall sit", "jump squat", "jump lunge",
+    "bulgarian split", "push up", "push-up", "plank",
+    "mountain climber", "burpee", "ab wheel", "bird dog",
+    "sled push", "box jump", "depth jump", "pistol squat",
+    "nordic", "dips", "inverted row", "renegade row",
+  ])) return "Body posture: Stand/position side-faced to camera";
+
+  return "Body posture: Stand still, front-facing";
+}
+
+function toExerciseRule(selectedExerciseName?: string, record?: MediaPipeExerciseRecord | null): ExerciseRule | null {
+  if (record?.exerciseRule?.label && Array.isArray(record.exerciseRule.joints) && record.exerciseRule.joints.length > 0) {
+    return record.exerciseRule;
+  }
+  const name = normalizeExerciseName(selectedExerciseName);
+  if (!name) return null;
+
+  if (containsAny(name, ["curl", "hammer", "preacher", "zottman", "spider", "reverse barbell curl", "barbell 21s"])) {
+    return {
+      label: "BICEP CURL",
+      joints: [
+        { label: "L Elbow", a: 11, b: 13, c: 15, min: 30, max: 160 },
+        { label: "R Elbow", a: 12, b: 14, c: 16, min: 30, max: 160 },
+      ],
+    };
+  }
+  // ── Lunge (must come before squat) ──────────────────────────────────────
+  if (
+    containsAny(name, [
+      "lunge", "split squat", "walking lunge", "jump lunge",
+      "lateral lunge", "reverse lunge", "curtsy lunge",
+    ])
+  ) {
+    return {
+      label: "LUNGE",
+      joints: [
+        { label: "L Knee", a: 23, b: 25, c: 27, min: 80, max: 100 },
+        { label: "R Knee", a: 24, b: 26, c: 28, min: 80, max: 100 },
+        { label: "L Hip", a: 11, b: 23, c: 25, min: 55, max: 175 },
+        { label: "R Hip", a: 12, b: 24, c: 26, min: 55, max: 175 },
+      ],
+    };
+  }
+
+  // ── Squat ────────────────────────────────────────────────────────────────
+  if (
+    containsAny(name, [
+      "squat", "wall sit", "step up", "jump squat", "pistol",
+      "zercher", "hack squat", "leg press", "goblet",
+      "overhead squat", "sumo squat",
+    ])
+  ) {
+    return {
+      label: "SQUAT",
+      joints: [
+        { label: "L Knee", a: 23, b: 25, c: 27, min: 70, max: 110 },
+        { label: "R Knee", a: 24, b: 26, c: 28, min: 70, max: 110 },
+        { label: "L Hip", a: 11, b: 23, c: 25, min: 60, max: 120 },
+        { label: "R Hip", a: 12, b: 24, c: 26, min: 60, max: 120 },
+      ],
+    };
+  }
+  if (
+    containsAny(name, [
+      "push up",
+      "bench press",
+      "chest press",
+      "chest fly",
+      "crossover",
+      "pec deck",
+      "dip",
+      "floor press",
+      "jm press",
+      "close grip bench",
+      "decline bench",
+      "incline bench",
+      "cable chest fly",
+    ])
+  ) {
+    return {
+      label: "PUSH-UP",
+      joints: [
+        { label: "L Elbow", a: 11, b: 13, c: 15, min: 75, max: 125 },
+        { label: "R Elbow", a: 12, b: 14, c: 16, min: 75, max: 125 },
+        { label: "L Shoulder", a: 13, b: 11, c: 23, min: 55, max: 120 },
+        { label: "R Shoulder", a: 14, b: 12, c: 24, min: 55, max: 120 },
+      ],
+    };
+  }
+  if (
+    containsAny(name, [
+      "deadlift",
+      "romanian deadlift",
+      "rack pull",
+      "hip thrust",
+      "glute bridge",
+      "swing",
+      "good morning",
+      "suitcase deadlift",
+    ])
+  ) {
+    return {
+      label: "HIP HINGE",
+      joints: [
+        { label: "L Knee", a: 23, b: 25, c: 27, min: 140, max: 178 },
+        { label: "R Knee", a: 24, b: 26, c: 28, min: 140, max: 178 },
+        { label: "L Hip", a: 11, b: 23, c: 25, min: 35, max: 110 },
+        { label: "R Hip", a: 12, b: 24, c: 26, min: 35, max: 110 },
+      ],
+    };
+  }
+  if (
+    containsAny(name, [
+      "shoulder press",
+      "arnold press",
+      "overhead press",
+      "push press",
+      "thruster",
+      "z press",
+      "clean and press",
+      "seated dumbbell press",
+      "heavy overhead press",
+      "explosive shoulder press",
+    ])
+  ) {
+    return {
+      label: name.includes("arnold") ? "ARNOLD PRESS" : "SHOULDER PRESS",
+      joints: [
+        { label: "L Elbow", a: 11, b: 13, c: 15, min: 80, max: 100 },
+        { label: "R Elbow", a: 12, b: 14, c: 16, min: 80, max: 100 },
+        { label: "L Shoulder", a: 13, b: 11, c: 23, min: 80, max: 120 },
+        { label: "R Shoulder", a: 14, b: 12, c: 24, min: 80, max: 120 },
+      ],
+    };
+  }
+  if (
+    containsAny(name, [
+      "row",
+      "pulldown",
+      "pull up",
+      "chin up",
+      "muscle up",
+      "lat ",
+      "face pull",
+      "rear delt",
+      "upright row",
+      "pendlay",
+      "seal row",
+      "meadows row",
+      "t bar row",
+      "yates row",
+      "inverted row",
+      "straight arm pulldown",
+    ])
+  ) {
+    return {
+      label: "PULL",
+      joints: [
+        { label: "L Elbow", a: 11, b: 13, c: 15, min: 45, max: 150 },
+        { label: "R Elbow", a: 12, b: 14, c: 16, min: 45, max: 150 },
+        { label: "L Shoulder", a: 13, b: 11, c: 23, min: 40, max: 120 },
+        { label: "R Shoulder", a: 14, b: 12, c: 24, min: 40, max: 120 },
+      ],
+    };
+  }
+  if (
+    containsAny(name, [
+      "tricep",
+      "triceps",
+      "skull crusher",
+      "rope pushdown",
+      "overhead cable extension",
+      "kickback",
+      "weighted tricep dips",
+      "close grip bench",
+      "jm press",
+    ])
+  ) {
+    return {
+      label: "TRICEPS",
+      joints: [
+        { label: "L Elbow", a: 11, b: 13, c: 15, min: 55, max: 165 },
+        { label: "R Elbow", a: 12, b: 14, c: 16, min: 55, max: 165 },
+      ],
+    };
+  }
+  if (containsAny(name, ["calf raise", "tibialis raise", "calf jump"])) {
+    return {
+      label: "CALVES",
+      joints: [
+        { label: "L Knee", a: 23, b: 25, c: 27, min: 150, max: 180 },
+        { label: "R Knee", a: 24, b: 26, c: 28, min: 150, max: 180 },
+        { label: "L Ankle", a: 25, b: 27, c: 29, min: 75, max: 130 },
+        { label: "R Ankle", a: 26, b: 28, c: 30, min: 75, max: 130 },
+      ],
+    };
+  }
+  if (
+    containsAny(name, [
+      "plank",
+      "dead bug",
+      "bird dog",
+      "hollow",
+      "ab wheel",
+      "crunch",
+      "v up",
+      "leg raise",
+      "toes to bar",
+      "russian twist",
+      "windshield wiper",
+      "dragon flag",
+      "superman hold",
+      "pallof press",
+      "woodchop",
+      "flutter kicks",
+      "bicycle crunch",
+    ])
+  ) {
+    return {
+      label: "CORE",
+      joints: [
+        { label: "L Hip", a: 11, b: 23, c: 25, min: 45, max: 160 },
+        { label: "R Hip", a: 12, b: 24, c: 26, min: 45, max: 160 },
+        { label: "L Shoulder", a: 13, b: 11, c: 23, min: 40, max: 150 },
+        { label: "R Shoulder", a: 14, b: 12, c: 24, min: 40, max: 150 },
+      ],
+    };
+  }
+  if (
+    containsAny(name, [
+      "burpee",
+      "jumping jack",
+      "mountain climber",
+      "sprint",
+      "stair running",
+      "jump rope",
+      "assault bike",
+      "battle rope",
+      "sled push",
+      "man maker",
+      "box jump",
+      "depth jump",
+      "tuck jump",
+      "jump squat",
+      "power clean",
+      "clean",
+      "snatch",
+      "farmer",
+      "carry",
+      "windmill",
+    ])
+  ) {
+    return {
+      label: "DYNAMIC FULL BODY",
+      joints: [
+        { label: "L Knee", a: 23, b: 25, c: 27, min: 70, max: 175 },
+        { label: "R Knee", a: 24, b: 26, c: 28, min: 70, max: 175 },
+        { label: "L Elbow", a: 11, b: 13, c: 15, min: 35, max: 175 },
+        { label: "R Elbow", a: 12, b: 14, c: 16, min: 35, max: 175 },
+      ],
+    };
+  }
+  return {
+    label: selectedExerciseName?.toUpperCase() || "WORKOUT",
+    joints: [
+      { label: "L Knee", a: 23, b: 25, c: 27, min: 70, max: 175 },
+      { label: "R Knee", a: 24, b: 26, c: 28, min: 70, max: 175 },
+      { label: "L Elbow", a: 11, b: 13, c: 15, min: 35, max: 175 },
+      { label: "R Elbow", a: 12, b: 14, c: 16, min: 35, max: 175 },
+    ],
+  };
+}
+
+function toMovementConfig(selectedExerciseName?: string, record?: MediaPipeExerciseRecord | null): MovementConfig | null {
+  const rawPrimary = String(record?.movementConfig?.primaryJoint || "").trim().toLowerCase();
+  const allowedPrimary = rawPrimary === "elbow" || rawPrimary === "knee" || rawPrimary === "hip" || rawPrimary === "shoulder" || rawPrimary === "ankle";
+  if (
+    allowedPrimary &&
+    typeof record?.movementConfig?.downThreshold === "number" &&
+    typeof record?.movementConfig?.upThreshold === "number" &&
+    typeof record?.movementConfig?.downWhenAngleIsLower === "boolean"
+  ) {
+    return {
+      primaryJoint: rawPrimary as MovementConfig["primaryJoint"],
+      downThreshold: record.movementConfig.downThreshold,
+      upThreshold: record.movementConfig.upThreshold,
+      downWhenAngleIsLower: record.movementConfig.downWhenAngleIsLower,
+    };
+  }
+  const name = normalizeExerciseName(selectedExerciseName);
+  if (!name) return null;
+  // Curl-like reps: down position = arm extended (higher elbow angle).
+  if (containsAny(name, ["curl", "hammer", "preacher", "zottman", "spider", "barbell 21s"])) {
+    return { primaryJoint: "elbow", downThreshold: 155, upThreshold: 70, downWhenAngleIsLower: false };
+  }
+  // Triceps-like reps: down position = elbow flexed.
+  if (containsAny(name, ["tricep", "triceps", "pushdown", "kickback", "skull crusher"])) {
+    return { primaryJoint: "elbow", downThreshold: 75, upThreshold: 150, downWhenAngleIsLower: true };
+  }
+  if (containsAny(name, ["squat", "lunge", "step up", "wall sit", "jump squat", "pistol", "leg press"])) {
+    return { primaryJoint: "knee", downThreshold: 105, upThreshold: 155, downWhenAngleIsLower: true };
+  }
+  if (containsAny(name, ["deadlift", "romanian", "rack pull", "hip thrust", "glute bridge", "swing"])) {
+    return { primaryJoint: "knee", downThreshold: 110, upThreshold: 165, downWhenAngleIsLower: true };
+  }
+  if (containsAny(name, ["push up", "bench press", "chest press", "dip", "chest fly", "pec deck"])) {
+    return { primaryJoint: "elbow", downThreshold: 95, upThreshold: 155, downWhenAngleIsLower: true };
+  }
+  if (
+    containsAny(name, [
+      "shoulder press",
+      "arnold press",
+      "overhead press",
+      "push press",
+      "thruster",
+      "z press",
+      "clean and press",
+    ])
+  ) {
+    return { primaryJoint: "elbow", downThreshold: 95, upThreshold: 150, downWhenAngleIsLower: true };
+  }
+  if (containsAny(name, ["row", "pulldown", "pull up", "chin up", "muscle up", "face pull", "rear delt fly"])) {
+    return { primaryJoint: "elbow", downThreshold: 70, upThreshold: 150, downWhenAngleIsLower: true };
+  }
+  if (containsAny(name, ["calf raise", "tibialis raise", "calf jump"])) {
+    return { primaryJoint: "knee", downThreshold: 150, upThreshold: 175, downWhenAngleIsLower: true };
+  }
+  if (containsAny(name, ["burpee", "mountain climber", "jumping jack", "tuck jump", "box jump", "depth jump"])) {
+    return { primaryJoint: "knee", downThreshold: 95, upThreshold: 165, downWhenAngleIsLower: true };
+  }
+  return null;
+}
+
+function isCardioOrMobilityExercise(
+  record: MediaPipeExerciseRecord | null,
+  name?: string,
+): boolean {
+  if (record?.movementFamily === "cardio_or_mobility") return true;
+  const n = (name || "").trim().toLowerCase();
+  return [
+    "treadmill", "cycling", "elliptical", "rowing machine",
+    "stationary", "brisk walking", "outdoor cycling",
+    "stair climbing", "skipping", "shadow boxing",
+    "agility ladder", "lateral shuffle", "carioca",
+    "hurdle drill", "sprint drill", "reactive cone",
+    "resisted sprint", "wall drill", "cat-cow", "inchworm",
+    "hip 90", "hip circle", "ankle rotation", "arm circle",
+    "neck roll", "shoulder roll", "leg swing", "thoracic",
+    "torso twist", "plank to downward", "band resisted hip",
+    "banded pull-apart",
+  ].some(kw => n.includes(kw));
+}
+
+function buildHtmlSource(
+  exerciseRule: ExerciseRule | null,
+  movementConfig: MovementConfig | null,
+  trainerNote: string,
+  isCardioOrMobility: boolean,
+): string {
+  const ruleJson   = JSON.stringify(exerciseRule);
+  const configJson = JSON.stringify(movementConfig);
+  const noteJson   = JSON.stringify(trainerNote);
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+    <style>
+      html,body{margin:0;padding:0;width:100%;height:100%;background:#050b16;overflow:hidden}
+      #root{position:relative;width:100%;height:100%}
+      video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+      #badge{position:absolute;left:10px;top:10px;z-index:12;background:rgba(0,0,0,.65);
+        color:#fff;border-radius:10px;padding:6px 10px;
+        font:800 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      #posture{position:absolute;left:10px;top:40px;z-index:12;background:rgba(0,0,0,.65);
+        color:#fff;border-radius:10px;padding:7px 10px;
+        font:700 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      #notes{position:absolute;left:10px;top:70px;z-index:12;background:rgba(15,23,42,.78);
+        color:#fff;border-radius:10px;padding:6px 10px;max-width:92%;
+        font:600 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      #hint{position:absolute;left:12px;right:12px;bottom:12px;z-index:10;
+        border-radius:10px;padding:8px 10px;text-align:center;color:#fff;
+        background:rgba(0,0,0,.55);
+        font:700 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      #cardio-banner{position:absolute;left:0;right:0;bottom:0;z-index:20;
+        background:rgba(15,23,42,.85);color:#fff;padding:14px 16px;text-align:center;
+        font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+        display:${isCardioOrMobility ? "block" : "none"}}
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+      <div id="badge">Exercise: Detecting...</div>
+      <div id="posture">Posture: --</div>
+      <div id="notes"></div>
+      <div id="hint">Align your full body in frame</div>
+      <div id="cardio-banner">Posture awareness mode — no form scoring for this exercise type</div>
+    </div>
+    <script type="module">
+      import{FilesetResolver,PoseLandmarker}from"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+      const EXERCISE_RULE=${ruleJson};
+      const MOVEMENT_CONFIG=${configJson};
+      const TRAINER_NOTE=${noteJson};
+      const IS_CARDIO=${isCardioOrMobility};
+
+      const badgeEl=document.getElementById("badge");
+      const postureEl=document.getElementById("posture");
+      const notesEl=document.getElementById("notes");
+      const hintEl=document.getElementById("hint");
+      const video=document.getElementById("video");
+      const canvas=document.getElementById("overlay");
+      const ctx=canvas.getContext("2d");
+
+      notesEl.textContent=TRAINER_NOTE?"Notes: "+TRAINER_NOTE:"Notes: Maintain controlled movement";
+
+      const post=(type,payload={})=>{
+        try{window.ReactNativeWebView?.postMessage(JSON.stringify({type,...payload}))}catch{}
+      };
+
+      let poseLandmarker=null,rafId=null,stream=null,lastVideoTime=-1;
+      let repCount=0,phase="idle",reachedDown=false,prevLandmarks=null;
+      const SMOOTH_ALPHA=0.55;
+
+      const POSE_CONNECTIONS=[[11,12],[11,13],[13,15],[12,14],[14,16],
+        [11,23],[12,24],[23,24],[23,25],[25,27],[27,29],[24,26],[26,28],[28,30]];
+      const DISPLAY_LANDMARKS=[11,12,13,14,15,16,23,24,25,26,27,28,29,30];
+
+      const resizeCanvas=()=>{
+        const w=video.videoWidth||video.clientWidth||720;
+        const h=video.videoHeight||video.clientHeight||1280;
+        if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
+      };
+
+      const getVideoRect=()=>{
+        const cw=canvas.width||720,ch=canvas.height||1280;
+        const vw=video.videoWidth||720,vh=video.videoHeight||1280;
+        const ca=cw/ch,va=vw/vh;
+        if(va>ca){const h=ch,w=h*va;return{x:(cw-w)/2,y:0,width:w,height:h}}
+        const w=cw,h=w/va;return{x:0,y:(ch-h)/2,width:w,height:h};
+      };
+
+      const toPixel=lm=>{const r=getVideoRect();return{x:r.x+lm.x*r.width,y:r.y+lm.y*r.height}};
+
+      const smoothLandmarks=landmarks=>{
+        if(!prevLandmarks||prevLandmarks.length!==landmarks.length){
+          prevLandmarks=landmarks.map(l=>({...l}));return landmarks;
+        }
+        const s=landmarks.map((l,i)=>{const p=prevLandmarks[i];return{
+          ...l,x:SMOOTH_ALPHA*l.x+(1-SMOOTH_ALPHA)*p.x,
+          y:SMOOTH_ALPHA*l.y+(1-SMOOTH_ALPHA)*p.y,
+          z:SMOOTH_ALPHA*l.z+(1-SMOOTH_ALPHA)*p.z,visibility:l.visibility
+        }});prevLandmarks=s;return s;
+      };
+
+      const calcAngle=(a,b,c)=>{
+        const bax=a.x-b.x,bay=a.y-b.y,bcx=c.x-b.x,bcy=c.y-b.y;
+        return(Math.atan2(Math.abs(bax*bcy-bay*bcx),bax*bcx+bay*bcy)*180)/Math.PI;
+      };
+
+      const isCentered=lms=>{
+        const xs=lms.map(l=>l.x),ys=lms.map(l=>l.y);
+        const cx=(Math.min(...xs)+Math.max(...xs))/2;
+        const cy=(Math.min(...ys)+Math.max(...ys))/2;
+        return cx>0.32&&cx<0.68&&cy>0.22&&cy<0.78;
+      };
+
+      const getPrimaryAngle=landmarks=>{
+        if(!MOVEMENT_CONFIG)return null;
+        let l=NaN,r=NaN;const j=MOVEMENT_CONFIG.primaryJoint;
+        if(j==="elbow"){
+          l=landmarks[11]&&landmarks[13]&&landmarks[15]?calcAngle(landmarks[11],landmarks[13],landmarks[15]):NaN;
+          r=landmarks[12]&&landmarks[14]&&landmarks[16]?calcAngle(landmarks[12],landmarks[14],landmarks[16]):NaN;
+        }else if(j==="knee"){
+          l=landmarks[23]&&landmarks[25]&&landmarks[27]?calcAngle(landmarks[23],landmarks[25],landmarks[27]):NaN;
+          r=landmarks[24]&&landmarks[26]&&landmarks[28]?calcAngle(landmarks[24],landmarks[26],landmarks[28]):NaN;
+        }else if(j==="hip"){
+          l=landmarks[11]&&landmarks[23]&&landmarks[25]?calcAngle(landmarks[11],landmarks[23],landmarks[25]):NaN;
+          r=landmarks[12]&&landmarks[24]&&landmarks[26]?calcAngle(landmarks[12],landmarks[24],landmarks[26]):NaN;
+        }else if(j==="shoulder"){
+          l=landmarks[13]&&landmarks[11]&&landmarks[23]?calcAngle(landmarks[13],landmarks[11],landmarks[23]):NaN;
+          r=landmarks[14]&&landmarks[12]&&landmarks[24]?calcAngle(landmarks[14],landmarks[12],landmarks[24]):NaN;
+        }else if(j==="ankle"){
+          l=landmarks[25]&&landmarks[27]&&landmarks[29]?calcAngle(landmarks[25],landmarks[27],landmarks[29]):NaN;
+          r=landmarks[26]&&landmarks[28]&&landmarks[30]?calcAngle(landmarks[26],landmarks[28],landmarks[30]):NaN;
+        }
+        const vals=[l,r].filter(v=>Number.isFinite(v));
+        return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+      };
+
+      const updateMovement=primaryAngle=>{
+        if(!MOVEMENT_CONFIG||primaryAngle===null)return{phase,reps:repCount,dynamicOk:true};
+        if(MOVEMENT_CONFIG.downWhenAngleIsLower){
+          if(primaryAngle<=MOVEMENT_CONFIG.downThreshold){phase="down";reachedDown=true}
+          else if(primaryAngle>=MOVEMENT_CONFIG.upThreshold){
+            phase="up";if(reachedDown){repCount++;reachedDown=false}
+          }
+        }else{
+          if(primaryAngle>=MOVEMENT_CONFIG.downThreshold){phase="down";reachedDown=true}
+          else if(primaryAngle<=MOVEMENT_CONFIG.upThreshold){
+            phase="up";if(reachedDown){repCount++;reachedDown=false}
+          }
+        }
+        const dynamicOk=MOVEMENT_CONFIG.downWhenAngleIsLower
+          ?(phase==="down"?primaryAngle<=MOVEMENT_CONFIG.downThreshold+20
+            :phase==="up"?primaryAngle>=MOVEMENT_CONFIG.upThreshold-20:true)
+          :(phase==="down"?primaryAngle>=MOVEMENT_CONFIG.downThreshold-20
+            :phase==="up"?primaryAngle<=MOVEMENT_CONFIG.upThreshold+20:true);
+        return{phase,reps:repCount,dynamicOk};
+      };
+
+      const evaluatePosture=(landmarks,primaryAngle,movementPhase)=>{
+        if(!EXERCISE_RULE||!EXERCISE_RULE.joints.length)
+          return{isCorrect:false,status:"Detecting...",correction:"Select exercise for form feedback"};
+        const tol=12;
+        const results=EXERCISE_RULE.joints.map(rule=>{
+          const a=landmarks[rule.a],b=landmarks[rule.b],c=landmarks[rule.c];
+          if(!a||!b||!c)return{label:rule.label,angle:NaN,ok:false};
+          const angle=calcAngle(a,b,c);
+          let{min,max}=rule;
+          if((EXERCISE_RULE.label==="ARNOLD PRESS"||EXERCISE_RULE.label==="SHOULDER PRESS")&&
+            primaryAngle!==null&&(rule.label.includes("Elbow")||rule.label.includes("Shoulder"))){
+            if(MOVEMENT_CONFIG&&primaryAngle>=MOVEMENT_CONFIG.upThreshold-10){min=145;max=180}
+            else if(MOVEMENT_CONFIG&&primaryAngle<=MOVEMENT_CONFIG.downThreshold+10){min=75;max=120}
+            else{min=70;max=180}
+          }
+          if(EXERCISE_RULE.label==="BICEP CURL"&&primaryAngle!==null&&rule.label.includes("Elbow")){
+            if(movementPhase==="down"){min=145;max=180}
+            else if(movementPhase==="up"){min=15;max=85}
+            else{min=15;max=180}
+          }
+          if((EXERCISE_RULE.label==="SQUAT"||EXERCISE_RULE.label==="LUNGE")&&
+            primaryAngle!==null&&rule.label.includes("Hip")){
+            if(MOVEMENT_CONFIG&&primaryAngle<=MOVEMENT_CONFIG.downThreshold+15){min=55;max=130}
+            else if(MOVEMENT_CONFIG&&primaryAngle>=MOVEMENT_CONFIG.upThreshold-15){min=145;max=180}
+            else{min=55;max=180}
+          }
+          if(EXERCISE_RULE.label==="HIP HINGE"&&primaryAngle!==null&&rule.label.includes("Hip")){
+            if(MOVEMENT_CONFIG&&primaryAngle<=MOVEMENT_CONFIG.downThreshold+15){min=35;max=90}
+            else if(MOVEMENT_CONFIG&&primaryAngle>=MOVEMENT_CONFIG.upThreshold-15){min=155;max=180}
+            else{min=35;max=180}
+          }
+          return{label:rule.label,angle,min,max,ok:angle>=min-tol&&angle<=max+tol};
+        });
+        const valid=results.filter(r=>Number.isFinite(r.angle));
+        if(!valid.length)return{isCorrect:false,status:"Joints not visible",correction:"Step back so full body is visible"};
+        const isCorrect=valid.every(r=>r.ok);
+        const firstWrong=valid.find(r=>!r.ok);
+        let correction="Maintain current form";
+        if(firstWrong){
+          correction=firstWrong.angle<firstWrong.min
+            ?firstWrong.label+": bend more ("+Math.round(firstWrong.angle)+"°)"
+            :firstWrong.label+": straighten ("+Math.round(firstWrong.angle)+"°)";
+        }
+        const summary=valid.slice(0,2).map(r=>r.label+" "+Math.round(r.angle)+"° "+(r.ok?"✓":"✗")).join(" | ");
+        return{isCorrect,status:isCorrect?"Right posture":"Wrong posture",
+          detail:EXERCISE_RULE.label+" · "+summary,correction};
+      };
+
+      const drawFrame=ok=>{
+        const rect=getVideoRect();
+        ctx.save();
+        ctx.strokeStyle=ok?"rgba(34,197,94,.95)":"rgba(239,68,68,.95)";ctx.lineWidth=3;
+        const fw=rect.width*.62,fh=rect.height*.72;
+        ctx.strokeRect(rect.x+(rect.width-fw)/2,rect.y+(rect.height-fh)/2,fw,fh);
+        ctx.strokeStyle="rgba(255,255,255,.45)";ctx.lineWidth=1;ctx.beginPath();
+        ctx.moveTo(rect.x+rect.width/2,rect.y);ctx.lineTo(rect.x+rect.width/2,rect.y+rect.height);
+        ctx.moveTo(rect.x,rect.y+rect.height/2);ctx.lineTo(rect.x+rect.width,rect.y+rect.height/2);
+        ctx.stroke();ctx.restore();
+      };
+
+      const drawSkeleton=(landmarks,ok)=>{
+        ctx.save();ctx.strokeStyle=ok?"rgba(34,197,94,0.86)":"rgba(239,68,68,0.86)";ctx.lineWidth=2;
+        for(const[ai,bi]of POSE_CONNECTIONS){
+          const a=landmarks[ai],b=landmarks[bi];
+          if(!a||!b||(a.visibility??1)<0.4||(b.visibility??1)<0.4)continue;
+          const pa=toPixel(a),pb=toPixel(b);
+          ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();
+        }
+        ctx.restore();
+      };
+
+      const drawLandmarks=(landmarks,ok)=>{
+        ctx.save();
+        ctx.fillStyle=ok?"rgba(34,197,94,0.96)":"rgba(239,68,68,0.96)";
+        ctx.strokeStyle="rgba(15,23,42,0.9)";ctx.lineWidth=1.5;
+        for(const idx of DISPLAY_LANDMARKS){
+          const lm=landmarks[idx];
+          if(!lm||(lm.visibility??1)<0.4)continue;
+          const p=toPixel(lm);
+          ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,Math.PI*2);ctx.fill();ctx.stroke();
+        }
+        ctx.restore();
+      };
+
+      const detectLoop=()=>{
+        if(!poseLandmarker)return;
+        if(video.currentTime===lastVideoTime){rafId=requestAnimationFrame(detectLoop);return}
+        lastVideoTime=video.currentTime;
+        resizeCanvas();
+        const result=poseLandmarker.detectForVideo(video,performance.now());
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const rawLm=result?.landmarks?.[0];
+        const landmarks=rawLm?.length?smoothLandmarks(rawLm):null;
+
+        if(landmarks?.length){
+          const centered=isCentered(landmarks);
+          if(IS_CARDIO){
+            drawFrame(centered);
+            drawSkeleton(landmarks,centered);
+            drawLandmarks(landmarks,centered);
+            badgeEl.textContent="Posture awareness mode";
+            postureEl.textContent="Posture: "+(centered?"Centred":"Adjust position");
+            postureEl.style.background=centered?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
+            hintEl.textContent=centered?"Keep your full body in frame":"Centre your body in the frame";
+            hintEl.style.background=centered?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
+          }else{
+            const primaryAngle=getPrimaryAngle(landmarks);
+            const movement=updateMovement(primaryAngle);
+            const posture=evaluatePosture(landmarks,primaryAngle,movement.phase);
+            const lineIsGood=EXERCISE_RULE?posture.isCorrect&&movement.dynamicOk:centered;
+            const label=EXERCISE_RULE?EXERCISE_RULE.label:"UNKNOWN";
+            drawFrame(lineIsGood);drawSkeleton(landmarks,lineIsGood);drawLandmarks(landmarks,lineIsGood);
+            badgeEl.textContent="Exercise: "+label+" · Reps: "+movement.reps;
+            postureEl.textContent="Posture: "+posture.status+" · Phase: "+movement.phase.toUpperCase()+
+              (primaryAngle?" · "+Math.round(primaryAngle)+"°":"");
+            postureEl.style.background=lineIsGood?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
+            hintEl.textContent=lineIsGood?"Right posture":"Wrong posture: "+(posture.correction||"Adjust posture");
+            hintEl.style.background=lineIsGood?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
+          }
+        }else{
+          drawFrame(false);
+          badgeEl.textContent="Exercise: "+(EXERCISE_RULE?EXERCISE_RULE.label:"UNKNOWN");
+          postureEl.textContent="No body detected";
+          hintEl.textContent="No full body detected - step back slightly";
+          hintEl.style.background="rgba(239,68,68,0.35)";
+        }
+        rafId=requestAnimationFrame(detectLoop);
+      };
+
+      const stop=()=>{
+        if(rafId)cancelAnimationFrame(rafId);rafId=null;
+        if(poseLandmarker){poseLandmarker.close();poseLandmarker=null}
+        if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+      };
+
+      document.addEventListener("visibilitychange",()=>{if(document.hidden)stop()});
+      window.addEventListener("beforeunload",stop);
+
+      (async()=>{
+        try{
+          stream=await navigator.mediaDevices.getUserMedia({
+            video:{facingMode:"user",width:{ideal:1280},height:{ideal:720}},audio:false
+          });
+          video.srcObject=stream;await video.play();
+          const vision=await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+          poseLandmarker=await PoseLandmarker.createFromOptions(vision,{
+            baseOptions:{
+              modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+              delegate:"GPU"
+            },
+            runningMode:"VIDEO",numPoses:1,
+            minPoseDetectionConfidence:0.35,
+            minPosePresenceConfidence:0.35,
+            minTrackingConfidence:0.35,
+            outputSegmentationMasks:false
+          });
+          post("ready");detectLoop();
+        }catch(err){
+          const msg=err?.message??"MediaPipe failed to start";
+          post("error",{message:msg});
+        }
+      })();
+    <\/script>
+  </body>
+</html>`;
+}
+
+
+function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady, onError }: MediaPipeGuidanceViewProps) {
+  const webHostRef = useRef<View | null>(null);
+
+  useEffect(() => {
+    if (!isActive) return;
+    if (Platform.OS !== "web") return;
+    const host = webHostRef.current as unknown as HTMLDivElement | null;
+    if (!host) return;
+
+    let stream: MediaStream | null = null;
+    let rafId: number | null = null;
+    let lastVideoTime = -1;
+    let poseLandmarker: PoseLandmarker | null = null;
+    let cancelled = false;
+    const matchedRecord = findExerciseRecord(selectedExerciseName);
+    const trainerNote = String(matchedRecord?.trainerChecks?.notes || "").trim();
+    const isCardio = isCardioOrMobilityExercise(matchedRecord, selectedExerciseName);
+
+    const video = document.createElement("video");
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.style.position = "absolute";
+    video.style.inset = "0";
+    video.style.width = "100%";
+    video.style.height = "100%";
+    // Use fill so normalized landmark coordinates map 1:1 to overlay pixels.
+    video.style.objectFit = "cover";
+    video.style.transform = "scaleX(-1)";
+
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "absolute";
+    canvas.style.inset = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.pointerEvents = "none";
+    canvas.style.objectFit = "cover";
+    canvas.style.transform = "scaleX(-1)";
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      onError?.("Unable to initialize drawing context.");
+      return;
+    }
+
+    const hint = document.createElement("div");
+    hint.style.position = "absolute";
+    hint.style.left = "10px";
+    hint.style.right = "10px";
+    hint.style.bottom = "10px";
+    hint.style.padding = "8px 10px";
+    hint.style.borderRadius = "10px";
+    hint.style.font = "700 12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    hint.style.color = "#fff";
+    hint.style.textAlign = "center";
+    hint.style.background = "rgba(0,0,0,0.58)";
+    hint.textContent = "Starting MediaPipe guidance...";
+
+    const exerciseBadge = document.createElement("div");
+    exerciseBadge.style.position = "absolute";
+    exerciseBadge.style.top = "10px";
+    exerciseBadge.style.left = "10px";
+    exerciseBadge.style.maxWidth = "88%";
+    exerciseBadge.style.width = "fit-content";
+    exerciseBadge.style.padding = "6px 10px";
+    exerciseBadge.style.borderRadius = "10px";
+    exerciseBadge.style.font = "800 12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    exerciseBadge.style.color = "#fff";
+    exerciseBadge.style.textAlign = "left";
+    exerciseBadge.style.background = "rgba(0,0,0,0.65)";
+    exerciseBadge.style.zIndex = "12";
+    exerciseBadge.textContent = "Exercise: Detecting...";
+
+    const posturePanel = document.createElement("div");
+    posturePanel.style.position = "absolute";
+    posturePanel.style.top = "40px";
+    posturePanel.style.left = "10px";
+    posturePanel.style.maxWidth = "88%";
+    posturePanel.style.width = "fit-content";
+    posturePanel.style.padding = "7px 10px";
+    posturePanel.style.borderRadius = "10px";
+    posturePanel.style.font = "700 11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    posturePanel.style.color = "#fff";
+    posturePanel.style.textAlign = "left";
+    posturePanel.style.background = "rgba(0,0,0,0.65)";
+    posturePanel.style.zIndex = "12";
+    posturePanel.textContent = "Posture: --";
+
+    const notesPanel = document.createElement("div");
+    notesPanel.style.position = "absolute";
+    notesPanel.style.top = "70px";
+    notesPanel.style.left = "10px";
+    notesPanel.style.maxWidth = "92%";
+    notesPanel.style.width = "fit-content";
+    notesPanel.style.padding = "6px 10px";
+    notesPanel.style.borderRadius = "10px";
+    notesPanel.style.font = "600 11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    notesPanel.style.color = "#fff";
+    notesPanel.style.textAlign = "left";
+    notesPanel.style.background = "rgba(15,23,42,0.78)";
+    notesPanel.style.whiteSpace = "normal";
+    notesPanel.style.zIndex = "12";
+    notesPanel.textContent = trainerNote ? `Notes: ${trainerNote}` : "Notes: Maintain controlled movement";
+
+    host.innerHTML = "";
+    host.style.position = "relative";
+    host.style.overflow = "hidden";
+    host.append(video, canvas, exerciseBadge, posturePanel, notesPanel, hint);
+
+    const getVideoRect = () => {
+      const cw = canvas.width || host.clientWidth || 720;
+      const ch = canvas.height || host.clientHeight || 1280;
+      const vw = video.videoWidth || 720;
+      const vh = video.videoHeight || 1280;
+      const canvasAspect = cw / ch;
+      const videoAspect = vw / vh;
+      // cover-fit rect (can overflow/crop on one axis)
+      if (videoAspect > canvasAspect) {
+        const height = ch;
+        const width = height * videoAspect;
+        return { x: (cw - width) / 2, y: 0, width, height };
+      }
+      const width = cw;
+      const height = width / videoAspect;
+      return { x: 0, y: (ch - height) / 2, width, height };
+    };
+
+    const toPixel = (lm: NormalizedLandmark) => {
+      const rect = getVideoRect();
+      return {
+        x: rect.x + lm.x * rect.width,
+        y: rect.y + lm.y * rect.height,
+      };
+    };
+
+    const resizeCanvas = () => {
+      const w = video.videoWidth || host.clientWidth || 720;
+      const h = video.videoHeight || host.clientHeight || 1280;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+    };
+
+    const POSE_CONNECTIONS: Array<[number, number]> = [
+      [11, 12],
+      [11, 13],
+      [13, 15],
+      [12, 14],
+      [14, 16],
+      [11, 23],
+      [12, 24],
+      [23, 24],
+      [23, 25],
+      [25, 27],
+      [27, 29],
+      [24, 26],
+      [26, 28],
+      [28, 30],
+    ];
+    const DISPLAY_LANDMARKS = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28, 29, 30];
+    let prevLandmarks: NormalizedLandmark[] | null = null;
+    const SMOOTH_ALPHA = 0.55;
+
+    const drawSkeleton = (landmarks: NormalizedLandmark[], isCorrect: boolean) => {
+      ctx.save();
+      ctx.strokeStyle = isCorrect ? "rgba(34,197,94,0.86)" : "rgba(239,68,68,0.86)";
+      ctx.lineWidth = 2;
+      for (const [aIdx, bIdx] of POSE_CONNECTIONS) {
+        const a = landmarks[aIdx];
+        const b = landmarks[bIdx];
+        if (!a || !b) continue;
+        const aVisible = (a.visibility ?? 1) >= 0.4;
+        const bVisible = (b.visibility ?? 1) >= 0.4;
+        if (!aVisible || !bVisible) continue;
+        const pa = toPixel(a);
+        const pb = toPixel(b);
+        ctx.beginPath();
+        ctx.moveTo(pa.x, pa.y);
+        ctx.lineTo(pb.x, pb.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
+    const smoothLandmarks = (landmarks: NormalizedLandmark[]) => {
+      if (!prevLandmarks || prevLandmarks.length !== landmarks.length) {
+        prevLandmarks = landmarks.map((l) => ({ ...l }));
+        return landmarks;
+      }
+      const smoothed = landmarks.map((l, i) => {
+        const p = prevLandmarks![i];
+        return {
+          ...l,
+          x: SMOOTH_ALPHA * l.x + (1 - SMOOTH_ALPHA) * p.x,
+          y: SMOOTH_ALPHA * l.y + (1 - SMOOTH_ALPHA) * p.y,
+          z: SMOOTH_ALPHA * l.z + (1 - SMOOTH_ALPHA) * p.z,
+          visibility: l.visibility,
+        };
+      });
+      prevLandmarks = smoothed;
+      return smoothed;
+    };
+
+    const drawLandmarks = (landmarks: NormalizedLandmark[], isCorrect: boolean) => {
+      ctx.save();
+      ctx.fillStyle = isCorrect ? "rgba(34,197,94,0.96)" : "rgba(239,68,68,0.96)";
+      ctx.strokeStyle = "rgba(15,23,42,0.9)";
+      ctx.lineWidth = 1.5;
+      for (const idx of DISPLAY_LANDMARKS) {
+        const lm = landmarks[idx];
+        if (!lm) continue;
+        if ((lm.visibility ?? 1) < 0.4) continue;
+        const p = toPixel(lm);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
+    const isCentered = (landmarks: NormalizedLandmark[]) => {
+      const xs = landmarks.map((l) => l.x);
+      const ys = landmarks.map((l) => l.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      return cx > 0.32 && cx < 0.68 && cy > 0.22 && cy < 0.78;
+    };
+
+    const calcAngle = (a: NormalizedLandmark, b: NormalizedLandmark, c: NormalizedLandmark) => {
+      const baX = a.x - b.x;
+      const baY = a.y - b.y;
+      const bcX = c.x - b.x;
+      const bcY = c.y - b.y;
+      const cross = Math.abs(baX * bcY - baY * bcX);
+      const dot = baX * bcX + baY * bcY;
+      const radians = Math.atan2(cross, dot);
+      return (radians * 180) / Math.PI;
+    };
+
+    const detectExercise = (landmarks: NormalizedLandmark[]) => {
+      const leftShoulder = landmarks[11];
+      const rightShoulder = landmarks[12];
+      const leftElbow = landmarks[13];
+      const rightElbow = landmarks[14];
+      const leftWrist = landmarks[15];
+      const rightWrist = landmarks[16];
+      const leftHip = landmarks[23];
+      const rightHip = landmarks[24];
+      const leftKnee = landmarks[25];
+      const rightKnee = landmarks[26];
+      const leftAnkle = landmarks[27];
+      const rightAnkle = landmarks[28];
+      if (
+        !leftShoulder || !rightShoulder || !leftElbow || !rightElbow || !leftWrist || !rightWrist ||
+        !leftHip || !rightHip || !leftKnee || !rightKnee || !leftAnkle || !rightAnkle
+      ) {
+        return "UNKNOWN";
+      }
+
+      const leftKneeAngle = calcAngle(leftHip, leftKnee, leftAnkle);
+      const rightKneeAngle = calcAngle(rightHip, rightKnee, rightAnkle);
+      const leftElbowAngle = calcAngle(leftShoulder, leftElbow, leftWrist);
+      const rightElbowAngle = calcAngle(rightShoulder, rightElbow, rightWrist);
+      const kneeAvg = (leftKneeAngle + rightKneeAngle) / 2;
+      const elbowAvg = (leftElbowAngle + rightElbowAngle) / 2;
+      const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+      const ankleWidth = Math.abs(leftAnkle.x - rightAnkle.x);
+      const oneKneeBent = (leftKneeAngle < 115 && rightKneeAngle > 145) || (rightKneeAngle < 115 && leftKneeAngle > 145);
+      const wristsAboveShoulders = leftWrist.y < leftShoulder.y && rightWrist.y < rightShoulder.y;
+      const bodyHorizontal = Math.abs(((leftShoulder.y + rightShoulder.y) / 2) - ((leftHip.y + rightHip.y) / 2)) < 0.12;
+
+      if (kneeAvg < 120) return "SQUAT";
+      if (oneKneeBent) return "LUNGE";
+      if (wristsAboveShoulders && ankleWidth > shoulderWidth * 1.7) return "JUMPING JACK";
+      if (bodyHorizontal && elbowAvg < 120) return "PUSH-UP";
+      if (elbowAvg < 75) return "BICEP CURL";
+      if (kneeAvg > 155 && elbowAvg > 145) return "STANDING";
+      return "WORKOUT";
+    };
+
+    const exerciseRule = toExerciseRule(selectedExerciseName, matchedRecord);
+    const movementConfig = toMovementConfig(selectedExerciseName, matchedRecord);
+    let repCount = 0;
+    let phase: "up" | "down" | "idle" = "idle";
+    let reachedDown = false;
+
+    const evaluateSelectedPosture = (
+      landmarks: NormalizedLandmark[],
+      primaryAngle: number | null,
+      movementPhase: "up" | "down" | "idle",
+    ) => {
+      if (!exerciseRule) {
+        return {
+          isCorrect: false,
+          status: "Select exercise",
+          detail: "Select an exercise first",
+        };
+      }
+      if (!exerciseRule.joints.length) {
+        return {
+          isCorrect: true,
+          status: "Right posture",
+          detail: `Tracking ${exerciseRule.label}`,
+          correction: `No strict posture rule configured for ${exerciseRule.label}`,
+        };
+      }
+      const results = exerciseRule.joints.map((rule) => {
+        const a = landmarks[rule.a];
+        const b = landmarks[rule.b];
+        const c = landmarks[rule.c];
+        if (!a || !b || !c) return { label: rule.label, angle: NaN, ok: false };
+        const angle = calcAngle(a, b, c);
+        const tolerance = matchedRecord?.trainerChecks?.strict ? 6 : 12;
+        let min = rule.min;
+        let max = rule.max;
+        // Press exercises need phase-aware posture ranges:
+        // elbows/shoulders are bent at the bottom and extended overhead at the top.
+        if (
+          (exerciseRule.label === "ARNOLD PRESS" || exerciseRule.label === "SHOULDER PRESS") &&
+          primaryAngle !== null &&
+          (rule.label.includes("Elbow") || rule.label.includes("Shoulder"))
+        ) {
+          if (movementConfig && primaryAngle >= movementConfig.upThreshold - 10) {
+            min = 145;
+            max = 180;
+          } else if (movementConfig && primaryAngle <= movementConfig.downThreshold + 10) {
+            min = 75;
+            max = 120;
+          } else {
+            min = 70;
+            max = 180;
+          }
+        }
+        // Curl exercises also need phase-aware ranges:
+        // DOWN = mostly extended elbows, UP = flexed elbows.
+        if (exerciseRule.label === "BICEP CURL" && primaryAngle !== null && rule.label.includes("Elbow")) {
+          if (movementPhase === "down") {
+            min = 145;
+            max = 180;
+          } else if (movementPhase === "up") {
+            min = 15;
+            max = 85;
+          } else {
+            min = 15;
+            max = 180;
+          }
+        }
+        // Squat / lunge phase-aware hip range
+        if (
+          (exerciseRule.label === "SQUAT" || exerciseRule.label === "LUNGE") &&
+          primaryAngle !== null &&
+          rule.label.includes("Hip")
+        ) {
+          if (movementConfig && primaryAngle <= movementConfig.downThreshold + 15)
+            { min = 55; max = 130; }
+          else if (movementConfig && primaryAngle >= movementConfig.upThreshold - 15)
+            { min = 145; max = 180; }
+          else { min = 55; max = 180; }
+        }
+
+        // Hip hinge phase-aware hip range
+        if (
+          exerciseRule.label === "HIP HINGE" &&
+          primaryAngle !== null &&
+          rule.label.includes("Hip")
+        ) {
+          if (movementConfig && primaryAngle <= movementConfig.downThreshold + 15)
+            { min = 35; max = 90; }
+          else if (movementConfig && primaryAngle >= movementConfig.upThreshold - 15)
+            { min = 155; max = 180; }
+          else { min = 35; max = 180; }
+        }
+        return {
+          label: rule.label,
+          angle,
+          min,
+          max,
+          ok: angle >= min - tolerance && angle <= max + tolerance,
+        };
+      });
+      const valid = results.filter((r) => Number.isFinite(r.angle));
+      if (!valid.length) {
+        return {
+          isCorrect: false,
+          status: "Wrong posture",
+          detail: `${exerciseRule.label} joints not visible`,
+          correction: "Bring full body into frame so joints are visible",
+        };
+      }
+      const okCount = valid.filter((r) => r.ok).length;
+      let trainerChecksOk = true;
+      let trainerCorrection = "";
+      if (exerciseRule.label === "BICEP CURL") {
+        const lShoulder = landmarks[11];
+        const rShoulder = landmarks[12];
+        const lElbow = landmarks[13];
+        const rElbow = landmarks[14];
+        const lHip = landmarks[23];
+        const rHip = landmarks[24];
+        const lKnee = landmarks[25];
+        const rKnee = landmarks[26];
+        const lWrist = landmarks[15];
+        const rWrist = landmarks[16];
+
+        const baseVisible =
+          Boolean(lShoulder && rShoulder && lElbow && rElbow && lHip && rHip && lWrist && rWrist) &&
+          (lShoulder?.visibility ?? 0) > 0.45 &&
+          (rShoulder?.visibility ?? 0) > 0.45 &&
+          (lElbow?.visibility ?? 0) > 0.45 &&
+          (rElbow?.visibility ?? 0) > 0.45 &&
+          (lHip?.visibility ?? 0) > 0.45 &&
+          (rHip?.visibility ?? 0) > 0.45;
+        if (!baseVisible) {
+          trainerChecksOk = false;
+          trainerCorrection = "Keep full upper body visible (shoulders, elbows, hips)";
+        }
+
+        if (trainerChecksOk && (!lKnee || !rKnee || (lKnee.visibility ?? 0) < 0.35 || (rKnee.visibility ?? 0) < 0.35)) {
+          trainerChecksOk = false;
+          trainerCorrection = "Stand farther back so knees are visible (no seated curls)";
+        }
+
+        if (trainerChecksOk && lShoulder && rShoulder && lHip && rHip && lElbow && rElbow) {
+          const shoulderWidth = Math.max(0.06, Math.abs(lShoulder.x - rShoulder.x));
+          const torsoMidX = (lHip.x + rHip.x) / 2;
+          const shoulderMidX = (lShoulder.x + rShoulder.x) / 2;
+          const torsoLean = Math.abs(shoulderMidX - torsoMidX);
+          const lElbowToHipX = Math.abs(lElbow.x - lHip.x);
+          const rElbowToHipX = Math.abs(rElbow.x - rHip.x);
+          const lUpperArmTravel = Math.abs(lShoulder.x - lElbow.x);
+          const rUpperArmTravel = Math.abs(rShoulder.x - rElbow.x);
+
+          if (torsoLean > shoulderWidth * 0.22) {
+            trainerChecksOk = false;
+            trainerCorrection = "Keep torso upright - avoid swinging/leaning";
+          } else if (lElbowToHipX > shoulderWidth * 0.9 || rElbowToHipX > shoulderWidth * 0.9) {
+            trainerChecksOk = false;
+            trainerCorrection = "Keep elbows pinned close to your sides";
+          } else if (lUpperArmTravel > shoulderWidth * 0.75 || rUpperArmTravel > shoulderWidth * 0.75) {
+            trainerChecksOk = false;
+            trainerCorrection = "Do not flare elbows forward/outward";
+          } else if ((lElbow.y < lShoulder.y - 0.02) || (rElbow.y < rShoulder.y - 0.02)) {
+            trainerChecksOk = false;
+            trainerCorrection = "Keep shoulders down; do not shrug while curling";
+          }
+        }
+      }
+      const summary = valid
+        .slice(0, 2)
+        .map((r) => `${r.label} ${Math.round(r.angle)}° ${r.ok ? "✓" : "✗"}`)
+        .join(" | ");
+      const isCorrect = okCount === valid.length && trainerChecksOk;
+      const firstWrong = valid.find((r) => !r.ok);
+      let correction = "Maintain current form";
+      if (!trainerChecksOk && trainerCorrection) {
+        correction = trainerCorrection;
+      } else if (firstWrong) {
+        const wMin = firstWrong.min ?? 0;
+        const wMax = firstWrong.max ?? 180;
+        if (firstWrong.angle < wMin) correction = `${firstWrong.label}: bend/move more (${Math.round(firstWrong.angle)}°)`;
+        else if (firstWrong.angle > wMax) correction = `${firstWrong.label}: reduce bend / straighten (${Math.round(firstWrong.angle)}°)`;
+      }
+      return {
+        isCorrect,
+        status: isCorrect ? "Right posture" : "Wrong posture",
+        detail: `${exerciseRule.label} · ${summary}`,
+        correction: correction || "Adjust posture based on highlighted joints",
+      };
+    };
+
+    const getPrimaryAngle = (landmarks: NormalizedLandmark[]) => {
+      if (!movementConfig) return null;
+      if (movementConfig.primaryJoint === "elbow") {
+        const l = landmarks[11] && landmarks[13] && landmarks[15] ? calcAngle(landmarks[11], landmarks[13], landmarks[15]) : NaN;
+        const r = landmarks[12] && landmarks[14] && landmarks[16] ? calcAngle(landmarks[12], landmarks[14], landmarks[16]) : NaN;
+        const vals = [l, r].filter((v) => Number.isFinite(v));
+        if (!vals.length) return null;
+        return vals.reduce((a, b) => a + b, 0) / vals.length;
+      }
+      let left = NaN;
+      let right = NaN;
+      if (movementConfig.primaryJoint === "knee") {
+        left = landmarks[23] && landmarks[25] && landmarks[27] ? calcAngle(landmarks[23], landmarks[25], landmarks[27]) : NaN;
+        right = landmarks[24] && landmarks[26] && landmarks[28] ? calcAngle(landmarks[24], landmarks[26], landmarks[28]) : NaN;
+      } else if (movementConfig.primaryJoint === "hip") {
+        left = landmarks[11] && landmarks[23] && landmarks[25] ? calcAngle(landmarks[11], landmarks[23], landmarks[25]) : NaN;
+        right = landmarks[12] && landmarks[24] && landmarks[26] ? calcAngle(landmarks[12], landmarks[24], landmarks[26]) : NaN;
+      } else if (movementConfig.primaryJoint === "shoulder") {
+        left = landmarks[13] && landmarks[11] && landmarks[23] ? calcAngle(landmarks[13], landmarks[11], landmarks[23]) : NaN;
+        right = landmarks[14] && landmarks[12] && landmarks[24] ? calcAngle(landmarks[14], landmarks[12], landmarks[24]) : NaN;
+      } else if (movementConfig.primaryJoint === "ankle") {
+        left = landmarks[25] && landmarks[27] && landmarks[29]
+          ? calcAngle(landmarks[25], landmarks[27], landmarks[29]) : NaN;
+        right = landmarks[26] && landmarks[28] && landmarks[30]
+          ? calcAngle(landmarks[26], landmarks[28], landmarks[30]) : NaN;
+      }
+      const vals = [left, right].filter((v) => Number.isFinite(v));
+      if (!vals.length) return null;
+      return vals.reduce((a, b) => a + b, 0) / vals.length;
+    };
+
+    const updateMovement = (primaryAngle: number | null) => {
+      if (!movementConfig || primaryAngle === null) return { phase, reps: repCount, dynamicOk: true };
+      if (movementConfig.downWhenAngleIsLower) {
+        if (primaryAngle <= movementConfig.downThreshold) {
+          phase = "down";
+          reachedDown = true;
+        } else if (primaryAngle >= movementConfig.upThreshold) {
+          phase = "up";
+          if (reachedDown) {
+            repCount += 1;
+            reachedDown = false;
+          }
+        }
+      } else {
+        if (primaryAngle >= movementConfig.downThreshold) {
+          phase = "down";
+          reachedDown = true;
+        } else if (primaryAngle <= movementConfig.upThreshold) {
+          phase = "up";
+          if (reachedDown) {
+            repCount += 1;
+            reachedDown = false;
+          }
+        }
+      }
+      const dynamicOk = movementConfig.downWhenAngleIsLower
+        ? (phase === "down"
+            ? primaryAngle <= movementConfig.downThreshold + 20
+            : phase === "up"
+              ? primaryAngle >= movementConfig.upThreshold - 20
+              : true)
+        : (phase === "down"
+            ? primaryAngle >= movementConfig.downThreshold - 20
+            : phase === "up"
+              ? primaryAngle <= movementConfig.upThreshold + 20
+              : true);
+      return { phase, reps: repCount, dynamicOk };
+    };
+
+    const drawFrame = (ok: boolean) => {
+      const rect = getVideoRect();
+      ctx.save();
+      ctx.strokeStyle = ok ? "rgba(34,197,94,.95)" : "rgba(239,68,68,.95)";
+      ctx.lineWidth = 3;
+      const fw = rect.width * 0.62;
+      const fh = rect.height * 0.72;
+      const fx = rect.x + (rect.width - fw) / 2;
+      const fy = rect.y + (rect.height - fh) / 2;
+      ctx.strokeRect(fx, fy, fw, fh);
+
+      ctx.strokeStyle = "rgba(255,255,255,.45)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(rect.x + rect.width / 2, rect.y);
+      ctx.lineTo(rect.x + rect.width / 2, rect.y + rect.height);
+      ctx.moveTo(rect.x, rect.y + rect.height / 2);
+      ctx.lineTo(rect.x + rect.width, rect.y + rect.height / 2);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    const loop = () => {
+      if (!poseLandmarker || cancelled) return;
+      if (video.currentTime === lastVideoTime) {
+        rafId = requestAnimationFrame(loop);
+        return;
+      }
+      lastVideoTime = video.currentTime;
+      resizeCanvas();
+      const result = poseLandmarker.detectForVideo(video, performance.now());
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const rawLandmarks = result.landmarks?.[0];
+      const landmarks = rawLandmarks?.length ? smoothLandmarks(rawLandmarks) : null;
+      if (landmarks?.length) {
+        const centered = isCentered(landmarks);
+        if (isCardio) {
+          drawFrame(centered);
+          drawSkeleton(landmarks, centered);
+          drawLandmarks(landmarks, centered);
+          exerciseBadge.textContent = "Posture awareness mode";
+          posturePanel.textContent = `Posture: ${centered ? "Centred" : "Adjust position"}`;
+          posturePanel.style.background = centered
+            ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
+          hint.textContent = centered
+            ? "Keep your full body in frame" : "Centre your body in the frame";
+          hint.style.background = centered
+            ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
+          if (!host.querySelector("#cardio-banner")) {
+            const banner = document.createElement("div");
+            banner.id = "cardio-banner";
+            Object.assign(banner.style, {
+              position: "absolute", left: "0", right: "0", bottom: "0", zIndex: "20",
+              background: "rgba(15,23,42,0.85)", color: "#fff", padding: "14px 16px",
+              textAlign: "center", fontSize: "13px", fontWeight: "600",
+            });
+            banner.textContent =
+              "Posture awareness mode — no form scoring for this exercise type";
+            host.appendChild(banner);
+          }
+        } else {
+          const primaryAngle = getPrimaryAngle(landmarks);
+          const movement = updateMovement(primaryAngle);
+          const posture = evaluateSelectedPosture(landmarks, primaryAngle, movement.phase);
+          const lineIsGood = exerciseRule
+            ? posture.isCorrect && movement.dynamicOk
+            : centered;
+          const exerciseName = exerciseRule
+            ? exerciseRule.label
+            : detectExercise(landmarks);
+          drawFrame(lineIsGood);
+          drawSkeleton(landmarks, lineIsGood);
+          drawLandmarks(landmarks, lineIsGood);
+          exerciseBadge.textContent = `Exercise: ${exerciseRule?.label || exerciseName} · Reps: ${movement.reps}`;
+          posturePanel.textContent = `Posture: ${posture.status} · Phase: ${movement.phase.toUpperCase()}${primaryAngle ? ` · ${Math.round(primaryAngle)}°` : ""}`;
+          posturePanel.style.background = lineIsGood ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
+          hint.textContent = lineIsGood ? "Right posture" : `Wrong posture: ${posture.correction || "Adjust posture"}`;
+          hint.style.background = lineIsGood ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
+        }
+      } else {
+        drawFrame(false);
+        exerciseBadge.textContent = `Exercise: ${exerciseRule?.label || "UNKNOWN"}`;
+        posturePanel.textContent = `Posture: ${exerciseRule?.label || "UNKNOWN"} not detected`;
+        hint.textContent = "No full body detected - step back slightly";
+        hint.style.background = "rgba(239,68,68,0.35)";
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+
+    (async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            aspectRatio: { ideal: 16 / 9 },
+          },
+          audio: false,
+        });
+        video.srcObject = stream;
+        await video.play();
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm",
+        );
+        poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath:
+              "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+            delegate: "GPU",
+          },
+          runningMode: "VIDEO",
+          numPoses: 1,
+          minPoseDetectionConfidence: 0.35,
+          minPosePresenceConfidence: 0.35,
+          minTrackingConfidence: 0.35,
+          outputSegmentationMasks: false,
+        });
+        if (cancelled) return;
+        onReady?.();
+        loop();
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "MediaPipe failed to start.";
+        onError?.(msg);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
+      if (poseLandmarker) poseLandmarker.close();
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+    };
+  }, [isActive, onError, onReady, selectedExerciseName]);
+
+  const matchedRecordForWebView = findExerciseRecord(selectedExerciseName);
+  const exerciseRuleForWebView = toExerciseRule(selectedExerciseName, matchedRecordForWebView);
+  const movementConfigForWebView = toMovementConfig(selectedExerciseName, matchedRecordForWebView);
+  const trainerNoteForWebView = String(matchedRecordForWebView?.trainerChecks?.notes || "").trim();
+  const isCardioForWebView = isCardioOrMobilityExercise(matchedRecordForWebView, selectedExerciseName);
+
+  if (Platform.OS === "web") {
+    return <View ref={webHostRef} style={styles.container} />;
+  }
+
+  return (
+    <View style={styles.container}>
+      <WebView
+        source={{ html: buildHtmlSource(
+          exerciseRuleForWebView,
+          movementConfigForWebView,
+          trainerNoteForWebView,
+          isCardioForWebView,
+        ) }}
+        style={styles.webview}
+        allowsInlineMediaPlayback
+        mediaPlaybackRequiresUserAction={false}
+        javaScriptEnabled
+        domStorageEnabled
+        onMessage={(event) => {
+          try {
+            const parsed = JSON.parse(event.nativeEvent.data || "{}") as { type?: string; message?: string };
+            if (parsed.type === "ready") onReady?.();
+            if (parsed.type === "error") onError?.(parsed.message || "MediaPipe failed to start.");
+          } catch {
+            // ignore malformed bridge messages
+          }
+        }}
+        onError={() => onError?.("MediaPipe WebView failed to load.")}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  webview: { flex: 1, backgroundColor: "#050b16" },
+});
+
+const MemoizedMediaPipeGuidanceView = memo(MediaPipeGuidanceView) as typeof MediaPipeGuidanceView;
+
+export default MemoizedMediaPipeGuidanceView;

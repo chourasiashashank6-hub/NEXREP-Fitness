@@ -13,3 +13,9 @@ venv/
 
 # Local env (never commit secrets)
 .env
+.env.local
+server/.env
+mobile/.env
+
+# Node
+mobile/node_modules/
