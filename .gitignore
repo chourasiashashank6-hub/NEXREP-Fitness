@@ -19,3 +19,5 @@ mobile/.env
 
 # Node
 mobile/node_modules/
+.DS_Store
+server/.env
