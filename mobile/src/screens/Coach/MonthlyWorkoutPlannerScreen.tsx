@@ -1,18 +1,37 @@
 import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  UIManager,
+  View,
+} from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { fetchWorkoutPlanCurrent, fetchWorkoutPlanDay, generateWorkoutPlan, swapWorkoutExercise } from "../../api/workoutPlanner";
+import {
+  fetchWorkoutPlanCurrent,
+  fetchWorkoutPlanDay,
+  generateWorkoutPlan,
+  regenerateWorkoutMonthPlan,
+  regenerateWorkoutPlanDay,
+  swapWorkoutExercise,
+} from "../../api/workoutPlanner";
 import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
 import { EXERCISE_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
-import { notifyUser } from "../../utils/notify";
+import { formatApiDetail, notifyUser } from "../../utils/notify";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
 import { useAppTheme } from "../../theme";
 import type { FocusMuscle, WorkoutDayPlan, WorkoutPlanCurrent } from "../../types/planner";
-import { fullDayLabel, monthYearLabel } from "../../utils/localDate";
+import { fullDayLabel, getNextMonthResetLabel, isPastPlanDay, monthYearLabel } from "../../utils/localDate";
 
 const MUSCLE_PILL_OPTIONS = ["Chest", "Back", "Shoulders", "Legs", "Arms", "Core", "Balanced"] as const;
 
@@ -26,6 +45,153 @@ function muscleSelectionHint(muscles: FocusMuscle[]): string {
   if (muscles.length === 0) return "Balanced — all muscle groups will be trained equally";
   if (muscles.length === 1) return `Extra volume for ${muscles[0]} in every session`;
   return `Extra volume for ${muscles.join(", ")} across your plan`;
+}
+
+const MAX_WORKOUT_REGENS_PER_MONTH = 2;
+const MAX_MONTH_PLAN_REGENS_PER_MONTH = 2;
+
+type RegenBadgeProps = {
+  remaining: number;
+  exempt: boolean;
+  resetLabel: string;
+};
+
+function RegenUsageBadge({ remaining, exempt, resetLabel }: RegenBadgeProps) {
+  if (exempt) return null;
+
+  const badgeText =
+    remaining <= 0
+      ? `Resets ${resetLabel}`
+      : `${remaining <= 1 ? "⚠ " : ""}${remaining} left this month`;
+
+  const badgeColor = remaining <= 0 ? "#888888" : remaining === 1 ? "#FFC107" : "#2ECC9A";
+  const badgeBg =
+    remaining <= 0
+      ? "rgba(136,136,136,0.15)"
+      : remaining === 1
+        ? "rgba(255,193,7,0.15)"
+        : "rgba(46,204,154,0.15)";
+
+  return (
+    <View style={[styles.regenBadge, { backgroundColor: badgeBg }]}>
+      <Text style={[styles.regenBadgeText, { color: badgeColor }]}>{badgeText}</Text>
+    </View>
+  );
+}
+
+type RegenButtonProps = {
+  label: string;
+  loadingLabel: string;
+  isLoading: boolean;
+  disabled: boolean;
+  remaining: number;
+  exempt: boolean;
+  resetLabel: string;
+  compact?: boolean;
+  onPress: () => void;
+};
+
+function RegenerateActionButton({
+  label,
+  loadingLabel,
+  isLoading,
+  disabled,
+  remaining,
+  exempt,
+  resetLabel,
+  compact,
+  onPress,
+}: RegenButtonProps) {
+  const showLimitLabel = !exempt && remaining <= 0 && !isLoading;
+
+  return (
+    <Pressable
+      style={[
+        compact ? styles.regenerateMonthPlanBtn : styles.regenerateWorkoutBtn,
+        (disabled || isLoading) && styles.regenerateWorkoutBtnDisabled,
+      ]}
+      onPress={onPress}
+      disabled={isLoading}
+    >
+      <View style={styles.regenButtonInner}>
+        <View style={styles.regenButtonLeft}>
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#2ECC9A" />
+          ) : (
+            <Ionicons name="refresh" size={compact ? 16 : 18} color={disabled ? "#64748b" : "#2ECC9A"} />
+          )}
+          <Text
+            style={[
+              compact ? styles.regenerateMonthPlanBtnText : styles.regenerateWorkoutBtnText,
+              disabled && styles.regenerateWorkoutBtnTextDisabled,
+            ]}
+          >
+            {isLoading ? loadingLabel : showLimitLabel ? "Regenerate limit reached" : label}
+          </Text>
+        </View>
+        <RegenUsageBadge remaining={remaining} exempt={exempt} resetLabel={resetLabel} />
+      </View>
+    </Pressable>
+  );
+}
+
+function isWorkoutRestDay(day: Pick<WorkoutDayPlan, "is_rest_day" | "split_name"> | null | undefined): boolean {
+  if (!day) return true;
+  if (day.is_rest_day) return true;
+  const split = (day.split_name ?? "").trim().toLowerCase();
+  return split.includes("rest") || split === "off";
+}
+
+function apiErrorMessage(e: unknown, fallback: string): string {
+  if (axios.isAxiosError(e)) {
+    const detail = e.response?.data?.detail;
+    const msg = formatApiDetail(detail);
+    if (msg) return msg;
+    if (e.code === "ECONNABORTED") {
+      return "Regeneration is taking longer than expected. Wait a moment and try again.";
+    }
+    if (e.message) return e.message;
+  }
+  if (e instanceof Error && e.message) return e.message;
+  return fallback;
+}
+
+type RegenStatsSource = {
+  day_regens_used?: number;
+  day_regens_limit?: number;
+  day_regens_remaining?: number;
+  month_plan_regens_used?: number;
+  month_plan_regens_limit?: number;
+  month_plan_regens_remaining?: number;
+  planner_limits_exempt?: boolean;
+};
+
+function syncWorkoutRegenStats(
+  source: RegenStatsSource | null | undefined,
+  setUsed: (n: number) => void,
+  setLimit: (n: number) => void,
+  setRemaining: (n: number) => void,
+  setExempt?: (v: boolean) => void,
+) {
+  if (source?.day_regens_used !== undefined) setUsed(source.day_regens_used);
+  if (source?.day_regens_limit !== undefined) setLimit(source.day_regens_limit ?? MAX_WORKOUT_REGENS_PER_MONTH);
+  if (source?.day_regens_remaining !== undefined) setRemaining(source.day_regens_remaining);
+  if (setExempt && source?.planner_limits_exempt !== undefined) setExempt(source.planner_limits_exempt);
+}
+
+function syncMonthPlanRegenStats(
+  source: RegenStatsSource | null | undefined,
+  setUsed: (n: number) => void,
+  setLimit: (n: number) => void,
+  setRemaining: (n: number) => void,
+) {
+  if (source?.month_plan_regens_used !== undefined) setUsed(source.month_plan_regens_used);
+  if (source?.month_plan_regens_limit !== undefined) setLimit(source.month_plan_regens_limit ?? MAX_MONTH_PLAN_REGENS_PER_MONTH);
+  if (source?.month_plan_regens_remaining !== undefined) setRemaining(source.month_plan_regens_remaining);
+}
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 const LOADING_MSGS = [
@@ -52,30 +218,85 @@ export default function MonthlyWorkoutPlannerScreen() {
   const [showExerciseSwapSheet, setShowExerciseSwapSheet] = useState(false);
   const [swapExerciseTarget, setSwapExerciseTarget] = useState<{ day: number; index: number; name: string; muscle: string } | null>(null);
   const [exerciseSwapsUsed, setExerciseSwapsUsed] = useState(0);
+  const [dayRegensUsed, setDayRegensUsed] = useState(0);
+  const [dayRegensLimit, setDayRegensLimit] = useState(MAX_WORKOUT_REGENS_PER_MONTH);
+  const [dayRegensRemaining, setDayRegensRemaining] = useState(MAX_WORKOUT_REGENS_PER_MONTH);
+  const [plannerLimitsExempt, setPlannerLimitsExempt] = useState(false);
+  const [isRegeneratingWorkout, setIsRegeneratingWorkout] = useState(false);
+  const [monthPlanRegensUsed, setMonthPlanRegensUsed] = useState(0);
+  const [monthPlanRegensLimit, setMonthPlanRegensLimit] = useState(MAX_MONTH_PLAN_REGENS_PER_MONTH);
+  const [monthPlanRegensRemaining, setMonthPlanRegensRemaining] = useState(MAX_MONTH_PLAN_REGENS_PER_MONTH);
+  const [isRegeneratingMonthPlan, setIsRegeneratingMonthPlan] = useState(false);
   const exerciseSwapsLimit = 5;
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const loadSeqRef = useRef(0);
+  const initialLoadDoneRef = useRef(false);
+  const generatingRef = useRef(false);
+  const regeneratingWorkoutRef = useRef(false);
+  const regeneratingMonthPlanRef = useRef(false);
+  const [exerciseListVersion, setExerciseListVersion] = useState(0);
 
+  const resetMonthLabel = getNextMonthResetLabel();
   const selectedWorkoutOverview = plan?.month_overview.find((d) => d.day === selectedDay);
   const canSwapExercises = Boolean(selectedWorkoutOverview && !selectedWorkoutOverview.is_future && plan);
   const exerciseSwapsRemaining = exerciseSwapsLimit - exerciseSwapsUsed;
+  const selectedDayIsPast = plan
+    ? (selectedWorkoutOverview?.is_past ??
+      isPastPlanDay(plan.month, plan.year, selectedDay))
+    : false;
+  const showRegenerateWorkout = Boolean(
+    plan &&
+    dayDetail &&
+    !dayDetail.locked &&
+    !isWorkoutRestDay(dayDetail) &&
+    !selectedDayIsPast &&
+    (selectedWorkoutOverview?.is_today || selectedWorkoutOverview?.is_future),
+  );
+  const canPressRegenerateWorkout =
+    showRegenerateWorkout && (plannerLimitsExempt || dayRegensRemaining > 0);
+  const canPressRegenerateMonthPlan = Boolean(
+    plan && (plannerLimitsExempt || monthPlanRegensRemaining > 0),
+  );
 
-  const loadPlan = useCallback(async () => {
-    setLoading(true);
-    try {
-      const current = await fetchWorkoutPlanCurrent();
-      setPlan(current);
-      if (current) setSelectedMuscles(planFocusMuscles(current));
-      if (current?.today?.day) setSelectedDay(current.today.day);
-    } catch {
-      setPlan(null);
-    } finally {
-      setLoading(false);
+  const applyPlan = useCallback((current: WorkoutPlanCurrent | null) => {
+    setPlan(current);
+    if (current) {
+      syncWorkoutRegenStats(current, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt);
+      syncMonthPlanRegenStats(current, setMonthPlanRegensUsed, setMonthPlanRegensLimit, setMonthPlanRegensRemaining);
+      setSelectedMuscles(planFocusMuscles(current));
+      const todayDay =
+        current.today?.day ??
+        current.month_overview.find((d) => d.is_today)?.day ??
+        current.month_overview[0]?.day;
+      if (todayDay) setSelectedDay(todayDay);
     }
   }, []);
 
+  const loadPlan = useCallback(async (opts?: { silent?: boolean }) => {
+    const seq = ++loadSeqRef.current;
+    if (!opts?.silent && !initialLoadDoneRef.current) {
+      setLoading(true);
+    }
+    try {
+      const current = await fetchWorkoutPlanCurrent();
+      if (seq !== loadSeqRef.current) return;
+      applyPlan(current);
+    } catch (e: unknown) {
+      if (seq !== loadSeqRef.current) return;
+      if (axios.isAxiosError(e) && e.response?.status === 404) {
+        applyPlan(null);
+      }
+    } finally {
+      if (seq === loadSeqRef.current) {
+        initialLoadDoneRef.current = true;
+        setLoading(false);
+      }
+    }
+  }, [applyPlan]);
+
   const loadDay = useCallback(
     async (day: number) => {
-      if (!plan) return;
+      if (!plan || regeneratingWorkoutRef.current || regeneratingMonthPlanRef.current) return;
       const overview = plan.month_overview.find((d) => d.day === day);
       if (overview?.is_future) {
         setDayDetail({
@@ -94,6 +315,7 @@ export default function MonthlyWorkoutPlannerScreen() {
         const d = await fetchWorkoutPlanDay(day);
         setDayDetail(d);
         if (typeof d.swaps_used_today === "number") setExerciseSwapsUsed(d.swaps_used_today);
+        syncWorkoutRegenStats(d, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt);
       } catch {
         setDayDetail(null);
       }
@@ -103,7 +325,8 @@ export default function MonthlyWorkoutPlannerScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void loadPlan();
+      if (generatingRef.current) return;
+      void loadPlan({ silent: initialLoadDoneRef.current });
     }, [loadPlan]),
   );
 
@@ -130,17 +353,35 @@ export default function MonthlyWorkoutPlannerScreen() {
   }, [plan, selectedDay, loadDay]);
 
   const startGenerate = async () => {
+    generatingRef.current = true;
     setGenerating(true);
     setGenStep(0);
+    const seq = ++loadSeqRef.current;
     progressTimer.current = setInterval(() => setGenStep((s) => Math.min(s + 1, 4)), 5000);
     try {
       const created = await generateWorkoutPlan(selectedMuscles);
-      setPlan(created);
-      if (created.today?.day) setSelectedDay(created.today.day);
+      if (seq !== loadSeqRef.current) return;
+      if (!created?.plan_id || !created.month_overview?.length) {
+        throw new Error("Server returned an incomplete plan. Please try again.");
+      }
+      applyPlan(created);
+      const refreshed = await fetchWorkoutPlanCurrent();
+      if (seq === loadSeqRef.current && refreshed) {
+        applyPlan(refreshed);
+      }
     } catch (e: unknown) {
-      Alert.alert("Generation failed", e instanceof Error ? e.message : "Could not generate workout plan");
+      if (seq === loadSeqRef.current) {
+        const msg =
+          axios.isAxiosError(e) && typeof e.response?.data?.detail === "string"
+            ? e.response.data.detail
+            : e instanceof Error
+              ? e.message
+              : "Could not generate workout plan";
+        Alert.alert("Generation failed", msg);
+      }
     } finally {
       if (progressTimer.current) clearInterval(progressTimer.current);
+      generatingRef.current = false;
       setGenerating(false);
     }
   };
@@ -180,6 +421,109 @@ export default function MonthlyWorkoutPlannerScreen() {
     } finally {
       setSwappingExerciseIndex(null);
       setSwapExerciseTarget(null);
+    }
+  };
+
+  const handleRegenerateWorkout = async () => {
+    if (!plan || !dayDetail) {
+      notifyUser("Error", "Workout plan is still loading. Try again in a moment.");
+      return;
+    }
+    if (dayDetail.locked) {
+      notifyUser("Not available", dayDetail.message ?? "This day's workout is not unlocked yet.");
+      return;
+    }
+    if (isWorkoutRestDay(dayDetail)) return;
+
+    if (!plannerLimitsExempt && dayRegensRemaining <= 0) {
+      notifyUser(
+        "Regenerate limit reached",
+        `You've used all regenerations for ${monthYearLabel(plan.month, plan.year)}. Resets ${resetMonthLabel}.`,
+      );
+      return;
+    }
+
+    regeneratingWorkoutRef.current = true;
+    setIsRegeneratingWorkout(true);
+    try {
+      const updated = await regenerateWorkoutPlanDay({ plan_id: plan.plan_id, day: dayDetail.day });
+      const nextDetail: WorkoutDayPlan = {
+        ...updated,
+        exercises: [...(updated.exercises ?? [])],
+      };
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setDayDetail(nextDetail);
+      setExerciseListVersion((v) => v + 1);
+      syncWorkoutRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt);
+      setPlan((prev) => (prev ? { ...prev, ...updated } : prev));
+      const left = updated.day_regens_remaining ?? Math.max(0, dayRegensRemaining - 1);
+      notifyUser(
+        "Workout regenerated!",
+        plannerLimitsExempt ? "Test account — unlimited regenerations." : `${left} left this month`,
+      );
+    } catch (e: unknown) {
+      const status = axios.isAxiosError(e) ? e.response?.status : undefined;
+      if (status === 429) {
+        setDayRegensRemaining(0);
+        setDayRegensUsed(dayRegensLimit);
+        notifyUser(
+          "Regenerate limit reached",
+          apiErrorMessage(e, `You've used all regenerations for this month. Resets ${resetMonthLabel}.`),
+        );
+      } else {
+        notifyUser("Regeneration failed", apiErrorMessage(e, "Could not regenerate workout. Please try again."));
+      }
+    } finally {
+      regeneratingWorkoutRef.current = false;
+      setIsRegeneratingWorkout(false);
+    }
+  };
+
+  const handleRegenerateMonthPlan = async () => {
+    if (!plan) return;
+    if (!plannerLimitsExempt && monthPlanRegensRemaining <= 0) {
+      notifyUser(
+        "Month plan limit reached",
+        `You've used all month plan regenerations. Resets ${resetMonthLabel}.`,
+      );
+      return;
+    }
+
+    regeneratingMonthPlanRef.current = true;
+    setIsRegeneratingMonthPlan(true);
+    try {
+      const updated = await regenerateWorkoutMonthPlan(plan.plan_id);
+      applyPlan(updated);
+      if (selectedDay) {
+        try {
+          const d = await fetchWorkoutPlanDay(selectedDay);
+          setDayDetail(d);
+          setExerciseListVersion((v) => v + 1);
+          syncWorkoutRegenStats(d, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt);
+        } catch {
+          /* day may be locked */
+        }
+      }
+      const left = updated.month_plan_regens_remaining ?? Math.max(0, monthPlanRegensRemaining - 1);
+      notifyUser(
+        "Month plan regenerated!",
+        plannerLimitsExempt ? "Test account — unlimited regenerations." : `${left} left this month`,
+      );
+    } catch (e: unknown) {
+      const status = axios.isAxiosError(e) ? e.response?.status : undefined;
+      if (status === 429) {
+        setMonthPlanRegensRemaining(0);
+        setMonthPlanRegensUsed(monthPlanRegensLimit);
+        notifyUser(
+          "Month plan limit reached",
+          apiErrorMessage(e, `Month plan limit reached. Resets ${resetMonthLabel}.`),
+        );
+      } else {
+        notifyUser("Regeneration failed", apiErrorMessage(e, "Failed to regenerate plan. Please try again."));
+      }
+    } finally {
+      regeneratingMonthPlanRef.current = false;
+      setIsRegeneratingMonthPlan(false);
     }
   };
 
@@ -233,9 +577,24 @@ export default function MonthlyWorkoutPlannerScreen() {
         </View>
       </View>
 
-      {showFocusBadge && plan ? (
+      {plan && !generating ? (
         <View style={[styles.focusBadge, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.md }]}>
-          <Text style={{ color: "#22d3ee", fontWeight: "700" }}>🎯 Focusing on: {activeFocusMuscles.join(", ")} this month</Text>
+          {showFocusBadge ? (
+            <Text style={{ color: "#22d3ee", fontWeight: "700" }}>
+              🎯 Focusing on: {activeFocusMuscles.join(", ")} this month
+            </Text>
+          ) : null}
+          <RegenerateActionButton
+            label="Regenerate Month Plan"
+            loadingLabel="Regenerating plan…"
+            isLoading={isRegeneratingMonthPlan}
+            disabled={!canPressRegenerateMonthPlan}
+            remaining={monthPlanRegensRemaining}
+            exempt={plannerLimitsExempt}
+            resetLabel={resetMonthLabel}
+            compact
+            onPress={() => void handleRegenerateMonthPlan()}
+          />
         </View>
       ) : null}
 
@@ -300,7 +659,7 @@ export default function MonthlyWorkoutPlannerScreen() {
                 <View style={[styles.dayHeader, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}>
                   <Text style={[styles.dayTitle, { color: colors.text }]}>📅 Day {dayDetail.day} — {fullDayLabel(plan.month, plan.year, dayDetail.day)}</Text>
                   <Text style={[styles.split, { color: "#22d3ee" }]}>{dayDetail.split_name.toUpperCase()}</Text>
-                  {!dayDetail.is_rest_day ? (
+                  {!isWorkoutRestDay(dayDetail) ? (
                     <>
                       <Text style={{ color: colors.muted, marginTop: 6 }}>Focus: {dayDetail.focus_muscles.join(", ")}</Text>
                       <Text style={{ color: colors.muted }}>Est. Duration: {dayDetail.estimated_duration_min} min</Text>
@@ -310,11 +669,24 @@ export default function MonthlyWorkoutPlannerScreen() {
                       ) ? (
                         <Text style={{ color: "#fbbf24", marginTop: 6 }}>🎯 Extra {activeFocusMuscles.join(", ")} Volume</Text>
                       ) : null}
+
+                      {showRegenerateWorkout ? (
+                        <RegenerateActionButton
+                          label="Regenerate Workout"
+                          loadingLabel="Regenerating workout…"
+                          isLoading={isRegeneratingWorkout}
+                          disabled={!canPressRegenerateWorkout}
+                          remaining={dayRegensRemaining}
+                          exempt={plannerLimitsExempt}
+                          resetLabel={resetMonthLabel}
+                          onPress={() => void handleRegenerateWorkout()}
+                        />
+                      ) : null}
                     </>
                   ) : null}
                 </View>
 
-                {dayDetail.is_rest_day ? (
+                {isWorkoutRestDay(dayDetail) ? (
                   <View style={[styles.restBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}>
                     <Text style={{ fontSize: 40, textAlign: "center" }}>😴</Text>
                     <Text style={[styles.restTitle, { color: colors.text }]}>REST DAY</Text>
@@ -328,7 +700,7 @@ export default function MonthlyWorkoutPlannerScreen() {
                       <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 10 }}>5/5 exercise swaps used today</Text>
                     ) : null}
                     {dayDetail.exercises.map((ex, i) => (
-                      <View key={`${ex.name}-${i}`} style={styles.exercise}>
+                      <View key={`${exerciseListVersion}-${ex.name}-${i}`} style={styles.exercise}>
                         {swappingExerciseIndex === i ? (
                           <View style={styles.swapLoadingRow}>
                             <ActivityIndicator color="#4ADE80" size="small" />
@@ -431,4 +803,66 @@ const styles = StyleSheet.create({
   musclePillText: { color: "#94A3B8", fontSize: 13, fontWeight: "500" },
   musclePillTextSelected: { color: "#22D3EE", fontWeight: "700" },
   muscleSelectionHint: { color: "#64748B", fontSize: 12, marginTop: 6, marginBottom: 4 },
+  regenerateWorkoutBtn: {
+    marginTop: 14,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#2ECC9A",
+    backgroundColor: "#1E2D2F",
+    paddingHorizontal: 12,
+    justifyContent: "center",
+  },
+  regenerateMonthPlanBtn: {
+    marginTop: 10,
+    height: 38,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#2ECC9A",
+    backgroundColor: "#1E2D2F",
+    paddingHorizontal: 12,
+    justifyContent: "center",
+  },
+  regenerateWorkoutBtnDisabled: {
+    opacity: 0.45,
+    borderColor: "#475569",
+  },
+  regenButtonInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  regenButtonLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  regenerateWorkoutBtnText: {
+    color: "#2ECC9A",
+    fontSize: 14,
+    fontWeight: "600",
+    flexShrink: 1,
+  },
+  regenerateMonthPlanBtnText: {
+    color: "#2ECC9A",
+    fontSize: 13,
+    fontWeight: "600",
+    flexShrink: 1,
+  },
+  regenerateWorkoutBtnTextDisabled: {
+    color: "#64748b",
+  },
+  regenBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    flexShrink: 0,
+  },
+  regenBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
 });

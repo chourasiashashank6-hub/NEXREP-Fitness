@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta
 import json
+import os
 from typing import Any
 import smtplib
 from email.message import EmailMessage
@@ -11,8 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from src.db.session import Base, SessionLocal, engine, get_db
 from src.models import admin_models  # noqa: F401 — registers admin analytics tables
-from src.models.admin_models import Subscription
-from src.core.config import settings
+from src.core.config import settings, validate_jwt_secret, warn_missing_razorpay_webhook_secret
 from src.models.models import Activity, Meal, User, UserOnboarding, Workout, WorkoutCatalog
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
 from src.models.meal_plan import (  # noqa: F401
@@ -38,26 +38,42 @@ from src.schemas.schemas import (
     WorkoutRequest,
     WorkoutUpdateRequest,
 )
-from src.services.auth_service import create_access_token, hash_password, verify_password
+from src.services.auth_service import (
+    create_access_token,
+    hash_password,
+    migrate_sha256_to_bcrypt,
+    verify_password,
+)
 from src.services.firebase_token import email_from_firebase_id_token
 from src.services.food_catalog_service import ensure_food_catalog_schema, load_food_catalog_from_sql_if_empty
 from src.services.global_exercises_service import load_global_exercises_if_empty
 from src.services.workout_catalog_service import load_workout_catalog_if_empty
 from src.services.score_service import compute_discipline_score
-from src.services.subscription_service import activate_subscription
+from src.services.subscription_service import activate_subscription, cancel_subscription
 from src.utils.auth import get_current_user
 from src.routes.calories import goal_progress_router, router as calories_api_router
 from src.routes.weight_log import router as weight_router
 from src.routes.payments import router as payments_router
+from src.routes.subscriptions import invoices_router, router as subscriptions_router
 from src.routes.admin import router as admin_router
 from src.services.ai_logger import log_groq_call
 from src.utils.auth import decode_user_id_from_token
 
 app = FastAPI(title="Fitness API", version="1.0.0")
 
+_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", settings.ALLOWED_ORIGINS).split(",") if o.strip()]
+if settings.APP_ENV == "development":
+    _dev_origins = (
+        "http://localhost:8081,http://127.0.0.1:8081,"
+        "http://localhost:19006,http://127.0.0.1:19006"
+    )
+    for origin in _dev_origins.split(","):
+        o = origin.strip()
+        if o and o not in _origins:
+            _origins.append(o)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,6 +87,8 @@ app.include_router(weight_router)
 app.include_router(meal_planner_router)
 app.include_router(workout_planner_router)
 app.include_router(payments_router)
+app.include_router(subscriptions_router)
+app.include_router(invoices_router)
 app.include_router(admin_router)
 
 
@@ -145,8 +163,15 @@ def health():
 
 @app.on_event("startup")
 def startup():
+    validate_jwt_secret()
+    warn_missing_razorpay_webhook_secret()
     Base.metadata.create_all(bind=engine)
     apply_schema_updates()
+    db = SessionLocal()
+    try:
+        migrate_sha256_to_bcrypt(db)
+    finally:
+        db.close()
     ensure_food_catalog_schema(engine)
     load_food_catalog_from_sql_if_empty(engine)
     load_workout_catalog_if_empty(engine)
@@ -154,6 +179,7 @@ def startup():
 
 
 def apply_schema_updates() -> None:
+    # DEPRECATED: use alembic upgrade head instead
     """
     Lightweight schema patches for local environments without migrations.
     """
@@ -209,6 +235,16 @@ def apply_schema_updates() -> None:
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ NULL"))
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMPTZ NULL"))
         conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS needs_password_reset BOOLEAN NOT NULL DEFAULT FALSE")
+        )
+        conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(32) NOT NULL DEFAULT 'free'"
+            )
+        )
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_expiry TIMESTAMPTZ NULL"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS razorpay_subscription_id VARCHAR(128) NULL"))
+        conn.execute(
             text(
                 """
                 UPDATE monthly_meal_plans p
@@ -241,6 +277,14 @@ def apply_schema_updates() -> None:
             )
         )
         conn.execute(text("ALTER TABLE monthly_workout_plans ADD COLUMN IF NOT EXISTS focus_muscles_json TEXT"))
+        conn.execute(text("ALTER TABLE monthly_workout_plans ADD COLUMN IF NOT EXISTS day_regens_used INTEGER DEFAULT 0"))
+        conn.execute(text("ALTER TABLE monthly_workout_plans ADD COLUMN IF NOT EXISTS day_regens_limit INTEGER DEFAULT 2"))
+        conn.execute(text("ALTER TABLE monthly_workout_plans ADD COLUMN IF NOT EXISTS month_plan_regens_used INTEGER DEFAULT 0"))
+        conn.execute(text("ALTER TABLE monthly_workout_plans ADD COLUMN IF NOT EXISTS month_plan_regens_limit INTEGER DEFAULT 2"))
+        conn.execute(text("UPDATE monthly_workout_plans SET day_regens_used = 0 WHERE day_regens_used IS NULL"))
+        conn.execute(text("UPDATE monthly_workout_plans SET day_regens_limit = 2 WHERE day_regens_limit IS NULL"))
+        conn.execute(text("UPDATE monthly_workout_plans SET month_plan_regens_used = 0 WHERE month_plan_regens_used IS NULL"))
+        conn.execute(text("UPDATE monthly_workout_plans SET month_plan_regens_limit = 2 WHERE month_plan_regens_limit IS NULL"))
         conn.execute(
             text(
                 """
@@ -1044,7 +1088,14 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
     email = payload.email.strip().lower()
     user = db.query(User).filter(func.lower(User.email) == email).first()
-    if not user or not verify_password(payload.password, user.password_hash):
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if user.needs_password_reset:
+        raise HTTPException(
+            status_code=401,
+            detail="Please reset your password via the forgot-password flow",
+        )
+    if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
 
@@ -1069,8 +1120,10 @@ def firebase_login(payload: FirebaseLoginRequest, db: Session = Depends(get_db))
         db.add(user)
         db.commit()
         db.refresh(user)
-    elif not verify_password(payload.password, user.password_hash):
+    elif user.needs_password_reset or not verify_password(payload.password, user.password_hash):
+        # Firebase ID token proves identity — upgrade legacy SHA-256 hash to bcrypt.
         user.password_hash = hash_password(payload.password)
+        user.needs_password_reset = False
         db.commit()
         db.refresh(user)
     return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
@@ -1086,6 +1139,7 @@ def sync_password_after_firebase(payload: SyncPasswordRequest, db: Session = Dep
     if not user:
         raise HTTPException(status_code=404, detail="No fitness account for this email. Sign up first.")
     user.password_hash = hash_password(payload.new_password)
+    user.needs_password_reset = False
     db.commit()
     db.refresh(user)
     return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
@@ -1742,7 +1796,8 @@ def profile(current_user: User = Depends(get_current_user), db: Session = Depend
     }
 
 
-DEV_TEST_EMAIL = "shashank@gmail.com"
+def _dev_tier_toggle_email_set() -> set[str]:
+    return {e.strip().lower() for e in settings.DEV_TIER_TOGGLE_EMAILS.split(",") if e.strip()}
 
 
 @app.post("/dev/subscription-toggle")
@@ -1752,31 +1807,28 @@ async def dev_subscription_toggle(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if settings.APP_ENV != "development":
+        raise HTTPException(status_code=403, detail="Not available in production")
     secret = request.headers.get("X-Dev-Secret", "")
     if secret != settings.DEV_TOGGLE_SECRET:
         raise HTTPException(status_code=403, detail="Not allowed")
-    if current_user.email.lower() != DEV_TEST_EMAIL.lower():
+    if current_user.email.lower() not in _dev_tier_toggle_email_set():
         raise HTTPException(status_code=403, detail="Not allowed for this user")
 
-    plan_id = payload.get("plan_id", "free")
-    billing_cycle = payload.get("billing_cycle", "monthly")
+    plan_id = str(payload.get("plan_id", "free")).lower()
+    billing_cycle = str(payload.get("billing_cycle", "monthly")).lower()
 
     if plan_id == "free":
-        current_user.plan_id = "free"
-        current_user.plan_expires_at = None
-        current_user.trial_ends_at = None
-        now = datetime.utcnow()
-        db.query(Subscription).filter(
-            Subscription.user_id == current_user.id,
-            Subscription.status.in_(["active", "trial"]),
-        ).update({"status": "cancelled", "cancelled_at": now}, synchronize_session=False)
-    else:
+        cancel_subscription(db, current_user.id)
+    elif plan_id in ("pro", "elite"):
         activate_subscription(
             db=db,
             user_id=current_user.id,
             plan_id=plan_id,
             billing_cycle=billing_cycle,
         )
+    else:
+        raise HTTPException(status_code=400, detail="plan_id must be free, pro, or elite")
 
     db.commit()
     db.refresh(current_user)

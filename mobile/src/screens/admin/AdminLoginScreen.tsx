@@ -28,7 +28,7 @@ export default function AdminLoginScreen() {
     setError(null);
     setLoading(true);
     try {
-      const res = await adminApi.login(email.trim(), password);
+      const res = await adminApi.login(email.trim().toLowerCase(), password);
       setAuth(res.access_token, res.role, res.name);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed");

@@ -5,6 +5,27 @@ function adminBase(): string {
   return `${resolveApiBaseUrl()}/api/admin`;
 }
 
+function parseAdminError(status: number, body: string): string {
+  if (!body) {
+    return status === 401 ? "Session expired. Please sign in again." : `${status} request failed`;
+  }
+  try {
+    const parsed = JSON.parse(body) as { detail?: unknown };
+    if (typeof parsed.detail === "string") {
+      if (status === 401 && parsed.detail.toLowerCase().includes("invalid admin token")) {
+        return "Session expired. Please sign in again.";
+      }
+      return parsed.detail;
+    }
+    if (Array.isArray(parsed.detail)) {
+      return parsed.detail.map((d) => (typeof d === "object" && d && "msg" in d ? String((d as { msg: string }).msg) : String(d))).join("\n");
+    }
+  } catch {
+    /* not JSON */
+  }
+  return body;
+}
+
 async function adminFetch(path: string, options: RequestInit = {}) {
   const token = useAdminStore.getState().token;
   const res = await fetch(`${adminBase()}${path}`, {
@@ -17,7 +38,11 @@ async function adminFetch(path: string, options: RequestInit = {}) {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(text || `${res.status} ${res.statusText}`);
+    const isLoginAttempt = path === "/auth/login";
+    if (res.status === 401 && token && !isLoginAttempt) {
+      useAdminStore.getState().logout();
+    }
+    throw new Error(parseAdminError(res.status, text));
   }
   return res.json();
 }
@@ -35,6 +60,8 @@ function toQuery(params?: Record<string, string | number | undefined>): string {
 export const adminApi = {
   login: (email: string, password: string) =>
     adminFetch("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+
+  me: () => adminFetch("/auth/me"),
 
   overview: () => adminFetch("/overview"),
 

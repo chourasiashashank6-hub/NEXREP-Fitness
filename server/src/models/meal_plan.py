@@ -64,6 +64,10 @@ class MonthlyWorkoutPlan(Base):
     focus_muscles_json = Column(Text, nullable=True)  # JSON array e.g. ["Chest", "Back"]
     generated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     source = Column(String(32), default="groq")
+    day_regens_used = Column(Integer, default=0, nullable=False)
+    day_regens_limit = Column(Integer, default=2, nullable=False)
+    month_plan_regens_used = Column(Integer, default=0, nullable=False)
+    month_plan_regens_limit = Column(Integer, default=2, nullable=False)
 
     entries = relationship("DailyWorkoutPlanEntry", back_populates="plan", cascade="all, delete-orphan")
 

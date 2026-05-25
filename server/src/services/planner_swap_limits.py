@@ -10,7 +10,11 @@ class SwapLimitExceeded(Exception):
 
 
 class DayRegenLimitExceeded(Exception):
-    """Raised when user exceeds monthly full-day regeneration quota."""
+    """Raised when user exceeds monthly full-day regeneration quota (meals or workouts)."""
+
+
+class MonthPlanRegenLimitExceeded(Exception):
+    """Raised when user exceeds monthly full month-plan regeneration quota (workouts)."""
 
 
 _meal_swap_counts: dict[str, int] = {}

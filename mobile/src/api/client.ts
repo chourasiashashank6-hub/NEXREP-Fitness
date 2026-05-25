@@ -3,9 +3,7 @@ import { Platform } from "react-native";
 import { signOutSession } from "../services/authService";
 import { useAuthStore } from "../store/authStore";
 
-const rawApiUrl = process.env.EXPO_PUBLIC_API_URL;
-const envApiUrl =
-  rawApiUrl != null && String(rawApiUrl).trim().length > 0 ? String(rawApiUrl).trim() : "http://127.0.0.1:8000";
+const envApiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "").trim();
 
 function isLoopbackHostname(hostname: string): boolean {
   const h = hostname.toLowerCase();
@@ -31,6 +29,9 @@ function isPrivateLanIpv4(hostname: string): boolean {
  * Otherwise use EXPO_PUBLIC_API_URL as-is (tunnels, public hosts, API already on LAN/ngrok).
  */
 export function resolveApiBaseUrl(): string {
+  if (!envApiUrl) {
+    throw new Error("EXPO_PUBLIC_API_URL is not set. Copy mobile/.env.example to mobile/.env");
+  }
   if (Platform.OS !== "web" || typeof window === "undefined") {
     return envApiUrl;
   }

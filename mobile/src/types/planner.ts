@@ -52,6 +52,9 @@ export type MealDayPlan = {
   day_regens_used?: number;
   day_regens_limit?: number;
   day_regens_remaining?: number;
+  month_plan_regens_used?: number;
+  month_plan_regens_limit?: number;
+  month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
 };
 
@@ -119,6 +122,9 @@ export type MealPlanCurrent = {
   day_regens_used?: number;
   day_regens_limit?: number;
   day_regens_remaining?: number;
+  month_plan_regens_used?: number;
+  month_plan_regens_limit?: number;
+  month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
 };
 
@@ -149,6 +155,9 @@ export type MealPlanWeeklyCurrent = {
   day_regens_used?: number;
   day_regens_limit?: number;
   day_regens_remaining?: number;
+  month_plan_regens_used?: number;
+  month_plan_regens_limit?: number;
+  month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
 };
 
@@ -180,6 +189,13 @@ export type WorkoutDayPlan = {
   message?: string;
   swaps_used_today?: number;
   swaps_limit?: number;
+  day_regens_used?: number;
+  day_regens_limit?: number;
+  day_regens_remaining?: number;
+  month_plan_regens_used?: number;
+  month_plan_regens_limit?: number;
+  month_plan_regens_remaining?: number;
+  planner_limits_exempt?: boolean;
 };
 
 export type WorkoutMonthOverviewDay = {
@@ -201,4 +217,11 @@ export type WorkoutPlanCurrent = {
   generated_at: string;
   today: WorkoutDayPlan | null;
   month_overview: WorkoutMonthOverviewDay[];
+  day_regens_used?: number;
+  day_regens_limit?: number;
+  day_regens_remaining?: number;
+  month_plan_regens_used?: number;
+  month_plan_regens_limit?: number;
+  month_plan_regens_remaining?: number;
+  planner_limits_exempt?: boolean;
 };

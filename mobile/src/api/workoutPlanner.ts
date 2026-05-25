@@ -33,12 +33,20 @@ export async function deleteWorkoutPlan(): Promise<void> {
   await apiClient.delete("/api/workout-planner/current", { params: params() });
 }
 
-export async function regenerateRemainingWorkouts(fromDay: number, focusMuscles: FocusMuscle[]): Promise<WorkoutPlanCurrent> {
+export async function regenerateWorkoutMonthPlan(planId: number): Promise<WorkoutPlanCurrent> {
   const { data } = await apiClient.post<WorkoutPlanCurrent>(
     "/api/workout-planner/regenerate-remaining",
-    { from_day: fromDay, focus_muscles: focusMuscles.length > 0 ? focusMuscles : null },
+    { plan_id: planId },
     { params: params(), timeout: COACH_API_TIMEOUT_MS },
   );
+  return data;
+}
+
+export async function regenerateWorkoutPlanDay(payload: { plan_id: number; day: number }): Promise<WorkoutDayPlan> {
+  const { data } = await apiClient.post<WorkoutDayPlan>("/api/workout-planner/regenerate-day", payload, {
+    params: params(),
+    timeout: COACH_API_TIMEOUT_MS,
+  });
   return data;
 }
 

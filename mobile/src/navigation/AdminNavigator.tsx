@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { adminApi } from "../api/adminApi";
 import AdminLoginScreen from "../screens/admin/AdminLoginScreen";
 import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
 import AdminUsersScreen from "../screens/admin/AdminUsersScreen";
@@ -21,6 +24,38 @@ const Stack = createNativeStackNavigator<AdminStackParamList>();
 
 export default function AdminNavigator() {
   const token = useAdminStore((s) => s.token);
+  const [sessionReady, setSessionReady] = useState(!token);
+
+  useEffect(() => {
+    if (!token) {
+      setSessionReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    setSessionReady(false);
+    void (async () => {
+      try {
+        await adminApi.me();
+      } catch {
+        useAdminStore.getState().logout();
+      } finally {
+        if (!cancelled) setSessionReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  if (!sessionReady) {
+    return (
+      <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator color={COLORS.teal} size="large" />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator

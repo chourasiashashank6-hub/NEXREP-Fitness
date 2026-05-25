@@ -69,3 +69,38 @@ export function getPrice(plan: Plan, isYearly: boolean, couponApplied: boolean):
 export function getOriginalPrice(plan: Plan, isYearly: boolean): number {
   return isYearly ? plan.yearlyPrice : plan.monthlyPrice;
 }
+
+export type CheckoutPlanName = "PRO" | "ELITE";
+
+export type CheckoutPlan = {
+  name: CheckoutPlanName;
+  planId: PlanId;
+  priceMonthly: number;
+  priceYearly: number;
+  features: string[];
+  desc: string;
+  headline: string;
+};
+
+export const CHECKOUT_COUPONS: Record<string, number> = {
+  NEXREP20: 0.2,
+  FIRST10: 0.1,
+};
+
+export function planToCheckout(plan: Plan): CheckoutPlan {
+  return {
+    name: plan.name as CheckoutPlanName,
+    planId: plan.id,
+    priceMonthly: plan.monthlyPrice,
+    priceYearly: Math.round(plan.yearlyPrice * 12 * 0.8),
+    features: plan.features.filter((f) => f.included).map((f) => f.label),
+    desc: plan.desc,
+    headline: plan.id === "pro" ? "Train Smarter." : "Peak Performance.",
+  };
+}
+
+export function getPlanById(planId: PlanId): Plan {
+  const plan = PLANS.find((p) => p.id === planId);
+  if (!plan) throw new Error(`Unknown plan: ${planId}`);
+  return plan;
+}

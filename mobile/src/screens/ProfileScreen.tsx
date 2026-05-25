@@ -23,10 +23,14 @@ import { fetchOnboardingMe, upsertOnboardingMe } from "../api/onboarding";
 import { getProfile, updateProfile } from "../api/user";
 import { getWorkoutHistory } from "../api/workout";
 import DevSubscriptionToggle from "../components/DevSubscriptionToggle";
+import PaymentHistorySection from "../components/PaymentHistorySection";
+import PlanTimelineSection from "../components/PlanTimelineSection";
+import SubscriptionCard from "../components/SubscriptionCard";
 import { HeroHeader } from "../components/HeroHeader";
 import { ScreenContainer } from "../components/ScreenContainer";
 import { signOutSession } from "../services/authService";
 import { useAuthStore } from "../store/authStore";
+import { useSubscriptionStore } from "../store/subscriptionStore";
 import { useAppTheme } from "../theme";
 import { calculateNutritionTargets } from "../engine/calculator";
 
@@ -171,6 +175,7 @@ export const ProfileScreen = () => {
   const [activeDatePicker, setActiveDatePicker] = useState<{ overlay: "exercise" | "calorie"; field: "from" | "to" } | null>(null);
   const [calendarCursor, setCalendarCursor] = useState(new Date());
   const [registrationDateIso, setRegistrationDateIso] = useState<string>("");
+  const [userId, setUserId] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -194,6 +199,10 @@ export const ProfileScreen = () => {
     currentDayStreak: 0,
     avgSessionsPerWeek: 0,
   });
+  const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
+  const fetchPayments = useSubscriptionStore((s) => s.fetchPayments);
+  const subscriptionTier = useSubscriptionStore((s) => s.subscription?.tier ?? "FREE");
+
   const [editForm, setEditForm] = useState({
     firstName: "",
     lastName: "",
@@ -241,6 +250,7 @@ export const ProfileScreen = () => {
       const weeksActive = Math.max(1, 8);
       const avgSessions = round1(sessionCount / weeksActive);
 
+      setUserId(String(profile.id || ""));
       setFirstName(f || "User");
       setLastName(l || "");
       setUserEmail(String(profile.email || ""));
@@ -370,6 +380,15 @@ export const ProfileScreen = () => {
     useCallback(() => {
       void load();
     }, [load]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        void fetchSubscription(userId);
+        void fetchPayments(userId);
+      }
+    }, [userId, fetchSubscription, fetchPayments]),
   );
 
   useFocusEffect(
@@ -723,16 +742,18 @@ export const ProfileScreen = () => {
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <HeroHeader title="Profile" subtitle="Fitness identity and progress" />
 
-        <Pressable
-          onPress={() => navigation.navigate("Subscription")}
-          style={[styles.proCta, { borderColor: "#E84545", backgroundColor: "rgba(232,69,69,0.12)" }]}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.proCtaTitle, { color: "#E84545" }]}>NexRep PRO</Text>
-            <Text style={[styles.proCtaSub, { color: colors.muted }]}>Unlock AI tracking & premium coaching</Text>
-          </View>
-          <Text style={{ color: "#E84545", fontSize: 22, fontWeight: "300" }}>›</Text>
-        </Pressable>
+        {plan_id === "free" && subscriptionTier === "FREE" ? (
+          <Pressable
+            onPress={() => navigation.navigate("Subscription")}
+            style={[styles.proCta, { borderColor: "#E84545", backgroundColor: "rgba(232,69,69,0.12)" }]}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.proCtaTitle, { color: "#E84545" }]}>NexRep PRO</Text>
+              <Text style={[styles.proCtaSub, { color: colors.muted }]}>Unlock AI tracking & premium coaching</Text>
+            </View>
+            <Text style={{ color: "#E84545", fontSize: 22, fontWeight: "300" }}>›</Text>
+          </Pressable>
+        ) : null}
 
         <View style={[styles.headerCard, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}>
           <Pressable
@@ -848,6 +869,10 @@ export const ProfileScreen = () => {
           <StatTile value={numFmt(stats.currentDayStreak)} label="Day streak" valueColor="#1D9E75" />
           <StatTile value={String(stats.avgSessionsPerWeek)} label="Avg sessions/week" valueColor="#BA7517" />
         </View>
+
+        {userId ? <SubscriptionCard userId={userId} /> : null}
+        <PaymentHistorySection />
+        <PlanTimelineSection />
 
         <View style={styles.historyCardsRow}>
           <View style={[styles.historySectionCard, styles.historySectionHalf, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}>

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 from datetime import datetime
 from typing import Any
 
@@ -26,11 +27,21 @@ from src.services.planner_common import (
 )
 from src.services.planner_swap_limits import (
     SWAP_LIMIT_PER_DAY,
+    DayRegenLimitExceeded,
+    MonthPlanRegenLimitExceeded,
     SwapLimitExceeded,
     check_swap_allowed,
     get_swap_count,
     increment_swap,
 )
+from src.services.planner_test_users import (
+    is_planner_test_user,
+    planner_limits_exempt_flag,
+    planner_unlimited_regen_stats,
+)
+
+MONTHLY_WORKOUT_DAY_REGEN_LIMIT = 2
+MONTHLY_WORKOUT_MONTH_PLAN_REGEN_LIMIT = 2
 
 WORKOUT_SYSTEM_PROMPT = """You are an expert strength and conditioning coach.
 Generate a 7-day workout plan as a JSON array of 7 objects.
@@ -55,6 +66,16 @@ Follow all rules in the user message. No markdown, return ONLY the JSON array.""
 
 WORKOUT_REGEN_PROMPT_SUFFIX = """
 The user message may include "continue_from_split" — this is the split that was last completed before regeneration. Start the rotation from the NEXT split in the sequence (e.g. if last was "Push Day", start with "Pull Day" or "Legs", not another Push Day immediately)."""
+
+WORKOUT_DAY_REGEN_SUFFIX = """
+SINGLE-DAY REGENERATION: Generate exactly ONE training day object for the day number in "days".
+You MUST keep split_name EXACTLY as given in preserve_split_name.
+You MUST keep focus_muscles EXACTLY as given in preserve_focus_muscles.
+is_rest_day must be false.
+Do NOT include any exercise whose name appears in exclude_exercises (case-insensitive).
+Provide a fresh exercise list targeting the same muscles with similar total volume.
+estimated_duration_min should be within ±10 minutes of target_duration_min.
+Return ONLY a JSON array containing that single day object."""
 
 WORKOUT_VOLUME_RULES = """
 User trains {workouts_per_week} days per week. Distribute rest days across the week:
@@ -676,11 +697,17 @@ def _generate_workout_chunk(
 
 
 def get_existing_workout_plan(db: Session, user_id: int, month: int, year: int) -> MonthlyWorkoutPlan | None:
-    return (
+    from sqlalchemy.orm import joinedload
+
+    plan = (
         db.query(MonthlyWorkoutPlan)
+        .options(joinedload(MonthlyWorkoutPlan.entries))
         .filter(MonthlyWorkoutPlan.user_id == user_id, MonthlyWorkoutPlan.month == month, MonthlyWorkoutPlan.year == year)
         .first()
     )
+    if plan and not plan.entries:
+        return None
+    return plan
 
 
 def generate_workout_plan(
@@ -694,7 +721,18 @@ def generate_workout_plan(
     month, year = today.month, today.year
     existing = get_existing_workout_plan(db, user.id, month, year)
     if existing:
-        return existing
+        db.refresh(existing)
+        if existing.entries:
+            return existing
+        logger.warning(
+            "[WorkoutPlanner] user=%s: removing empty plan id=%s for %s-%s",
+            user.id,
+            existing.id,
+            month,
+            year,
+        )
+        db.delete(existing)
+        db.flush()
 
     muscles = focus_muscles if focus_muscles is not None else []
     ctx = _build_workout_ctx(db, user, focus_muscles=muscles)
@@ -764,7 +802,67 @@ def _workout_entry_dict(entry: DailyWorkoutPlanEntry, *, locked: bool = False) -
     }
 
 
-def workout_plan_current_response(plan: MonthlyWorkoutPlan, local_date: str | None) -> dict[str, Any]:
+def _monthly_workout_day_regen_stats(
+    db: Session,
+    user_id: int,
+    month: int,
+    year: int,
+    *,
+    user: User | None = None,
+) -> dict[str, int | bool]:
+    if user and is_planner_test_user(user):
+        return planner_unlimited_regen_stats()
+
+    plan = get_existing_workout_plan(db, user_id, month, year)
+    used = int(plan.day_regens_used or 0) if plan else 0
+    limit = int(plan.day_regens_limit or MONTHLY_WORKOUT_DAY_REGEN_LIMIT) if plan else MONTHLY_WORKOUT_DAY_REGEN_LIMIT
+    remaining = max(0, limit - used)
+    return {
+        "day_regens_used": used,
+        "day_regens_limit": limit,
+        "day_regens_remaining": remaining,
+        **planner_limits_exempt_flag(user),
+    }
+
+
+def _monthly_workout_month_plan_regen_stats(
+    db: Session,
+    user_id: int,
+    month: int,
+    year: int,
+    *,
+    user: User | None = None,
+) -> dict[str, int | bool]:
+    if user and is_planner_test_user(user):
+        return {
+            "month_plan_regens_used": 0,
+            "month_plan_regens_limit": 999,
+            "month_plan_regens_remaining": 999,
+        }
+
+    plan = get_existing_workout_plan(db, user_id, month, year)
+    used = int(plan.month_plan_regens_used or 0) if plan else 0
+    limit = int(plan.month_plan_regens_limit or MONTHLY_WORKOUT_MONTH_PLAN_REGEN_LIMIT) if plan else MONTHLY_WORKOUT_MONTH_PLAN_REGEN_LIMIT
+    remaining = max(0, limit - used)
+    return {
+        "month_plan_regens_used": used,
+        "month_plan_regens_limit": limit,
+        "month_plan_regens_remaining": remaining,
+    }
+
+
+def _attach_workout_day_regen_stats(payload: dict[str, Any], stats: dict[str, int | bool]) -> dict[str, Any]:
+    payload.update(stats)
+    return payload
+
+
+def workout_plan_current_response(
+    plan: MonthlyWorkoutPlan,
+    local_date: str | None,
+    *,
+    db: Session | None = None,
+    user: User | None = None,
+) -> dict[str, Any]:
     today = parse_local_date(local_date)
     entries = sorted(plan.entries, key=lambda e: e.day)
     today_entry = next((e for e in entries if e.day == today.day), None)
@@ -779,7 +877,7 @@ def workout_plan_current_response(plan: MonthlyWorkoutPlan, local_date: str | No
                 **flags,
             }
         )
-    return {
+    payload = {
         "plan_id": plan.id,
         "month": plan.month,
         "year": plan.year,
@@ -789,6 +887,233 @@ def workout_plan_current_response(plan: MonthlyWorkoutPlan, local_date: str | No
         "today": _workout_entry_dict(today_entry, locked=False) if today_entry else None,
         "month_overview": month_overview,
     }
+    if db is not None and user is not None:
+        payload.update(_monthly_workout_day_regen_stats(db, user.id, plan.month, plan.year, user=user))
+        payload.update(_monthly_workout_month_plan_regen_stats(db, user.id, plan.month, plan.year, user=user))
+    return payload
+
+
+def _refresh_workout_entry_exercises(
+    db: Session,
+    user: User,
+    plan: MonthlyWorkoutPlan,
+    entry: DailyWorkoutPlanEntry,
+    *,
+    ctx: dict[str, Any] | None = None,
+) -> None:
+    """Replace exercises for an entry while preserving split and focus."""
+    day = int(entry.day)
+    split_name = entry.split_name
+    focus_muscles = safe_json_loads(entry.focus_muscles_json) or _focus_muscles_for_split(split_name)
+    old_exercises = safe_json_loads(entry.exercises_json) or []
+    exclude_names = {str(ex.get("name", "")).strip().lower() for ex in old_exercises if ex.get("name")}
+    target_duration = int(entry.estimated_duration_min or 50)
+    exercise_count = max(len(old_exercises), 1)
+    if ctx is None:
+        ctx = _build_workout_ctx(db, user, focus_muscles=plan_get_focus_muscles(plan))
+    week_number = max(1, (day - 1) // 7 + 1)
+
+    day_data = _regenerate_workout_day_ai(
+        day=day,
+        split_name=split_name,
+        focus_muscles=focus_muscles,
+        exclude_exercises=[ex.get("name", "") for ex in old_exercises if ex.get("name")],
+        target_duration=target_duration,
+        ctx=ctx,
+        user_id=user.id,
+    )
+
+    if not day_data:
+        exercises = _fallback_regenerate_exercises(
+            split_name=split_name,
+            focus_muscles=focus_muscles,
+            exercises_per_session=max(int(ctx["exercises_per_session"]), exercise_count),
+            exclude_names=exclude_names,
+            target_duration=target_duration,
+            week_number=week_number,
+        )
+        duration = target_duration
+    else:
+        exercises = day_data.get("exercises") or []
+        duration = int(day_data.get("estimated_duration_min") or target_duration)
+        if abs(duration - target_duration) > 10:
+            duration = target_duration
+
+    normalized = _ensure_exercises_for_day(
+        {
+            "day": day,
+            "is_rest_day": False,
+            "split_name": split_name,
+            "focus_muscles": focus_muscles,
+            "exercises": exercises,
+            "estimated_duration_min": duration,
+        },
+        exercises_per_session=max(int(ctx["exercises_per_session"]), len(exercises), exercise_count),
+        week_number=week_number,
+    )
+
+    entry.is_rest_day = False
+    entry.split_name = split_name
+    entry.focus_muscles_json = safe_json_dumps(normalized["focus_muscles"])
+    entry.exercises_json = safe_json_dumps(normalized["exercises"])
+    entry.estimated_duration_min = int(normalized["estimated_duration_min"])
+
+
+def _fallback_regenerate_exercises(
+    *,
+    split_name: str,
+    focus_muscles: list[str],
+    exercises_per_session: int,
+    exclude_names: set[str],
+    target_duration: int,
+    week_number: int,
+) -> list[dict[str, Any]]:
+    pool = _exercise_pool_for_split(split_name)
+    filtered = [
+        dict(ex)
+        for ex in pool
+        if str(ex.get("name", "")).strip().lower() not in exclude_names
+    ]
+    if len(filtered) < max(1, exercises_per_session - 1):
+        filtered = [dict(ex) for ex in pool]
+    random.shuffle(filtered)
+    extra_sets = 1 if week_number >= 3 else 0
+    count = max(len(exclude_names), exercises_per_session) if exclude_names else exercises_per_session
+    count = max(1, min(count, exercises_per_session + 1))
+    return _pad_exercises(filtered, count, extra_sets=extra_sets)
+
+
+def _regenerate_workout_day_ai(
+    *,
+    day: int,
+    split_name: str,
+    focus_muscles: list[str],
+    exclude_exercises: list[str],
+    target_duration: int,
+    ctx: dict[str, Any],
+    user_id: int | None,
+) -> dict[str, Any] | None:
+    user_msg = {
+        "days": [day],
+        "workouts_per_week": ctx["workouts_per_week"],
+        "exercises_per_session": ctx["exercises_per_session"],
+        "goal_type": ctx["goal_type"],
+        "difficulty": ctx["difficulty"],
+        "activity_level": ctx["activity_level"],
+        "focus_muscles": focus_muscles,
+        "has_muscle_focus": len(focus_muscles) > 0,
+        "workout_types": ctx["workout_types"],
+        "user_weight_kg": ctx["user_weight_kg"],
+        "week_number": max(1, (day - 1) // 7 + 1),
+        "preserve_split_name": split_name,
+        "preserve_focus_muscles": focus_muscles,
+        "exclude_exercises": exclude_exercises,
+        "target_duration_min": target_duration,
+    }
+    system_prompt = _build_workout_system_prompt(ctx) + WORKOUT_DAY_REGEN_SUFFIX
+
+    for attempt in range(2):
+        try:
+            raw = _groq_workout_chunk(
+                user_msg,
+                system_prompt=system_prompt,
+                user_id=user_id,
+                endpoint="/api/workout-planner/regenerate-day",
+            )
+            validated = [_validate_workout_day(d) for d in raw]
+            validated = [d for d in validated if d]
+            if validated:
+                return validated[0]
+        except Exception:
+            if attempt == 0:
+                continue
+        try:
+            raw = _gemini_workout_chunk(
+                user_msg,
+                system_prompt=system_prompt,
+                user_id=user_id,
+                endpoint="/api/workout-planner/regenerate-day",
+            )
+            validated = [_validate_workout_day(d) for d in raw]
+            validated = [d for d in validated if d]
+            if validated:
+                return validated[0]
+        except Exception:
+            pass
+    return None
+
+
+def regenerate_single_workout_day(
+    db: Session,
+    user: User,
+    *,
+    plan_id: int,
+    day: int,
+    local_date: str | None,
+) -> dict[str, Any]:
+    today = parse_local_date(local_date)
+    month, year = today.month, today.year
+
+    if day < today.day and today.month == month and today.year == year:
+        raise ValueError(f"Cannot regenerate past days. Day {day} has already passed.")
+
+    if day > today.day and today.month == month and today.year == year:
+        raise ValueError(
+            f"Cannot regenerate future days. This day's plan unlocks on day {day}."
+        )
+
+    test_user = is_planner_test_user(user)
+    if not test_user:
+        regen_stats = _monthly_workout_day_regen_stats(db, user.id, month, year, user=user)
+        if regen_stats["day_regens_remaining"] <= 0:
+            limit = regen_stats["day_regens_limit"]
+            raise DayRegenLimitExceeded(
+                f"You have used all {limit} workout regenerations for this month. "
+                "You can still swap individual exercises."
+            )
+
+    plan = (
+        db.query(MonthlyWorkoutPlan)
+        .filter(
+            MonthlyWorkoutPlan.id == plan_id,
+            MonthlyWorkoutPlan.user_id == user.id,
+            MonthlyWorkoutPlan.month == month,
+            MonthlyWorkoutPlan.year == year,
+        )
+        .first()
+    )
+    if not plan:
+        raise LookupError("Plan not found")
+
+    existing_entry = (
+        db.query(DailyWorkoutPlanEntry)
+        .filter(DailyWorkoutPlanEntry.plan_id == plan.id, DailyWorkoutPlanEntry.day == day)
+        .first()
+    )
+    if not existing_entry:
+        raise LookupError("Day not found")
+    if existing_entry.is_rest_day:
+        raise ValueError("Cannot regenerate a rest day")
+
+    ctx = _build_workout_ctx(db, user, focus_muscles=plan_get_focus_muscles(plan))
+
+    try:
+        _refresh_workout_entry_exercises(db, user, plan, existing_entry, ctx=ctx)
+        if not test_user:
+            plan.day_regens_used = int(plan.day_regens_used or 0) + 1
+        db.commit()
+        db.refresh(existing_entry)
+        db.refresh(plan)
+    except Exception as db_exc:
+        db.rollback()
+        logger.exception("[WorkoutPlanner] DB error on workout day regen for day %s: %s", day, db_exc)
+        raise RuntimeError("Failed to save regenerated workout. Please try again.") from db_exc
+
+    result = _workout_entry_dict(existing_entry, locked=False)
+    return _attach_workout_day_regen_stats(
+        result,
+        _monthly_workout_day_regen_stats(db, user.id, month, year, user=user),
+    )
 
 
 def workout_plan_month_response(plan: MonthlyWorkoutPlan, local_date: str | None) -> dict[str, Any]:
@@ -813,6 +1138,70 @@ def workout_plan_month_response(plan: MonthlyWorkoutPlan, local_date: str | None
 def delete_workout_plan(db: Session, plan: MonthlyWorkoutPlan) -> None:
     db.delete(plan)
     db.commit()
+
+
+def regenerate_month_plan_workouts(
+    db: Session,
+    user: User,
+    *,
+    plan_id: int,
+    local_date: str | None,
+) -> dict[str, Any]:
+    """Regenerate exercises for today and all future workout days; keep split schedule."""
+    today = parse_local_date(local_date)
+    month, year = today.month, today.year
+
+    test_user = is_planner_test_user(user)
+    if not test_user:
+        month_stats = _monthly_workout_month_plan_regen_stats(db, user.id, month, year, user=user)
+        if month_stats["month_plan_regens_remaining"] <= 0:
+            limit = month_stats["month_plan_regens_limit"]
+            raise MonthPlanRegenLimitExceeded(
+                f"You have used all {limit} month plan regenerations for this month."
+            )
+
+    plan = (
+        db.query(MonthlyWorkoutPlan)
+        .filter(
+            MonthlyWorkoutPlan.id == plan_id,
+            MonthlyWorkoutPlan.user_id == user.id,
+            MonthlyWorkoutPlan.month == month,
+            MonthlyWorkoutPlan.year == year,
+        )
+        .first()
+    )
+    if not plan:
+        raise LookupError("Plan not found")
+
+    entries = (
+        db.query(DailyWorkoutPlanEntry)
+        .filter(
+            DailyWorkoutPlanEntry.plan_id == plan.id,
+            DailyWorkoutPlanEntry.day >= today.day,
+            DailyWorkoutPlanEntry.is_rest_day.is_(False),
+        )
+        .order_by(DailyWorkoutPlanEntry.day.asc())
+        .all()
+    )
+    if not entries:
+        raise ValueError("No remaining workout days to regenerate this month.")
+
+    ctx = _build_workout_ctx(db, user, focus_muscles=plan_get_focus_muscles(plan))
+
+    try:
+        for entry in entries:
+            _refresh_workout_entry_exercises(db, user, plan, entry, ctx=ctx)
+        if not test_user:
+            plan.month_plan_regens_used = int(plan.month_plan_regens_used or 0) + 1
+        plan.generated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(plan)
+    except Exception as db_exc:
+        db.rollback()
+        logger.exception("[WorkoutPlanner] DB error on month plan regen: %s", db_exc)
+        raise RuntimeError("Failed to save regenerated month plan. Please try again.") from db_exc
+
+    return workout_plan_current_response(plan, local_date, db=db, user=user)
 
 
 def regenerate_remaining_workouts(

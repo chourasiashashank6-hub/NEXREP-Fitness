@@ -5,12 +5,13 @@ from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.models.models import User
 from src.services.planner_common import parse_local_date
-from src.services.planner_swap_limits import SwapLimitExceeded
+from src.services.planner_swap_limits import DayRegenLimitExceeded, MonthPlanRegenLimitExceeded, SwapLimitExceeded
 from src.services.workout_planner_service import (
     delete_workout_plan,
     generate_workout_plan,
     get_existing_workout_plan,
-    regenerate_remaining_workouts,
+    regenerate_month_plan_workouts,
+    regenerate_single_workout_day,
     swap_exercise,
     workout_plan_current_response,
     workout_plan_month_response,
@@ -33,8 +34,13 @@ class ExerciseSwapRequest(BaseModel):
     reason: str | None = None
 
 
+class WorkoutRegenerateDayRequest(BaseModel):
+    plan_id: int
+    day: int
+
+
 class RegenerateRemainingWorkoutRequest(BaseModel):
-    from_day: int
+    plan_id: int
     focus_muscles: list[str] | None = None
 
 
@@ -59,7 +65,7 @@ def post_generate(
 ):
     focus_muscles = _normalize_focus_muscles(body.focus_muscles)
     plan = generate_workout_plan(db, current_user, focus_muscles=focus_muscles, local_date=local_date)
-    return workout_plan_current_response(plan, local_date)
+    return workout_plan_current_response(plan, local_date, db=db, user=current_user)
 
 
 @router.get("/current")
@@ -72,7 +78,7 @@ def get_current(
     plan = get_existing_workout_plan(db, current_user.id, today.month, today.year)
     if not plan:
         raise HTTPException(status_code=404, detail="No workout plan for this month")
-    return workout_plan_current_response(plan, local_date)
+    return workout_plan_current_response(plan, local_date, db=db, user=current_user)
 
 
 @router.get("/day/{day}")
@@ -96,9 +102,13 @@ def get_day(
     entry = next((e for e in plan.entries if e.day == day), None)
     if not entry:
         raise HTTPException(status_code=404, detail="Day not found")
-    from src.services.workout_planner_service import _workout_entry_dict
+    from src.services.workout_planner_service import _attach_workout_day_regen_stats, _monthly_workout_day_regen_stats, _workout_entry_dict
 
-    return _workout_entry_dict(entry, locked=False)
+    payload = _workout_entry_dict(entry, locked=False)
+    return _attach_workout_day_regen_stats(
+        payload,
+        _monthly_workout_day_regen_stats(db, current_user.id, plan.month, plan.year, user=current_user),
+    )
 
 
 @router.get("/month")
@@ -114,6 +124,31 @@ def get_month(
     return workout_plan_month_response(plan, local_date)
 
 
+@router.post("/regenerate-day")
+def post_regenerate_day(
+    body: WorkoutRegenerateDayRequest,
+    local_date: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return regenerate_single_workout_day(
+            db,
+            current_user,
+            plan_id=body.plan_id,
+            day=body.day,
+            local_date=local_date,
+        )
+    except DayRegenLimitExceeded as e:
+        raise HTTPException(status_code=429, detail=str(e)) from e
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
 @router.post("/regenerate-remaining")
 def post_regenerate_remaining(
     body: RegenerateRemainingWorkoutRequest,
@@ -121,10 +156,21 @@ def post_regenerate_remaining(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    raise HTTPException(
-        status_code=403,
-        detail="Full workout plan regeneration is not available. You can swap individual exercises.",
-    )
+    try:
+        return regenerate_month_plan_workouts(
+            db,
+            current_user,
+            plan_id=body.plan_id,
+            local_date=local_date,
+        )
+    except MonthPlanRegenLimitExceeded as e:
+        raise HTTPException(status_code=429, detail=str(e)) from e
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/swap-exercise")

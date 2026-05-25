@@ -114,7 +114,7 @@ export function SubscriptionScreen({
       const price = getPrice(plan, isYearly, couponApplied);
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onSelectPlan?.(planId, price, isYearly);
-      navigation.navigate("Payment", { planId, price, isYearly });
+      navigation.navigate("Payment", { planId, displayPrice: price, isYearly });
     },
     [couponApplied, isYearly, navigation, onSelectPlan],
   );

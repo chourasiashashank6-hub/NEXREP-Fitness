@@ -17,6 +17,37 @@ PLAN_PRICES_INR = {
 TRIAL_DAYS = 7
 
 
+def is_pro(db: Session, user_id: int) -> bool:
+    """Server-side pro check — never trust client subscription flags."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return False
+    status = (user.subscription_status or "free").lower()
+    plan = (user.plan_id or "free").lower()
+    if status not in ("pro", "elite") and plan not in ("pro", "elite"):
+        return False
+    expiry = user.subscription_expiry or user.plan_expires_at
+    if expiry and expiry.replace(tzinfo=None) < datetime.utcnow():
+        return False
+    return True
+
+
+def _sync_user_subscription_fields(
+    user: User,
+    *,
+    plan_id: str,
+    status: str,
+    expires_at: Optional[datetime],
+    razorpay_subscription_id: Optional[str] = None,
+) -> None:
+    user.plan_id = plan_id
+    user.plan_expires_at = expires_at
+    user.subscription_status = status
+    user.subscription_expiry = expires_at
+    if razorpay_subscription_id is not None:
+        user.razorpay_subscription_id = razorpay_subscription_id
+
+
 def get_active_subscription(db: Session, user_id: int) -> Optional[Subscription]:
     return (
         db.query(Subscription)
@@ -29,8 +60,28 @@ def get_active_subscription(db: Session, user_id: int) -> Optional[Subscription]
     )
 
 
+def get_display_subscription(db: Session, user_id: int) -> Optional[Subscription]:
+    """Active, trial, or cancelled but still within paid access period."""
+    now = datetime.utcnow()
+    rows = (
+        db.query(Subscription)
+        .filter(Subscription.user_id == user_id)
+        .order_by(Subscription.created_at.desc())
+        .all()
+    )
+    for sub in rows:
+        if sub.status in ("active", "trial"):
+            return sub
+        if sub.status == "cancelled" and sub.expires_at:
+            expires = sub.expires_at.replace(tzinfo=None) if sub.expires_at.tzinfo else sub.expires_at
+            if expires > now:
+                return sub
+    return None
+
+
 def start_trial(db: Session, user_id: int, plan_id: str = "pro") -> Subscription:
     now = datetime.utcnow()
+    expires = now + timedelta(days=TRIAL_DAYS)
     sub = Subscription(
         user_id=user_id,
         plan_id=plan_id,
@@ -38,15 +89,14 @@ def start_trial(db: Session, user_id: int, plan_id: str = "pro") -> Subscription
         status="trial",
         price_inr=0,
         started_at=now,
-        trial_ends_at=now + timedelta(days=TRIAL_DAYS),
-        expires_at=now + timedelta(days=TRIAL_DAYS),
+        trial_ends_at=expires,
+        expires_at=expires,
     )
     db.add(sub)
     user = db.query(User).filter(User.id == user_id).first()
     if user:
-        user.plan_id = plan_id
         user.trial_ends_at = sub.trial_ends_at
-        user.plan_expires_at = sub.expires_at
+        _sync_user_subscription_fields(user, plan_id=plan_id, status="pro", expires_at=expires)
     db.commit()
     db.refresh(sub)
     return sub
@@ -95,21 +145,37 @@ def activate_subscription(
     db.add(sub)
     user = db.query(User).filter(User.id == user_id).first()
     if user:
-        user.plan_id = plan_id
-        user.plan_expires_at = expires
         user.trial_ends_at = None
+        _sync_user_subscription_fields(
+            user,
+            plan_id=plan_id,
+            status=plan_id if plan_id in ("pro", "elite") else "pro",
+            expires_at=expires,
+            razorpay_subscription_id=razorpay_subscription_id,
+        )
     db.commit()
     db.refresh(sub)
     return sub
 
 
-def cancel_subscription(db: Session, user_id: int) -> None:
+def cancel_subscription(db: Session, user_id: int) -> Optional[Subscription]:
+    """Cancel at period end — user keeps plan access until expires_at."""
     sub = get_active_subscription(db, user_id)
-    if sub:
+    if not sub:
+        sub = get_display_subscription(db, user_id)
+    if sub and sub.status in ("active", "trial"):
         sub.status = "cancelled"
         sub.cancelled_at = datetime.utcnow()
     user = db.query(User).filter(User.id == user_id).first()
     if user:
-        user.plan_id = "free"
-        user.plan_expires_at = None
+        expires = sub.expires_at if sub else None
+        _sync_user_subscription_fields(
+            user,
+            plan_id=(sub.plan_id if sub else user.plan_id) or "free",
+            status="cancelled",
+            expires_at=expires,
+        )
     db.commit()
+    if sub:
+        db.refresh(sub)
+    return sub

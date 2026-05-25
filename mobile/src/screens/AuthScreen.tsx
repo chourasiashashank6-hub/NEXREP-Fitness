@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Keyboard, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { firebaseLogin, login, signup, syncPasswordFromFirebase } from "../api/auth";
+import { firebaseLogin, signup, syncPasswordFromFirebase } from "../api/auth";
 import { resolveApiBaseUrl } from "../api/client";
 import { AppButton } from "../components/AppButton";
 import { AppCard } from "../components/AppCard";
@@ -169,7 +169,22 @@ export const AuthScreen = ({ onAuth }: Props) => {
         const msg = detailFromAxios(e);
         if (msg.includes("Email already registered") || msg.toLowerCase().includes("already")) {
           try {
-            const data = await login({ email: emailTrim, password });
+            let firebaseUser = fb.user;
+            if (!firebaseUser) {
+              const signIn = await firebaseSignIn(emailTrim, password);
+              if (signIn.error || !signIn.user) {
+                await signOutFirebaseOnly();
+                setErrorMsg(signIn.error ?? "Could not sign in with this email.");
+                return;
+              }
+              firebaseUser = signIn.user;
+            }
+            const idToken = await firebaseUser.getIdToken(true);
+            const data = await firebaseLogin({
+              id_token: idToken,
+              password,
+              name: nameTrim,
+            });
             const accessToken = data?.access_token;
             if (!accessToken || typeof accessToken !== "string") {
               await signOutFirebaseOnly();
@@ -179,7 +194,7 @@ export const AuthScreen = ({ onAuth }: Props) => {
             await onAuth(accessToken, "login");
           } catch (e2) {
             await signOutFirebaseOnly();
-            setErrorMsg(detailFromAxios(e2));
+            setErrorMsg(mapBackendLoginError(e2));
           }
         } else {
           await signOutFirebaseOnly();

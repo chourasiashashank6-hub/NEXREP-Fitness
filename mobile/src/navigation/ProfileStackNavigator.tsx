@@ -2,6 +2,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { SubscriptionScreen } from "../screens/SubscriptionScreen";
 import { PaymentScreen } from "../screens/PaymentScreen";
+import { PaymentSuccessScreen } from "../screens/PaymentSuccessScreen";
+import { ManageSubscriptionScreen } from "../screens/ManageSubscriptionScreen";
 import type { ProfileStackParamList } from "./types";
 
 export type { ProfileStackParamList };
@@ -13,7 +15,9 @@ export function ProfileStackNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ProfileMain" component={ProfileScreen} />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
       <Stack.Screen name="Payment" component={PaymentScreen} />
+      <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

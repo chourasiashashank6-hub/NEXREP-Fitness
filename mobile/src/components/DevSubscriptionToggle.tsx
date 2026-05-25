@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -9,14 +9,24 @@ import {
 import { resolveApiBaseUrl } from "../api/client";
 import { useAuthStore } from "../store/authStore";
 
-const DEV_EMAIL = "shashank@gmail.com";
-const DEV_TOGGLE_SECRET = "nexrep-dev-toggle-2026";
+const DEV_TOGGLE_SECRET =
+  process.env.EXPO_PUBLIC_DEV_TOGGLE_SECRET?.trim() || "nexrep-dev-toggle-2026";
+
+function devTierEmails(): string[] {
+  const raw =
+    process.env.EXPO_PUBLIC_DEV_TIER_EMAILS?.trim() || "shashank1@gmail.com";
+  return raw
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 type Props = {
   email?: string;
 };
 
 export default function DevSubscriptionToggle({ email = "" }: Props) {
+  const allowed = useMemo(() => devTierEmails(), []);
   const plan_id = useAuthStore((s) => s.plan_id) ?? "free";
   const setPlanId = useAuthStore((s) => s.setPlanId);
   const token = useAuthStore((s) => s.token);
@@ -25,7 +35,7 @@ export default function DevSubscriptionToggle({ email = "" }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
-  if (email.toLowerCase() !== DEV_EMAIL.toLowerCase()) return null;
+  if (!allowed.includes(email.trim().toLowerCase())) return null;
 
   const toggle = async (newPlan: "free" | "pro" | "elite") => {
     setLoading(true);
@@ -43,7 +53,10 @@ export default function DevSubscriptionToggle({ email = "" }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        const detail = typeof data?.detail === "string" ? data.detail : JSON.stringify(data?.detail ?? data);
+        const detail =
+          typeof data?.detail === "string"
+            ? data.detail
+            : JSON.stringify(data?.detail ?? data);
         throw new Error(detail || `Error ${res.status}`);
       }
       setPlanId(data.plan_id);
@@ -117,7 +130,7 @@ export default function DevSubscriptionToggle({ email = "" }: Props) {
             </Text>
           ) : null}
 
-          <Text style={styles.warning}>⚠ Dev only — visible to shashank@gmail.com only</Text>
+          <Text style={styles.warning}>Dev only — tier testing for allowlisted accounts</Text>
         </View>
       ) : null}
     </View>

@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: pip install ruff==0.8.4
+      - name: Ruff check
+        run: ruff check server/src
+
+  test-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r server/requirements.txt
+      - name: Pytest
+        run: |
+          if [ -d server/tests ] && [ "$(ls -A server/tests 2>/dev/null)" ]; then
+            pytest server/tests
+          else
+            echo "No server tests; skipping pytest"
+          fi
+
+  lint-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci
+      - name: TypeScript check
+        working-directory: mobile
+        run: npx tsc --noEmit

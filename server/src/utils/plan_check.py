@@ -1,18 +1,22 @@
 from datetime import datetime
 
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
 from src.models.models import User
+from src.services.subscription_service import is_pro
 
 
-def require_plan(user: User, minimum_plan: str) -> None:
+def require_plan(user: User, minimum_plan: str, db: Session) -> None:
     """
     Raise 403 if user's plan is below the minimum required.
-    Plan hierarchy: free < pro < elite
-    Also checks if plan has expired.
+    Plan hierarchy: free < pro < elite. Uses server-side is_pro() for pro checks.
     """
     hierarchy = {"free": 0, "pro": 1, "elite": 2}
-    user_level = hierarchy.get(user.plan_id or "free", 0)
+    if minimum_plan == "pro" and not is_pro(db, user.id):
+        user_level = 0
+    else:
+        user_level = hierarchy.get(user.plan_id or "free", 0)
     required_level = hierarchy.get(minimum_plan, 0)
 
     if user.plan_id != "free" and user.plan_expires_at:

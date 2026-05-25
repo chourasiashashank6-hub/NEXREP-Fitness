@@ -1,14 +1,26 @@
 services:
-  postgres:
-    image: postgres:16
-    container_name: fitness-postgres
+  db:
+    image: postgres:15
+    container_name: nexrep-postgres
     environment:
       POSTGRES_DB: fitnessdb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Remove port 5432 exposure before deploying to production
     ports:
       - "5434:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: ./server
+    env_file: ./server/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/fitnessdb
+
 volumes:
-  postgres_data:
+  pgdata:

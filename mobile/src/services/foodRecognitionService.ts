@@ -85,6 +85,7 @@ const normalizePayload = (value: unknown): FoodAnalysisResult | FoodAnalysisErro
   };
 };
 
+// TODO: route through server — never call AI APIs from mobile (this function uses the server API only).
 export const analyzeFoodImageWithGroq = async ({
   base64,
   mimeType,

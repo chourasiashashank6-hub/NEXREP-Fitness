@@ -1,3 +1,4 @@
+// TODO: route through server — never call AI APIs from mobile
 import { apiClient, COACH_API_TIMEOUT_MS } from "../api/client";
 import axios from "axios";
 import type { AICoachResponse, NutritionData, Task } from "../types/coach";

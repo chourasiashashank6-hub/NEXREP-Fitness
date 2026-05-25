@@ -30,7 +30,12 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_admin_token(admin_id: int, role: str) -> str:
     expire = datetime.utcnow() + timedelta(hours=ADMIN_TOKEN_EXPIRE_HOURS)
-    payload = {"sub": str(admin_id), "role": role, "exp": expire, "type": "admin"}
+    payload = {
+        "sub": str(admin_id),
+        "role": role,
+        "exp": int(expire.timestamp()),
+        "type": "admin",
+    }
     secret = settings.JWT_SECRET + ADMIN_SECRET_SUFFIX
     return jwt.encode(payload, secret, algorithm=ADMIN_JWT_ALGORITHM)
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from src.db.session import Base
@@ -22,6 +22,10 @@ class User(Base):
     plan_expires_at = Column(DateTime(timezone=True), nullable=True)
     trial_ends_at = Column(DateTime(timezone=True), nullable=True)
     last_active_at = Column(DateTime(timezone=True), nullable=True)
+    needs_password_reset = Column(Boolean, nullable=False, default=False)
+    subscription_status = Column(String(32), nullable=False, default="free")
+    subscription_expiry = Column(DateTime(timezone=True), nullable=True)
+    razorpay_subscription_id = Column(String(128), nullable=True, index=True)
 
     onboarding = relationship("UserOnboarding", back_populates="user", uselist=False)
 
