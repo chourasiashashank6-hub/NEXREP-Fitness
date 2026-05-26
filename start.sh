@@ -13,7 +13,7 @@ if command -v xattr >/dev/null 2>&1; then
 fi
 
 echo "==> Starting Postgres (Docker)"
-docker compose up -d
+docker compose up -d db
 echo "==> Waiting for database…"
 sleep 2
 

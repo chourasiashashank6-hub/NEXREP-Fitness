@@ -23,9 +23,7 @@ import { fetchOnboardingMe, upsertOnboardingMe } from "../api/onboarding";
 import { getProfile, updateProfile } from "../api/user";
 import { getWorkoutHistory } from "../api/workout";
 import DevSubscriptionToggle from "../components/DevSubscriptionToggle";
-import PaymentHistorySection from "../components/PaymentHistorySection";
-import PlanTimelineSection from "../components/PlanTimelineSection";
-import SubscriptionCard from "../components/SubscriptionCard";
+import SubscriptionBillingSection from "../components/SubscriptionBillingSection";
 import { HeroHeader } from "../components/HeroHeader";
 import { ScreenContainer } from "../components/ScreenContainer";
 import { signOutSession } from "../services/authService";
@@ -870,32 +868,16 @@ export const ProfileScreen = () => {
           <StatTile value={String(stats.avgSessionsPerWeek)} label="Avg sessions/week" valueColor="#BA7517" />
         </View>
 
-        {userId ? <SubscriptionCard userId={userId} /> : null}
-        <PaymentHistorySection />
-        <PlanTimelineSection />
+        {userId ? (
+          <SubscriptionBillingSection
+            userId={userId}
+            memberSince={memberSince}
+            onExerciseHistory={() => setShowExerciseHistory(true)}
+            onCalorieHistory={() => setShowCalorieHistory(true)}
+          />
+        ) : null}
 
-        <View style={styles.historyCardsRow}>
-          <View style={[styles.historySectionCard, styles.historySectionHalf, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}>
-            <Pressable
-              style={[styles.historySectionButton, { borderColor: colors.border, backgroundColor: colors.card }]}
-              onPress={() => setShowExerciseHistory(true)}
-            >
-              <Text style={[styles.historySectionButtonText, { color: colors.text }]}>Exercise History</Text>
-              <Text style={[styles.historySectionChevron, { color: colors.muted }]}>↗</Text>
-            </Pressable>
-          </View>
-          <View style={[styles.historySectionCard, styles.historySectionHalf, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}>
-            <Pressable
-              style={[styles.historySectionButton, { borderColor: colors.border, backgroundColor: colors.card }]}
-              onPress={() => setShowCalorieHistory(true)}
-            >
-              <Text style={[styles.historySectionButtonText, { color: colors.text }]}>Calorie History</Text>
-              <Text style={[styles.historySectionChevron, { color: colors.muted }]}>↗</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <DevSubscriptionToggle email={userEmail} />
+        <DevSubscriptionToggle email={userEmail} userId={userId} />
 
         <TouchableOpacity
           onPress={handleVersionTap}

@@ -90,7 +90,9 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error?.response?.status;
-    if (status !== 401 && status !== 403) {
+    const detail = error?.response?.data?.detail;
+    const staleSession = status === 404 && detail === "User not found";
+    if (status !== 401 && status !== 403 && !staleSession) {
       return Promise.reject(error);
     }
     const url = String(error?.config?.url ?? "");

@@ -12,7 +12,9 @@ services:
     ports:
       - "5434:5432"
 
+  # Optional — local dev uses `uvicorn` from server/ (see start.sh). Enable with: docker compose --profile fullstack up -d
   api:
+    profiles: ["fullstack"]
     build: ./server
     env_file: ./server/.env
     ports:

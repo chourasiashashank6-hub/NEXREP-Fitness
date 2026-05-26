@@ -223,8 +223,12 @@ function formatLoadError(err: unknown): string {
       return "Cannot reach the API. Check EXPO_PUBLIC_API_URL and that the FastAPI server is running.";
     }
     if (err.response.status === 404) {
+      const detail = (err.response.data as { detail?: string })?.detail;
+      if (detail === "User not found") {
+        return "Your session is out of date (database was reset or account removed). Log out and sign in again.";
+      }
       const u = String(err.config?.url ?? "");
-      return `Not Found (${u || "unknown URL"}). Port 8000 is almost always an old API process: run "lsof -ti :8000 | xargs kill -9", then from server/: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload. Open /docs and confirm POST /api/calories/daily-log exists.`;
+      return `Not Found (${u || "unknown URL"}). Restart the API from server/: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload, then tap Retry.`;
     }
     const data = err.response.data as { detail?: unknown };
     const d = data?.detail;

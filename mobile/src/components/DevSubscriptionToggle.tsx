@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { resolveApiBaseUrl } from "../api/client";
 import { useAuthStore } from "../store/authStore";
+import { useSubscriptionStore } from "../store/subscriptionStore";
 
 const DEV_TOGGLE_SECRET =
   process.env.EXPO_PUBLIC_DEV_TOGGLE_SECRET?.trim() || "nexrep-dev-toggle-2026";
@@ -23,13 +24,16 @@ function devTierEmails(): string[] {
 
 type Props = {
   email?: string;
+  userId?: string;
 };
 
-export default function DevSubscriptionToggle({ email = "" }: Props) {
+export default function DevSubscriptionToggle({ email = "", userId = "" }: Props) {
   const allowed = useMemo(() => devTierEmails(), []);
   const plan_id = useAuthStore((s) => s.plan_id) ?? "free";
   const setPlanId = useAuthStore((s) => s.setPlanId);
   const token = useAuthStore((s) => s.token);
+  const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
+  const fetchPayments = useSubscriptionStore((s) => s.fetchPayments);
 
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -59,8 +63,12 @@ export default function DevSubscriptionToggle({ email = "" }: Props) {
             : JSON.stringify(data?.detail ?? data);
         throw new Error(detail || `Error ${res.status}`);
       }
-      setPlanId(data.plan_id);
-      setResult(`✓ Switched to ${String(data.plan_id).toUpperCase()}`);
+      const nextPlan = String(data.plan_id || newPlan).toLowerCase();
+      setPlanId(nextPlan);
+      if (userId) {
+        await Promise.all([fetchSubscription(userId), fetchPayments(userId)]);
+      }
+      setResult(`✓ Switched to ${nextPlan.toUpperCase()}`);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Request failed";
       setResult(`✗ ${message}`);

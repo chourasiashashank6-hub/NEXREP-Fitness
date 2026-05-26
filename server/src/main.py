@@ -49,7 +49,11 @@ from src.services.food_catalog_service import ensure_food_catalog_schema, load_f
 from src.services.global_exercises_service import load_global_exercises_if_empty
 from src.services.workout_catalog_service import load_workout_catalog_if_empty
 from src.services.score_service import compute_discipline_score
-from src.services.subscription_service import activate_subscription, cancel_subscription
+from src.services.subscription_service import (
+    activate_subscription,
+    cancel_subscription,
+    revoke_subscription_immediately,
+)
 from src.utils.auth import get_current_user
 from src.routes.calories import goal_progress_router, router as calories_api_router
 from src.routes.weight_log import router as weight_router
@@ -1819,7 +1823,7 @@ async def dev_subscription_toggle(
     billing_cycle = str(payload.get("billing_cycle", "monthly")).lower()
 
     if plan_id == "free":
-        cancel_subscription(db, current_user.id)
+        revoke_subscription_immediately(db, current_user.id)
     elif plan_id in ("pro", "elite"):
         activate_subscription(
             db=db,

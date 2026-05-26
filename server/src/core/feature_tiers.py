@@ -12,14 +12,14 @@ FEATURE_TIERS: dict[str, str] = {
     "food_photo_analysis": "pro",
     "calorie_coach": "pro",
     "workout_coach": "pro",
-    "meal_plan_generation": "pro",
-    "meal_day_regen": "pro",
-    "meal_swap": "pro",
-    "protein_suggestions": "pro",
-    "workout_plan_generation": "pro",
-    "workout_swap": "pro",
-    "meal_regen_remaining": "pro",
-    "workout_regen_remaining": "pro",
+    "meal_plan_generation": "elite",
+    "meal_day_regen": "elite",
+    "meal_swap": "elite",
+    "protein_suggestions": "elite",
+    "workout_plan_generation": "elite",
+    "workout_swap": "elite",
+    "meal_regen_remaining": "elite",
+    "workout_regen_remaining": "elite",
     # ── On-device AI ───────────────────────────────────────────────
     # MediaPipe pose guidance and rep counter run on-device.
     # Access is checked client-side only (no server endpoint needed).

@@ -34,8 +34,21 @@ from src.services.planner_swap_limits import DayRegenLimitExceeded, SwapLimitExc
 from src.services.planner_common import parse_local_date
 from src.services.planner_test_users import is_meal_planner_test_user
 from src.utils.auth import get_current_user
+from src.utils.plan_check import require_feature
 
 router = APIRouter(prefix="/api/meal-planner", tags=["meal-planner"])
+
+
+def _require_meal_planner_plan(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    if is_meal_planner_test_user(current_user):
+        return
+    require_feature(current_user, "meal_plan_generation", db)
+
+
+router.dependencies.append(Depends(_require_meal_planner_plan))
 
 
 class MealPlanGenerateRequest(BaseModel):

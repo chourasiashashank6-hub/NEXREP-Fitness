@@ -49,7 +49,7 @@ export const PLANS: Plan[] = [
     features: [
       { label: "Everything in Pro", included: true },
       { label: "Personal trainer access", included: true },
-      { label: "Custom AI meal plans", included: true },
+      { label: "Monthly meal & workout planners", included: true },
       { label: "Advanced body composition", included: true },
       { label: "Priority 24/7 support", included: true },
       { label: "Exclusive live challenges", included: true },

@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from src.core.feature_tiers import get_required_plan
 from src.models.models import User
 from src.services.subscription_service import is_pro
 
@@ -41,3 +42,8 @@ def require_plan(user: User, minimum_plan: str, db: Session) -> None:
                 "required_plan": minimum_plan,
             },
         )
+
+
+def require_feature(user: User, feature: str, db: Session) -> None:
+    """Raise 403 if the user cannot access this feature key."""
+    require_plan(user, get_required_plan(feature), db)

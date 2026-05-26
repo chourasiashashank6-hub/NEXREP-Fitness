@@ -1,4 +1,5 @@
-import { apiClient, resolveApiBaseUrl } from "./client";
+import axios from "axios";
+import { apiClient } from "./client";
 
 export type MealType = "Breakfast" | "Lunch" | "Dinner" | "Snack" | "Pre_Workout" | "Post_Workout";
 
@@ -90,42 +91,68 @@ export interface AIFoodMealEntryPayload {
   day?: CalorieDayPayload;
 }
 
-/** Cached prefix e.g. "/api/calories" after OpenAPI discovery. */
-let caloriesRoutePrefix: string | null = null;
+const CALORIES_PREFIXES = ["/api/calories", "/v1/calories"] as const;
 
-/** Call from Calorie Log "Retry" so we re-scan OpenAPI (e.g. after restarting the API). */
+/** Cached prefix e.g. "/api/calories" after a successful call. */
+let caloriesRoutePrefix: (typeof CALORIES_PREFIXES)[number] | null = null;
+
+/** Call from Calorie Log "Retry" so we re-probe routes (e.g. after restarting the API). */
 export function invalidateCaloriesRoutePrefix() {
   caloriesRoutePrefix = null;
 }
 
-function apiOrigin(): string {
-  return resolveApiBaseUrl().replace(/\/+$/, "");
+async function discoverPrefixFromOpenApi(): Promise<(typeof CALORIES_PREFIXES)[number] | null> {
+  try {
+    const { data: doc } = await apiClient.get<{ paths?: Record<string, Record<string, unknown>> }>("/openapi.json");
+    const paths = doc.paths ?? {};
+    for (const prefix of CALORIES_PREFIXES) {
+      const entry = paths[`${prefix}/daily-log`];
+      if (entry && typeof entry === "object" && "post" in entry) {
+        return prefix;
+      }
+    }
+  } catch {
+    // OpenAPI probe failed — fall back to trying both prefixes on requests.
+  }
+  return null;
 }
 
-/**
- * Picks /api/calories vs /v1/calories by reading GET {origin}/openapi.json (no auth).
- * Survives stale proxies and documents which build is running.
- */
-async function getCaloriesRoutePrefix(): Promise<string> {
-  if (caloriesRoutePrefix) return caloriesRoutePrefix;
-  const { data: doc } = await apiClient.get<{ paths?: Record<string, Record<string, unknown>> }>("/openapi.json");
-  const paths = doc.paths ?? {};
-  for (const prefix of ["/api/calories", "/v1/calories"]) {
-    const entry = paths[`${prefix}/daily-log`];
-    if (entry && typeof entry === "object" && "post" in entry) {
+async function prefixCandidates(): Promise<(typeof CALORIES_PREFIXES)[number][]> {
+  if (caloriesRoutePrefix) return [caloriesRoutePrefix, ...CALORIES_PREFIXES.filter((p) => p !== caloriesRoutePrefix)];
+  const discovered = await discoverPrefixFromOpenApi();
+  if (discovered) {
+    caloriesRoutePrefix = discovered;
+    return [discovered, ...CALORIES_PREFIXES.filter((p) => p !== discovered)];
+  }
+  return [...CALORIES_PREFIXES];
+}
+
+function joinPath(prefix: string, suffix: string): string {
+  const s = suffix.startsWith("/") ? suffix : `/${suffix}`;
+  return `${prefix}${s}`;
+}
+
+async function withCaloriesRoute<T>(
+  suffix: string,
+  request: (path: string) => Promise<T>,
+): Promise<T> {
+  const prefixes = await prefixCandidates();
+  let lastError: unknown;
+  for (const prefix of prefixes) {
+    try {
+      const result = await request(joinPath(prefix, suffix));
       caloriesRoutePrefix = prefix;
-      return prefix;
+      return result;
+    } catch (error) {
+      lastError = error;
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        caloriesRoutePrefix = null;
+        continue;
+      }
+      throw error;
     }
   }
-  throw new Error(
-    "This server has no Calorie Log API (OpenAPI is missing POST …/daily-log). Stop any old process on port 8000, then run uvicorn from folder server with the latest code."
-  );
-}
-
-async function caloriesAbsUrl(suffix: string): Promise<string> {
-  const prefix = await getCaloriesRoutePrefix();
-  const s = suffix.startsWith("/") ? suffix : `/${suffix}`;
-  return `${apiOrigin()}${prefix}${s}`;
+  throw lastError ?? new Error("Calorie Log API not found on this server.");
 }
 
 export const todayLocal = () => {
@@ -137,15 +164,17 @@ export const todayLocal = () => {
 };
 
 export const ensureDailyCalorieLog = async (date?: string) => {
-  const url = await caloriesAbsUrl("/daily-log");
-  const { data } = await apiClient.post<CalorieDayPayload>(url, { date: date ?? null });
-  return data;
+  return withCaloriesRoute("/daily-log", async (path) => {
+    const { data } = await apiClient.post<CalorieDayPayload>(path, { date: date ?? null });
+    return data;
+  });
 };
 
 export const getDailyCalorieLog = async (date: string = todayLocal()) => {
-  const url = await caloriesAbsUrl(`/daily-log/${encodeURIComponent(date)}`);
-  const { data } = await apiClient.get<CalorieDayPayload>(url);
-  return data;
+  return withCaloriesRoute(`/daily-log/${encodeURIComponent(date)}`, async (path) => {
+    const { data } = await apiClient.get<CalorieDayPayload>(path);
+    return data;
+  });
 };
 
 export const postCalorieMeal = async (payload: {
@@ -160,50 +189,57 @@ export const postCalorieMeal = async (payload: {
   fat_per_100g: number;
   fiber_per_100g?: number;
 }) => {
-  const url = await caloriesAbsUrl("/meals");
-  const { data } = await apiClient.post<CalorieDayPayload>(url, payload);
-  return data;
+  return withCaloriesRoute("/meals", async (path) => {
+    const { data } = await apiClient.post<CalorieDayPayload>(path, payload);
+    return data;
+  });
 };
 
 export const deleteCalorieMeal = async (mealId: number) => {
-  const url = await caloriesAbsUrl(`/meals/${mealId}`);
-  const { data } = await apiClient.delete<CalorieDayPayload>(url);
-  return data;
+  return withCaloriesRoute(`/meals/${mealId}`, async (path) => {
+    const { data } = await apiClient.delete<CalorieDayPayload>(path);
+    return data;
+  });
 };
 
 export const deleteAIFoodMeal = async (aiMealId: number) => {
-  const url = await caloriesAbsUrl(`/foods/ai-meals/${aiMealId}`);
-  const { data } = await apiClient.delete<CalorieDayPayload>(url);
-  return data;
+  return withCaloriesRoute(`/foods/ai-meals/${aiMealId}`, async (path) => {
+    const { data } = await apiClient.delete<CalorieDayPayload>(path);
+    return data;
+  });
 };
 
 export const patchCalorieMealQty = async (mealId: number, quantityG: number) => {
-  const url = await caloriesAbsUrl(`/meals/${mealId}`);
-  const { data } = await apiClient.patch<CalorieDayPayload>(url, {
-    quantity_g: quantityG,
+  return withCaloriesRoute(`/meals/${mealId}`, async (path) => {
+    const { data } = await apiClient.patch<CalorieDayPayload>(path, { quantity_g: quantityG });
+    return data;
   });
-  return data;
 };
 
 export const patchCalorieWater = async (waterL: number, date?: string) => {
-  const url = await caloriesAbsUrl("/water");
-  const { data } = await apiClient.patch<CalorieDayPayload>(url, {
-    water_l: waterL,
-    date: date ?? null,
+  return withCaloriesRoute("/water", async (path) => {
+    const { data } = await apiClient.patch<CalorieDayPayload>(path, {
+      water_l: waterL,
+      date: date ?? null,
+    });
+    return data;
   });
-  return data;
 };
 
 export const searchFoodCatalog = async (query: string, limit: number = 20) => {
-  const url = await caloriesAbsUrl(`/foods/search?q=${encodeURIComponent(query)}&limit=${Math.max(1, Math.min(limit, 50))}`);
-  const { data } = await apiClient.get<{ items: FoodSearchItem[] }>(url);
-  return data.items ?? [];
+  const q = encodeURIComponent(query);
+  const lim = Math.max(1, Math.min(limit, 50));
+  return withCaloriesRoute(`/foods/search?q=${q}&limit=${lim}`, async (path) => {
+    const { data } = await apiClient.get<{ items: FoodSearchItem[] }>(path);
+    return data.items ?? [];
+  });
 };
 
 export const lookupFoodNutrition = async (payload: { food_id?: number; food_name?: string; quantity_g: number }) => {
-  const url = await caloriesAbsUrl("/foods/lookup");
-  const { data } = await apiClient.post<FoodLookupPayload>(url, payload);
-  return data;
+  return withCaloriesRoute("/foods/lookup", async (path) => {
+    const { data } = await apiClient.post<FoodLookupPayload>(path, payload);
+    return data;
+  });
 };
 
 export const postAIFoodMeal = async (payload: {
@@ -219,7 +255,8 @@ export const postAIFoodMeal = async (payload: {
   confidence?: "low" | "medium" | "high";
   estimated_serving_size?: string;
 }) => {
-  const url = await caloriesAbsUrl("/foods/ai-meals");
-  const { data } = await apiClient.post<AIFoodMealEntryPayload>(url, payload);
-  return data;
+  return withCaloriesRoute("/foods/ai-meals", async (path) => {
+    const { data } = await apiClient.post<AIFoodMealEntryPayload>(path, payload);
+    return data;
+  });
 };

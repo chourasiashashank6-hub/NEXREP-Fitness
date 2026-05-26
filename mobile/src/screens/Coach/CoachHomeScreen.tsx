@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import ProGateModal from "../../components/ProGateModal";
-import { canAccess } from "../../constants/featureTiers";
+import { canAccess, getRequiredPlan } from "../../constants/featureTiers";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
 import { useAuthStore } from "../../store/authStore";
 
@@ -260,8 +260,8 @@ export default function CoachHomeScreen() {
           {/* ── SECTION: Planners ──────────────────────────────── */}
           <View style={[styles.sectionRow, { marginTop: 20 }]}>
             <Text style={styles.sectionLabel}>PLANNERS</Text>
-            <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>Pro feature</Text>
+            <View style={[styles.sectionBadge, styles.sectionBadgeElite]}>
+              <Text style={[styles.sectionBadgeText, styles.sectionBadgeTextElite]}>Elite feature</Text>
             </View>
           </View>
 
@@ -295,7 +295,7 @@ export default function CoachHomeScreen() {
                     },
                   ]}
                 >
-                  <Text style={[styles.badgeProText, { color: "#79b8f8" }]}>PRO</Text>
+                  <Text style={[styles.badgeProText, { color: "#a5a0f0" }]}>ELITE</Text>
                 </View>
                 <View style={styles.badgeNew}>
                   <Text style={styles.badgeNewText}>NEW</Text>
@@ -355,7 +355,7 @@ export default function CoachHomeScreen() {
               >
                 {canAccess(plan_id, "meal_plan_generation")
                   ? "Open meal planner →"
-                  : "🔒  Unlock — upgrade to Pro"}
+                  : "🔒  Unlock — upgrade to Elite"}
               </Text>
             </View>
           </TouchableOpacity>
@@ -390,7 +390,7 @@ export default function CoachHomeScreen() {
                     },
                   ]}
                 >
-                  <Text style={[styles.badgeProText, { color: "#a5a0f0" }]}>PRO</Text>
+                  <Text style={[styles.badgeProText, { color: "#a5a0f0" }]}>ELITE</Text>
                 </View>
                 <View style={styles.badgeNew}>
                   <Text style={styles.badgeNewText}>NEW</Text>
@@ -450,7 +450,7 @@ export default function CoachHomeScreen() {
               >
                 {canAccess(plan_id, "workout_plan_generation")
                   ? "Open workout planner →"
-                  : "🔒  Unlock — upgrade to Pro"}
+                  : "🔒  Unlock — upgrade to Elite"}
               </Text>
             </View>
           </TouchableOpacity>
@@ -481,6 +481,7 @@ export default function CoachHomeScreen() {
           featureDescription={gate.description}
           featureEmoji={gate.emoji}
           accentColor={gate.accentColor}
+          requiredPlan={getRequiredPlan(gate.feature)}
         />
       ) : null}
     </SafeAreaView>
@@ -570,6 +571,13 @@ const styles = StyleSheet.create({
     color: "#3fcf8e",
     fontSize: 11,
     fontWeight: "500",
+  },
+  sectionBadgeElite: {
+    backgroundColor: "rgba(127,119,221,0.12)",
+    borderColor: "rgba(127,119,221,0.35)",
+  },
+  sectionBadgeTextElite: {
+    color: "#a5a0f0",
   },
 
   // ── Feature card ──────────────────────────────────────────

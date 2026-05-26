@@ -15,6 +15,7 @@ type Props = {
   featureDescription: string;
   featureEmoji: string;
   accentColor?: string;
+  requiredPlan?: "pro" | "elite";
 };
 
 export default function ProGateModal({
@@ -24,8 +25,10 @@ export default function ProGateModal({
   featureDescription,
   featureEmoji,
   accentColor = "#1d9e75",
+  requiredPlan = "pro",
 }: Props) {
   const navigation = useNavigation<any>();
+  const isElite = requiredPlan === "elite";
 
   const openSubscription = () => {
     onClose();
@@ -58,7 +61,7 @@ export default function ProGateModal({
           </View>
           <View style={styles.lockBadge}>
             <Text style={styles.lockEmoji}>🔒</Text>
-            <Text style={styles.lockText}>PRO FEATURE</Text>
+            <Text style={styles.lockText}>{isElite ? "ELITE FEATURE" : "PRO FEATURE"}</Text>
           </View>
         </View>
 
@@ -66,14 +69,23 @@ export default function ProGateModal({
         <Text style={styles.description}>{featureDescription}</Text>
 
         <View style={styles.benefitsBox}>
-          <Text style={styles.benefitsTitle}>What you get with Pro</Text>
-          {[
-            "All 4 AI coaching features unlocked",
-            "Monthly meal + workout planners",
-            "Food photo calorie scanner",
-            "AI pose guidance + rep counter",
-            "5 AI swaps per day",
-          ].map((b, i) => (
+          <Text style={styles.benefitsTitle}>{isElite ? "What you get with Elite" : "What you get with Pro"}</Text>
+          {(isElite
+            ? [
+                "Monthly meal + workout planners",
+                "Unlimited AI swaps & day regenerations",
+                "Everything in Pro included",
+                "Personal trainer access",
+                "Priority 24/7 support",
+              ]
+            : [
+                "All 4 AI coaching features unlocked",
+                "Food photo calorie scanner",
+                "AI pose guidance + rep counter",
+                "Calorie & workout AI coaches",
+                "5 AI swaps per day",
+              ]
+          ).map((b, i) => (
             <View key={i} style={styles.benefitRow}>
               <Text style={[styles.tick, { color: accentColor }]}>✓</Text>
               <Text style={styles.benefitText}>{b}</Text>
@@ -82,10 +94,16 @@ export default function ProGateModal({
         </View>
 
         <Text style={styles.priceLine}>
-          Pro from{" "}
-          <Text style={[styles.priceHighlight, { color: accentColor }]}>₹999/mo</Text>
-          {"  ·  "}
-          Elite from <Text style={styles.priceHighlight}>₹1,999/mo</Text>
+          {isElite ? (
+            <>
+              Elite from <Text style={[styles.priceHighlight, { color: accentColor }]}>₹1,999/mo</Text>
+            </>
+          ) : (
+            <>
+              Pro from <Text style={[styles.priceHighlight, { color: accentColor }]}>₹999/mo</Text>
+              {"  ·  "}Elite from <Text style={styles.priceHighlight}>₹1,999/mo</Text>
+            </>
+          )}
         </Text>
 
         <TouchableOpacity
@@ -93,7 +111,7 @@ export default function ProGateModal({
           onPress={openSubscription}
           activeOpacity={0.85}
         >
-          <Text style={styles.upgradeBtnText}>Upgrade to Pro →</Text>
+          <Text style={styles.upgradeBtnText}>{isElite ? "Upgrade to Elite →" : "Upgrade to Pro →"}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>

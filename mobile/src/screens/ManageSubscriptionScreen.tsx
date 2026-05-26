@@ -12,8 +12,10 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import { HeroHeader } from "../components/HeroHeader";
 import { ScreenContainer } from "../components/ScreenContainer";
+import { useAppTheme } from "../theme";
 import { exportInvoicesApi } from "../api/subscriptions";
 import { PLANS } from "../constants/plans";
 import type { ProfileStackParamList } from "../navigation/types";
@@ -23,6 +25,7 @@ import { daysUntil, formatDate } from "../utils/dateFormat";
 export function ManageSubscriptionScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
   const route = useRoute<RouteProp<ProfileStackParamList, "ManageSubscription">>();
+  const { colors } = useAppTheme();
   const userId = route.params.userId;
   const subscription = useSubscriptionStore((s) => s.subscription);
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
@@ -32,6 +35,14 @@ export function ManageSubscriptionScreen() {
   useEffect(() => {
     if (userId) void fetchSubscription(userId);
   }, [userId, fetchSubscription]);
+
+  const handleBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate("ProfileMain");
+  }, [navigation]);
 
   const handleCancel = useCallback(() => {
     if (!subscription) return;
@@ -80,6 +91,15 @@ export function ManageSubscriptionScreen() {
   if (!subscription || subscription.tier === "FREE") {
     return (
       <ScreenContainer>
+        <Pressable
+          onPress={handleBack}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
+          <Text style={[styles.backBtnText, { color: colors.text }]}>Back</Text>
+        </Pressable>
         <HeroHeader title="Manage subscription" subtitle="No active paid plan" />
         <Pressable style={styles.primaryBtn} onPress={() => navigation.navigate("Subscription")}>
           <Text style={styles.primaryBtnText}>View plans</Text>
@@ -95,6 +115,15 @@ export function ManageSubscriptionScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        <Pressable
+          onPress={handleBack}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
+          <Text style={[styles.backBtnText, { color: colors.text }]}>Back</Text>
+        </Pressable>
         <HeroHeader title="Manage subscription" subtitle={`${subscription.tier} · ${subscription.status}`} />
 
         <View style={styles.card}>
@@ -186,6 +215,17 @@ function CycleCompare({
 }
 
 const styles = StyleSheet.create({
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 4,
+    marginBottom: 12,
+    paddingVertical: 6,
+    paddingRight: 8,
+  },
+  backBtnPressed: { opacity: 0.65 },
+  backBtnText: { fontSize: 16, fontWeight: "600" },
   card: {
     backgroundColor: "#111c17",
     borderWidth: 1,

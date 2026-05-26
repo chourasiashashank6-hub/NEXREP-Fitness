@@ -208,6 +208,17 @@ def get_subscription(
     current_user: User = Depends(get_current_user),
 ):
     uid = _assert_user_access(current_user, user_id)
+    if (current_user.plan_id or "free").lower() == "free":
+        all_rows = (
+            db.query(Subscription)
+            .filter(Subscription.user_id == uid)
+            .order_by(Subscription.created_at.asc())
+            .all()
+        )
+        return {
+            "subscription": _free_subscription_payload(current_user),
+            "planHistory": _build_plan_history(current_user, all_rows),
+        }
     sub = get_display_subscription(db, uid)
     all_rows = (
         db.query(Subscription)

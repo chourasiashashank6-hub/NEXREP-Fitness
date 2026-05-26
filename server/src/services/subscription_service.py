@@ -158,6 +158,28 @@ def activate_subscription(
     return sub
 
 
+def revoke_subscription_immediately(db: Session, user_id: int) -> None:
+    """Drop paid access now (dev/admin tooling)."""
+    now = datetime.utcnow()
+    rows = (
+        db.query(Subscription)
+        .filter(
+            Subscription.user_id == user_id,
+            Subscription.status.in_(["active", "trial", "cancelled"]),
+        )
+        .all()
+    )
+    for sub in rows:
+        sub.status = "cancelled"
+        sub.cancelled_at = now
+        sub.expires_at = now
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        _sync_user_subscription_fields(user, plan_id="free", status="free", expires_at=None)
+        user.razorpay_subscription_id = None
+    db.commit()
+
+
 def cancel_subscription(db: Session, user_id: int) -> Optional[Subscription]:
     """Cancel at period end — user keeps plan access until expires_at."""
     sub = get_active_subscription(db, user_id)

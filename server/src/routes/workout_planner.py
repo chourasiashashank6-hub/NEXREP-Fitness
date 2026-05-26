@@ -16,9 +16,23 @@ from src.services.workout_planner_service import (
     workout_plan_current_response,
     workout_plan_month_response,
 )
+from src.services.planner_test_users import is_planner_test_user
 from src.utils.auth import get_current_user
+from src.utils.plan_check import require_feature
 
 router = APIRouter(prefix="/api/workout-planner", tags=["workout-planner"])
+
+
+def _require_workout_planner_plan(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    if is_planner_test_user(current_user):
+        return
+    require_feature(current_user, "workout_plan_generation", db)
+
+
+router.dependencies.append(Depends(_require_workout_planner_plan))
 
 FOCUS_MUSCLES = {"Chest", "Back", "Shoulders", "Legs", "Arms", "Core"}
 
