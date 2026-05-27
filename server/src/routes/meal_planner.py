@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from src.db.session import get_db
 from src.models.models import User
+from src.services.planner_test_users import is_planner_days_unlocked_user
 from src.services.meal_planner_service import (
     _build_week_response,
     _monthly_day_regen_stats,
@@ -61,8 +62,11 @@ class GenerateWeekRequest(BaseModel):
 
 
 class RegenerateWeekRequest(BaseModel):
-    week_start_day: int
+    week_start_day: int | None = None
+    week_start: int | None = None
     from_day: int
+    exclude_foods: list[str] = []
+    exclude_dishes: list[dict[str, Any] | str] = []
 
 
 class MealSwapRequest(BaseModel):
@@ -74,11 +78,15 @@ class MealSwapRequest(BaseModel):
 
 class RegenerateRemainingRequest(BaseModel):
     from_day: int
+    exclude_foods: list[str] = []
+    exclude_dishes: list[dict[str, Any] | str] = []
 
 
 class RegenerateDayRequest(BaseModel):
     plan_id: int
     day: int
+    exclude_foods: list[str] = []
+    exclude_dishes: list[dict[str, Any] | str] = []
 
 
 @router.post("/generate")
@@ -168,7 +176,12 @@ def get_day(
     plan = get_plan_for_day(db, current_user.id, today.month, today.year, day)
     if not plan:
         raise HTTPException(status_code=404, detail="No meal plan for this month")
-    if day > today.day and today.month == plan.month and today.year == plan.year:
+    if (
+        day > today.day
+        and today.month == plan.month
+        and today.year == plan.year
+        and not is_planner_days_unlocked_user(current_user)
+    ):
         return {
             "day": day,
             "is_cheat_day": False,
@@ -214,12 +227,17 @@ def post_regenerate_week(
             detail="Full plan regeneration is not available. You can regenerate individual days (3 times per month) or swap individual meals.",
         )
     try:
+        week_start = body.week_start_day if body.week_start_day is not None else body.week_start
+        if week_start is None:
+            raise HTTPException(status_code=400, detail="week_start_day is required")
         return regenerate_week_plan(
             db,
             current_user,
-            week_start_day=body.week_start_day,
+            week_start_day=week_start,
             from_day=body.from_day,
             local_date=local_date,
+            exclude_foods=body.exclude_foods,
+            exclude_dishes=body.exclude_dishes,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -245,7 +263,14 @@ def post_regenerate_remaining(
             detail="Full plan regeneration is not available. You can regenerate individual days (3 times per month) or swap individual meals.",
         )
     try:
-        plan = regenerate_remaining_meals(db, current_user, from_day=body.from_day, local_date=local_date)
+        plan = regenerate_remaining_meals(
+            db,
+            current_user,
+            from_day=body.from_day,
+            local_date=local_date,
+            exclude_foods=body.exclude_foods,
+            exclude_dishes=body.exclude_dishes,
+        )
         return meal_plan_current_response(plan, local_date, db=db, user=current_user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -273,6 +298,8 @@ def post_regenerate_day(
             plan_id=body.plan_id,
             day=body.day,
             local_date=local_date,
+            exclude_foods=body.exclude_foods,
+            exclude_dishes=body.exclude_dishes,
         )
     except DayRegenLimitExceeded as e:
         raise HTTPException(status_code=429, detail=str(e)) from e

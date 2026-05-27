@@ -6,9 +6,11 @@ import {
   migrateOnboardingStorageFromJwtKeys,
   setPendingSignupOnboarding,
 } from "../storage/onboarding";
+import { decodeJwtSub } from "../utils/jwt";
 
 type AuthState = {
   token: string | null;
+  sessionUserId: string | null;
   plan_id: string;
   needsOnboarding: boolean;
   returnToProfileAfterOnboarding: boolean;
@@ -61,8 +63,11 @@ const loadToken = async () => {
   }
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+const sessionIdFromToken = (token: string | null) => (token ? decodeJwtSub(token) : null);
+
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
+  sessionUserId: null,
   plan_id: "free",
   needsOnboarding: false,
   returnToProfileAfterOnboarding: false,
@@ -70,14 +75,35 @@ export const useAuthStore = create<AuthState>((set) => ({
   setPlanId: (plan_id) => set({ plan_id }),
   setToken: async (token, opts) => {
     if (!token) {
+      const { useSubscriptionStore } = await import("./subscriptionStore");
+      useSubscriptionStore.getState().reset();
       await saveToken(null);
-      set({ token: null, plan_id: "free", needsOnboarding: false, returnToProfileAfterOnboarding: false });
+      set({
+        token: null,
+        sessionUserId: null,
+        plan_id: "free",
+        needsOnboarding: false,
+        returnToProfileAfterOnboarding: false,
+      });
       return;
     }
+
+    const prevUserId = get().sessionUserId;
+    const nextUserId = sessionIdFromToken(token);
+    if (prevUserId && nextUserId && prevUserId !== nextUserId) {
+      const { useSubscriptionStore } = await import("./subscriptionStore");
+      useSubscriptionStore.getState().reset();
+    }
+
     await migrateOnboardingStorageFromJwtKeys();
     if (opts?.fromSignup) await setPendingSignupOnboarding(token);
     const pending = await hasPendingOnboarding(token);
-    set({ token, needsOnboarding: pending, returnToProfileAfterOnboarding: false });
+    set({
+      token,
+      sessionUserId: nextUserId,
+      needsOnboarding: pending,
+      returnToProfileAfterOnboarding: false,
+    });
     await saveToken(token);
   },
   setNeedsOnboarding: (value) => {
@@ -88,8 +114,37 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   bootstrap: async () => {
     await migrateOnboardingStorageFromJwtKeys();
-    const token = await loadToken();
-    const pending = token ? await hasPendingOnboarding(token) : false;
-    set({ token, needsOnboarding: pending, hydrated: true, returnToProfileAfterOnboarding: false });
+    let token = await loadToken();
+
+    if (token) {
+      set({ token, sessionUserId: sessionIdFromToken(token) });
+      const { validateStoredSessionEmail } = await import("../utils/sessionValidation");
+      const check = await validateStoredSessionEmail();
+      if (check === "mismatch" || check === "invalid") {
+        const { signOutSession } = await import("../services/authService");
+        await signOutSession();
+        token = null;
+      }
+    }
+
+    if (!token) {
+      set({
+        token: null,
+        sessionUserId: null,
+        needsOnboarding: false,
+        hydrated: true,
+        returnToProfileAfterOnboarding: false,
+      });
+      return;
+    }
+
+    const pending = await hasPendingOnboarding(token);
+    set({
+      token,
+      sessionUserId: sessionIdFromToken(token),
+      needsOnboarding: pending,
+      hydrated: true,
+      returnToProfileAfterOnboarding: false,
+    });
   },
 }));

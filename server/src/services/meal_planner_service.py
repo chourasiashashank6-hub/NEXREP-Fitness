@@ -13,7 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from src.core.config import settings
-from src.core.http_client import post_json
+from src.core.http_client import ExternalHTTPError, post_json
 from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.models.meal_plan import DailyMealPlanEntry, MonthlyMealPlan
 from src.models.models import User, UserOnboarding
@@ -39,9 +39,16 @@ from src.services.planner_swap_limits import (
 )
 from src.services.planner_test_users import (
     is_meal_planner_test_user,
+    is_planner_days_unlocked_user,
     meal_planner_limits_exempt_flag,
     meal_planner_unlimited_regen_stats,
+    planner_days_unlocked_flag,
 )
+
+class GroqRateLimitError(Exception):
+    """Raised when Groq returns HTTP 429 rate limit."""
+    pass
+
 
 MONTHLY_DAY_REGEN_LIMIT = 3
 
@@ -185,10 +192,67 @@ Before returning your JSON, verify for each day:
    Do NOT skip this check. Protein target adherence is mandatory.
 6. Does total fat sum to approximately {fat_target}g? If under, add ghee (1 tsp = 5g fat, 45 kcal)
    to main meals or include nuts in snacks.
+
+STRICT CALORIE AND MACRO RULES — NON-NEGOTIABLE:
+- The sum of ALL meals in a day MUST equal target_kcal +/- 5%.
+  If target_kcal is 2100, total must be between 1995-2205 kcal. Never exceed.
+- Protein MUST meet protein_target. This is the highest priority macro.
+  Prioritize high-protein foods in every meal slot.
+- To hit protein without excess calories: use low-fat protein sources -
+  egg whites, low-fat curd, paneer (small portions), dal, sprouts,
+  roasted chana, chicken breast (if non-veg), moong dal chilla.
+- Distribute calories across meals using these EXACT slot splits:
+    Breakfast:         20-22% of target_kcal
+    Mid-Morning Snack:  8-10%
+    Lunch:             28-30%
+    Post Workout:      10-12%
+    Evening Snack:      8-10%
+    Dinner:            22-25%
+  The percentages must sum to target_kcal +/- 5%. Adjust quantities,
+  not meal types, to hit the split.
+- For each food item, calculate calories as:
+    (quantity_g / 100) x calories_per_100g
+  Use realistic calorie densities. Do NOT estimate loosely.
+- Before finalizing a day, mentally sum all meal calories. If the sum
+  exceeds target_kcal by more than 5%, reduce the highest-calorie item
+  in the largest meal. Never add extra items to compensate.
+
+STRICT DIVERSITY RULES:
+- No breakfast dish may repeat within the same week (7 days).
+- No lunch main dish may repeat within the same week.
+- No dinner main dish may repeat within the same week.
+- Snacks may repeat at most once per week.
+- Rotate protein sources across days:
+    Day 1: eggs + dal    Day 2: paneer + sprouts   Day 3: curd + chana
+    Day 4: tofu/chicken  Day 5: moong + nuts       Day 6: eggs + rajma
+    Day 7: free choice (not used earlier this week)
+- Rotate grain/carb sources across days:
+    oats -> poha -> upma -> paratha -> dosa -> idli -> bread (weekly cycle)
+    rice -> roti -> rice -> roti (lunch/dinner alternating)
+- You MUST track what you have already generated in prior days of this
+  chunk and explicitly avoid repeating main dishes.
+- The food_dataset_sample is a grounding reference only. Do NOT generate
+  the same items from it day after day. Use it to verify calorie density, not to pick meals.
+
+USER PROFILE (use all fields to personalize meals):
+- Goal: {goal} - if muscle_gain, maximize protein in every meal
+- Diet type: {diet_type} - strictly respect this, no exceptions
+- Region: {region} - only use locally available, culturally appropriate foods
+- Allergies: {allergies} - NEVER include these ingredients
+- Activity: {activity_level}, Workouts: {workout_types}
+  If workout_types includes weight_training or gym, ensure Post Workout
+  slot is high protein (>=30g) and moderate carb (40-50g).
+- Meals per day: {meals_per_day} - generate EXACTLY this many meal slots,
+  no more, no less.
+
 Only return the JSON after confirming no repeats exist within any single day and macro totals hit targets."""
 
 MEAL_SYSTEM_PROMPT_CHUNK_FOLLOWUP = """
-The user message includes previous_week_breakfasts and previous_week_dinners — these are meals already planned in earlier weeks. Do NOT repeat any of these dishes. Use completely different recipes."""
+CROSS-WEEK DIVERSITY:
+The following dishes were used LAST WEEK. Do NOT repeat any of them this week, not even once:
+  Previous breakfasts: {previous_week_breakfasts}
+  Previous dinners: {previous_week_dinners}
+Treat this list as a strict exclusion list."""
 
 MEAL_SWAP_SYSTEM_PROMPT = """You are an expert Indian nutritionist. Replace one meal with a different option.
 Return ONLY a JSON object with key "meal" containing the replacement meal.
@@ -939,11 +1003,37 @@ def ensure_complete_meal_slots(day_data: dict[str, Any], meals_per_day: int) -> 
     return day_data
 
 
-def _build_meal_system_prompt(ctx: dict[str, Any], chunk_index: int, *, has_prior_context: bool = False) -> str:
+def _build_meal_system_prompt(
+    ctx: dict[str, Any],
+    chunk_index: int,
+    *,
+    has_prior_context: bool = False,
+    previous_week_breakfasts: list[str] | None = None,
+    previous_week_dinners: list[str] | None = None,
+) -> str:
+    exclusion_prefix = ""
+    exclude_foods = ctx.get("exclude_foods") or []
+    exclude_dishes = ctx.get("exclude_dishes_this_week") or []
+
+    if exclude_foods or exclude_dishes:
+        exclusion_prefix = (
+            "⚠️ REGENERATION MODE — DIFFERENT MEALS REQUIRED ⚠️\n"
+            "You are replacing an existing meal plan. The user has already "
+            "eaten these dishes and MUST receive completely different ones.\n\n"
+            "BANNED MAIN DISHES — DO NOT USE THESE AT ALL:\n"
+            + "\n".join(f"  ✗ {f.title()}" for f in exclude_foods[:20])
+            + "\n\nBANNED COMBINATIONS THIS WEEK:\n"
+            + "\n".join(f"  ✗ {d}" for d in exclude_dishes[:12])
+            + "\n\nFor EVERY meal slot, pick a dish NOT in the banned list above. "
+            "If you are about to write a banned dish, STOP and pick a different one.\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+
     allergies = ctx.get("allergies") or []
     meals_per_day = int(ctx["meals_per_day"])
     target_kcal = int(ctx["target_kcal"])
-    prompt = MEAL_SYSTEM_PROMPT_BASE.format(
+
+    base_prompt = MEAL_SYSTEM_PROMPT_BASE.format(
         target_kcal=target_kcal,
         protein_target=ctx["protein_target"],
         carbs_target=ctx["carbs_target"],
@@ -956,9 +1046,19 @@ def _build_meal_system_prompt(ctx: dict[str, Any], chunk_index: int, *, has_prio
         diet_type=ctx["diet_type"],
         allergies=", ".join(allergies) if allergies else "none",
         budget_level=ctx["budget_level"],
+        goal=ctx.get("goal") or "maintain",
+        activity_level=ctx.get("activity_level") or "moderately_active",
+        workout_types=", ".join(ctx.get("workout_types") or []) if isinstance(ctx.get("workout_types"), list) else str(ctx.get("workout_types") or "none"),
     )
+
+    prompt = exclusion_prefix + base_prompt
+
     if chunk_index >= 1 or has_prior_context:
-        prompt += MEAL_SYSTEM_PROMPT_CHUNK_FOLLOWUP
+        prompt += MEAL_SYSTEM_PROMPT_CHUNK_FOLLOWUP.format(
+            previous_week_breakfasts=", ".join(previous_week_breakfasts or []) or "none",
+            previous_week_dinners=", ".join(previous_week_dinners or []) or "none",
+        )
+
     return prompt
 
 
@@ -1068,24 +1168,29 @@ def _groq_meal_chunk(
         token_limit = 1500 if single_day else _meal_chunk_max_tokens(meals_per_day, chunk_size)
     temp = temperature if temperature is not None else (0.7 if single_day else 0.6)
     model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
-    raw = post_json(
-        "https://api.groq.com/openai/v1/chat/completions",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-        },
-        payload={
-            "model": model_name,
-            "temperature": temp,
-            "max_tokens": token_limit,
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": json.dumps(user_message)},
-            ],
-        },
-        timeout=90,
-    )
+    try:
+        raw = post_json(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+            },
+            payload={
+                "model": model_name,
+                "temperature": temp,
+                "max_tokens": token_limit,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": json.dumps(user_message)},
+                ],
+            },
+            timeout=90,
+        )
+    except ExternalHTTPError as http_exc:
+        if http_exc.status_code == 429 or "rate limit" in http_exc.body.lower():
+            raise GroqRateLimitError(f"Groq rate limited: {http_exc.body[:100]}") from http_exc
+        raise
     try:
         log_groq_call(
             user_id=user_id,
@@ -1096,6 +1201,13 @@ def _groq_meal_chunk(
         )
     except Exception:
         pass
+    # Check for rate limit error in response
+    groq_error = raw.get("error") or {}
+    if isinstance(groq_error, dict) and groq_error:
+        error_msg = str(groq_error.get("message") or "")
+        status_code = int(raw.get("status_code") or 0)
+        if "rate limit" in error_msg.lower() or "429" in error_msg or status_code == 429:
+            raise GroqRateLimitError(f"Groq rate limited: {error_msg[:100]}")
     content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
     return parse_groq_json_array(content)
 
@@ -1172,6 +1284,44 @@ def _validate_parsed_chunk(
         )
         return None
     return result
+
+
+def _day_item_totals(day_obj: dict[str, Any]) -> tuple[int, float]:
+    kcal = 0
+    protein = 0.0
+    for meal in day_obj.get("meals") or []:
+        if not isinstance(meal, dict):
+            continue
+        for item in meal.get("items") or []:
+            if not isinstance(item, dict):
+                continue
+            kcal += int(item.get("calories") or 0)
+            protein += float(item.get("protein") or 0)
+    return kcal, protein
+
+
+def _find_day_validation_issue(
+    day_obj: dict[str, Any],
+    *,
+    target_kcal: int,
+    protein_target: int,
+) -> str | None:
+    total_kcal, total_protein = _day_item_totals(day_obj)
+    if total_kcal > int(target_kcal * 1.10):
+        day_num = int(day_obj.get("day") or 0)
+        return (
+            f"Day {day_num} generated {total_kcal} kcal but target is {target_kcal}. "
+            f"Reduce portions in the largest meals to bring total under {int(target_kcal * 1.05)} kcal. "
+            "Do not add new items."
+        )
+    if total_protein < protein_target * 0.90:
+        day_num = int(day_obj.get("day") or 0)
+        return (
+            f"Day {day_num} only has {round(total_protein, 1)}g protein but target is {protein_target}g. "
+            "Replace lowest-protein items with: boiled eggs, low-fat curd, sprouts, or roasted chana. "
+            "Keep calories the same."
+        )
+    return None
 
 
 def _validate_meal_day(
@@ -1294,6 +1444,7 @@ def _fallback_meal_days(
     meals_per_day: int,
     include_cheat: bool,
     day_offset: int = 0,
+    regen_offset: int = 0,
 ) -> list[dict[str, Any]]:
     lookup = {str(f["food"]).lower(): f for f in BUDGET_FOODS}
     meal_slots = _meal_slots_for_count(meals_per_day)
@@ -1311,7 +1462,9 @@ def _fallback_meal_days(
     out: list[dict[str, Any]] = []
     cheat_day = days[len(days) // 2] if include_cheat and days else None
     for i, d in enumerate(days):
-        tpl = FALLBACK_DAY_TEMPLATES[(day_offset + i) % len(FALLBACK_DAY_TEMPLATES)]
+        tpl = FALLBACK_DAY_TEMPLATES[
+            (day_offset + i + regen_offset) % len(FALLBACK_DAY_TEMPLATES)
+        ]
         if d == cheat_day:
             tpl = CHEAT_MEAL_TEMPLATE
         meals = []
@@ -1360,10 +1513,15 @@ def _build_meal_ctx(db: Session, user: User) -> dict[str, Any]:
     personal = onboarding.get("personal") if isinstance(onboarding.get("personal"), dict) else {}
     app_setup = onboarding.get("app_setup") if isinstance(onboarding.get("app_setup"), dict) else {}
     activity = onboarding.get("activity") if isinstance(onboarding.get("activity"), dict) else {}
+    target_kcal = nutrition.get("target_kcal")
+    protein_target = nutrition.get("protein_target")
+    assert target_kcal is not None, "target_kcal must be resolved before generation"
+    assert protein_target is not None, "protein_target must be resolved before generation"
     meals_per_day = int(dietary.get("meals_per_day") or 3)
+    assert meals_per_day >= 3, "meals_per_day must come from onboarding"
     return {
-        "target_kcal": int(nutrition["target_kcal"]),
-        "protein_target": int(nutrition["protein_target"]),
+        "target_kcal": int(target_kcal),
+        "protein_target": int(protein_target),
         "carbs_target": int(nutrition["carbs_target"]),
         "fat_target": int(nutrition["fat_target"]),
         "fiber_target": int(nutrition["fiber_target"]),
@@ -1423,6 +1581,92 @@ def _diversity_from_entries(entries: list[DailyMealPlanEntry]) -> tuple[list[str
     return breakfasts, dinners
 
 
+def _exclusions_from_entries(
+    entries: list[DailyMealPlanEntry],
+    *,
+    exclude_day: int | None = None,
+) -> tuple[list[str], list[str]]:
+    foods: set[str] = set()
+    dishes: list[str] = []
+    for entry in entries:
+        if exclude_day is not None and int(entry.day or 0) == int(exclude_day):
+            continue
+        meals = safe_json_loads(entry.meals_json)
+        if not isinstance(meals, list):
+            continue
+        for meal in meals:
+            if not isinstance(meal, dict):
+                continue
+            meal_type = str(meal.get("meal_type") or "Meal")
+            items = meal.get("items") or []
+            if not items or not isinstance(items[0], dict):
+                continue
+            main_dish = str(items[0].get("food") or "").strip()
+            if not main_dish:
+                continue
+            foods.add(main_dish.lower())
+            item_foods = [main_dish]
+            dishes.append(f"{meal_type}: {', '.join(item_foods)}")
+    return sorted(foods), dishes
+
+
+def _slot_exclusions_for_day_regen(
+    entries: list[DailyMealPlanEntry],
+    *,
+    exclude_day: int,
+    meals_per_day: int,
+) -> tuple[list[str], list[str]]:
+    """
+    For day regeneration: only exclude the main dish per meal slot
+    from other days in the same week. Keeps list short so model obeys it.
+    """
+    slot_mains: dict[str, list[str]] = {}
+    for entry in entries:
+        if int(entry.day or 0) == int(exclude_day):
+            continue
+        meals = safe_json_loads(entry.meals_json)
+        if not isinstance(meals, list):
+            continue
+        for meal in meals:
+            if not isinstance(meal, dict):
+                continue
+            meal_type = str(meal.get("meal_type") or "")
+            items = meal.get("items") or []
+            if not items or not isinstance(items[0], dict):
+                continue
+            main = str(items[0].get("food") or "").strip()
+            if main:
+                slot_mains.setdefault(meal_type, []).append(main)
+
+    foods: set[str] = set()
+    dishes: list[str] = []
+    for meal_type, mains in slot_mains.items():
+        unique_mains = list(dict.fromkeys(mains))
+        for m in unique_mains:
+            foods.add(m.lower())
+        dishes.append(f"{meal_type}: {', '.join(unique_mains)}")
+
+    return sorted(foods), dishes
+
+
+def _normalize_exclude_dishes(exclude_dishes: list[dict[str, Any] | str] | None) -> list[str]:
+    out: list[str] = []
+    for entry in exclude_dishes or []:
+        if isinstance(entry, str):
+            s = entry.strip()
+            if s:
+                out.append(s)
+            continue
+        if isinstance(entry, dict):
+            mt = str(entry.get("meal_type") or "Meal").strip()
+            foods = entry.get("foods")
+            if isinstance(foods, list):
+                names = [str(f).strip() for f in foods if str(f).strip()]
+                if names:
+                    out.append(f"{mt}: {', '.join(names)}")
+    return out
+
+
 def _generate_chunk_days(
     db: Session,
     *,
@@ -1437,15 +1681,64 @@ def _generate_chunk_days(
     user_id: int | None = None,
     ai_feature: str = "meal_plan_generation",
     endpoint: str = "/api/meal-planner/generate",
+    enable_post_validation: bool = True,
+    exclude_foods: list[str] | None = None,
+    exclude_dishes: list[dict[str, Any] | str] | None = None,
+    temperature_override: float | None = None,
 ) -> tuple[list[dict[str, Any]], str]:
+    normalized_exclude_foods = sorted({str(x).strip().lower() for x in (exclude_foods or []) if str(x).strip()})
+    normalized_exclude_dishes = _normalize_exclude_dishes(exclude_dishes)
+    logger.info(
+        "[MealPlanner][DEBUG] === GENERATION START === days=%s, ai_feature=%s",
+        days, ai_feature,
+    )
+    logger.info(
+        "[MealPlanner][DEBUG] exclude_foods count=%s, full_list=%s",
+        len(normalized_exclude_foods),
+        normalized_exclude_foods,
+    )
+    logger.info(
+        "[MealPlanner][DEBUG] exclude_dishes count=%s, full_list=%s",
+        len(normalized_exclude_dishes),
+        normalized_exclude_dishes,
+    )
+    logger.info(
+        "[MealPlanner][DEBUG] prev_breakfasts=%s",
+        prev_breakfasts,
+    )
+    logger.info(
+        "[MealPlanner][DEBUG] prev_dinners=%s",
+        prev_dinners,
+    )
+    logger.info(
+        "[MealPlanner][DEBUG] has_prior_context=%s, chunk_index=%s",
+        has_prior_context, chunk_index,
+    )
+    logger.info(
+        "[MealPlanner][DEBUG] target_kcal=%s, protein=%s, carbs=%s, fat=%s",
+        ctx.get("target_kcal"), ctx.get("protein_target"),
+        ctx.get("carbs_target"), ctx.get("fat_target"),
+    )
+    if normalized_exclude_foods:
+        ctx["exclude_foods"] = normalized_exclude_foods
+    if normalized_exclude_dishes:
+        ctx["exclude_dishes_this_week"] = normalized_exclude_dishes
     include_cheat = include_cheat_override if include_cheat_override is not None else _include_cheat_for_chunk(chunk_index)
-    system_prompt = _build_meal_system_prompt(ctx, chunk_index, has_prior_context=has_prior_context or bool(prev_breakfasts or prev_dinners))
+    system_prompt = _build_meal_system_prompt(
+        ctx,
+        chunk_index,
+        has_prior_context=has_prior_context or bool(prev_breakfasts or prev_dinners),
+        previous_week_breakfasts=prev_breakfasts,
+        previous_week_dinners=prev_dinners,
+    )
     meals_per_day = int(ctx["meals_per_day"])
+    target_kcal = int(ctx["target_kcal"])
+    protein_target = int(ctx["protein_target"])
     user_msg: dict[str, Any] = {
         "days": days,
         "include_cheat_day": include_cheat,
-        "target_kcal": ctx["target_kcal"],
-        "protein_target": ctx["protein_target"],
+        "target_kcal": target_kcal,
+        "protein_target": protein_target,
         "carbs_target": ctx["carbs_target"],
         "fat_target": ctx["fat_target"],
         "fiber_target": ctx["fiber_target"],
@@ -1471,11 +1764,27 @@ def _generate_chunk_days(
             "Each day object MUST use the exact integer from the days array as its day field "
             "(e.g. if days is [17,18,19], return day 17 then 18 then 19 — never 1,2,3)."
         ),
+        "calorie_tolerance_pct": 5,
+        "protein_is_highest_priority": True,
+        "macro_check_instruction": (
+            f"Final day total MUST be {target_kcal} kcal +/-5%. "
+            f"Protein MUST be >={protein_target}g. "
+            "Check your math before responding."
+        ),
+        "diversity_instruction": (
+            "Each day's meals must be completely different from every other day "
+            "in this batch. List the main dish for each meal slot before finalizing "
+            "to confirm no repeats within the week."
+        ),
+        "exclude_foods": normalized_exclude_foods,
+        "exclude_dishes_this_week": normalized_exclude_dishes,
     }
     if prev_breakfasts:
         user_msg["previous_week_breakfasts"] = prev_breakfasts
     if prev_dinners:
         user_msg["previous_week_dinners"] = prev_dinners
+    if ctx.get("urgent_retry_reason"):
+        user_msg["URGENT_RETRY_REASON"] = str(ctx["urgent_retry_reason"])
     _verify_meal_planner_targets(ctx)
     assert int(ctx["target_kcal"]) > 1000, f"[MealPlanner] target_kcal too low: {ctx['target_kcal']}"
     assert int(ctx["protein_target"]) > 0, "[MealPlanner] protein_target is 0"
@@ -1495,66 +1804,196 @@ def _generate_chunk_days(
         "meals_per_day": meals_per_day,
     }
     chunk_size = len(days)
+    single_day = len(days) == 1
+    chunk_temperature = (
+        temperature_override
+        if temperature_override is not None
+        else (0.85 if single_day else 0.75)
+    )
 
+    logger.info(
+        "[MealPlanner][DEBUG] system_prompt exclusion_section=%s",
+        "HAS_EXCLUSIONS" if (normalized_exclude_foods or normalized_exclude_dishes) else "NO_EXCLUSIONS",
+    )
+    logger.info(
+        "[MealPlanner][DEBUG] system_prompt length=%s chars",
+        len(system_prompt),
+    )
+    logger.info(
+        "[MealPlanner][DEBUG] user_msg exclude_foods in payload=%s",
+        user_msg.get("exclude_foods"),
+    )
+
+    groq_skip = False
     for attempt in range(2):
-        try:
-            raw_days = _groq_meal_chunk(
-                system_prompt,
-                user_msg,
-                user_id=user_id,
-                ai_feature=ai_feature,
-                endpoint=endpoint,
-            )
-            result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
-            if result is not None:
-                _log_meal_day_counts(result, meals_per_day)
-                return result, "groq"
-            _, short_days = _days_have_correct_meal_count(
-                _align_chunk_days(
-                    [d for d in (_validate_meal_day(x, scale_targets=scale_targets) for x in raw_days) if d],
-                    days,
+        if not groq_skip:
+            try:
+                raw_days = _groq_meal_chunk(
+                    system_prompt,
+                    user_msg,
+                    temperature=chunk_temperature,
+                    user_id=user_id,
+                    ai_feature=ai_feature,
+                    endpoint=endpoint,
                 )
-                if raw_days
-                else [],
-                meals_per_day,
-            )
-            logger.warning(
-                "[MealPlanner] Groq chunk incomplete (short days: %s) — retrying with higher token limit",
-                short_days,
-            )
-            retry_msg = dict(user_msg)
-            retry_msg["URGENT_RETRY_REASON"] = (
-                f"Previous attempt returned fewer than {meals_per_day} meals per day. "
-                f"You MUST return EXACTLY {meals_per_day} meals for EVERY day. "
-                f"Do not stop early. Complete all {len(days)} days fully."
-            )
-            retry_tokens = min(_meal_chunk_max_tokens(meals_per_day, chunk_size) + 2000, 8000)
-            raw_days = _groq_meal_chunk(
-                system_prompt,
-                retry_msg,
-                max_tokens=retry_tokens,
-                temperature=0.5,
-                user_id=user_id,
-                ai_feature=ai_feature,
-                endpoint=endpoint,
-            )
-            result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
-            if result is not None:
-                _log_meal_day_counts(result, meals_per_day)
-                return result, "groq"
-        except Exception:
-            if attempt == 0:
-                continue
+                result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
+                if result is not None:
+                    if enable_post_validation:
+                        fixed_result = list(result)
+                        for idx, generated_day in enumerate(list(fixed_result)):
+                            issue = _find_day_validation_issue(
+                                generated_day,
+                                target_kcal=target_kcal,
+                                protein_target=protein_target,
+                            )
+                            if not issue:
+                                continue
+                            repaired = False
+                            for _ in range(2):
+                                retry_ctx = dict(ctx)
+                                retry_ctx["urgent_retry_reason"] = issue
+                                single_day_result, _ = _generate_chunk_days(
+                                    db,
+                                    days=[int(generated_day["day"])],
+                                    chunk_index=0,
+                                    ctx=retry_ctx,
+                                    prev_breakfasts=prev_breakfasts,
+                                    prev_dinners=prev_dinners,
+                                    include_cheat_override=bool(generated_day.get("is_cheat_day")),
+                                    day_offset=day_offset,
+                                    has_prior_context=True,
+                                    user_id=user_id,
+                                    ai_feature=ai_feature,
+                                    endpoint=endpoint,
+                                    enable_post_validation=False,
+                                    exclude_foods=normalized_exclude_foods,
+                                    exclude_dishes=normalized_exclude_dishes,
+                                    temperature_override=temperature_override,
+                                )
+                                if single_day_result:
+                                    candidate = single_day_result[0]
+                                    next_issue = _find_day_validation_issue(
+                                        candidate,
+                                        target_kcal=target_kcal,
+                                        protein_target=protein_target,
+                                    )
+                                    if not next_issue:
+                                        fixed_result[idx] = candidate
+                                        repaired = True
+                                        break
+                                    issue = next_issue
+                            if not repaired:
+                                logger.warning("[MealPlanner] day %s failed macro validation after retries: %s", generated_day.get("day"), issue)
+                        result = fixed_result
+                    _log_meal_day_counts(result, meals_per_day)
+                    return result, "groq"
+                _, short_days = _days_have_correct_meal_count(
+                    _align_chunk_days(
+                        [d for d in (_validate_meal_day(x, scale_targets=scale_targets) for x in raw_days) if d],
+                        days,
+                    )
+                    if raw_days
+                    else [],
+                    meals_per_day,
+                )
+                logger.warning(
+                    "[MealPlanner] Groq chunk incomplete (short days: %s) — retrying with higher token limit",
+                    short_days,
+                )
+                retry_msg = dict(user_msg)
+                retry_msg["URGENT_RETRY_REASON"] = str(
+                    ctx.get("urgent_retry_reason")
+                    or (
+                        f"Previous attempt returned fewer than {meals_per_day} meals per day. "
+                        f"You MUST return EXACTLY {meals_per_day} meals for EVERY day. "
+                        f"Do not stop early. Complete all {len(days)} days fully."
+                    )
+                )
+                retry_tokens = min(_meal_chunk_max_tokens(meals_per_day, chunk_size) + 2000, 8000)
+                raw_days = _groq_meal_chunk(
+                    system_prompt,
+                    retry_msg,
+                    max_tokens=retry_tokens,
+                    temperature=0.5,
+                    user_id=user_id,
+                    ai_feature=ai_feature,
+                    endpoint=endpoint,
+                )
+                result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
+                if result is not None:
+                    _log_meal_day_counts(result, meals_per_day)
+                    return result, "groq"
+            except GroqRateLimitError as rate_exc:
+                logger.warning(
+                    "[MealPlanner] Groq rate limited — skipping "
+                    "directly to Gemini: %s", str(rate_exc)[:100],
+                )
+                groq_skip = True  # skip groq retries, go straight to Gemini
+            except Exception as groq_exc:
+                logger.warning(
+                    "[MealPlanner] Groq attempt %s failed: %s",
+                    attempt, str(groq_exc)[:200],
+                )
+                if attempt == 0:
+                    continue
         try:
             raw_days = _gemini_meal_chunk(
                 system_prompt,
                 user_msg,
+                temperature=chunk_temperature,
                 user_id=user_id,
                 ai_feature=ai_feature,
                 endpoint=endpoint,
             )
             result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
             if result is not None:
+                if enable_post_validation:
+                    fixed_result = list(result)
+                    for idx, generated_day in enumerate(list(fixed_result)):
+                        issue = _find_day_validation_issue(
+                            generated_day,
+                            target_kcal=target_kcal,
+                            protein_target=protein_target,
+                        )
+                        if not issue:
+                            continue
+                        repaired = False
+                        for _ in range(2):
+                            retry_ctx = dict(ctx)
+                            retry_ctx["urgent_retry_reason"] = issue
+                            single_day_result, _ = _generate_chunk_days(
+                                db,
+                                days=[int(generated_day["day"])],
+                                chunk_index=0,
+                                ctx=retry_ctx,
+                                prev_breakfasts=prev_breakfasts,
+                                prev_dinners=prev_dinners,
+                                include_cheat_override=bool(generated_day.get("is_cheat_day")),
+                                day_offset=day_offset,
+                                has_prior_context=True,
+                                user_id=user_id,
+                                ai_feature=ai_feature,
+                                endpoint=endpoint,
+                                enable_post_validation=False,
+                                exclude_foods=normalized_exclude_foods,
+                                exclude_dishes=normalized_exclude_dishes,
+                                temperature_override=temperature_override,
+                            )
+                            if single_day_result:
+                                candidate = single_day_result[0]
+                                next_issue = _find_day_validation_issue(
+                                    candidate,
+                                    target_kcal=target_kcal,
+                                    protein_target=protein_target,
+                                )
+                                if not next_issue:
+                                    fixed_result[idx] = candidate
+                                    repaired = True
+                                    break
+                                issue = next_issue
+                        if not repaired:
+                            logger.warning("[MealPlanner] day %s failed macro validation after retries: %s", generated_day.get("day"), issue)
+                    result = fixed_result
                 _log_meal_day_counts(result, meals_per_day)
                 return result, "gemini"
             retry_msg = dict(user_msg)
@@ -1564,6 +2003,7 @@ def _generate_chunk_days(
             raw_days = _gemini_meal_chunk(
                 system_prompt,
                 retry_msg,
+                temperature=chunk_temperature,
                 user_id=user_id,
                 ai_feature=ai_feature,
                 endpoint=endpoint,
@@ -1572,8 +2012,19 @@ def _generate_chunk_days(
             if result is not None:
                 _log_meal_day_counts(result, meals_per_day)
                 return result, "gemini"
-        except Exception:
-            pass
+        except Exception as gemini_exc:
+            logger.warning(
+                "[MealPlanner] Gemini also failed: %s",
+                str(gemini_exc)[:200],
+            )
+    # Use exclude_foods length as offset so each regen
+    # picks a different fallback template
+    _regen_offset = len(normalized_exclude_foods) % len(FALLBACK_DAY_TEMPLATES)
+    logger.warning(
+        "[MealPlanner] USING FALLBACK TEMPLATE for days=%s "
+        "— both Groq and Gemini failed. Meals will repeat!",
+        days,
+    )
     fallback_raw = _fallback_meal_days(
             days,
             target_kcal=int(ctx["target_kcal"]),
@@ -1584,6 +2035,7 @@ def _generate_chunk_days(
             meals_per_day=int(ctx["meals_per_day"]),
             include_cheat=include_cheat,
             day_offset=day_offset if day_offset is not None else chunk_index * 7,
+            regen_offset=_regen_offset,
         )
     fallback: list[dict[str, Any]] = []
     for day_data in fallback_raw:
@@ -1708,9 +2160,10 @@ def _build_week_response(
     targets = _plan_targets_dict(plan, db, user)
     days_out: list[dict[str, Any]] = []
 
+    unlock_all_days = is_planner_days_unlocked_user(user)
     for entry in entries:
         flags = day_flags(entry.day, today, plan.month, plan.year)
-        if flags["is_future"]:
+        if flags["is_future"] and not unlock_all_days:
             day_dict: dict[str, Any] = {
                 "day": entry.day,
                 "is_cheat_day": entry.is_cheat_day,
@@ -1759,6 +2212,7 @@ def _build_week_response(
         ],
         "today": next((d for d in days_out if d.get("is_today")), None),
         **_monthly_day_regen_stats(db, user.id, plan.month, plan.year, user=user),
+        **planner_days_unlocked_flag(user),
     }
 
 
@@ -1912,6 +2366,8 @@ def regenerate_week_plan(
     week_start_day: int,
     from_day: int,
     local_date: str | None,
+    exclude_foods: list[str] | None = None,
+    exclude_dishes: list[dict[str, Any] | str] | None = None,
 ) -> dict[str, Any]:
     today = parse_local_date(local_date)
     month, year = today.month, today.year
@@ -1937,6 +2393,9 @@ def regenerate_week_plan(
         .all()
     )
     prev_breakfasts, prev_dinners = _diversity_from_entries(preserved)
+    existing_foods, existing_dishes = _exclusions_from_entries(list(plan.entries))
+    merged_exclude_foods = sorted(set(existing_foods) | {str(x).strip().lower() for x in (exclude_foods or []) if str(x).strip()})
+    merged_exclude_dishes = existing_dishes + _normalize_exclude_dishes(exclude_dishes)
 
     remaining_days = list(range(from_day, week_end + 1))
     if not remaining_days:
@@ -1954,6 +2413,9 @@ def regenerate_week_plan(
             day_offset=from_day - 1,
             user_id=user.id,
             has_prior_context=True,
+            exclude_foods=merged_exclude_foods,
+            exclude_dishes=merged_exclude_dishes,
+            temperature_override=0.85,
         )
     except Exception as exc:
         logger.exception("[MealPlanner] regenerate_week_plan generation failed: %s", exc)
@@ -1988,6 +2450,11 @@ def regenerate_week_plan(
             )
 
         plan.generated_at = datetime.utcnow()
+        plan.target_kcal = int(ctx["target_kcal"])
+        plan.target_protein_g = int(ctx["protein_target"])
+        plan.target_carbs_g = int(ctx["carbs_target"])
+        plan.target_fat_g = int(ctx["fat_target"])
+        plan.target_fiber_g = int(ctx["fiber_target"])
         db.add(plan)
         db.commit()
         db.refresh(plan)
@@ -2137,12 +2604,13 @@ def meal_plan_current_response(
     today = parse_local_date(local_date)
     entries = sorted(plan.entries, key=lambda e: e.day)
     today_entry = next((e for e in entries if e.day == today.day), None)
+    unlock_all_days = user is not None and is_planner_days_unlocked_user(user)
     month_overview = []
     for e in entries:
         flags = day_flags(e.day, today, plan.month, plan.year)
         row = {
             "day": e.day,
-            "total_calories": e.total_calories if not flags["is_future"] else None,
+            "total_calories": e.total_calories if (unlock_all_days or not flags["is_future"]) else None,
             "is_cheat_day": e.is_cheat_day,
             **flags,
         }
@@ -2162,6 +2630,7 @@ def meal_plan_current_response(
         ),
         "month_overview": month_overview,
         **(_monthly_day_regen_stats(db, user.id, plan.month, plan.year, user=user) if db and user else {}),
+        **(planner_days_unlocked_flag(user) if user else {}),
     }
 
 
@@ -2210,6 +2679,8 @@ def regenerate_single_day(
     plan_id: int,
     day: int,
     local_date: str | None,
+    exclude_foods: list[str] | None = None,
+    exclude_dishes: list[dict[str, Any] | str] | None = None,
 ) -> dict[str, Any]:
     today = parse_local_date(local_date)
     month, year = today.month, today.year
@@ -2269,6 +2740,13 @@ def regenerate_single_day(
         .all()
     )
     prev_breakfasts, prev_dinners = _diversity_from_entries(sorted(preserved, key=lambda e: e.day))
+    existing_foods, existing_dishes = _slot_exclusions_for_day_regen(
+        list(plan.entries),
+        exclude_day=day,
+        meals_per_day=int(ctx["meals_per_day"]),
+    )
+    merged_exclude_foods = sorted(set(existing_foods) | {str(x).strip().lower() for x in (exclude_foods or []) if str(x).strip()})
+    merged_exclude_dishes = existing_dishes + _normalize_exclude_dishes(exclude_dishes)
 
     try:
         new_days, _ = _generate_chunk_days(
@@ -2284,6 +2762,9 @@ def regenerate_single_day(
             ai_feature="meal_day_regen",
             endpoint="/api/meal-planner/regenerate-day",
             has_prior_context=True,
+            exclude_foods=merged_exclude_foods,
+            exclude_dishes=merged_exclude_dishes,
+            temperature_override=0.9,
         )
     except Exception as gen_exc:
         logger.exception("[MealPlanner] regenerate_single_day generation failed for day %s: %s", day, gen_exc)
@@ -2316,6 +2797,11 @@ def regenerate_single_day(
         db.add(new_entry)
         if not test_user:
             plan.day_regens_used = int(plan.day_regens_used or 0) + 1
+        plan.target_kcal = int(ctx["target_kcal"])
+        plan.target_protein_g = int(ctx["protein_target"])
+        plan.target_carbs_g = int(ctx["carbs_target"])
+        plan.target_fat_g = int(ctx["fat_target"])
+        plan.target_fiber_g = int(ctx["fiber_target"])
         db.commit()
         db.refresh(new_entry)
         db.refresh(plan)
@@ -2335,6 +2821,8 @@ def regenerate_remaining_meals(
     *,
     from_day: int,
     local_date: str | None,
+    exclude_foods: list[str] | None = None,
+    exclude_dishes: list[dict[str, Any] | str] | None = None,
 ) -> MonthlyMealPlan:
     today = parse_local_date(local_date)
     month, year = today.month, today.year
@@ -2364,6 +2852,9 @@ def regenerate_remaining_meals(
         .all()
     )
     preserved = sorted(preserved, key=lambda e: e.day)
+    existing_foods, existing_dishes = _exclusions_from_entries(list(plan.entries))
+    merged_exclude_foods = sorted(set(existing_foods) | {str(x).strip().lower() for x in (exclude_foods or []) if str(x).strip()})
+    merged_exclude_dishes = existing_dishes + _normalize_exclude_dishes(exclude_dishes)
 
     deleted_count = (
         db.query(DailyMealPlanEntry)
@@ -2409,6 +2900,9 @@ def regenerate_remaining_meals(
             day_offset=chunk_days[0] - 1 if chunk_days else 0,
             user_id=user.id,
             has_prior_context=True,
+            exclude_foods=merged_exclude_foods,
+            exclude_dishes=merged_exclude_dishes,
+            temperature_override=0.85,
         )
         for d in new_days:
             day_num = int(d["day"])

@@ -19,6 +19,7 @@ type Props = {
   selectedDay: number;
   onSelectDay: (day: number) => void;
   mode: "meal" | "workout";
+  allowFutureSelection?: boolean;
 };
 
 function splitAbbrev(name?: string): string {
@@ -34,7 +35,15 @@ function splitAbbrev(name?: string): string {
   return name.split(" ")[0]?.slice(0, 4) ?? "";
 }
 
-export function PlannerMonthCalendar({ month, year, days, selectedDay, onSelectDay, mode }: Props) {
+export function PlannerMonthCalendar({
+  month,
+  year,
+  days,
+  selectedDay,
+  onSelectDay,
+  mode,
+  allowFutureSelection = false,
+}: Props) {
   const { colors, radius } = useAppTheme();
 
   return (
@@ -45,7 +54,7 @@ export function PlannerMonthCalendar({ month, year, days, selectedDay, onSelectD
       keyExtractor={(item) => String(item.day)}
       contentContainerStyle={styles.strip}
       renderItem={({ item }) => {
-        const locked = item.is_future;
+        const locked = item.is_future && !allowFutureSelection;
         const selected = item.day === selectedDay;
         const center =
           mode === "meal"

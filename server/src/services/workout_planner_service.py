@@ -36,6 +36,8 @@ from src.services.planner_swap_limits import (
 )
 from src.services.planner_test_users import (
     is_planner_test_user,
+    is_planner_days_unlocked_user,
+    planner_days_unlocked_flag,
     planner_limits_exempt_flag,
     planner_unlimited_regen_stats,
 )
@@ -603,8 +605,12 @@ def _build_workout_ctx(
     personal = onboarding.get("personal") if isinstance(onboarding.get("personal"), dict) else {}
 
     if focus_muscles is None:
-        stored = goal.get("focus_muscle")
-        focus_muscles = [str(stored)] if stored else []
+        stored_list = goal.get("focus_muscles")
+        if isinstance(stored_list, list):
+            focus_muscles = [str(m).strip() for m in stored_list if m and str(m).strip()]
+        else:
+            stored = goal.get("focus_muscle")
+            focus_muscles = [str(stored)] if stored else []
 
     difficulty = str(goal.get("difficulty") or "intermediate").strip().lower()
     activity_level = str(activity.get("level") or "moderately_active").strip().lower()
@@ -890,6 +896,7 @@ def workout_plan_current_response(
     if db is not None and user is not None:
         payload.update(_monthly_workout_day_regen_stats(db, user.id, plan.month, plan.year, user=user))
         payload.update(_monthly_workout_month_plan_regen_stats(db, user.id, plan.month, plan.year, user=user))
+        payload.update(planner_days_unlocked_flag(user))
     return payload
 
 
@@ -1057,7 +1064,12 @@ def regenerate_single_workout_day(
     if day < today.day and today.month == month and today.year == year:
         raise ValueError(f"Cannot regenerate past days. Day {day} has already passed.")
 
-    if day > today.day and today.month == month and today.year == year:
+    if (
+        day > today.day
+        and today.month == month
+        and today.year == year
+        and not is_planner_days_unlocked_user(user)
+    ):
         raise ValueError(
             f"Cannot regenerate future days. This day's plan unlocks on day {day}."
         )

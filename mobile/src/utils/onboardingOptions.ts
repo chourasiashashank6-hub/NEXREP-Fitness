@@ -27,6 +27,7 @@ export const GOAL_PACE_OPTIONS: PickerOption<string>[] = [
   { value: "aggressive", label: "Aggressive — 0.75 kg/week" },
 ];
 
+/** @deprecated use FOCUS_MUSCLE_UI_OPTIONS from onboardingFocusMuscles.ts */
 export const FOCUS_MUSCLE_OPTIONS: PickerOption<string | null>[] = [
   { value: "Chest", label: "Chest" },
   { value: "Back", label: "Back" },

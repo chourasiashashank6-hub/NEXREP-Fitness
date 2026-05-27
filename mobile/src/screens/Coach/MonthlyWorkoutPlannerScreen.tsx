@@ -27,6 +27,8 @@ import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
 import { EXERCISE_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { auth } from "../../services/authService";
+import { useAuthStore } from "../../store/authStore";
 import { formatApiDetail, notifyUser } from "../../utils/notify";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
 import { useAppTheme } from "../../theme";
@@ -49,6 +51,8 @@ function muscleSelectionHint(muscles: FocusMuscle[]): string {
 
 const MAX_WORKOUT_REGENS_PER_MONTH = 2;
 const MAX_MONTH_PLAN_REGENS_PER_MONTH = 2;
+const PLANNER_DAYS_UNLOCK_EMAILS = new Set(["shashank1@gmail.com"]);
+const PLANNER_DAYS_UNLOCK_USER_IDS = new Set(["2"]);
 
 type RegenBadgeProps = {
   remaining: number;
@@ -164,6 +168,7 @@ type RegenStatsSource = {
   month_plan_regens_limit?: number;
   month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
+  planner_days_unlocked?: boolean;
 };
 
 function syncWorkoutRegenStats(
@@ -172,11 +177,13 @@ function syncWorkoutRegenStats(
   setLimit: (n: number) => void,
   setRemaining: (n: number) => void,
   setExempt?: (v: boolean) => void,
+  setDaysUnlocked?: (v: boolean) => void,
 ) {
   if (source?.day_regens_used !== undefined) setUsed(source.day_regens_used);
   if (source?.day_regens_limit !== undefined) setLimit(source.day_regens_limit ?? MAX_WORKOUT_REGENS_PER_MONTH);
   if (source?.day_regens_remaining !== undefined) setRemaining(source.day_regens_remaining);
   if (setExempt && source?.planner_limits_exempt !== undefined) setExempt(source.planner_limits_exempt);
+  if (setDaysUnlocked && source?.planner_days_unlocked !== undefined) setDaysUnlocked(source.planner_days_unlocked);
 }
 
 function syncMonthPlanRegenStats(
@@ -222,11 +229,20 @@ export default function MonthlyWorkoutPlannerScreen() {
   const [dayRegensLimit, setDayRegensLimit] = useState(MAX_WORKOUT_REGENS_PER_MONTH);
   const [dayRegensRemaining, setDayRegensRemaining] = useState(MAX_WORKOUT_REGENS_PER_MONTH);
   const [plannerLimitsExempt, setPlannerLimitsExempt] = useState(false);
+  const [plannerDaysUnlocked, setPlannerDaysUnlocked] = useState(false);
   const [isRegeneratingWorkout, setIsRegeneratingWorkout] = useState(false);
   const [monthPlanRegensUsed, setMonthPlanRegensUsed] = useState(0);
   const [monthPlanRegensLimit, setMonthPlanRegensLimit] = useState(MAX_MONTH_PLAN_REGENS_PER_MONTH);
   const [monthPlanRegensRemaining, setMonthPlanRegensRemaining] = useState(MAX_MONTH_PLAN_REGENS_PER_MONTH);
   const [isRegeneratingMonthPlan, setIsRegeneratingMonthPlan] = useState(false);
+  const sessionUserId = useAuthStore((s) => s.sessionUserId);
+  const signedInEmail = String(auth.currentUser?.email || "")
+    .trim()
+    .toLowerCase();
+  const plannerDaysUnlockedByIdentity =
+    PLANNER_DAYS_UNLOCK_EMAILS.has(signedInEmail) ||
+    (sessionUserId ? PLANNER_DAYS_UNLOCK_USER_IDS.has(sessionUserId) : false);
+  const canViewFutureDays = plannerDaysUnlocked || plannerDaysUnlockedByIdentity;
   const exerciseSwapsLimit = 5;
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadSeqRef = useRef(0);
@@ -238,7 +254,9 @@ export default function MonthlyWorkoutPlannerScreen() {
 
   const resetMonthLabel = getNextMonthResetLabel();
   const selectedWorkoutOverview = plan?.month_overview.find((d) => d.day === selectedDay);
-  const canSwapExercises = Boolean(selectedWorkoutOverview && !selectedWorkoutOverview.is_future && plan);
+  const canSwapExercises = Boolean(
+    selectedWorkoutOverview && (canViewFutureDays || !selectedWorkoutOverview.is_future) && plan,
+  );
   const exerciseSwapsRemaining = exerciseSwapsLimit - exerciseSwapsUsed;
   const selectedDayIsPast = plan
     ? (selectedWorkoutOverview?.is_past ??
@@ -250,7 +268,7 @@ export default function MonthlyWorkoutPlannerScreen() {
     !dayDetail.locked &&
     !isWorkoutRestDay(dayDetail) &&
     !selectedDayIsPast &&
-    (selectedWorkoutOverview?.is_today || selectedWorkoutOverview?.is_future),
+    (selectedWorkoutOverview?.is_today || selectedWorkoutOverview?.is_future || canViewFutureDays),
   );
   const canPressRegenerateWorkout =
     showRegenerateWorkout && (plannerLimitsExempt || dayRegensRemaining > 0);
@@ -261,7 +279,14 @@ export default function MonthlyWorkoutPlannerScreen() {
   const applyPlan = useCallback((current: WorkoutPlanCurrent | null) => {
     setPlan(current);
     if (current) {
-      syncWorkoutRegenStats(current, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt);
+      syncWorkoutRegenStats(
+        current,
+        setDayRegensUsed,
+        setDayRegensLimit,
+        setDayRegensRemaining,
+        setPlannerLimitsExempt,
+        setPlannerDaysUnlocked,
+      );
       syncMonthPlanRegenStats(current, setMonthPlanRegensUsed, setMonthPlanRegensLimit, setMonthPlanRegensRemaining);
       setSelectedMuscles(planFocusMuscles(current));
       const todayDay =
@@ -298,7 +323,7 @@ export default function MonthlyWorkoutPlannerScreen() {
     async (day: number) => {
       if (!plan || regeneratingWorkoutRef.current || regeneratingMonthPlanRef.current) return;
       const overview = plan.month_overview.find((d) => d.day === day);
-      if (overview?.is_future) {
+      if (overview?.is_future && !canViewFutureDays) {
         setDayDetail({
           day,
           is_rest_day: false,
@@ -315,12 +340,12 @@ export default function MonthlyWorkoutPlannerScreen() {
         const d = await fetchWorkoutPlanDay(day);
         setDayDetail(d);
         if (typeof d.swaps_used_today === "number") setExerciseSwapsUsed(d.swaps_used_today);
-        syncWorkoutRegenStats(d, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt);
+        syncWorkoutRegenStats(d, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
       } catch {
         setDayDetail(null);
       }
     },
-    [plan],
+    [canViewFutureDays, plan],
   );
 
   useFocusEffect(
@@ -341,7 +366,12 @@ export default function MonthlyWorkoutPlannerScreen() {
           difficulty: String(goal?.difficulty ?? "intermediate"),
           wpw: Number(activity?.workouts_per_week ?? 4),
         });
-        if (goal?.focus_muscle) setSelectedMuscles([goal.focus_muscle as FocusMuscle]);
+        const fromOnboarding = goal?.focus_muscles;
+        if (Array.isArray(fromOnboarding) && fromOnboarding.length > 0) {
+          setSelectedMuscles(fromOnboarding as FocusMuscle[]);
+        } else if (goal?.focus_muscle) {
+          setSelectedMuscles([goal.focus_muscle as FocusMuscle]);
+        }
       } catch {
         /* defaults */
       }
@@ -454,7 +484,7 @@ export default function MonthlyWorkoutPlannerScreen() {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setDayDetail(nextDetail);
       setExerciseListVersion((v) => v + 1);
-      syncWorkoutRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt);
+      syncWorkoutRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
       setPlan((prev) => (prev ? { ...prev, ...updated } : prev));
       const left = updated.day_regens_remaining ?? Math.max(0, dayRegensRemaining - 1);
       notifyUser(
@@ -499,7 +529,7 @@ export default function MonthlyWorkoutPlannerScreen() {
           const d = await fetchWorkoutPlanDay(selectedDay);
           setDayDetail(d);
           setExerciseListVersion((v) => v + 1);
-          syncWorkoutRegenStats(d, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt);
+          syncWorkoutRegenStats(d, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
         } catch {
           /* day may be locked */
         }
@@ -647,6 +677,7 @@ export default function MonthlyWorkoutPlannerScreen() {
               selectedDay={selectedDay}
               onSelectDay={setSelectedDay}
               mode="workout"
+              allowFutureSelection={canViewFutureDays}
             />
 
             {dayDetail?.locked ? (

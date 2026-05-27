@@ -16,7 +16,7 @@ from src.services.workout_planner_service import (
     workout_plan_current_response,
     workout_plan_month_response,
 )
-from src.services.planner_test_users import is_planner_test_user
+from src.services.planner_test_users import is_planner_days_unlocked_user, is_planner_test_user
 from src.utils.auth import get_current_user
 from src.utils.plan_check import require_feature
 
@@ -106,7 +106,12 @@ def get_day(
     plan = get_existing_workout_plan(db, current_user.id, today.month, today.year)
     if not plan:
         raise HTTPException(status_code=404, detail="No workout plan for this month")
-    if day > today.day and today.month == plan.month and today.year == plan.year:
+    if (
+        day > today.day
+        and today.month == plan.month
+        and today.year == plan.year
+        and not is_planner_days_unlocked_user(current_user)
+    ):
         return {
             "day": day,
             "is_rest_day": False,

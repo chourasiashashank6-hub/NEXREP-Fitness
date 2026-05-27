@@ -80,6 +80,7 @@ const MainTabs = ({ initialRouteName = "Home" }: { initialRouteName?: "Home" | "
 export const RootNavigator = () => {
   const { colors } = useAppTheme();
   const token = useAuthStore((s) => s.token);
+  const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const hydrated = useAuthStore((s) => s.hydrated);
   const bootstrap = useAuthStore((s) => s.bootstrap);
   const setToken = useAuthStore((s) => s.setToken);
@@ -106,7 +107,7 @@ export const RootNavigator = () => {
       {token && needsOnboarding ? (
         <Stack.Screen name="Onboarding">
           {() => (
-            <OnboardingProvider>
+            <OnboardingProvider key={sessionUserId ?? token ?? "onboarding"}>
               <Stack.Navigator screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="Screen1Personal" component={Screen1Personal} />
                 <Stack.Screen name="Screen2Goal" component={Screen2Goal} />

@@ -38,6 +38,7 @@ export const DEFAULT_ONBOARDING_DATA: OnboardingData = {
     type: null,
     pace: null,
     difficulty: null,
+    focus_muscles: [],
     focus_muscle: null,
     target_weight_kg: null,
     target_weight_lb: null,

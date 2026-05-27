@@ -12,6 +12,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import ProGateModal from "../../components/ProGateModal";
 import { canAccess, getRequiredPlan } from "../../constants/featureTiers";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
+import { auth } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 
 export type { CoachStackParamList } from "../../navigation/coachTypes";
@@ -24,20 +25,38 @@ type GateConfig = {
   accentColor: string;
 };
 
+const PLANNER_GATE_BYPASS_EMAILS = new Set(["shashank1@gmail.com"]);
+const PLANNER_GATE_BYPASS_USER_IDS = new Set(["2"]);
+const PLANNER_GATE_BYPASS_FEATURES = new Set(["meal_plan_generation", "workout_plan_generation"]);
+
 export default function CoachHomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
   const plan_id = useAuthStore((s) => s.plan_id) ?? "free";
+  const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const [gate, setGate] = useState<GateConfig | null>(null);
+  const signedInEmail = String(auth.currentUser?.email || "")
+    .trim()
+    .toLowerCase();
+  const plannerGateBypassEnabled =
+    PLANNER_GATE_BYPASS_EMAILS.has(signedInEmail) ||
+    (sessionUserId ? PLANNER_GATE_BYPASS_USER_IDS.has(sessionUserId) : false);
+
+  const hasFeatureAccess = useCallback(
+    (feature: string) =>
+      canAccess(plan_id, feature) ||
+      (plannerGateBypassEnabled && PLANNER_GATE_BYPASS_FEATURES.has(feature)),
+    [plan_id, plannerGateBypassEnabled],
+  );
 
   const openOrGate = useCallback(
     (navigateFn: () => void, config: GateConfig) => {
-      if (canAccess(plan_id, config.feature)) {
+      if (hasFeatureAccess(config.feature)) {
         navigateFn();
       } else {
         setGate(config);
       }
     },
-    [plan_id],
+    [hasFeatureAccess],
   );
 
   const openSubscription = () => {
@@ -155,17 +174,17 @@ export default function CoachHomeScreen() {
               style={[
                 styles.cardBtn,
                 {
-                  backgroundColor: canAccess(plan_id, "calorie_coach") ? "#1d9e75" : "#1c2128",
+                  backgroundColor: hasFeatureAccess("calorie_coach") ? "#1d9e75" : "#1c2128",
                 },
               ]}
             >
               <Text
                 style={[
                   styles.cardBtnText,
-                  { color: canAccess(plan_id, "calorie_coach") ? "#ffffff" : "#6e7681" },
+                  { color: hasFeatureAccess("calorie_coach") ? "#ffffff" : "#6e7681" },
                 ]}
               >
-                {canAccess(plan_id, "calorie_coach")
+                {hasFeatureAccess("calorie_coach")
                   ? "Open AI Calorie Coach →"
                   : "🔒  Unlock — upgrade to Pro"}
               </Text>
@@ -240,17 +259,17 @@ export default function CoachHomeScreen() {
               style={[
                 styles.cardBtn,
                 {
-                  backgroundColor: canAccess(plan_id, "workout_coach") ? "#7f77dd" : "#1c2128",
+                  backgroundColor: hasFeatureAccess("workout_coach") ? "#7f77dd" : "#1c2128",
                 },
               ]}
             >
               <Text
                 style={[
                   styles.cardBtnText,
-                  { color: canAccess(plan_id, "workout_coach") ? "#ffffff" : "#6e7681" },
+                  { color: hasFeatureAccess("workout_coach") ? "#ffffff" : "#6e7681" },
                 ]}
               >
-                {canAccess(plan_id, "workout_coach")
+                {hasFeatureAccess("workout_coach")
                   ? "Open Workout Coach →"
                   : "🔒  Unlock — upgrade to Pro"}
               </Text>
@@ -343,17 +362,17 @@ export default function CoachHomeScreen() {
               style={[
                 styles.cardBtn,
                 {
-                  backgroundColor: canAccess(plan_id, "meal_plan_generation") ? "#378add" : "#1c2128",
+                  backgroundColor: hasFeatureAccess("meal_plan_generation") ? "#378add" : "#1c2128",
                 },
               ]}
             >
               <Text
                 style={[
                   styles.cardBtnText,
-                  { color: canAccess(plan_id, "meal_plan_generation") ? "#ffffff" : "#6e7681" },
+                  { color: hasFeatureAccess("meal_plan_generation") ? "#ffffff" : "#6e7681" },
                 ]}
               >
-                {canAccess(plan_id, "meal_plan_generation")
+                {hasFeatureAccess("meal_plan_generation")
                   ? "Open meal planner →"
                   : "🔒  Unlock — upgrade to Elite"}
               </Text>
@@ -438,17 +457,17 @@ export default function CoachHomeScreen() {
               style={[
                 styles.cardBtn,
                 {
-                  backgroundColor: canAccess(plan_id, "workout_plan_generation") ? "#7f77dd" : "#1c2128",
+                  backgroundColor: hasFeatureAccess("workout_plan_generation") ? "#7f77dd" : "#1c2128",
                 },
               ]}
             >
               <Text
                 style={[
                   styles.cardBtnText,
-                  { color: canAccess(plan_id, "workout_plan_generation") ? "#ffffff" : "#6e7681" },
+                  { color: hasFeatureAccess("workout_plan_generation") ? "#ffffff" : "#6e7681" },
                 ]}
               >
-                {canAccess(plan_id, "workout_plan_generation")
+                {hasFeatureAccess("workout_plan_generation")
                   ? "Open workout planner →"
                   : "🔒  Unlock — upgrade to Elite"}
               </Text>

@@ -23,7 +23,9 @@ export type OnboardingData = {
     type: GoalType | null;
     pace: GoalPace | null;
     difficulty: DifficultyLevel | null;
-    focus_muscle: FocusMuscle | null;
+    focus_muscles: FocusMuscle[];
+    /** @deprecated use focus_muscles; kept for legacy payloads */
+    focus_muscle?: FocusMuscle | null;
     target_weight_kg: number | null;
     target_weight_lb: number | null;
     target_date: string | null;

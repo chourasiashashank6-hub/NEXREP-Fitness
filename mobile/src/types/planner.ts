@@ -56,6 +56,7 @@ export type MealDayPlan = {
   month_plan_regens_limit?: number;
   month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
+  planner_days_unlocked?: boolean;
 };
 
 export type MealMonthOverviewDay = {
@@ -126,6 +127,7 @@ export type MealPlanCurrent = {
   month_plan_regens_limit?: number;
   month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
+  planner_days_unlocked?: boolean;
 };
 
 export type WeekTab = {
@@ -159,6 +161,7 @@ export type MealPlanWeeklyCurrent = {
   month_plan_regens_limit?: number;
   month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
+  planner_days_unlocked?: boolean;
 };
 
 export function isWeeklyPlannerCurrent(data: unknown): data is MealPlanWeeklyCurrent {
@@ -196,6 +199,7 @@ export type WorkoutDayPlan = {
   month_plan_regens_limit?: number;
   month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
+  planner_days_unlocked?: boolean;
 };
 
 export type WorkoutMonthOverviewDay = {
@@ -224,4 +228,5 @@ export type WorkoutPlanCurrent = {
   month_plan_regens_limit?: number;
   month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
+  planner_days_unlocked?: boolean;
 };

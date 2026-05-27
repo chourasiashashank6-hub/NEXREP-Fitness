@@ -34,6 +34,8 @@ import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
 import { MEAL_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { auth } from "../../services/authService";
+import { useAuthStore } from "../../store/authStore";
 import { notifyUser } from "../../utils/notify";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
 import { useAppTheme } from "../../theme";
@@ -55,17 +57,23 @@ type RegenStatsSource = {
   day_regens_limit?: number;
   day_regens_remaining?: number;
   planner_limits_exempt?: boolean;
+  planner_days_unlocked?: boolean;
 };
+
+const PLANNER_DAYS_UNLOCK_EMAILS = new Set(["shashank1@gmail.com"]);
+const PLANNER_DAYS_UNLOCK_USER_IDS = new Set(["2"]);
 
 function syncRegenStats(
   source: RegenStatsSource | null | undefined,
   setUsed: (n: number) => void,
   setLimit: (n: number) => void,
   setExempt?: (v: boolean) => void,
+  setDaysUnlocked?: (v: boolean) => void,
 ) {
   if (source?.day_regens_used !== undefined) setUsed(source.day_regens_used);
   if (source?.day_regens_limit !== undefined) setLimit(source.day_regens_limit ?? 3);
   if (setExempt && source?.planner_limits_exempt !== undefined) setExempt(source.planner_limits_exempt);
+  if (setDaysUnlocked && source?.planner_days_unlocked !== undefined) setDaysUnlocked(source.planner_days_unlocked);
 }
 
 const BUDGETS: { id: BudgetLevel; label: string; emoji: string }[] = [
@@ -183,6 +191,7 @@ export default function MonthlyMealPlannerScreen() {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [onboardingPreview, setOnboardingPreview] = useState({ meals: 3, kcal: 2200 });
   const [plannerLimitsExempt, setPlannerLimitsExempt] = useState(false);
+  const [plannerDaysUnlocked, setPlannerDaysUnlocked] = useState(false);
   const [showRegenerateSheet, setShowRegenerateSheet] = useState(false);
   const [showRegenerateDaySheet, setShowRegenerateDaySheet] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -202,6 +211,18 @@ export default function MonthlyMealPlannerScreen() {
   const [loadingSupplements, setLoadingSupplements] = useState(false);
   const [supplementsLoaded, setSupplementsLoaded] = useState(false);
   const [supplementsCardExpanded, setSupplementsCardExpanded] = useState(false);
+  const sessionUserId = useAuthStore((s) => s.sessionUserId);
+  const signedInEmail = String(auth.currentUser?.email || "")
+    .trim()
+    .toLowerCase();
+  const plannerDaysUnlockedByIdentity =
+    PLANNER_DAYS_UNLOCK_EMAILS.has(signedInEmail) ||
+    (sessionUserId ? PLANNER_DAYS_UNLOCK_USER_IDS.has(sessionUserId) : false);
+  const plannerLimitsExemptByIdentity =
+    PLANNER_DAYS_UNLOCK_EMAILS.has(signedInEmail) ||
+    (sessionUserId ? PLANNER_DAYS_UNLOCK_USER_IDS.has(sessionUserId) : false);
+  const effectiveLimitsExempt = plannerLimitsExempt || plannerLimitsExemptByIdentity;
+  const canViewFutureDays = plannerDaysUnlocked || plannerDaysUnlockedByIdentity;
   const mealSwapsLimit = 5;
   const dayRegensRemaining = Math.max(0, dayRegensLimit - dayRegensUsed);
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -211,7 +232,7 @@ export default function MonthlyMealPlannerScreen() {
 
   const selectedOverview = plan?.month_overview.find((d) => d.day === selectedDay);
   const isCurrentOrFuture = Boolean(selectedOverview && !selectedOverview.is_past && plan);
-  const canSwapMeals = Boolean(selectedOverview && !selectedOverview.is_future && plan);
+  const canSwapMeals = Boolean(selectedOverview && (canViewFutureDays || !selectedOverview.is_future) && plan);
   const swapsRemaining = mealSwapsLimit - mealSwapsUsed;
 
   const dailyTargets = useMemo(() => {
@@ -229,7 +250,7 @@ export default function MonthlyMealPlannerScreen() {
     }
     try {
       const weekPlan = await fetchWeekPlan(weekStart);
-      syncRegenStats(weekPlan, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+      syncRegenStats(weekPlan, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
       setPlan(weekPlan);
       setSelectedDay((prev) => {
         if (weekPlan.month_overview.some((d) => d.day === prev)) return prev;
@@ -265,9 +286,9 @@ export default function MonthlyMealPlannerScreen() {
 
       if (current && isWeeklyPlannerCurrent(current)) {
         setPlannerMode("weekly");
-        syncRegenStats(current, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+        syncRegenStats(current, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
         if (current.current_week) {
-          syncRegenStats(current.current_week, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+          syncRegenStats(current.current_week, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
           setPlan(current.current_week);
           setSelectedDay((prev) => {
             const cw = current.current_week!;
@@ -283,7 +304,7 @@ export default function MonthlyMealPlannerScreen() {
         }
       } else if (current) {
         setPlannerMode("monthly");
-        syncRegenStats(current, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+        syncRegenStats(current, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
         setPlan(current);
         setSelectedDay((prev) => current.today?.day ?? prev);
         lastDayFetchRef.current = null;
@@ -338,7 +359,7 @@ export default function MonthlyMealPlannerScreen() {
     }
 
     const overview = plan.month_overview.find((d) => d.day === selectedDay);
-    if (overview?.is_future) {
+    if (overview?.is_future && !canViewFutureDays) {
       setDayDetail({
         day: selectedDay,
         is_cheat_day: false,
@@ -360,8 +381,8 @@ export default function MonthlyMealPlannerScreen() {
       lastDayFetchRef.current = { planId: plan.plan_id, day: selectedDay };
       setDayDetail(embedded);
       if (typeof embedded.swaps_used_today === "number") setMealSwapsUsed(embedded.swaps_used_today);
-      syncRegenStats(embedded, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
-      syncRegenStats(plan, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+      syncRegenStats(embedded, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+      syncRegenStats(plan, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
       return;
     }
 
@@ -378,7 +399,7 @@ export default function MonthlyMealPlannerScreen() {
         lastDayFetchRef.current = fetchKey;
         setDayDetail(d);
         if (typeof d.swaps_used_today === "number") setMealSwapsUsed(d.swaps_used_today);
-        syncRegenStats(d, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+        syncRegenStats(d, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
       } catch {
         if (!cancelled) setDayDetail(null);
       }
@@ -387,7 +408,7 @@ export default function MonthlyMealPlannerScreen() {
     return () => {
       cancelled = true;
     };
-  }, [plan, selectedDay, month, year]);
+  }, [plan, selectedDay, month, year, canViewFutureDays]);
 
   const loadDayExtras = useCallback(
     async (dayData: MealDayPlan) => {
@@ -452,7 +473,7 @@ export default function MonthlyMealPlannerScreen() {
       if (created.today?.day) setSelectedDay(created.today.day);
       const overview = await fetchWeeksOverview();
       setWeeks(overview.weeks);
-      syncRegenStats(created, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+      syncRegenStats(created, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
       notifyUser("Done", "Week meals generated!");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Could not generate week";
@@ -477,7 +498,7 @@ export default function MonthlyMealPlannerScreen() {
       lastDayFetchRef.current = null;
       setPlan(created);
       if (created.today?.day) setSelectedDay(created.today.day);
-      syncRegenStats(created, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+      syncRegenStats(created, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Could not generate meal plan";
       Alert.alert("Generation failed", msg);
@@ -566,7 +587,7 @@ export default function MonthlyMealPlannerScreen() {
 
   const handleRegenerateDay = (day: number) => {
     if (!plan) return;
-    if (!plannerLimitsExempt && dayRegensRemaining <= 0) {
+    if (!effectiveLimitsExempt && dayRegensRemaining <= 0) {
       Alert.alert(
         "No Refreshes Remaining",
         "You have used all 3 day refreshes for this month. You can still swap individual meals using the swap icon on each meal card.",
@@ -584,13 +605,24 @@ export default function MonthlyMealPlannerScreen() {
     setRegenerateDayTarget(null);
     setIsRegeneratingDay(true);
     try {
-      const updated = await regenerateMealPlanDay({ plan_id: plan.plan_id, day });
+      const existingMealNames =
+        dayDetail?.meals?.flatMap((meal) => meal.items.map((item) => item.food)) ?? [];
+      const updated = await regenerateMealPlanDay({
+        plan_id: plan.plan_id,
+        day,
+        exclude_foods: [...new Set(existingMealNames)],
+        exclude_dishes:
+          dayDetail?.meals?.map((m) => ({
+            meal_type: m.meal_type,
+            foods: m.items.map((i) => i.food),
+          })) ?? [],
+      });
       setDayDetail(updated);
-      syncRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+      syncRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
       if (selectedWeekStart != null) {
         const refreshedWeek = await fetchWeekPlan(selectedWeekStart);
         lastDayFetchRef.current = null;
-        syncRegenStats(refreshedWeek, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+        syncRegenStats(refreshedWeek, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
         setPlan(refreshedWeek);
       }
       notifyUser("Done", "Day meals regenerated!");
@@ -620,24 +652,78 @@ export default function MonthlyMealPlannerScreen() {
     const weekEndDay = selectedWeekMeta?.end_day ?? lastDayOfMonth;
     try {
       if (plannerMode === "weekly" && selectedWeekStart != null) {
-        const updated = await regenerateWeek(selectedWeekStart, currentDay);
+        const currentWeekFoods =
+          (plan as MealPlanCurrent & { days?: MealDayPlan[] }).days?.flatMap(
+            (day) => day.meals?.flatMap((meal) => meal.items.map((item) => item.food)) ?? [],
+          ) ?? [];
+
+        const currentWeekDishes =
+          (plan as MealPlanCurrent & { days?: MealDayPlan[] }).days?.flatMap(
+            (day) =>
+              day.meals?.map((meal) => ({
+                meal_type: meal.meal_type,
+                foods: meal.items.map((i) => i.food),
+              })) ?? [],
+          ) ?? [];
+
+        const updated = await regenerateWeek(selectedWeekStart, currentDay, {
+          exclude_foods: [...new Set(currentWeekFoods)],
+          exclude_dishes: currentWeekDishes,
+        });
         lastDayFetchRef.current = null;
-        syncRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+        syncRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
         setPlan(updated);
-        setSelectedDay(currentDay);
-        const dayData = await fetchMealPlanDay(currentDay);
-        lastDayFetchRef.current = { planId: updated.plan_id, day: currentDay };
-        setDayDetail(dayData);
+        const viewDay = selectedDay >= currentDay ? selectedDay : currentDay;
+        const selectedDayInUpdatedPlan = updated.month_overview.some((d) => d.day === viewDay) ? viewDay : currentDay;
+        setSelectedDay(selectedDayInUpdatedPlan);
+        const updatedDays = (updated as MealPlanCurrent & { days?: MealDayPlan[] }).days;
+        const embeddedDay = updatedDays?.find((d) => d.day === selectedDayInUpdatedPlan);
+        if (embeddedDay?.meals?.length) {
+          lastDayFetchRef.current = { planId: updated.plan_id, day: selectedDayInUpdatedPlan };
+          setDayDetail(embeddedDay);
+          if (typeof embeddedDay.swaps_used_today === "number") setMealSwapsUsed(embeddedDay.swaps_used_today);
+        } else {
+          const dayData = await fetchMealPlanDay(selectedDayInUpdatedPlan);
+          lastDayFetchRef.current = { planId: updated.plan_id, day: selectedDayInUpdatedPlan };
+          setDayDetail(dayData);
+          if (typeof dayData.swaps_used_today === "number") setMealSwapsUsed(dayData.swaps_used_today);
+        }
         notifyUser("Done", "Meals regenerated for this week!");
       } else {
-        const updated = await regenerateRemainingMeals(currentDay);
+        const currentWeekFoods =
+          (plan as MealPlanCurrent & { days?: MealDayPlan[] }).days?.flatMap(
+            (day) => day.meals?.flatMap((meal) => meal.items.map((item) => item.food)) ?? [],
+          ) ?? [];
+        const currentWeekDishes =
+          (plan as MealPlanCurrent & { days?: MealDayPlan[] }).days?.flatMap(
+            (day) =>
+              day.meals?.map((meal) => ({
+                meal_type: meal.meal_type,
+                foods: meal.items.map((i) => i.food),
+              })) ?? [],
+          ) ?? [];
+        const updated = await regenerateRemainingMeals(currentDay, {
+          exclude_foods: [...new Set(currentWeekFoods)],
+          exclude_dishes: currentWeekDishes,
+        });
         lastDayFetchRef.current = null;
-        syncRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt);
+        syncRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
         setPlan(updated);
-        setSelectedDay(currentDay);
-        const dayData = await fetchMealPlanDay(currentDay);
-        lastDayFetchRef.current = { planId: updated.plan_id, day: currentDay };
-        setDayDetail(dayData);
+        const viewDay = selectedDay >= currentDay ? selectedDay : currentDay;
+        const selectedDayInUpdatedPlan = updated.month_overview.some((d) => d.day === viewDay) ? viewDay : currentDay;
+        setSelectedDay(selectedDayInUpdatedPlan);
+        const updatedDays = (updated as MealPlanCurrent & { days?: MealDayPlan[] }).days;
+        const embeddedDay = updatedDays?.find((d) => d.day === selectedDayInUpdatedPlan);
+        if (embeddedDay?.meals?.length) {
+          lastDayFetchRef.current = { planId: updated.plan_id, day: selectedDayInUpdatedPlan };
+          setDayDetail(embeddedDay);
+          if (typeof embeddedDay.swaps_used_today === "number") setMealSwapsUsed(embeddedDay.swaps_used_today);
+        } else {
+          const dayData = await fetchMealPlanDay(selectedDayInUpdatedPlan);
+          lastDayFetchRef.current = { planId: updated.plan_id, day: selectedDayInUpdatedPlan };
+          setDayDetail(dayData);
+          if (typeof dayData.swaps_used_today === "number") setMealSwapsUsed(dayData.swaps_used_today);
+        }
         notifyUser("Done", `Meals regenerated from ${monthName} ${currentDay}!`);
       }
     } catch (e: unknown) {
@@ -689,7 +775,7 @@ export default function MonthlyMealPlannerScreen() {
   const lastDayOfMonth = new Date(year, month, 0).getDate();
   const monthName = now.toLocaleString(undefined, { month: "long" });
   const weekEndDay = selectedWeekMeta?.end_day ?? lastDayOfMonth;
-  const shouldShowRegenerate = plannerLimitsExempt && Boolean(plan) && currentDay <= weekEndDay;
+  const shouldShowRegenerate = effectiveLimitsExempt && Boolean(plan) && currentDay <= weekEndDay;
   const regenRangeLabel =
     plannerMode === "weekly"
       ? `${monthName} ${currentDay} – ${monthName} ${weekEndDay}`
@@ -816,6 +902,7 @@ export default function MonthlyMealPlannerScreen() {
               selectedDay={selectedDay}
               onSelectDay={setSelectedDay}
               mode="meal"
+              allowFutureSelection={canViewFutureDays}
             />
 
             {dayDetail?.locked ? (
@@ -845,11 +932,11 @@ export default function MonthlyMealPlannerScreen() {
                         onPress={() => handleRegenerateDay(dayDetail.day)}
                         style={[
                           styles.regenerateDayButton,
-                          (isRegeneratingDay || (!plannerLimitsExempt && dayRegensRemaining <= 0)) &&
+                          (isRegeneratingDay || (!effectiveLimitsExempt && dayRegensRemaining <= 0)) &&
                             styles.regenerateDayButtonDisabled,
                         ]}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        disabled={isRegeneratingDay || (!plannerLimitsExempt && dayRegensRemaining <= 0)}
+                        disabled={isRegeneratingDay || (!effectiveLimitsExempt && dayRegensRemaining <= 0)}
                       >
                         {isRegeneratingDay ? (
                           <ActivityIndicator size="small" color="#22D3EE" />
@@ -858,12 +945,12 @@ export default function MonthlyMealPlannerScreen() {
                             <Ionicons
                               name="refresh"
                               size={14}
-                              color={plannerLimitsExempt || dayRegensRemaining > 0 ? "#22D3EE" : "#475569"}
+                              color={effectiveLimitsExempt || dayRegensRemaining > 0 ? "#22D3EE" : "#475569"}
                             />
                             <Text
                               style={[
                                 styles.regenerateDayButtonText,
-                                !plannerLimitsExempt && dayRegensRemaining <= 0 && styles.regenerateDayButtonTextDisabled,
+                                !effectiveLimitsExempt && dayRegensRemaining <= 0 && styles.regenerateDayButtonTextDisabled,
                               ]}
                             >
                               Day
@@ -885,10 +972,10 @@ export default function MonthlyMealPlannerScreen() {
                   <Ionicons
                     name="refresh-circle-outline"
                     size={16}
-                    color={plannerLimitsExempt || dayRegensRemaining > 0 ? "#22D3EE" : "#475569"}
+                    color={effectiveLimitsExempt || dayRegensRemaining > 0 ? "#22D3EE" : "#475569"}
                   />
-                  <Text style={[styles.regenCounterText, !plannerLimitsExempt && dayRegensRemaining === 0 && styles.regenCounterTextExhausted]}>
-                    {plannerLimitsExempt
+                  <Text style={[styles.regenCounterText, !effectiveLimitsExempt && dayRegensRemaining === 0 && styles.regenCounterTextExhausted]}>
+                    {effectiveLimitsExempt
                       ? "Test account — unlimited day refreshes, swaps, and full regeneration"
                       : dayRegensRemaining > 0
                         ? `${dayRegensRemaining} of ${dayRegensLimit} day refreshes remaining this month`

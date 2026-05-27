@@ -9,14 +9,23 @@ const PREFIX_DONE = "@fitness:onboarding_done:";
 const pendingOnboardingKey = (userId: string) => `@fitness:pending_onboarding:${userId}`;
 
 /** Stable storage scope: JWT changes every login, user id (sub) does not. */
-const storageScope = (token: string): string => {
+const storageScope = (token: string): string | null => {
   const sub = decodeJwtSub(token);
-  return sub ? `uid:${sub}` : `tok:${token}`;
+  return sub ? `uid:${sub}` : null;
 };
 
-const onboardingKey = (token: string) => `${PREFIX_ONBOARDING}${storageScope(token)}`;
-const targetsKey = (token: string) => `${PREFIX_TARGETS}${storageScope(token)}`;
-const doneKey = (token: string) => `${PREFIX_DONE}${storageScope(token)}`;
+const onboardingKey = (token: string) => {
+  const scope = storageScope(token);
+  return scope ? `${PREFIX_ONBOARDING}${scope}` : null;
+};
+const targetsKey = (token: string) => {
+  const scope = storageScope(token);
+  return scope ? `${PREFIX_TARGETS}${scope}` : null;
+};
+const doneKey = (token: string) => {
+  const scope = storageScope(token);
+  return scope ? `${PREFIX_DONE}${scope}` : null;
+};
 
 /** Legacy keys used the full JWT; copy into uid:* once so data survives re-login. */
 export const migrateOnboardingStorageFromJwtKeys = async (): Promise<void> => {
@@ -72,21 +81,30 @@ export const clearPendingOnboarding = async (token: string) => {
 };
 
 export const saveOnboardingData = async (token: string, data: OnboardingData) => {
-  await AsyncStorage.setItem(onboardingKey(token), JSON.stringify(data));
-  await AsyncStorage.setItem(doneKey(token), "1");
+  const oKey = onboardingKey(token);
+  const dKey = doneKey(token);
+  if (!oKey || !dKey) return;
+  await AsyncStorage.setItem(oKey, JSON.stringify(data));
+  await AsyncStorage.setItem(dKey, "1");
   await clearPendingOnboarding(token);
 };
 
 export const getOnboardingData = async (token: string) => {
-  const raw = await AsyncStorage.getItem(onboardingKey(token));
+  const oKey = onboardingKey(token);
+  if (!oKey) return null;
+  const raw = await AsyncStorage.getItem(oKey);
   return raw ? (JSON.parse(raw) as OnboardingData) : null;
 };
 
 export const saveTargets = async (token: string, targets: NutritionTargets) => {
-  await AsyncStorage.setItem(targetsKey(token), JSON.stringify(targets));
+  const tKey = targetsKey(token);
+  if (!tKey) return;
+  await AsyncStorage.setItem(tKey, JSON.stringify(targets));
 };
 
 export const getTargets = async (token: string) => {
-  const raw = await AsyncStorage.getItem(targetsKey(token));
+  const tKey = targetsKey(token);
+  if (!tKey) return null;
+  const raw = await AsyncStorage.getItem(tKey);
   return raw ? (JSON.parse(raw) as NutritionTargets) : null;
 };

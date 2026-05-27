@@ -8,6 +8,7 @@ import { useOnboardingContext } from "./OnboardingContext";
 import { useAuthStore } from "../store/authStore";
 import { saveOnboardingData, saveTargets } from "../storage/onboarding";
 import { formatApiDetail, notifyUser } from "../utils/notify";
+import { normalizeGoalFocusFields } from "../utils/onboardingFocusMuscles";
 import { validateOnboardingForSave } from "../utils/onboardingValidation";
 
 export function useOnboardingSaveAndExit() {
@@ -41,9 +42,13 @@ export function useOnboardingSaveAndExit() {
         if (difficulty === "beginner") return "Beginner";
         return "Intermediate";
       };
-      const targets = calculateNutritionTargets(data);
+      const onboardingPayload = {
+        ...data,
+        goal: normalizeGoalFocusFields(data.goal),
+      };
+      const targets = calculateNutritionTargets(onboardingPayload);
       try {
-        await upsertOnboardingMe({ onboarding: data, targets });
+        await upsertOnboardingMe({ onboarding: onboardingPayload, targets });
       } catch (e: unknown) {
         if (!axios.isAxiosError(e)) throw e;
         const status = e.response?.status;
@@ -67,18 +72,18 @@ export function useOnboardingSaveAndExit() {
       const profileWeight = data.personal.unit_system === "metric"
         ? Number(data.personal.weight_kg || 0)
         : Number(data.personal.weight_lb || 0) / 2.20462;
-      if (data.personal.name?.trim() && profileWeight > 0 && Number(data.personal.age || 0) > 0) {
+      if (onboardingPayload.personal.name?.trim() && profileWeight > 0 && Number(onboardingPayload.personal.age || 0) > 0) {
         await updateProfile({
-          name: data.personal.name.trim(),
-          age: Number(data.personal.age),
+          name: onboardingPayload.personal.name.trim(),
+          age: Number(onboardingPayload.personal.age),
           weight: Number(profileWeight.toFixed(1)),
-          goals: mapGoalTypeToTag(data.goal.type),
-          goalTag: mapGoalTypeToTag(data.goal.type),
-          difficulty: mapDifficultyToProfile(data.goal.difficulty),
+          goals: mapGoalTypeToTag(onboardingPayload.goal.type),
+          goalTag: mapGoalTypeToTag(onboardingPayload.goal.type),
+          difficulty: mapDifficultyToProfile(onboardingPayload.goal.difficulty),
         });
       }
 
-      await saveOnboardingData(token, data);
+      await saveOnboardingData(token, onboardingPayload);
       await saveTargets(token, targets);
       setNeedsOnboarding(false);
     } catch (e: unknown) {

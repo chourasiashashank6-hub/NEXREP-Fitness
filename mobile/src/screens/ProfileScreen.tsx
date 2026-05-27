@@ -770,6 +770,9 @@ export const ProfileScreen = () => {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.nameText}>{`${firstName} ${lastName}`.trim()}</Text>
+              {userEmail ? (
+                <Text style={[styles.emailText, { color: colors.muted }]}>{userEmail}</Text>
+              ) : null}
               <Text style={[styles.metaText, { color: colors.muted }]}>
                 {`Member since ${memberSince} · ${difficulty}`}
               </Text>
@@ -1278,6 +1281,7 @@ const styles = StyleSheet.create({
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", backgroundColor: "#404060" },
   avatarText: { color: "#fff", fontSize: 17, fontWeight: "500" },
   nameText: { color: "#fff", fontSize: 19, fontWeight: "500" },
+  emailText: { fontSize: 12, marginTop: 2 },
   metaText: { fontSize: 11 },
   headerBtns: { flexDirection: "row", gap: 8, alignItems: "center" },
   headerBtn: { borderWidth: 0.5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },

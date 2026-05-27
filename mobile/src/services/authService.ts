@@ -95,6 +95,8 @@ export const signOutSession = async () => {
   } catch {
     /* ignore */
   }
+  const { useSubscriptionStore } = await import("../store/subscriptionStore");
+  useSubscriptionStore.getState().reset();
   await useAuthStore.getState().setToken(null);
 };
 

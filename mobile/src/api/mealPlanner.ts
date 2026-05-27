@@ -49,10 +49,19 @@ export async function generateWeekPlan(budgetLevel: BudgetLevel, weekStartDay: n
   return data;
 }
 
-export async function regenerateWeek(weekStartDay: number, fromDay: number): Promise<MealPlanCurrent> {
+type MealRegenOptions = {
+  exclude_foods?: string[];
+  exclude_dishes?: Array<{ meal_type: string; foods: string[] } | string>;
+};
+
+export async function regenerateWeek(
+  weekStartDay: number,
+  fromDay: number,
+  options?: MealRegenOptions,
+): Promise<MealPlanCurrent> {
   const { data } = await apiClient.post<MealPlanCurrent>(
     "/api/meal-planner/regenerate-week",
-    { week_start_day: weekStartDay, from_day: fromDay },
+    { week_start_day: weekStartDay, week_start: weekStartDay, from_day: fromDay, ...(options ?? {}) },
     { params: params(), timeout: COACH_API_TIMEOUT_MS },
   );
   return data;
@@ -76,16 +85,21 @@ export async function deleteMealPlan(): Promise<void> {
   await apiClient.delete("/api/meal-planner/current", { params: params() });
 }
 
-export async function regenerateRemainingMeals(fromDay: number): Promise<MealPlanCurrent> {
+export async function regenerateRemainingMeals(fromDay: number, options?: MealRegenOptions): Promise<MealPlanCurrent> {
   const { data } = await apiClient.post<MealPlanCurrent>(
     "/api/meal-planner/regenerate-remaining",
-    { from_day: fromDay },
+    { from_day: fromDay, ...(options ?? {}) },
     { params: params(), timeout: MEAL_REGENERATE_TIMEOUT_MS },
   );
   return data;
 }
 
-export async function regenerateMealPlanDay(payload: { plan_id: number; day: number }): Promise<MealDayPlan> {
+export async function regenerateMealPlanDay(payload: {
+  plan_id: number;
+  day: number;
+  exclude_foods?: string[];
+  exclude_dishes?: Array<{ meal_type: string; foods: string[] } | string>;
+}): Promise<MealDayPlan> {
   const { data } = await apiClient.post<MealDayPlan>(
     "/api/meal-planner/regenerate-day",
     payload,

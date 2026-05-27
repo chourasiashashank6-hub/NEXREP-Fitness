@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { MultiChips } from "../../components/MultiChips";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
@@ -6,14 +7,21 @@ import { TapCards } from "../../components/TapCards";
 import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
-import type { FocusMuscle } from "../../types/onboarding";
-import { ACTIVITY_OPTIONS, FOCUS_MUSCLE_OPTIONS, WORKOUTS_PER_WEEK_OPTIONS, WORKOUT_TYPE_OPTIONS } from "../../utils/onboardingOptions";
-import { useState } from "react";
+import {
+  focusMusclesHint,
+  FOCUS_MUSCLE_UI_OPTIONS,
+  getGoalFocusMuscles,
+  isGoalFocusMuscleSelected,
+  toggleGoalFocusMuscle,
+} from "../../utils/onboardingFocusMuscles";
+import { ACTIVITY_OPTIONS, WORKOUTS_PER_WEEK_OPTIONS, WORKOUT_TYPE_OPTIONS } from "../../utils/onboardingOptions";
 
 export default function Screen3Activity({ navigation }: any) {
   const { data, updateActivity, updateGoal } = useOnboardingContext();
   const { saveAndExit, saving } = useOnboardingSaveAndExit();
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const selectedFocus = getGoalFocusMuscles(data.goal);
 
   const onNext = () => {
     const next: Record<string, string> = {};
@@ -51,21 +59,22 @@ export default function Screen3Activity({ navigation }: any) {
 
       <View style={styles.block}>
         <Text style={styles.label}>Muscle Focus (Optional)</Text>
-        <Text style={styles.sub}>We'll add extra volume for this muscle group in your monthly workout plan</Text>
+        <Text style={styles.sub}>Select one or more muscle groups — we&apos;ll add extra volume in your monthly workout plan</Text>
         <View style={styles.chips}>
-          {FOCUS_MUSCLE_OPTIONS.map((opt) => {
-            const selected = (data.goal.focus_muscle ?? null) === opt.value;
+          {FOCUS_MUSCLE_UI_OPTIONS.map((muscle) => {
+            const selected = isGoalFocusMuscleSelected(data.goal, muscle);
             return (
               <Pressable
-                key={opt.label}
+                key={muscle}
                 style={[styles.chip, selected ? styles.chipSelected : null]}
-                onPress={() => updateGoal({ focus_muscle: opt.value as FocusMuscle | null })}
+                onPress={() => updateGoal(toggleGoalFocusMuscle(data.goal, muscle))}
               >
-                <Text style={[styles.chipLabel, selected ? styles.chipLabelSelected : null]}>{opt.label}</Text>
+                <Text style={[styles.chipLabel, selected ? styles.chipLabelSelected : null]}>{muscle}</Text>
               </Pressable>
             );
           })}
         </View>
+        <Text style={styles.hint}>{focusMusclesHint(selectedFocus)}</Text>
       </View>
     </OnboardingLayout>
   );
@@ -87,5 +96,6 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: "#1E1B3A", borderColor: ONBOARDING_COLORS.primary },
   chipLabel: { color: ONBOARDING_COLORS.textPrimary, fontSize: 13 },
   chipLabelSelected: { color: ONBOARDING_COLORS.primary, fontWeight: "700" },
+  hint: { marginTop: 8, fontSize: 12, color: ONBOARDING_COLORS.textSecondary },
   error: { marginTop: 4, fontSize: 12, color: ONBOARDING_COLORS.danger },
 });
