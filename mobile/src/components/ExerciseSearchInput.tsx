@@ -285,7 +285,7 @@ export default function ExerciseSearchInput({
         style={[
           styles.inputRow,
           {
-            borderColor: isDropdownOpen || inputFocused ? colors.primary : colors.border,
+            borderColor: colors.border,
             backgroundColor: colors.inputBg,
             borderRadius: radius.lg,
           },

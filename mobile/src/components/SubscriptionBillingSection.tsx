@@ -6,10 +6,11 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { PLANS } from "../constants/plans";
 import type { ProfileStackParamList } from "../navigation/types";
 import { useSubscriptionStore } from "../store/subscriptionStore";
+import { useAppTheme } from "../theme";
+import { planTierTheme } from "../theme/planTierTheme";
 import type { PlanHistoryEntry, PlanStatus, PlanTier, PaymentRecord } from "../types/subscription";
 import { daysUntil, formatDate } from "../utils/dateFormat";
 
-const HERO_BG = "#0a2a1f";
 const TEAL = "#2ECC9A";
 const AMBER = "#FFC107";
 const MUTED = "rgba(226,232,228,0.45)";
@@ -26,14 +27,6 @@ const TIER_MONTHLY: Record<PlanTier, number> = {
   FREE: 0,
   PRO: 999,
   ELITE: 1999,
-};
-
-const STATUS_COLORS: Record<PlanStatus, string> = {
-  active: TEAL,
-  trial: AMBER,
-  cancelled: "rgba(226,232,228,0.4)",
-  past_due: "#e24b4a",
-  expired: "rgba(226,232,228,0.4)",
 };
 
 type Props = {
@@ -126,30 +119,18 @@ export default function SubscriptionBillingSection({
   onCalorieHistory,
 }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
+  const { colors: themeColors } = useAppTheme();
   const subscription = useSubscriptionStore((s) => s.subscription);
   const payments = useSubscriptionStore((s) => s.payments);
   const planHistory = useSubscriptionStore((s) => s.planHistory);
   const [paymentsModalVisible, setPaymentsModalVisible] = useState(false);
+  const [timelineModalVisible, setTimelineModalVisible] = useState(false);
   const [timelineModalDate, setTimelineModalDate] = useState<string | null>(null);
 
   const tier: PlanTier = subscription?.tier ?? "FREE";
   const status: PlanStatus = subscription?.status ?? "active";
   const isFree = tier === "FREE";
-
-  const totalSpent = useMemo(
-    () => payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0),
-    [payments],
-  );
-
-  const thisMonthCharge = useMemo(() => {
-    const now = new Date();
-    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    return payments
-      .filter((p) => p.status === "paid" && p.date.startsWith(ym))
-      .reduce((sum, p) => sum + p.amount, 0);
-  }, [payments]);
-
-  const planChangeCount = useMemo(() => Math.max(0, planHistory.length - 1), [planHistory]);
+  const tierTheme = useMemo(() => planTierTheme(tier, themeColors), [tier, themeColors]);
 
   const savingsLabel = useMemo(() => {
     if (tier === "ELITE") return "Max tier";
@@ -166,8 +147,7 @@ export default function SubscriptionBillingSection({
   }, [tier]);
 
   const timelineItems = useMemo(() => (planHistory.length > 1 ? prepareTimeline(planHistory) : []), [planHistory]);
-
-  const visiblePayments = payments.slice(0, 3);
+  const hasTimeline = timelineItems.length > 0;
 
   const timelineModalEntries = useMemo(() => {
     if (!timelineModalDate) return [];
@@ -187,16 +167,25 @@ export default function SubscriptionBillingSection({
   const primaryCta =
     tier === "ELITE" ? null : tier === "PRO" ? "Upgrade to Elite" : "Upgrade to PRO";
 
+  const statusColor =
+    status === "active"
+      ? tierTheme.statusActive
+      : status === "trial"
+        ? AMBER
+        : status === "cancelled"
+          ? MUTED
+          : "#e24b4a";
+
   return (
     <View style={styles.wrap}>
       {/* 1. Plan hero */}
-      <View style={styles.hero}>
+      <View style={[styles.hero, { backgroundColor: tierTheme.heroBg, borderColor: tierTheme.heroBorder }]}>
         <View style={styles.heroTop}>
           <View style={styles.heroTitleBlock}>
             <Text style={styles.heroPlanName}>{isFree ? "FREE" : tier} Plan</Text>
             {!isFree ? (
-              <View style={[styles.statusPill, { borderColor: STATUS_COLORS[status] }]}>
-                <Text style={[styles.statusPillText, { color: STATUS_COLORS[status] }]}>
+              <View style={[styles.statusPill, { borderColor: statusColor, backgroundColor: tierTheme.accentSoft }]}>
+                <Text style={[styles.statusPillText, { color: statusColor }]}>
                   {status === "active" ? "Active" : status === "trial" ? "Trial" : status === "cancelled" ? "Cancelled" : "Past due"}
                 </Text>
               </View>
@@ -205,7 +194,7 @@ export default function SubscriptionBillingSection({
           {nextBilling ? (
             <View style={styles.heroBillingRight}>
               <Text style={styles.heroBillingLabel}>Next billing</Text>
-              <Text style={styles.heroBillingDate}>{nextBilling}</Text>
+              <Text style={[styles.heroBillingDate, { color: tierTheme.accent }]}>{nextBilling}</Text>
             </View>
           ) : null}
         </View>
@@ -221,43 +210,44 @@ export default function SubscriptionBillingSection({
 
         <View style={styles.heroStats}>
           <View style={styles.heroStat}>
-            <Text style={styles.heroStatVal}>₹{totalSpent.toLocaleString("en-IN")}</Text>
-            <Text style={styles.heroStatLabel}>Total spent</Text>
-          </View>
-          <View style={styles.heroStatDivider} />
-          <View style={styles.heroStat}>
             <Text style={styles.heroStatVal}>{memberSince || "—"}</Text>
             <Text style={styles.heroStatLabel}>Member since</Text>
-          </View>
-          <View style={styles.heroStatDivider} />
-          <View style={styles.heroStat}>
-            <Text style={styles.heroStatVal}>{payments.length}</Text>
-            <Text style={styles.heroStatLabel}>Total payments</Text>
           </View>
         </View>
 
         <View style={styles.heroActions}>
           {primaryCta ? (
-            <Pressable style={styles.btnPrimary} onPress={goPricing}>
-              <Text style={styles.btnPrimaryText}>{primaryCta}</Text>
+            <Pressable
+              style={[
+                styles.btnPrimary,
+                {
+                  backgroundColor: tierTheme.btnPrimaryBg,
+                  borderColor: tierTheme.btnPrimaryBorder,
+                  borderWidth: tier === "FREE" ? 1 : 0,
+                },
+              ]}
+              onPress={goPricing}
+            >
+              <Text style={[styles.btnPrimaryText, { color: tierTheme.btnPrimaryText }]}>{primaryCta}</Text>
             </Pressable>
           ) : null}
-          <Pressable style={[styles.btnGhost, !primaryCta && styles.btnGhostFull]} onPress={isFree ? goPricing : goManage}>
-            <Text style={styles.btnGhostText}>{isFree ? "View plans" : "Manage plan"}</Text>
+          <Pressable
+            style={[
+              styles.btnGhost,
+              !primaryCta && styles.btnGhostFull,
+              { borderColor: tierTheme.btnGhostBorder },
+            ]}
+            onPress={isFree ? goPricing : goManage}
+          >
+            <Text style={[styles.btnGhostText, { color: tierTheme.btnGhostText }]}>
+              {isFree ? "View plans" : "Manage plan"}
+            </Text>
           </Pressable>
         </View>
       </View>
 
-      {/* 2. Summary stat cards */}
+      {/* 2. Savings stat */}
       <View style={styles.statGrid}>
-        <View style={styles.statCard}>
-          <Text style={styles.statCardVal}>₹{thisMonthCharge.toLocaleString("en-IN")}</Text>
-          <Text style={styles.statCardLabel}>This month&apos;s charge</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statCardVal}>{planChangeCount}</Text>
-          <Text style={styles.statCardLabel}>Plan changes</Text>
-        </View>
         <View style={styles.statCard}>
           <Text style={styles.statCardVal} numberOfLines={1}>
             {savingsLabel}
@@ -266,68 +256,25 @@ export default function SubscriptionBillingSection({
         </View>
       </View>
 
-      {/* 3. Billing history */}
+      {/* 3. Billing history entry */}
       {payments.length > 0 ? (
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+          <Pressable style={styles.modalEntry} onPress={() => setPaymentsModalVisible(true)}>
             <Text style={styles.sectionLabel}>Billing history</Text>
-            {payments.length > 3 ? (
-              <Pressable onPress={() => setPaymentsModalVisible(true)} hitSlop={8}>
-                <Text style={styles.sectionLink}>{`See all ${payments.length} payments`}</Text>
-              </Pressable>
-            ) : null}
-          </View>
-          <View style={styles.listCard}>
-            {visiblePayments.map((p, i) => (
-              <PaymentRow key={p.id} payment={p} isLast={i === visiblePayments.length - 1} />
-            ))}
-          </View>
+            <Text style={[styles.sectionLink, { color: tierTheme.accent }]}>
+              {`See all ${payments.length} payment${payments.length === 1 ? "" : "s"}`}
+            </Text>
+          </Pressable>
         </View>
       ) : null}
 
-      {/* 4. Plan timeline */}
-      {timelineItems.length > 0 ? (
+      {/* 4. Plan timeline entry */}
+      {hasTimeline ? (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Plan timeline</Text>
-          <View style={styles.listCard}>
-            {timelineItems.map((item, idx) => {
-              if (item.kind === "collapsed") {
-                return (
-                  <View
-                    key={`collapsed-${item.dateIso}`}
-                    style={[styles.timelineRow, idx < timelineItems.length - 1 && styles.rowBorder]}
-                  >
-                    <View style={styles.timelineRail}>
-                      <View style={[styles.timelineDot, { backgroundColor: MUTED }]} />
-                      {idx < timelineItems.length - 1 ? <View style={styles.timelineLine} /> : null}
-                    </View>
-                    <View style={styles.timelineBody}>
-                      <View style={styles.expandTitleRow}>
-                        <Text style={styles.timelineTitle}>
-                          {item.count} more cancelled same-day entries —
-                        </Text>
-                        <Pressable onPress={() => setTimelineModalDate(item.dateIso)} hitSlop={8}>
-                          <Text style={styles.expandLink}>Expand</Text>
-                        </Pressable>
-                      </View>
-                      <Text style={styles.timelineMeta}>{formatDate(item.dateIso)}</Text>
-                    </View>
-                    <View style={[styles.entryBadge, { borderColor: MUTED }]}>
-                      <Text style={[styles.entryBadgeText, { color: MUTED }]}>Cancelled</Text>
-                    </View>
-                  </View>
-                );
-              }
-              return (
-                <TimelineEntryRow
-                  key={`${item.entry.tier}-${item.entry.startDate}`}
-                  entry={item.entry}
-                  isCurrent={item.isCurrent}
-                  showLine={idx < timelineItems.length - 1}
-                />
-              );
-            })}
-          </View>
+          <Pressable style={styles.modalEntry} onPress={() => setTimelineModalVisible(true)}>
+            <Text style={styles.sectionLabel}>Plan timeline</Text>
+            <Text style={[styles.sectionLink, { color: tierTheme.accent }]}>View timeline</Text>
+          </Pressable>
         </View>
       ) : null}
 
@@ -352,6 +299,52 @@ export default function SubscriptionBillingSection({
         {payments.map((p, i) => (
           <PaymentRow key={p.id} payment={p} isLast={i === payments.length - 1} />
         ))}
+      </BillingSheetModal>
+
+      <BillingSheetModal
+        visible={timelineModalVisible}
+        title="Plan timeline"
+        subtitle={`${planHistory.length} plan event${planHistory.length === 1 ? "" : "s"}`}
+        onClose={() => {
+          setTimelineModalVisible(false);
+          setTimelineModalDate(null);
+        }}
+      >
+        {timelineItems.map((item, idx) => {
+          if (item.kind === "collapsed") {
+            return (
+              <View
+                key={`collapsed-${item.dateIso}`}
+                style={[styles.timelineRow, idx < timelineItems.length - 1 && styles.rowBorder]}
+              >
+                <View style={styles.timelineRail}>
+                  <View style={[styles.timelineDot, { backgroundColor: MUTED }]} />
+                  {idx < timelineItems.length - 1 ? <View style={styles.timelineLine} /> : null}
+                </View>
+                <View style={styles.timelineBody}>
+                  <View style={styles.expandTitleRow}>
+                    <Text style={styles.timelineTitle}>{item.count} more cancelled same-day entries —</Text>
+                    <Pressable onPress={() => setTimelineModalDate(item.dateIso)} hitSlop={8}>
+                      <Text style={styles.expandLink}>Expand</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={styles.timelineMeta}>{formatDate(item.dateIso)}</Text>
+                </View>
+                <View style={[styles.entryBadge, { borderColor: MUTED }]}>
+                  <Text style={[styles.entryBadgeText, { color: MUTED }]}>Cancelled</Text>
+                </View>
+              </View>
+            );
+          }
+          return (
+            <TimelineEntryRow
+              key={`${item.entry.tier}-${item.entry.startDate}`}
+              entry={item.entry}
+              isCurrent={item.isCurrent}
+              showLine={idx < timelineItems.length - 1}
+            />
+          );
+        })}
       </BillingSheetModal>
 
       <BillingSheetModal
@@ -494,10 +487,8 @@ function TimelineEntryRow({
 const styles = StyleSheet.create({
   wrap: { marginBottom: 12 },
   hero: {
-    backgroundColor: HERO_BG,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(46,204,154,0.25)",
     padding: 16,
     marginBottom: 10,
   },
@@ -533,29 +524,36 @@ const styles = StyleSheet.create({
   heroStat: { flex: 1, alignItems: "center" },
   heroStatVal: { fontSize: 14, fontWeight: "700", color: "#fff" },
   heroStatLabel: { fontSize: 10, color: MUTED, marginTop: 4, textAlign: "center" },
-  heroStatDivider: { width: 1, height: 28, backgroundColor: "rgba(255,255,255,0.08)" },
   heroActions: { flexDirection: "row", gap: 8 },
   btnPrimary: {
     flex: 1,
-    backgroundColor: TEAL,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
   },
-  btnPrimaryText: { color: "#0a2a1f", fontSize: 13, fontWeight: "700" },
+  btnPrimaryText: { fontSize: 13, fontWeight: "700" },
   btnGhost: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
   },
   btnGhostFull: { flex: 1 },
-  btnGhostText: { color: "#e2e8e4", fontSize: 13, fontWeight: "600" },
-  statGrid: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  btnGhostText: { fontSize: 13, fontWeight: "600" },
+  statGrid: { marginBottom: 12 },
+  modalEntry: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: CARD_BG,
+    borderWidth: 1,
+    borderColor: CARD_BORDER,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
   statCard: {
-    flex: 1,
     backgroundColor: CARD_BG,
     borderWidth: 1,
     borderColor: CARD_BORDER,

@@ -142,7 +142,6 @@ const FieldCard = ({ title, badge, type, description, children, error }: any) =>
         <Text style={[styles.badgeText, badge === "Required" ? styles.badgeReqText : styles.badgeOptText]}>{badge}</Text>
       </View>
     </View>
-    <Text style={styles.type}>{type}</Text>
     {description ? <Text style={styles.desc}>{description}</Text> : null}
     <View style={{ marginTop: 10 }}>{children}</View>
     {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -160,7 +159,6 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: "700" },
   badgeReqText: { color: ONBOARDING_COLORS.requiredText },
   badgeOptText: { color: ONBOARDING_COLORS.optionalText },
-  type: { fontSize: 13, color: ONBOARDING_COLORS.textTertiary, marginTop: 2 },
   desc: { fontSize: 13, color: ONBOARDING_COLORS.textSecondary, marginTop: 4, lineHeight: 19 },
   textInput: { height: 48, borderWidth: 1, borderColor: ONBOARDING_COLORS.border, borderRadius: 10, paddingHorizontal: 14, color: ONBOARDING_COLORS.textPrimary, backgroundColor: ONBOARDING_COLORS.card },
   inputError: { borderColor: ONBOARDING_COLORS.danger },

@@ -26,6 +26,9 @@ import {
   type CheckoutPlan,
 } from "../constants/plans";
 import type { ProfileStackParamList } from "../navigation/types";
+import { useAppTheme } from "../theme";
+import { planTierTheme } from "../theme/planTierTheme";
+import type { PlanTier } from "../types/subscription";
 import {
   buildRazorpayWebViewHtml,
   completePayment,
@@ -71,10 +74,18 @@ function featureIcon(feature: string): keyof typeof Ionicons.glyphMap {
   return "barbell-outline";
 }
 
-function TrustItem({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; label: string }) {
+function TrustItem({
+  icon,
+  label,
+  iconColor,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  iconColor: string;
+}) {
   return (
     <View style={styles.trustItem}>
-      <Ionicons name={icon} size={16} color={theme.accent} />
+      <Ionicons name={icon} size={16} color={iconColor} />
       <Text style={styles.trustLabel}>{label}</Text>
     </View>
   );
@@ -82,8 +93,11 @@ function TrustItem({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; labe
 
 export function PaymentScreen({ route, navigation }: Props) {
   const { planId, isYearly, displayPrice } = route.params;
+  const { colors: themeColors } = useAppTheme();
   const plan: CheckoutPlan = useMemo(() => planToCheckout(getPlanById(planId)), [planId]);
   const billingCycle = isYearly ? "yearly" : "monthly";
+  const tier: PlanTier = plan.name;
+  const tierTheme = useMemo(() => planTierTheme(tier, themeColors), [tier, themeColors]);
 
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -252,9 +266,9 @@ export function PaymentScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        <View style={styles.planBanner}>
+        <View style={[styles.planBanner, { backgroundColor: tierTheme.heroBg, borderColor: tierTheme.heroBorder }]}>
           <LinearGradient
-            colors={["rgba(46,204,154,0.12)", "transparent"]}
+            colors={[tierTheme.accentSoft, "transparent"]}
             start={{ x: 1, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={StyleSheet.absoluteFill}
@@ -262,22 +276,24 @@ export function PaymentScreen({ route, navigation }: Props) {
           />
           <View style={styles.planRow}>
             <View style={{ flex: 1 }}>
-              <View style={styles.planBadge}>
-                <Text style={styles.planBadgeText}>{plan.name} PLAN</Text>
+              <View style={[styles.planBadge, { backgroundColor: tierTheme.accentSoft }]}>
+                <Text style={[styles.planBadgeText, { color: tierTheme.accent }]}>{plan.name} PLAN</Text>
               </View>
               <Text style={styles.planHeadline}>{plan.headline}</Text>
               <Text style={styles.planDesc}>{plan.desc}</Text>
             </View>
             <View style={styles.priceBlock}>
-              <Text style={styles.priceAmount}>₹{isYearly ? getPlanById(planId).yearlyPrice : plan.priceMonthly}</Text>
+              <Text style={[styles.priceAmount, { color: tierTheme.accent }]}>
+                ₹{isYearly ? getPlanById(planId).yearlyPrice : plan.priceMonthly}
+              </Text>
               <Text style={styles.pricePeriod}>{isYearly ? "per month · billed yearly" : "per month"}</Text>
             </View>
           </View>
           {!isYearly ? (
-            <View style={styles.savingsPill}>
-              <Ionicons name="flash" size={13} color={theme.accent} />
-              <Text style={styles.savingsText}>Switch to yearly and save</Text>
-              <Text style={styles.savingsAmount}>₹{yearlySavings}/yr</Text>
+            <View style={[styles.savingsPill, { borderColor: tierTheme.accent, backgroundColor: tierTheme.accentSoft }]}>
+              <Ionicons name="flash" size={13} color={tierTheme.accent} />
+              <Text style={[styles.savingsText, { color: tierTheme.accent }]}>Switch to yearly and save</Text>
+              <Text style={[styles.savingsAmount, { color: tierTheme.accent }]}>₹{yearlySavings}/yr</Text>
             </View>
           ) : null}
         </View>
@@ -285,11 +301,11 @@ export function PaymentScreen({ route, navigation }: Props) {
         <View style={styles.featureCard}>
           {plan.features.map((feat, i) => (
             <View key={feat} style={[styles.featRow, i < plan.features.length - 1 && styles.featBorder]}>
-              <View style={styles.featIconBox}>
-                <Ionicons name={featureIcon(feat)} size={16} color={theme.accent} />
+              <View style={[styles.featIconBox, { backgroundColor: tierTheme.accentSoft }]}>
+                <Ionicons name={featureIcon(feat)} size={16} color={tierTheme.accent} />
               </View>
               <Text style={styles.featText}>{feat}</Text>
-              <Ionicons name="checkmark-circle" size={14} color={theme.accent} />
+              <Ionicons name="checkmark-circle" size={14} color={tierTheme.accent} />
             </View>
           ))}
         </View>
@@ -303,8 +319,11 @@ export function PaymentScreen({ route, navigation }: Props) {
             onChangeText={setCouponCode}
             autoCapitalize="characters"
           />
-          <TouchableOpacity style={styles.couponBtn} onPress={handleApplyCoupon}>
-            <Text style={styles.couponBtnText}>Apply</Text>
+          <TouchableOpacity
+            style={[styles.couponBtn, { backgroundColor: tierTheme.btnPrimaryBg, borderColor: tierTheme.btnPrimaryBorder }]}
+            onPress={handleApplyCoupon}
+          >
+            <Text style={[styles.couponBtnText, { color: tierTheme.btnPrimaryText }]}>Apply</Text>
           </TouchableOpacity>
         </View>
         {couponError ? <Text style={styles.couponError}>{couponError}</Text> : null}
@@ -323,11 +342,15 @@ export function PaymentScreen({ route, navigation }: Props) {
           ).map((pm) => (
             <Pressable
               key={pm.id}
-              style={[styles.pmTile, selectedPm === pm.id && styles.pmTileActive]}
+              style={[
+                styles.pmTile,
+                selectedPm === pm.id && styles.pmTileActive,
+                selectedPm === pm.id && { borderColor: tierTheme.accent, backgroundColor: tierTheme.accentSoft },
+              ]}
               onPress={() => setSelectedPm(pm.id)}
             >
-              <Ionicons name={pm.icon} size={20} color={selectedPm === pm.id ? theme.accent : theme.textMuted} />
-              <Text style={[styles.pmLabel, selectedPm === pm.id && styles.pmLabelActive]}>{pm.label}</Text>
+              <Ionicons name={pm.icon} size={20} color={selectedPm === pm.id ? tierTheme.accent : theme.textMuted} />
+              <Text style={[styles.pmLabel, selectedPm === pm.id && { color: tierTheme.accent }]}>{pm.label}</Text>
             </Pressable>
           ))}
         </View>
@@ -352,18 +375,22 @@ export function PaymentScreen({ route, navigation }: Props) {
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Total due today</Text>
-            <Text style={styles.totalValue}>₹{totalDue}</Text>
+            <Text style={[styles.totalValue, { color: tierTheme.accent }]}>₹{totalDue}</Text>
           </View>
           <Text style={styles.finePrint}>* GST included. Billed {billingCycle}. Cancel anytime.</Text>
         </View>
 
-        <TouchableOpacity style={styles.ctaBtn} onPress={() => void handlePay()} disabled={paying}>
+        <TouchableOpacity
+          style={[styles.ctaBtn, { backgroundColor: tierTheme.btnPrimaryBg }]}
+          onPress={() => void handlePay()}
+          disabled={paying}
+        >
           {paying ? (
-            <ActivityIndicator color="#0a0f0d" />
+            <ActivityIndicator color={tierTheme.btnPrimaryText} />
           ) : (
             <>
-              <Ionicons name="lock-closed" size={18} color="#0a0f0d" />
-              <Text style={styles.ctaBtnText}>
+              <Ionicons name="lock-closed" size={18} color={tierTheme.btnPrimaryText} />
+              <Text style={[styles.ctaBtnText, { color: tierTheme.btnPrimaryText }]}>
                 Pay ₹{totalDue} · Start {plan.name}
               </Text>
             </>
@@ -371,9 +398,9 @@ export function PaymentScreen({ route, navigation }: Props) {
         </TouchableOpacity>
 
         <View style={styles.trustRow}>
-          <TrustItem icon="shield-checkmark-outline" label="Secure checkout" />
-          <TrustItem icon="refresh-outline" label="Cancel anytime" />
-          <TrustItem icon="time-outline" label="7-day trial" />
+          <TrustItem icon="shield-checkmark-outline" label="Secure checkout" iconColor={tierTheme.accent} />
+          <TrustItem icon="refresh-outline" label="Cancel anytime" iconColor={tierTheme.accent} />
+          <TrustItem icon="time-outline" label="7-day trial" iconColor={tierTheme.accent} />
         </View>
         <Text style={styles.trialNote}>7-day free trial · No charge until trial ends</Text>
       </ScrollView>
@@ -463,7 +490,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 12,
     alignSelf: "flex-start",
-    backgroundColor: theme.accentFaint,
+    borderWidth: 1,
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 6,

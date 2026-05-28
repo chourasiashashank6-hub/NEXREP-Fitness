@@ -1168,12 +1168,14 @@ def _groq_meal_chunk(
         token_limit = 1500 if single_day else _meal_chunk_max_tokens(meals_per_day, chunk_size)
     temp = temperature if temperature is not None else (0.7 if single_day else 0.6)
     model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
-    try:
-        raw = post_json(
+    fallback_key = (settings.GROQ_API_KEY_FALLBACK or "").strip()
+
+    def _post_with_groq_key(api_key: str) -> dict[str, Any]:
+        return post_json(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Authorization": f"Bearer {api_key}",
             },
             payload={
                 "model": model_name,
@@ -1187,10 +1189,32 @@ def _groq_meal_chunk(
             },
             timeout=90,
         )
+
+    try:
+        raw = _post_with_groq_key(settings.GROQ_API_KEY)
     except ExternalHTTPError as http_exc:
-        if http_exc.status_code == 429 or "rate limit" in http_exc.body.lower():
-            raise GroqRateLimitError(f"Groq rate limited: {http_exc.body[:100]}") from http_exc
-        raise
+        if http_exc.status_code == 429 or "rate limit" in http_exc.body.lower() or "token" in http_exc.body.lower():
+            if fallback_key and fallback_key != settings.GROQ_API_KEY:
+                logger.warning("[MealPlanner] Primary Groq key rate limited, retrying with fallback Groq key")
+                try:
+                    raw = _post_with_groq_key(fallback_key)
+                except ExternalHTTPError as fallback_http_exc:
+                    if (
+                        fallback_http_exc.status_code == 429
+                        or "rate limit" in fallback_http_exc.body.lower()
+                        or "token" in fallback_http_exc.body.lower()
+                    ):
+                        raise GroqRateLimitError(
+                            f"Both Groq keys rate limited: {fallback_http_exc.body[:100]}"
+                        ) from fallback_http_exc
+                    raise
+            else:
+                raise GroqRateLimitError(f"Groq rate limited: {http_exc.body[:100]}") from http_exc
+        else:
+            raise
+    except RuntimeError as runtime_exc:
+        # Network/transient errors should still be retried by caller, but not key-switched.
+        raise runtime_exc
     try:
         log_groq_call(
             user_id=user_id,
