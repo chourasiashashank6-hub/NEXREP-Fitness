@@ -17,6 +17,7 @@ import { fetchOnboardingMe } from "../api/onboarding";
 import { getProfile } from "../api/user";
 import { AppCard } from "../components/AppCard";
 import { AppInput } from "../components/AppInput";
+import { TodaysFocusCard } from "../components/TodaysFocusCard";
 import ExerciseGuidanceCard from "../components/ExerciseGuidanceCard";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
 import MediaPipeGuidanceView from "../components/MediaPipeGuidanceView";
@@ -1031,6 +1032,8 @@ export const WorkoutScreen = () => {
         </View>
         <Text style={[styles.dailyBurnLabel, { color: colors.text }]}>Total Calories burned = {todayCaloriesBurned} kcal</Text>
       </AppCard>
+
+      <TodaysFocusCard />
 
       <AppCard>
         <LinearGradient colors={accentPlanner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardTopAccent} />

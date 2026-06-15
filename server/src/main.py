@@ -75,9 +75,15 @@ if settings.APP_ENV == "development":
         o = origin.strip()
         if o and o not in _origins:
             _origins.append(o)
+_dev_origin_regex = (
+    r"https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?"
+    if settings.APP_ENV == "development"
+    else None
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,
+    allow_origin_regex=_dev_origin_regex,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
