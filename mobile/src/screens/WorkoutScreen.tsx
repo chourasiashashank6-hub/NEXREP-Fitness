@@ -1,7 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  LayoutAnimation,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  UIManager,
+  View,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useCameraPermissions } from "expo-camera";
 import axios from "axios";
 import {
@@ -15,19 +28,50 @@ import {
 } from "../api/workout";
 import { fetchOnboardingMe } from "../api/onboarding";
 import { getProfile } from "../api/user";
-import { AppCard } from "../components/AppCard";
 import { AppInput } from "../components/AppInput";
-import { TodaysFocusCard } from "../components/TodaysFocusCard";
-import ExerciseGuidanceCard from "../components/ExerciseGuidanceCard";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
 import MediaPipeGuidanceView from "../components/MediaPipeGuidanceView";
 import type { GlobalExercise } from "../constants/GlobalExercisesData";
+import {
+  EXERCISE_GUIDANCE,
+  type ExerciseGuidance,
+} from "../constants/ExerciseGuidanceData";
 import type { MediaPipeGuidanceViewProps } from "../components/MediaPipeGuidanceView";
-import { ScreenContainer } from "../components/ScreenContainer";
 import { useAppTheme } from "../theme";
 import { formatDate } from "../utils/date";
 
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const PURPLE = "#534AB7";
+const PURPLE_LIGHT = "#F3F0FB";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#E2E2DD";
+const DANGER = "#E85B5B";
+const BURN_TARGET = 154;
+
+const CHIP_DROPDOWN_COLORS = {
+  text: TEXT,
+  muted: MUTED,
+  border: BORDER,
+  cardAlt: WHITE,
+  tabBg: BG,
+  primary: GREEN,
+  inputBg: WHITE,
+};
+const CHIP_RADIUS = { md: 10, lg: 16 };
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 const SELECT_CHOICE = "Select choice";
+const GUIDANCE_PLACEHOLDERS = new Set(["select choice", "default", "no choice", "none", ""]);
 const NO_CHOICE_VALUES = new Set(["select choice", "default", "no choice", "none", ""]);
 
 const workoutTypeFromGlobalCategory = (category: string): WorkoutPayloadType => {
@@ -79,7 +123,6 @@ const pickBestCatalogEntry = (
 
   return [...candidates].sort((a, b) => scoreEntry(b) - scoreEntry(a))[0];
 };
-const SESSION_MILESTONES = [1, 2, 3, 4, 5, 6] as const;
 type WorkoutPayloadType = "stability" | "hiit" | "compound";
 type DifficultyLabel = "Beginner" | "Intermediate" | "Advanced";
 type WorkoutCatalogItem = {
@@ -154,69 +197,112 @@ const toDateKey = (value: unknown): string | null => {
   return `${year}-${month}-${day}`;
 };
 
-const DropdownField = ({
-  label,
+function formatWorkoutHeaderDate(now: Date): string {
+  return new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" }).format(now);
+}
+
+function normalizeExerciseName(value?: string): string {
+  return (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[''`]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findExerciseGuidance(exerciseName?: string): ExerciseGuidance | null {
+  const normalizedTarget = normalizeExerciseName(exerciseName);
+  if (!normalizedTarget || GUIDANCE_PLACEHOLDERS.has(normalizedTarget)) {
+    return null;
+  }
+  const exact = EXERCISE_GUIDANCE.find(
+    (record) => normalizeExerciseName(record.exerciseName) === normalizedTarget,
+  );
+  if (exact) return exact;
+  const partial = EXERCISE_GUIDANCE.find((record) => {
+    const candidate = normalizeExerciseName(record.exerciseName);
+    return (
+      candidate &&
+      (candidate.includes(normalizedTarget) || normalizedTarget.includes(candidate))
+    );
+  });
+  return partial || null;
+}
+
+function bodyPartEmoji(bodyPart: string): string {
+  const p = bodyPart.toLowerCase();
+  if (p.includes("chest")) return "🫁";
+  if (p.includes("back")) return "🔙";
+  if (p.includes("leg") || p.includes("quad") || p.includes("ham")) return "🦵";
+  if (p.includes("arm") || p.includes("bicep") || p.includes("tricep")) return "💪";
+  if (p.includes("shoulder")) return "🏋️";
+  if (p.includes("core") || p.includes("ab")) return "🧘";
+  if (p.includes("cardio")) return "❤️";
+  return "💪";
+}
+
+const ChipDropdownField = ({
   value,
   options,
   enabled = true,
   onChange,
-  colors,
-  radius,
+  placeholder = "Select choice",
 }: {
-  label: string;
   value: string;
   options: string[];
   enabled?: boolean;
   onChange: (value: string) => void;
-  colors: { text: string; muted: string; border: string; cardAlt: string; tabBg: string; primary: string; inputBg: string };
-  radius: { md: number; lg: number };
+  placeholder?: string;
 }) => {
   const [open, setOpen] = useState(false);
   const isPlaceholder = value === SELECT_CHOICE;
+  const displayValue = isPlaceholder ? placeholder : value;
+  const selected = !isPlaceholder;
+
+  const toggleOpen = () => {
+    if (!enabled) return;
+    LayoutAnimation.easeInEaseOut();
+    setOpen((prev) => !prev);
+  };
 
   return (
-    <View style={styles.selectWrap}>
-      <Text style={[styles.selectLabel, { color: colors.muted }]}>{label}</Text>
+    <View style={styles.chipDropdownWrap}>
       <Pressable
-        style={({ pressed }) => [
-          styles.selectButton,
-          {
-            borderColor: open ? colors.primary : colors.border,
-            backgroundColor: colors.inputBg,
-            borderRadius: radius.lg,
-          },
-          !enabled ? styles.selectDisabled : null,
-          pressed && enabled ? styles.selectPressed : null,
+        style={[
+          styles.chipField,
+          selected ? styles.chipFieldSelected : styles.chipFieldIdle,
+          !enabled ? styles.chipFieldDisabled : null,
         ]}
         disabled={!enabled}
-        onPress={() => setOpen((prev) => !prev)}
+        onPress={toggleOpen}
       >
         <Text
-          style={[styles.selectValue, { color: isPlaceholder ? colors.muted : colors.text }, isPlaceholder ? styles.placeholderValue : null]}
+          style={[styles.chipFieldText, selected ? styles.chipFieldTextSelected : styles.chipFieldTextIdle]}
           numberOfLines={1}
         >
-          {value}
+          {displayValue}
         </Text>
-        <Text style={[styles.selectChevron, { color: colors.muted }]}>{open ? "▴" : "▾"}</Text>
+        <Text style={[styles.chipChevron, selected ? styles.chipChevronSelected : styles.chipChevronIdle]}>
+          {open ? "▴" : "▾"}
+        </Text>
       </Pressable>
       {open && enabled ? (
-        <View style={[styles.optionsCard, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.lg }]}>
-          <ScrollView nestedScrollEnabled style={styles.optionsScroll} keyboardShouldPersistTaps="always">
+        <View style={styles.chipOptionsCard}>
+          <ScrollView nestedScrollEnabled style={styles.chipOptionsScroll} keyboardShouldPersistTaps="always">
             {[SELECT_CHOICE, ...options].map((option, index, all) => (
               <Pressable
                 key={`${option}-${index}`}
-                style={[
-                  styles.optionRow,
-                  { borderBottomColor: colors.border },
-                  option === value ? [styles.optionRowActive, { borderLeftColor: colors.primary }] : null,
-                  index === all.length - 1 ? styles.optionRowLast : null,
-                ]}
+                style={[styles.chipOptionRow, index === all.length - 1 ? styles.chipOptionRowLast : null]}
                 onPress={() => {
                   onChange(option);
+                  LayoutAnimation.easeInEaseOut();
                   setOpen(false);
                 }}
               >
-                <Text style={[styles.optionText, { color: option === value ? colors.primary : colors.text }]}>{option}</Text>
+                <Text style={[styles.chipOptionText, option === value ? styles.chipOptionTextActive : null]}>
+                  {option === SELECT_CHOICE ? placeholder : option}
+                </Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -225,66 +311,6 @@ const DropdownField = ({
     </View>
   );
 };
-
-function SectionHeader({
-  eyebrow,
-  title,
-  subtitle,
-  colors,
-}: {
-  eyebrow: string;
-  title: string;
-  subtitle?: string;
-  colors: { muted: string; text: string };
-}) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text style={[styles.sectionEyebrow, { color: colors.muted }]}>{eyebrow}</Text>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
-      {subtitle ? <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>{subtitle}</Text> : null}
-    </View>
-  );
-}
-
-function InsightTile({
-  label,
-  value,
-  accent,
-  colors,
-  radius,
-}: {
-  label: string;
-  value: string;
-  accent: readonly [string, string];
-  colors: { text: string; muted: string; border: string; inputBg: string };
-  radius: { md: number };
-}) {
-  return (
-    <View style={[styles.insightTile, { borderColor: colors.border, backgroundColor: colors.inputBg, borderRadius: radius.md }]}>
-      <LinearGradient colors={accent} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.insightAccent} />
-      <View style={styles.insightBody}>
-        <Text style={[styles.insightLabel, { color: colors.muted }]}>{label}</Text>
-        <Text style={[styles.insightValue, { color: colors.text }]} numberOfLines={3}>
-          {value}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-function SetupProgressBar({ filled, total, colors }: { filled: number; total: number; colors: { primary: string; border: string; muted: string } }) {
-  const pct = total > 0 ? Math.min(100, Math.round((filled / total) * 100)) : 0;
-  return (
-    <View style={styles.setupProgressWrap}>
-      <View style={[styles.setupProgressTrack, { backgroundColor: colors.border }]}>
-        <View style={[styles.setupProgressFill, { width: `${pct}%`, backgroundColor: colors.primary }]} />
-      </View>
-      <Text style={[styles.setupProgressCaption, { color: colors.muted }]}>
-        Setup {filled}/{total} — filters, exercise, then your sets & time
-      </Text>
-    </View>
-  );
-}
 
 export const WorkoutScreen = () => {
   const { colors, radius } = useAppTheme();
@@ -325,6 +351,7 @@ export const WorkoutScreen = () => {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [estimateKcal, setEstimateKcal] = useState<number | null>(null);
   const [estimateError, setEstimateError] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const isNoChoice = (value: string) => NO_CHOICE_VALUES.has((value || "").trim().toLowerCase());
   const needsGoalTagInput = isNoChoice(profileGoalTag);
@@ -383,6 +410,10 @@ export const WorkoutScreen = () => {
       if (nextReps) setPerformedRepsPerSet(nextReps);
     }
   }, [selectedEntry, performedSets, performedRepsPerSet]);
+
+  useEffect(() => {
+    setGuideOpen(false);
+  }, [exerciseName]);
 
   const fetchCatalog = async (
     params: {
@@ -949,9 +980,6 @@ export const WorkoutScreen = () => {
     setCameraError(null);
   };
 
-  const accentPlanner = ["#3b82f6", "#22d3ee", "transparent"] as const;
-  const accentHistory = ["#ef4444", "#fb7185", "transparent"] as const;
-  const dropdownColors = { ...colors, inputBg: colors.inputBg };
   const canOpenCamera = exerciseName !== SELECT_CHOICE;
   const todayKey = useMemo(() => toDateKey(new Date()), []);
   const todayHistory = useMemo(() => {
@@ -959,12 +987,33 @@ export const WorkoutScreen = () => {
     return history.filter((item) => toDateKey(item?.date) === todayKey);
   }, [history, todayKey]);
   const latestTodayWorkout = todayHistory[0];
-  const latestWorkoutLabel = latestTodayWorkout ? sessionHistoryLabel(latestTodayWorkout) : "No sessions logged today";
   const todayCaloriesBurned = useMemo(
     () => todayHistory.reduce((sum, item) => sum + (Number(item?.caloriesBurned) || 0), 0),
     [todayHistory],
   );
   const todaySessionCount = todayHistory.length;
+  const burnTargetReached = todayCaloriesBurned >= BURN_TARGET;
+  const burnProgressPct = Math.min(todayCaloriesBurned / BURN_TARGET, 1);
+  const headerDateLabel = useMemo(() => formatWorkoutHeaderDate(new Date()), []);
+  const exerciseGuidance = useMemo(() => findExerciseGuidance(exerciseName), [exerciseName]);
+  const showGuideCard = exerciseName !== SELECT_CHOICE && !isNoChoice(exerciseName);
+  const movementTypeDisplay =
+    selectedEntry?.type ?? (type !== SELECT_CHOICE ? type : "—");
+  const recommendationDisplay = recommendation !== SELECT_CHOICE ? recommendation : "—";
+  const weightDisplay = recommendedWeight !== SELECT_CHOICE ? recommendedWeight : "—";
+  const displayGoalTag = profileGoalTag !== SELECT_CHOICE ? profileGoalTag : goalTag;
+  const displayDifficulty = profileDifficulty !== SELECT_CHOICE ? profileDifficulty : difficulty;
+
+  const toggleGuide = () => {
+    LayoutAnimation.easeInEaseOut();
+    setGuideOpen((prev) => !prev);
+  };
+
+  const toggleHistory = () => {
+    LayoutAnimation.easeInEaseOut();
+    setShowHistory((prev) => !prev);
+  };
+
   const mediaPipeProps: MediaPipeGuidanceViewProps = {
     selectedExerciseName: canOpenCamera ? exerciseName : undefined,
     isActive: showCamera,
@@ -979,317 +1028,452 @@ export const WorkoutScreen = () => {
   };
 
   return (
-    <ScreenContainer>
-      <Text style={[styles.pageTitle, { color: colors.text }]}>Workout Log</Text>
-      <Text style={[styles.pageSub, { color: colors.muted }]}>Track sessions, calories burned, and training progress</Text>
-
-      <AppCard>
-        <LinearGradient colors={accentPlanner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardTopAccent} />
-        <View style={styles.topTrackerHeader}>
-          <View>
-            <Text style={[styles.section, { color: colors.text, marginBottom: 0 }]}>Workout tracker</Text>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="on-drag"
+      >
+        <View style={styles.greetingHeader}>
+          <View style={styles.greetingLeft}>
+            <Text style={styles.greetingDate}>{headerDateLabel}</Text>
+            <Text style={styles.greetingTitle}>Workout Log 🏋️</Text>
           </View>
           {canOpenCamera ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Open camera tracker"
-              style={[styles.cameraIconBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+              style={styles.headerCameraBtn}
               onPress={() => void openCameraTracker()}
             >
-              <Text style={styles.cameraIconText}>📷</Text>
+              <Text style={styles.headerCameraEmoji}>📷</Text>
             </Pressable>
           ) : null}
         </View>
-        <Text style={[styles.toggleHint, { color: colors.muted, marginTop: 4 }]}>
-          {todaySessionCount} sessions today · Latest: {latestWorkoutLabel}
-        </Text>
-        <View style={[styles.lastSessionCard, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
-          <Text style={[styles.lastSessionEyebrow, { color: colors.muted }]}>Last session performed today</Text>
-          <Text style={[styles.lastSessionValue, { color: colors.text }]}>{latestWorkoutLabel}</Text>
-        </View>
-        <View style={styles.sessionDialRow}>
-          {SESSION_MILESTONES.map((goal) => {
-            const isLast = goal === SESSION_MILESTONES[SESSION_MILESTONES.length - 1];
-            const hit = todaySessionCount >= goal;
-            return (
-              <View key={goal} style={styles.sessionDialCell}>
-                <View
-                  style={[
-                    styles.sessionDialRing,
-                    {
-                      borderColor: hit ? colors.primary : colors.border,
-                      backgroundColor: hit ? `${colors.primary}22` : "transparent",
-                    },
-                  ]}
-                >
-                  <Text style={[styles.sessionDialText, { color: hit ? colors.primary : colors.muted }]}>
-                    {isLast ? (todaySessionCount > 6 ? "6+" : "6") : hit ? "✓" : goal}
-                  </Text>
-                </View>
+
+        {todaySessionCount > 0 ? (
+          <View style={styles.milestoneCard}>
+            <View style={styles.milestoneTopRow}>
+              <View style={styles.milestoneTopLeft}>
+                <Text style={styles.milestoneEyebrow}>SESSION MILESTONE</Text>
+                {latestTodayWorkout ? (
+                  <>
+                    <Text style={styles.milestoneExerciseName} numberOfLines={1}>
+                      {bodyPartEmoji(
+                        latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || "Body",
+                      )}{" "}
+                      {latestTodayWorkout.exerciseName}
+                    </Text>
+                    <Text style={styles.milestoneLastMeta}>
+                      Last session · {Math.round(Number(latestTodayWorkout.caloriesBurned) || 0)} kcal
+                    </Text>
+                  </>
+                ) : null}
               </View>
-            );
-          })}
-        </View>
-        <Text style={[styles.dailyBurnLabel, { color: colors.text }]}>Total Calories burned = {todayCaloriesBurned} kcal</Text>
-      </AppCard>
+              <View style={styles.milestoneCountCol}>
+                <Text style={[styles.milestoneCount, todaySessionCount >= 6 ? styles.milestoneCountMet : null]}>
+                  {todaySessionCount}
+                </Text>
+                <Text style={styles.milestoneCountDenom}>/ 6 sessions</Text>
+              </View>
+            </View>
 
-      <TodaysFocusCard />
+            <View style={styles.milestoneTileRow}>
+              {Array.from({ length: Math.max(todaySessionCount, 6) }, (_, index) => {
+                const tileNum = index + 1;
+                const filled = tileNum <= Math.min(todaySessionCount, 6);
+                const bonus = tileNum > 6;
+                const empty = !filled && !bonus;
+                return (
+                  <View
+                    key={`milestone-tile-${tileNum}`}
+                    style={[
+                      styles.milestoneTile,
+                      filled ? styles.milestoneTileFilled : null,
+                      bonus ? styles.milestoneTileBonus : null,
+                      empty ? styles.milestoneTileEmpty : null,
+                    ]}
+                  >
+                    {filled ? (
+                      <Text style={styles.milestoneTileCheck}>✓</Text>
+                    ) : bonus ? (
+                      <Text style={styles.milestoneTileBonusText}>+{tileNum - 6}</Text>
+                    ) : (
+                      <Text style={styles.milestoneTileEmptyText}>{tileNum}</Text>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
 
-      <AppCard>
-        <LinearGradient colors={accentPlanner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardTopAccent} />
-        {showHistory ? (
-          <Pressable
-            style={[styles.backToFormBanner, { borderColor: colors.border, backgroundColor: colors.tabBg, borderRadius: radius.lg }]}
-            onPress={() => setShowHistory(false)}
-          >
-            <Text style={[styles.backToFormText, { color: colors.text }]}>Back to workout form</Text>
-            <Text style={[styles.headerArrow, { color: colors.muted }]}>▾</Text>
-          </Pressable>
+            <View style={styles.milestoneProgressTrack}>
+              <View
+                style={[
+                  styles.milestoneProgressFill,
+                  { width: `${Math.min(todaySessionCount / 6, 1) * 100}%` },
+                ]}
+              />
+            </View>
+
+            <View style={styles.milestoneFooterRow}>
+              <Text style={styles.milestoneFooterGoal}>Goal: 6 sessions</Text>
+              {todaySessionCount > 6 ? (
+                <Text style={styles.milestoneFooterSuccess}>
+                  🎉 Goal crushed! +{todaySessionCount - 6} bonus
+                </Text>
+              ) : todaySessionCount === 6 ? (
+                <Text style={styles.milestoneFooterSuccess}>✓ Goal reached!</Text>
+              ) : (
+                <Text style={styles.milestoneFooterRemaining}>{6 - todaySessionCount} more to go</Text>
+              )}
+            </View>
+          </View>
         ) : null}
 
-        <View style={showHistory ? styles.hiddenSection : null}>
-          <SectionHeader
-            eyebrow="STEP 1"
-            title="Choose Workout"
-            subtitle="Each choice narrows the next list. Disabled fields unlock as you go."
-            colors={colors}
-          />
-          <SetupProgressBar filled={setupStepsFilled} total={4} colors={colors} />
+        <View style={styles.kpiRow}>
+          <View style={styles.kpiPill}>
+            <Text style={styles.kpiEmoji}>🔥</Text>
+            <Text style={styles.kpiValueOrange}>{todayCaloriesBurned}</Text>
+            <Text style={styles.kpiLabel}>kcal burned</Text>
+          </View>
+          <View style={styles.kpiPill}>
+            <Text style={styles.kpiEmoji}>✅</Text>
+            <Text style={styles.kpiValue}>{todaySessionCount}</Text>
+            <Text style={styles.kpiLabel}>sessions</Text>
+          </View>
+          <View style={styles.kpiPill}>
+            <Text style={styles.kpiEmoji}>🎯</Text>
+            <Text style={styles.kpiValueGreen}>{BURN_TARGET}</Text>
+            <Text style={styles.kpiLabel}>target</Text>
+          </View>
+        </View>
 
-          {needsGoalTagInput ? (
-            <DropdownField
-              label="Goal tag"
-              value={goalTag}
-              options={goalTagOptions}
-              onChange={async (value) => {
-                setGoalTag(value);
-                setDifficulty(SELECT_CHOICE);
-                setBodyPart(SELECT_CHOICE);
-                setType(SELECT_CHOICE);
-                setExerciseName(SELECT_CHOICE);
-                setSelectedGlobalExercise(null);
-                setRecommendation(SELECT_CHOICE);
-                await fetchCatalog(buildFilterParams({ goalTag: value }));
-              }}
-              colors={dropdownColors}
-              radius={radius}
-            />
-          ) : null}
+        <View style={styles.goalLevelRow}>
+          <View style={styles.goalPill}>
+            <Text style={styles.goalPillText} numberOfLines={1}>
+              {displayGoalTag}
+            </Text>
+          </View>
+          <View style={styles.levelPill}>
+            <Text style={styles.levelPillText} numberOfLines={1}>
+              {displayDifficulty}
+            </Text>
+          </View>
+        </View>
 
-          {needsDifficultyInput ? (
-            <DropdownField
-              label="Difficulty"
-              value={difficulty}
-              options={difficultyOptions}
-              enabled={!needsGoalTagInput || goalTag !== SELECT_CHOICE}
-              onChange={async (value) => {
-                setDifficulty(value);
-                setBodyPart(SELECT_CHOICE);
-                setType(SELECT_CHOICE);
-                setExerciseName(SELECT_CHOICE);
-                setSelectedGlobalExercise(null);
-                setRecommendation(SELECT_CHOICE);
-                await fetchCatalog(buildFilterParams({ goalTag, difficulty: value }));
-              }}
-              colors={dropdownColors}
-              radius={radius}
-            />
-          ) : null}
+        <View style={styles.bgCard}>
+          <View style={styles.burnHeaderRow}>
+            <Text style={styles.burnTitle}>🔥 Burn progress</Text>
+            {burnTargetReached ? (
+              <Text style={styles.burnTargetReached}>✓ Target reached!</Text>
+            ) : (
+              <Text style={styles.burnMeta}>
+                {todayCaloriesBurned} / {BURN_TARGET} kcal
+              </Text>
+            )}
+          </View>
+          <View style={styles.burnTrack}>
+            <View style={[styles.burnFill, { width: `${burnProgressPct * 100}%` }]} />
+          </View>
+        </View>
 
-          <DropdownField
-            label="Body part"
-            value={bodyPart}
-            options={bodyPartOptions}
-            enabled={(!needsGoalTagInput || goalTag !== SELECT_CHOICE) && (!needsDifficultyInput || difficulty !== SELECT_CHOICE)}
+        {todaySessionCount > 0 && latestTodayWorkout ? (
+          <View style={styles.bgCard}>
+            <View style={styles.lastSessionRow}>
+              <View style={styles.lastSessionBody}>
+                <Text style={styles.lastSessionTitle} numberOfLines={2}>
+                  {bodyPartEmoji(
+                    latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || "Body",
+                  )}{" "}
+                  {latestTodayWorkout.exerciseName}
+                </Text>
+                <Text style={styles.lastSessionSub} numberOfLines={1}>
+                  {latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || "Body"} ·{" "}
+                  {Math.round(Number(latestTodayWorkout.caloriesBurned) || 0)} kcal · {latestTodayWorkout.sets ?? 0} ×{" "}
+                  {latestTodayWorkout.reps ?? 0}
+                </Text>
+              </View>
+              <View style={styles.donePill}>
+                <Text style={styles.donePillText}>Done ✓</Text>
+              </View>
+            </View>
+          </View>
+        ) : null}
+
+        <Text style={styles.sectionLabel}>Log new workout</Text>
+
+        {needsGoalTagInput ? (
+          <ChipDropdownField
+            value={goalTag}
+            options={goalTagOptions}
+            placeholder="Goal tag"
             onChange={async (value) => {
-              setBodyPart(value);
+              setGoalTag(value);
+              setDifficulty(SELECT_CHOICE);
+              setBodyPart(SELECT_CHOICE);
               setType(SELECT_CHOICE);
               setExerciseName(SELECT_CHOICE);
               setSelectedGlobalExercise(null);
               setRecommendation(SELECT_CHOICE);
-              await fetchCatalog(buildFilterParams({ bodyPart: value === SELECT_CHOICE ? undefined : value, goalTag, difficulty }));
+              await fetchCatalog(buildFilterParams({ goalTag: value }));
             }}
-            colors={dropdownColors}
-            radius={radius}
           />
+        ) : null}
 
-          <ExerciseSearchInput
-            value={exerciseName}
-            onSelectCatalogExercise={(name, catalogId) => {
-              void handleCatalogExerciseSelect(name, catalogId);
+        {needsDifficultyInput ? (
+          <ChipDropdownField
+            value={difficulty}
+            options={difficultyOptions}
+            placeholder="Difficulty"
+            enabled={!needsGoalTagInput || goalTag !== SELECT_CHOICE}
+            onChange={async (value) => {
+              setDifficulty(value);
+              setBodyPart(SELECT_CHOICE);
+              setType(SELECT_CHOICE);
+              setExerciseName(SELECT_CHOICE);
+              setSelectedGlobalExercise(null);
+              setRecommendation(SELECT_CHOICE);
+              await fetchCatalog(buildFilterParams({ goalTag, difficulty: value }));
             }}
-            onSelectGlobalExercise={(exercise) => {
-              void handleGlobalExerciseSelect(exercise);
-            }}
-            resolveCatalogId={resolveCatalogId}
-            catalogExerciseNames={exerciseOptions}
-            placeholder="Search or select exercise"
-            disabled={bodyPart === SELECT_CHOICE}
-            colors={dropdownColors}
-            radius={radius}
           />
+        ) : null}
 
-          <View style={[styles.chipRow, { marginBottom: 12 }]}>
-            <View style={[styles.chip, { borderColor: colors.border, backgroundColor: colors.tabBg }]}>
-              <Text style={[styles.chipKey, { color: colors.muted }]}>Goal</Text>
-              <Text style={[styles.chipVal, { color: colors.text }]} numberOfLines={1}>
-                {activeGoalTag}
-              </Text>
+        <ChipDropdownField
+          value={bodyPart}
+          options={bodyPartOptions}
+          placeholder="Body part"
+          enabled={(!needsGoalTagInput || goalTag !== SELECT_CHOICE) && (!needsDifficultyInput || difficulty !== SELECT_CHOICE)}
+          onChange={async (value) => {
+            setBodyPart(value);
+            setType(SELECT_CHOICE);
+            setExerciseName(SELECT_CHOICE);
+            setSelectedGlobalExercise(null);
+            setRecommendation(SELECT_CHOICE);
+            await fetchCatalog(buildFilterParams({ bodyPart: value === SELECT_CHOICE ? undefined : value, goalTag, difficulty }));
+          }}
+        />
+
+        <ExerciseSearchInput
+          value={exerciseName}
+          onSelectCatalogExercise={(name, catalogId) => {
+            void handleCatalogExerciseSelect(name, catalogId);
+          }}
+          onSelectGlobalExercise={(exercise) => {
+            void handleGlobalExerciseSelect(exercise);
+          }}
+          resolveCatalogId={resolveCatalogId}
+          catalogExerciseNames={exerciseOptions}
+          placeholder="Exercise"
+          disabled={bodyPart === SELECT_CHOICE}
+          chipMode
+          chipSelected={exerciseName !== SELECT_CHOICE}
+          colors={CHIP_DROPDOWN_COLORS}
+          radius={CHIP_RADIUS}
+        />
+
+        {showGuideCard ? (
+          <Pressable
+            style={[styles.guideCard, guideOpen ? styles.guideCardOpen : styles.guideCardClosed]}
+            onPress={toggleGuide}
+          >
+            <View style={styles.guideHeader}>
+              <View style={styles.guideHeaderLeft}>
+                <View style={styles.guideIconTile}>
+                  <Text style={styles.guideIconEmoji}>💪</Text>
+                </View>
+                <View style={styles.guideHeaderText}>
+                  <Text style={styles.guideExerciseName} numberOfLines={1}>
+                    {exerciseName}
+                  </Text>
+                  <Text style={styles.guideHint}>
+                    {guideOpen ? "Tap to collapse guide" : "Tap to see exercise guide"}
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.guideChevronCircle, guideOpen ? styles.guideChevronCircleOpen : null]}>
+                <Text style={[styles.guideChevron, guideOpen ? styles.guideChevronOpen : null]}>
+                  {guideOpen ? "▴" : "▾"}
+                </Text>
+              </View>
             </View>
-            <View style={[styles.chip, { borderColor: colors.border, backgroundColor: colors.tabBg }]}>
-              <Text style={[styles.chipKey, { color: colors.muted }]}>Level</Text>
-              <Text style={[styles.chipVal, { color: colors.text }]} numberOfLines={1}>
-                {activeDifficulty}
-              </Text>
-            </View>
-          </View>
 
-          <ExerciseGuidanceCard exerciseName={exerciseName} />
+            {guideOpen ? (
+              <View style={styles.guideBody}>
+                <View style={styles.guideDivider} />
 
-          <SectionHeader
-            eyebrow="STEP 2"
-            title="Exercise detail"
-            subtitle="Read-only values from the matched catalog row. Honest numbers drive better calorie estimates."
-            colors={colors}
-          />
+                {exerciseGuidance?.muscles?.length ? (
+                  <View style={styles.guideSection}>
+                    <Text style={styles.guideSectionLabelGreen}>🎯 MUSCLES WORKED</Text>
+                    <View style={styles.musclePillRow}>
+                      {exerciseGuidance.muscles.map((muscle) => (
+                        <View key={`${muscle.name}-${muscle.role}`} style={styles.muscleTag}>
+                          <Text style={styles.muscleTagText}>{muscle.name}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
 
-          <View style={styles.insightGrid}>
-            <InsightTile label="Movement type" value={type === SELECT_CHOICE ? "—" : type} accent={["#5BC0EB", "#1B3A6F"]} colors={colors} radius={radius} />
-            <InsightTile
-              label="Recommendation"
-              value={recommendation === SELECT_CHOICE ? "—" : recommendation}
-              accent={[colors.primary, "#2D4A2F"]}
-              colors={colors}
-              radius={radius}
-            />
-            <InsightTile
-              label="Suggested weight (kg)"
-              value={recommendedWeight === SELECT_CHOICE ? "—" : recommendedWeight}
-              accent={["#E8A54B", "#5c4a2f"]}
-              colors={colors}
-              radius={radius}
-            />
-          </View>
+                {exerciseGuidance?.posture ? (
+                  <View style={styles.guideBlockGreen}>
+                    <Text style={styles.guideBlockLabelGreen}>🧍 POSTURE</Text>
+                    <Text style={styles.guideBlockBody}>{exerciseGuidance.posture}</Text>
+                  </View>
+                ) : null}
 
-          <View style={styles.inputGrid}>
-            <View style={styles.inputGridHalf}>
-              <AppInput
-                label="Sets"
+                {exerciseGuidance?.formCues ? (
+                  <View style={styles.guideBlockPurple}>
+                    <Text style={styles.guideBlockLabelPurple}>✋ FORM CUES</Text>
+                    <Text style={styles.guideBlockBody}>{exerciseGuidance.formCues}</Text>
+                  </View>
+                ) : null}
+
+                {exerciseGuidance?.cautions ? (
+                  <View style={styles.guideBlockOrange}>
+                    <Text style={styles.guideBlockLabelOrange}>⚠️ CAUTIONS</Text>
+                    <Text style={styles.guideBlockBody}>{exerciseGuidance.cautions}</Text>
+                  </View>
+                ) : null}
+
+                {exerciseGuidance?.proTip ? (
+                  <View style={styles.proTipBubble}>
+                    <Text style={styles.proTipEmoji}>💡</Text>
+                    <Text style={styles.proTipText}>{exerciseGuidance.proTip}</Text>
+                  </View>
+                ) : null}
+
+                <View style={styles.guideDetailDivider} />
+                <View style={styles.guideDetailRow}>
+                  <Text style={styles.guideDetailLabel}>Movement</Text>
+                  <Text style={styles.guideDetailValue} numberOfLines={2}>
+                    {movementTypeDisplay}
+                  </Text>
+                </View>
+                <View style={styles.guideDetailRow}>
+                  <Text style={styles.guideDetailLabel}>Recommendation</Text>
+                  <Text style={styles.guideDetailValue} numberOfLines={3}>
+                    {recommendationDisplay}
+                  </Text>
+                </View>
+                <View style={styles.guideDetailRow}>
+                  <Text style={styles.guideDetailLabel}>Suggested weight</Text>
+                  <Text style={styles.guideDetailValueGreen} numberOfLines={2}>
+                    {weightDisplay}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+          </Pressable>
+        ) : null}
+
+        <View style={styles.srdCard}>
+          <Text style={styles.srdLabel}>Sets · Reps · Duration</Text>
+          <View style={styles.srdRow}>
+            <View style={styles.srdTile}>
+              <Text style={styles.srdTileLabel}>Sets</Text>
+              <TextInput
+                style={styles.srdTileInput}
                 placeholder="4"
+                placeholderTextColor={MUTED}
                 value={performedSets}
                 onChangeText={(value) => setPerformedSets(value.replace(/\D/g, ""))}
                 keyboardType="number-pad"
                 maxLength={3}
               />
             </View>
-            <View style={styles.inputGridHalf}>
-              <AppInput
-                label="Reps / set"
+            <View style={styles.srdTile}>
+              <Text style={styles.srdTileLabel}>Reps</Text>
+              <TextInput
+                style={styles.srdTileInput}
                 placeholder="12"
+                placeholderTextColor={MUTED}
                 value={performedRepsPerSet}
                 onChangeText={(value) => setPerformedRepsPerSet(value.replace(/\D/g, ""))}
                 keyboardType="number-pad"
                 maxLength={4}
               />
             </View>
-          </View>
-          {timeRangeError ? <Text style={[styles.inlineError, { color: colors.danger }]}>{timeRangeError}</Text> : null}
-          {estimateKcal != null && workoutEstimatePayload ? (
-            <View style={[styles.estimateBanner, { borderColor: colors.border, backgroundColor: colors.tabBg }]}>
-              <Text style={[styles.estimateLabel, { color: colors.muted }]}>Estimated burn (MET)</Text>
-              <Text style={[styles.estimateValue, { color: colors.text }]}>~{estimateKcal} kcal</Text>
-            </View>
-          ) : null}
-          {estimateError ? <Text style={[styles.inlineError, { color: colors.danger }]}>{estimateError}</Text> : null}
-          <View style={styles.durationWrap}>
-            <Text style={[styles.durationLabel, { color: colors.text }]}>Duration (mm:ss)</Text>
-            <Pressable
-              style={({ pressed }) => [
-                styles.durationField,
-                { borderColor: colors.border, backgroundColor: colors.inputBg, borderRadius: radius.md },
-                pressed ? { opacity: 0.9 } : null,
-              ]}
-              onPress={openDurationPicker}
-            >
-              <Text style={[styles.durationValue, { color: colors.text }]}>{timeTaken || "00:00"}</Text>
+            <Pressable style={styles.srdTile} onPress={openDurationPicker}>
+              <Text style={styles.srdTileLabel}>Duration</Text>
+              <Text style={styles.srdTileValue}>{timeTaken || "00:00"}</Text>
             </Pressable>
           </View>
-
-          <Pressable onPress={submit} style={({ pressed }) => [styles.ctaWrap, pressed && { opacity: 0.92 }]}>
-            <LinearGradient colors={[colors.primary, "#7BC976"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.ctaGradient, { borderRadius: radius.lg }]}>
-              <Text style={[styles.ctaLabel, { color: colors.background }]}>Log workout</Text>
-              <Text style={[styles.ctaSub, { color: `${colors.background}CC` }]}>Saves to history & updates burn</Text>
-            </LinearGradient>
-          </Pressable>
         </View>
-      </AppCard>
 
-      <AppCard>
-        <LinearGradient colors={accentHistory} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardTopAccent} />
-        <Pressable
-          style={({ pressed }) => [
-            styles.historyToggle,
-            { borderColor: colors.border, backgroundColor: colors.inputBg, borderRadius: radius.lg },
-            pressed && { opacity: 0.9 },
-          ]}
-          onPress={() => setShowHistory((prev) => !prev)}
-        >
-          <View style={styles.cardHeaderContent}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={[styles.historyEyebrow, { color: colors.muted }]}>RECENT</Text>
-              <Text style={[styles.section, { color: colors.text, marginBottom: 0 }]}>Session history</Text>
-              <Text style={[styles.toggleHint, { color: colors.muted }]}>
-                {showHistory ? "Tap header to collapse" : `Tap to expand · ${todaySessionCount} saved today`}
-              </Text>
-            </View>
-            <Text style={[styles.headerArrow, { color: colors.muted, transform: [{ rotate: showHistory ? "180deg" : "0deg" }] }]}>▾</Text>
+        {timeRangeError ? <Text style={styles.inlineError}>{timeRangeError}</Text> : null}
+        {estimateKcal != null && workoutEstimatePayload ? (
+          <View style={styles.estimatePill}>
+            <Text style={styles.estimatePillText}>~{estimateKcal} kcal estimated</Text>
           </View>
+        ) : null}
+        {estimateError ? <Text style={styles.inlineError}>{estimateError}</Text> : null}
+
+        <Pressable style={styles.logBtn} onPress={submit}>
+          <Text style={styles.logBtnTitle}>Log workout 🔥</Text>
+          <Text style={styles.logBtnSub}>Saves to history & updates burn</Text>
         </Pressable>
 
-        {showHistory ? (
-          todayHistory.length === 0 ? (
-            <View style={[styles.emptyHistory, { borderColor: colors.border, borderRadius: radius.md }]}>
-              <Text style={[styles.emptyHistoryTitle, { color: colors.text }]}>No sessions today</Text>
-              <Text style={[styles.emptyHistorySub, { color: colors.muted }]}>Log a workout above — today&apos;s entries will appear here with type, burn, and date.</Text>
+        <View style={styles.bgCard}>
+          <Pressable style={styles.historyHeader} onPress={toggleHistory}>
+            <View style={styles.historyHeaderLeft}>
+              <Text style={styles.historyEyebrow}>Recent</Text>
+              <Text style={styles.historyTitle}>Session history</Text>
             </View>
-          ) : (
-            todayHistory.map((item, idx) => (
-              <View
-                key={item.id}
-                style={[styles.historyRow, { borderBottomColor: colors.border }, idx === todayHistory.length - 1 ? styles.historyRowLast : null]}
-              >
-                <LinearGradient colors={["#5BC0EB", colors.primary]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.historyStripe} />
-                <View style={styles.historyBody}>
-                  <Text style={[styles.historySessionLine, { color: colors.text }]} numberOfLines={2}>
-                    {sessionHistoryLabel(item)}
-                  </Text>
-                  <Text style={[styles.historySessionMeta, { color: colors.muted }]} numberOfLines={1}>
-                    {String(item.type || "")} · {formatDate(item.date)}
-                  </Text>
-                </View>
-                <View style={styles.historyActions}>
-                  <Pressable
-                    style={[styles.editLogBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    onPress={() => openEditModal(item)}
-                    disabled={deletingId === item.id}
-                  >
-                    <Text style={[styles.editLogText, { color: colors.primary }]}>Edit</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.deleteLogBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    disabled={deletingId === item.id}
-                    onPress={() => void removeHistoryItem(item.id)}
-                  >
-                    <Text style={[styles.deleteLogText, { color: colors.danger }]}>{deletingId === item.id ? "…" : "✕"}</Text>
-                  </Pressable>
-                </View>
+            <View style={styles.historyHeaderRight}>
+              <Text style={styles.historyCount}>{todaySessionCount} today</Text>
+              <Text style={[styles.historyChevron, showHistory ? styles.historyChevronOpen : null]}>▾</Text>
+            </View>
+          </Pressable>
+
+          {showHistory ? (
+            todayHistory.length === 0 ? (
+              <View style={styles.emptyHistory}>
+                <Text style={styles.emptyHistoryTitle}>No sessions today</Text>
+                <Text style={styles.emptyHistorySub}>
+                  Log a workout above — today&apos;s entries will appear here with type, burn, and date.
+                </Text>
               </View>
-            ))
-          )
-        ) : null}
-      </AppCard>
+            ) : (
+              todayHistory.map((item, idx) => (
+                <View
+                  key={item.id}
+                  style={[styles.historyRow, idx === todayHistory.length - 1 ? styles.historyRowLast : null]}
+                >
+                  <View style={styles.historyStripe} />
+                  <View style={styles.historyBody}>
+                    <Text style={styles.historySessionLine} numberOfLines={2}>
+                      {sessionHistoryLabel(item)}
+                    </Text>
+                    <Text style={styles.historySessionMeta} numberOfLines={1}>
+                      {String(item.type || "")} · {formatDate(item.date)}
+                    </Text>
+                  </View>
+                  <View style={styles.historyActions}>
+                    <Pressable
+                      style={styles.editLogBtn}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      onPress={() => openEditModal(item)}
+                      disabled={deletingId === item.id}
+                    >
+                      <Text style={styles.editLogText}>Edit</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.deleteLogBtn}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      disabled={deletingId === item.id}
+                      onPress={() => void removeHistoryItem(item.id)}
+                    >
+                      <Text style={styles.deleteLogText}>{deletingId === item.id ? "…" : "✕"}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))
+            )
+          ) : null}
+        </View>
+      </ScrollView>
 
       <Modal visible={durationPickerOpen} transparent animationType="fade" onRequestClose={() => setDurationPickerOpen(false)}>
         <View style={styles.durationModalBackdrop}>
@@ -1452,168 +1636,422 @@ export const WorkoutScreen = () => {
           </View>
         </View>
       </Modal>
-    </ScreenContainer>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  pageTitle: { fontSize: 26, fontWeight: "800", marginBottom: 4 },
-  pageSub: { fontSize: 14, marginBottom: 18 },
-  cardTopAccent: {
-    height: 3,
-    width: "100%",
-    borderRadius: 2,
-    marginBottom: 12,
-  },
-  backToFormBanner: {
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
+  safe: { flex: 1, backgroundColor: WHITE },
+  scroll: { flex: 1, backgroundColor: WHITE },
+  scrollContent: { padding: 16, paddingBottom: 40 },
+  greetingHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
+    marginBottom: 16,
   },
-  backToFormText: { fontSize: 15, fontWeight: "800" },
-  sectionHeader: { marginBottom: 14 },
-  sectionEyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2, marginBottom: 4 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", marginBottom: 4 },
-  sectionSubtitle: { fontSize: 13, lineHeight: 18 },
-  setupProgressWrap: { marginBottom: 18 },
-  setupProgressTrack: { height: 6, borderRadius: 4, overflow: "hidden" },
-  setupProgressFill: { height: 6, borderRadius: 4 },
-  setupProgressCaption: { fontSize: 11, fontWeight: "600", marginTop: 8, textAlign: "right" },
-  chipRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
-  chip: { flex: 1, minWidth: "42%", borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
-  chipKey: { fontSize: 10, fontWeight: "800", letterSpacing: 0.6, marginBottom: 4 },
-  chipVal: { fontSize: 14, fontWeight: "700" },
-  insightGrid: { gap: 10, marginBottom: 8 },
-  insightTile: { flexDirection: "row", overflow: "hidden", borderWidth: 1 },
-  insightAccent: { width: 5, minHeight: 72 },
-  insightBody: { flex: 1, paddingHorizontal: 14, paddingVertical: 12 },
-  insightLabel: { fontSize: 10, fontWeight: "800", letterSpacing: 0.8, marginBottom: 6, textTransform: "uppercase" },
-  insightValue: { fontSize: 15, fontWeight: "700", lineHeight: 21 },
-  inputGrid: { flexDirection: "row", gap: 10, marginBottom: 0 },
-  inputGridHalf: { flex: 1, minWidth: "40%" },
-  ctaWrap: { marginTop: 6, marginBottom: 4 },
-  ctaGradient: { paddingVertical: 16, paddingHorizontal: 16, alignItems: "center" },
-  ctaLabel: { fontSize: 17, fontWeight: "900" },
-  ctaSub: { fontSize: 12, fontWeight: "600", marginTop: 4 },
-  section: { fontWeight: "800", marginBottom: 4, fontSize: 17 },
-  historyEyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2, marginBottom: 4 },
-  topTrackerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  cameraIconBtn: {
+  greetingLeft: { flex: 1, paddingRight: 12 },
+  greetingDate: { fontSize: 13, color: MUTED, marginBottom: 4 },
+  greetingTitle: { fontSize: 22, fontWeight: "700", color: TEXT },
+  headerCameraBtn: {
     width: 40,
     height: 40,
-    borderWidth: 1,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cameraIconText: { fontSize: 19 },
-  sessionDialRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 12 },
-  dailyBurnLabel: { marginTop: 12, fontSize: 13, fontWeight: "700" },
-  lastSessionCard: {
-    marginTop: 10,
-    borderWidth: 1,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  lastSessionEyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" },
-  lastSessionValue: { marginTop: 4, fontSize: 14, fontWeight: "700" },
-  sessionDialCell: { alignItems: "center", flex: 1 },
-  sessionDialRing: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: BG,
     alignItems: "center",
     justifyContent: "center",
   },
-  sessionDialText: { fontSize: 13, fontWeight: "800" },
-  cardHeaderContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  headerArrow: { fontSize: 16, fontWeight: "700" },
-  historyToggle: { borderWidth: 1, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 12 },
-  toggleHint: { fontSize: 12, marginTop: 6, lineHeight: 17 },
-  hiddenSection: { display: "none" },
-  selectWrap: { marginBottom: 14 },
-  selectLabel: { fontSize: 12, fontWeight: "800", letterSpacing: 0.5, marginBottom: 8, textTransform: "uppercase" },
-  selectButton: {
-    borderWidth: 1.5,
-    paddingHorizontal: 14,
+  headerCameraEmoji: { fontSize: 18 },
+  kpiRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
+  kpiPill: {
+    flex: 1,
+    backgroundColor: BG,
+    borderRadius: 14,
     paddingVertical: 14,
+    paddingHorizontal: 8,
+    alignItems: "center",
+  },
+  kpiEmoji: { fontSize: 18, marginBottom: 6 },
+  kpiValue: { fontSize: 18, fontWeight: "700", color: TEXT },
+  kpiValueOrange: { fontSize: 18, fontWeight: "700", color: ORANGE },
+  kpiValueGreen: { fontSize: 18, fontWeight: "700", color: GREEN },
+  kpiLabel: { fontSize: 10, color: MUTED, marginTop: 4, textTransform: "lowercase" },
+  bgCard: {
+    backgroundColor: BG,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+  },
+  burnHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    marginBottom: 10,
   },
-  selectChevron: { fontSize: 12, fontWeight: "800", marginLeft: 8 },
-  selectPressed: { opacity: 0.88 },
-  selectDisabled: { opacity: 0.45 },
-  selectValue: { fontWeight: "700", fontSize: 15, flex: 1 },
-  placeholderValue: { fontWeight: "600" },
-  optionsCard: {
-    borderWidth: 1,
-    marginTop: 8,
+  burnTitle: { fontSize: 14, fontWeight: "600", color: TEXT },
+  burnTargetReached: { fontSize: 12, fontWeight: "700", color: GREEN },
+  burnMeta: { fontSize: 12, color: MUTED },
+  burnTrack: {
+    height: 7,
+    borderRadius: 100,
+    backgroundColor: TRACK,
     overflow: "hidden",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
   },
-  optionsScroll: { maxHeight: 220 },
-  optionRow: { paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderLeftWidth: 3, borderLeftColor: "transparent" },
-  optionRowLast: { borderBottomWidth: 0 },
-  optionRowActive: { backgroundColor: "rgba(168, 230, 163, 0.1)", borderLeftColor: "transparent" },
-  optionText: { fontWeight: "600", fontSize: 15 },
-  inlineError: { marginBottom: 8, marginTop: -4, fontSize: 12, fontWeight: "700" },
-  estimateBanner: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, marginTop: 4 },
-  estimateLabel: { fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 4 },
-  estimateValue: { fontSize: 22, fontWeight: "900" },
-  estimateHint: { fontSize: 11, lineHeight: 16, marginTop: 6 },
-  emptyHistory: { borderWidth: 1, padding: 18, marginTop: 8, alignItems: "center" },
-  emptyHistoryTitle: { fontSize: 16, fontWeight: "800", marginBottom: 6 },
-  emptyHistorySub: { fontSize: 13, lineHeight: 19, textAlign: "center" },
+  burnFill: { height: 7, borderRadius: 100, backgroundColor: ORANGE },
+  milestoneCard: {
+    backgroundColor: BG,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  milestoneTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  milestoneTopLeft: { flex: 1, paddingRight: 12 },
+  milestoneEyebrow: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    color: MUTED,
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  milestoneExerciseName: { fontSize: 13, fontWeight: "700", color: TEXT, marginBottom: 4 },
+  milestoneLastMeta: { fontSize: 11, color: MUTED },
+  milestoneCountCol: { alignItems: "flex-end" },
+  milestoneCount: { fontSize: 28, fontWeight: "800", color: TEXT, lineHeight: 32 },
+  milestoneCountMet: { color: GREEN },
+  milestoneCountDenom: { fontSize: 11, color: MUTED, marginTop: 2 },
+  milestoneTileRow: { flexDirection: "row", gap: 7, marginBottom: 12 },
+  milestoneTile: {
+    flex: 1,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  milestoneTileFilled: { backgroundColor: GREEN },
+  milestoneTileBonus: { backgroundColor: ORANGE },
+  milestoneTileEmpty: { backgroundColor: TRACK },
+  milestoneTileCheck: { fontSize: 14, fontWeight: "800", color: WHITE },
+  milestoneTileBonusText: { fontSize: 12, fontWeight: "800", color: WHITE },
+  milestoneTileEmptyText: { fontSize: 12, fontWeight: "700", color: MUTED },
+  milestoneProgressTrack: {
+    height: 6,
+    borderRadius: 100,
+    backgroundColor: TRACK,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  milestoneProgressFill: { height: 6, borderRadius: 100, backgroundColor: GREEN },
+  milestoneFooterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  milestoneFooterGoal: { fontSize: 11, color: MUTED },
+  milestoneFooterSuccess: { fontSize: 11, fontWeight: "700", color: GREEN },
+  milestoneFooterRemaining: { fontSize: 11, color: MUTED },
+  lastSessionRow: { flexDirection: "row", alignItems: "center" },
+  lastSessionBody: { flex: 1, paddingRight: 10 },
+  lastSessionTitle: { fontSize: 15, fontWeight: "700", color: TEXT, lineHeight: 20 },
+  lastSessionSub: { fontSize: 12, color: MUTED, marginTop: 4 },
+  donePill: {
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  donePillText: { fontSize: 11, fontWeight: "700", color: GREEN },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
+    color: MUTED,
+    textTransform: "uppercase",
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  chipDropdownWrap: { marginBottom: 10 },
+  chipField: {
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  chipFieldSelected: { backgroundColor: WHITE, borderColor: GREEN },
+  chipFieldIdle: { backgroundColor: BG, borderColor: BORDER },
+  chipFieldDisabled: { opacity: 0.45 },
+  chipFieldText: { fontSize: 15, fontWeight: "600", flex: 1, marginRight: 8 },
+  chipFieldTextSelected: { color: TEXT },
+  chipFieldTextIdle: { color: MUTED },
+  chipChevron: { fontSize: 12, fontWeight: "800" },
+  chipChevronSelected: { color: GREEN },
+  chipChevronIdle: { color: MUTED },
+  chipOptionsCard: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 14,
+    backgroundColor: WHITE,
+    overflow: "hidden",
+  },
+  chipOptionsScroll: { maxHeight: 220 },
+  chipOptionRow: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: BORDER,
+  },
+  chipOptionRowLast: { borderBottomWidth: 0 },
+  chipOptionText: { fontSize: 15, fontWeight: "600", color: TEXT },
+  chipOptionTextActive: { color: GREEN, fontWeight: "700" },
+  goalLevelRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
+  goalPill: {
+    flex: 1,
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  goalPillText: { fontSize: 13, fontWeight: "700", color: GREEN },
+  levelPill: {
+    flex: 1,
+    backgroundColor: PURPLE_LIGHT,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  levelPillText: { fontSize: 13, fontWeight: "700", color: PURPLE },
+  guideCard: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    marginBottom: 12,
+    overflow: "hidden",
+    backgroundColor: WHITE,
+  },
+  guideCardClosed: { borderColor: BORDER },
+  guideCardOpen: { borderColor: GREEN },
+  guideHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 14,
+  },
+  guideHeaderLeft: { flexDirection: "row", alignItems: "center", flex: 1, paddingRight: 10 },
+  guideIconTile: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: GREEN_LIGHT,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  guideIconEmoji: { fontSize: 16 },
+  guideHeaderText: { flex: 1 },
+  guideExerciseName: { fontSize: 13, fontWeight: "700", color: TEXT },
+  guideHint: { fontSize: 10, color: MUTED, marginTop: 2 },
+  guideChevronCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: BG,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  guideChevronCircleOpen: { backgroundColor: GREEN_LIGHT },
+  guideChevron: { fontSize: 12, color: MUTED, fontWeight: "800" },
+  guideChevronOpen: { color: GREEN },
+  guideBody: { backgroundColor: WHITE },
+  guideDivider: { height: 1, backgroundColor: BORDER },
+  guideSection: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 },
+  guideSectionLabelGreen: { fontSize: 10, fontWeight: "700", color: GREEN, marginBottom: 8 },
+  musclePillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  muscleTag: {
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  muscleTagText: { fontSize: 11, fontWeight: "600", color: GREEN },
+  guideBlockGreen: {
+    borderLeftWidth: 3,
+    borderLeftColor: GREEN,
+    paddingLeft: 12,
+    marginHorizontal: 14,
+    marginTop: 10,
+  },
+  guideBlockPurple: {
+    borderLeftWidth: 3,
+    borderLeftColor: PURPLE,
+    paddingLeft: 12,
+    marginHorizontal: 14,
+    marginTop: 10,
+  },
+  guideBlockOrange: {
+    borderLeftWidth: 3,
+    borderLeftColor: ORANGE,
+    paddingLeft: 12,
+    marginHorizontal: 14,
+    marginTop: 10,
+  },
+  guideBlockLabelGreen: { fontSize: 10, fontWeight: "700", color: GREEN, marginBottom: 6 },
+  guideBlockLabelPurple: { fontSize: 10, fontWeight: "700", color: PURPLE, marginBottom: 6 },
+  guideBlockLabelOrange: { fontSize: 10, fontWeight: "700", color: ORANGE, marginBottom: 6 },
+  guideBlockBody: { fontSize: 12, color: "#555555", lineHeight: 18 },
+  proTipBubble: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: BG,
+    borderRadius: 12,
+    padding: 12,
+    marginHorizontal: 14,
+    marginTop: 12,
+    marginBottom: 4,
+    gap: 8,
+  },
+  proTipEmoji: { fontSize: 14 },
+  proTipText: { flex: 1, fontSize: 11, color: "#777777", lineHeight: 16 },
+  guideDetailDivider: {
+    height: 1,
+    backgroundColor: BORDER,
+    marginHorizontal: 14,
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  guideDetailRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 12,
+  },
+  guideDetailLabel: { fontSize: 12, color: MUTED, flex: 1 },
+  guideDetailValue: { fontSize: 12, fontWeight: "700", color: TEXT, flex: 1.2, textAlign: "right" },
+  guideDetailValueGreen: { fontSize: 12, fontWeight: "700", color: GREEN, flex: 1.2, textAlign: "right" },
+  srdCard: {
+    backgroundColor: BG,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+  },
+  srdLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    color: MUTED,
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
+  srdRow: { flexDirection: "row", gap: 8 },
+  srdTile: {
+    flex: 1,
+    backgroundColor: WHITE,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: "center",
+  },
+  srdTileLabel: { fontSize: 10, color: MUTED, marginBottom: 6 },
+  srdTileInput: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: TEXT,
+    textAlign: "center",
+    width: "100%",
+    padding: 0,
+  },
+  srdTileValue: { fontSize: 18, fontWeight: "700", color: TEXT },
+  inlineError: { marginBottom: 8, fontSize: 12, fontWeight: "700", color: DANGER },
+  estimatePill: {
+    alignSelf: "flex-start",
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  estimatePillText: { fontSize: 12, fontWeight: "700", color: GREEN },
+  logBtn: {
+    backgroundColor: GREEN,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  logBtnTitle: { fontSize: 15, fontWeight: "700", color: WHITE },
+  logBtnSub: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 4 },
+  historyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  historyHeaderLeft: { flex: 1 },
+  historyEyebrow: { fontSize: 10, fontWeight: "700", color: MUTED, textTransform: "uppercase", marginBottom: 4 },
+  historyTitle: { fontSize: 16, fontWeight: "700", color: TEXT },
+  historyHeaderRight: { flexDirection: "row", alignItems: "center", gap: 4 },
+  historyCount: { fontSize: 12, fontWeight: "700", color: GREEN },
+  historyChevron: { fontSize: 14, color: GREEN, fontWeight: "700" },
+  historyChevronOpen: { transform: [{ rotate: "180deg" }] },
+  emptyHistory: { borderWidth: 1, borderColor: BORDER, borderRadius: 12, padding: 18, marginTop: 12, alignItems: "center" },
+  emptyHistoryTitle: { fontSize: 16, fontWeight: "700", color: TEXT, marginBottom: 6 },
+  emptyHistorySub: { fontSize: 13, lineHeight: 19, textAlign: "center", color: MUTED },
   historyRow: {
     flexDirection: "row",
     paddingVertical: 12,
     paddingRight: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: BORDER,
     alignItems: "center",
+    marginTop: 12,
   },
   historyRowLast: { borderBottomWidth: 0 },
-  historyStripe: { width: 4, borderRadius: 2, marginRight: 12 },
+  historyStripe: { width: 4, height: 40, borderRadius: 2, marginRight: 12, backgroundColor: GREEN },
   historyBody: { flex: 1, minWidth: 0, justifyContent: "center", paddingRight: 6 },
-  historySessionLine: { fontWeight: "800", fontSize: 14, lineHeight: 19 },
-  historySessionMeta: { fontSize: 11, fontWeight: "600", marginTop: 4 },
+  historySessionLine: { fontWeight: "700", fontSize: 14, lineHeight: 19, color: TEXT },
+  historySessionMeta: { fontSize: 11, fontWeight: "600", marginTop: 4, color: MUTED },
   historyActions: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 8, marginLeft: 6, flexShrink: 0 },
   editLogBtn: {
     minWidth: 52,
     height: 32,
     borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: WHITE,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
   },
-  editLogText: { fontSize: 12, fontWeight: "800" },
+  editLogText: { fontSize: 12, fontWeight: "700", color: GREEN },
   deleteLogBtn: {
     width: 34,
     height: 34,
     borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: WHITE,
     borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
   },
-  deleteLogText: { fontSize: 16, fontWeight: "900", lineHeight: 18 },
+  deleteLogText: { fontSize: 16, fontWeight: "900", lineHeight: 18, color: DANGER },
+  inputGrid: { flexDirection: "row", gap: 10, marginBottom: 0 },
+  inputGridHalf: { flex: 1, minWidth: "40%" },
   durationWrap: { marginBottom: 8 },
   durationLabel: { fontSize: 13, fontWeight: "600", marginBottom: 6 },
   durationField: {

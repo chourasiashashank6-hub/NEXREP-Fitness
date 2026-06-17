@@ -4,10 +4,26 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { TapCards } from "../../components/TapCards";
-import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
 import { DIFFICULTY_OPTIONS, GOAL_OPTIONS, GOAL_PACE_OPTIONS, getImperialWeightOptions, getMetricWeightOptions } from "../../utils/onboardingOptions";
+
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 export default function Screen2Goal({ navigation }: any) {
   const { data, updateGoal } = useOnboardingContext();
@@ -106,10 +122,10 @@ export default function Screen2Goal({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  label: { color: ONBOARDING_COLORS.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 8 },
+  label: { color: TEXT, fontSize: 16, fontWeight: "800", marginBottom: 8 },
   block: { marginTop: 12 },
-  error: { marginTop: 4, fontSize: 12, color: ONBOARDING_COLORS.danger },
-  dateTrigger: { height: 48, borderRadius: 10, borderWidth: 1, borderColor: ONBOARDING_COLORS.border, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: ONBOARDING_COLORS.card },
-  dateText: { color: ONBOARDING_COLORS.textPrimary },
-  dateAction: { color: ONBOARDING_COLORS.primary, fontWeight: "700" },
+  error: { marginTop: 4, fontSize: 12, color: ORANGE },
+  dateTrigger: { height: 48, borderRadius: 12, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: BG },
+  dateText: { color: TEXT, fontWeight: "700" },
+  dateAction: { color: GREEN, fontWeight: "900" },
 });

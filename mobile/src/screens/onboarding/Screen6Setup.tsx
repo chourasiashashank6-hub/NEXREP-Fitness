@@ -3,10 +3,26 @@ import { StyleSheet, Text } from "react-native";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { ToggleRow } from "../../components/ToggleRow";
-import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
 import { REGION_OPTIONS, REMINDER_TIME_OPTIONS, WATER_GOAL_OPTIONS } from "../../utils/onboardingOptions";
+
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 export default function Screen6Setup({ navigation }: any) {
   const { data, updateAppSetup } = useOnboardingContext();
@@ -39,7 +55,7 @@ export default function Screen6Setup({ navigation }: any) {
       saveDisabled={saving}
     >
       <ToggleRow
-        label="Daily weigh-in reminder"
+        label="📅 Daily weigh-in reminder"
         subLabel="Needed for adaptive recalibration after day 14"
         value={data.app_setup.weigh_in_reminder_enabled}
         onChange={(v) => updateAppSetup({ weigh_in_reminder_enabled: v })}
@@ -51,11 +67,11 @@ export default function Screen6Setup({ navigation }: any) {
       <Text style={styles.section}>Water intake goal</Text>
       <BottomSheetPicker label="Water intake goal" value={data.app_setup.water_intake_goal_liters} options={WATER_GOAL_OPTIONS} onChange={(v) => updateAppSetup({ water_intake_goal_liters: v as number | null })} placeholder="2.5 L (auto)" />
 
-      <Text style={styles.section}>Notification preferences</Text>
-      <ToggleRow label="Meal logging reminders" subLabel="Remind me to log breakfast, lunch, dinner" value={data.app_setup.notifications.meal_logging} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, meal_logging: v } })} />
-      <ToggleRow label="AI coach insights" subLabel="Daily tips based on your progress" value={data.app_setup.notifications.coach_insights} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, coach_insights: v } })} />
-      <ToggleRow label="Weekly progress summary" subLabel="Sunday recap of the week" value={data.app_setup.notifications.weekly_summary} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, weekly_summary: v } })} />
-      <ToggleRow label="Streak alerts" subLabel="Don't break your streak" value={data.app_setup.notifications.streak_alerts} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, streak_alerts: v } })} />
+      <Text style={styles.section}>Notifications</Text>
+      <ToggleRow label="🍽️ Meal logging reminders" subLabel="Remind me to log breakfast, lunch, dinner" value={data.app_setup.notifications.meal_logging} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, meal_logging: v } })} />
+      <ToggleRow label="🤖 AI coach insights" subLabel="Daily tips based on your progress" value={data.app_setup.notifications.coach_insights} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, coach_insights: v } })} />
+      <ToggleRow label="📊 Weekly progress summary" subLabel="Sunday recap of the week" value={data.app_setup.notifications.weekly_summary} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, weekly_summary: v } })} />
+      <ToggleRow label="⚡ Streak alerts" subLabel="Don't break your streak" value={data.app_setup.notifications.streak_alerts} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, streak_alerts: v } })} />
 
       <Text style={styles.section}>Region / language</Text>
       <BottomSheetPicker label="Region / language" value={data.app_setup.region} options={REGION_OPTIONS} onChange={(v) => updateAppSetup({ region: String(v) })} placeholder="India (auto-detected)" />
@@ -63,4 +79,6 @@ export default function Screen6Setup({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({ section: { marginTop: 12, marginBottom: 8, color: ONBOARDING_COLORS.textPrimary, fontSize: 16, fontWeight: "700" } });
+const styles = StyleSheet.create({
+  section: { marginTop: 12, marginBottom: 8, color: TEXT, fontSize: 16, fontWeight: "800" },
+});

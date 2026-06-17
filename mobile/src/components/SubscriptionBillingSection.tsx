@@ -6,21 +6,30 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { PLANS } from "../constants/plans";
 import type { ProfileStackParamList } from "../navigation/types";
 import { useSubscriptionStore } from "../store/subscriptionStore";
-import { useAppTheme } from "../theme";
-import { planTierTheme } from "../theme/planTierTheme";
 import type { PlanHistoryEntry, PlanStatus, PlanTier, PaymentRecord } from "../types/subscription";
 import { daysUntil, formatDate } from "../utils/dateFormat";
 
-const TEAL = "#2ECC9A";
-const AMBER = "#FFC107";
-const MUTED = "rgba(226,232,228,0.45)";
-const CARD_BG = "#111c17";
-const CARD_BORDER = "rgba(255,255,255,0.06)";
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 const TIER_COLORS: Record<PlanTier, string> = {
   FREE: "#8b949e",
-  PRO: "#2ECC9A",
-  ELITE: "#a5a0f0",
+  PRO: GREEN,
+  ELITE: GOLD,
 };
 
 const TIER_MONTHLY: Record<PlanTier, number> = {
@@ -54,16 +63,16 @@ function reasonLabel(reason: PlanHistoryEntry["reason"]): string {
 
 function entryStatusBadge(entry: PlanHistoryEntry, isCurrent: boolean): { label: string; color: string } {
   if (isCurrent && entry.reason !== "cancelled") {
-    return { label: "Active", color: TEAL };
+    return { label: "Active", color: GREEN };
   }
   if (entry.reason === "cancelled") {
-    return { label: "Cancelled", color: "rgba(226,232,228,0.4)" };
+    return { label: "Cancelled", color: ORANGE };
   }
   if (entry.reason === "downgrade") {
-    return { label: "Downgraded", color: AMBER };
+    return { label: "Downgraded", color: GOLD };
   }
   if (entry.reason === "upgrade") {
-    return { label: "Upgraded", color: TEAL };
+    return { label: "Upgraded", color: GREEN };
   }
   return { label: reasonLabel(entry.reason), color: MUTED };
 }
@@ -119,7 +128,6 @@ export default function SubscriptionBillingSection({
   onCalorieHistory,
 }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
-  const { colors: themeColors } = useAppTheme();
   const subscription = useSubscriptionStore((s) => s.subscription);
   const payments = useSubscriptionStore((s) => s.payments);
   const planHistory = useSubscriptionStore((s) => s.planHistory);
@@ -130,7 +138,6 @@ export default function SubscriptionBillingSection({
   const tier: PlanTier = subscription?.tier ?? "FREE";
   const status: PlanStatus = subscription?.status ?? "active";
   const isFree = tier === "FREE";
-  const tierTheme = useMemo(() => planTierTheme(tier, themeColors), [tier, themeColors]);
 
   const savingsLabel = useMemo(() => {
     if (tier === "ELITE") return "Max tier";
@@ -167,126 +174,80 @@ export default function SubscriptionBillingSection({
   const primaryCta =
     tier === "ELITE" ? null : tier === "PRO" ? "Upgrade to Elite" : "Upgrade to PRO";
 
-  const statusColor =
-    status === "active"
-      ? tierTheme.statusActive
-      : status === "trial"
-        ? AMBER
-        : status === "cancelled"
-          ? MUTED
-          : "#e24b4a";
-
   return (
     <View style={styles.wrap}>
-      {/* 1. Plan hero */}
-      <View style={[styles.hero, { backgroundColor: tierTheme.heroBg, borderColor: tierTheme.heroBorder }]}>
+      <View style={styles.hero}>
         <View style={styles.heroTop}>
           <View style={styles.heroTitleBlock}>
             <Text style={styles.heroPlanName}>{isFree ? "FREE" : tier} Plan</Text>
-            {!isFree ? (
-              <View style={[styles.statusPill, { borderColor: statusColor, backgroundColor: tierTheme.accentSoft }]}>
-                <Text style={[styles.statusPillText, { color: statusColor }]}>
-                  {status === "active" ? "Active" : status === "trial" ? "Trial" : status === "cancelled" ? "Cancelled" : "Past due"}
-                </Text>
-              </View>
-            ) : null}
+            <View style={styles.statusPill}>
+              <Text style={styles.statusPillText}>
+                {status === "active" ? "Active" : status === "trial" ? "Trial" : status === "cancelled" ? "Cancelled" : "Past due"}
+              </Text>
+            </View>
           </View>
           {nextBilling ? (
             <View style={styles.heroBillingRight}>
               <Text style={styles.heroBillingLabel}>Next billing</Text>
-              <Text style={[styles.heroBillingDate, { color: tierTheme.accent }]}>{nextBilling}</Text>
+              <Text style={styles.heroBillingDate}>{nextBilling}</Text>
+              <Text style={styles.heroBillingDays}>{subscription ? `in ${daysUntil(subscription.currentPeriodEnd)} days` : ""}</Text>
             </View>
           ) : null}
         </View>
 
-        {!isFree && subscription ? (
-          <Text style={styles.heroSub}>
-            ₹{subscription.priceINR.toLocaleString("en-IN")}/{subscription.billingCycle === "monthly" ? "mo" : "yr"}
-            {status === "active" ? ` · in ${daysUntil(subscription.currentPeriodEnd)} days` : ""}
-          </Text>
-        ) : (
-          <Text style={styles.heroSub}>Basic features · No billing</Text>
-        )}
-
-        <View style={styles.heroStats}>
-          <View style={styles.heroStat}>
-            <Text style={styles.heroStatVal}>{memberSince || "—"}</Text>
+        <View style={styles.heroPriceStrip}>
+          <View>
             <Text style={styles.heroStatLabel}>Member since</Text>
+            <Text style={styles.heroStatVal}>{memberSince || "—"}</Text>
           </View>
+          <Text style={styles.heroPriceText}>
+            {!isFree && subscription ? `₹${subscription.priceINR.toLocaleString("en-IN")}` : "₹0"}
+            <Text style={styles.heroPriceUnit}>/{!isFree && subscription?.billingCycle === "yearly" ? "yr" : "mo"}</Text>
+          </Text>
         </View>
 
         <View style={styles.heroActions}>
           {primaryCta ? (
-            <Pressable
-              style={[
-                styles.btnPrimary,
-                {
-                  backgroundColor: tierTheme.btnPrimaryBg,
-                  borderColor: tierTheme.btnPrimaryBorder,
-                  borderWidth: tier === "FREE" ? 1 : 0,
-                },
-              ]}
-              onPress={goPricing}
-            >
-              <Text style={[styles.btnPrimaryText, { color: tierTheme.btnPrimaryText }]}>{primaryCta}</Text>
+            <Pressable style={styles.manageBtn} onPress={goPricing}>
+              <Text style={styles.manageBtnText}>{primaryCta}</Text>
             </Pressable>
           ) : null}
-          <Pressable
-            style={[
-              styles.btnGhost,
-              !primaryCta && styles.btnGhostFull,
-              { borderColor: tierTheme.btnGhostBorder },
-            ]}
-            onPress={isFree ? goPricing : goManage}
-          >
-            <Text style={[styles.btnGhostText, { color: tierTheme.btnGhostText }]}>
-              {isFree ? "View plans" : "Manage plan"}
-            </Text>
+          <Pressable style={[styles.manageBtn, !primaryCta && styles.manageBtnFull]} onPress={isFree ? goPricing : goManage}>
+            <Text style={styles.manageBtnText}>{isFree ? "View plans" : "Manage plan"}</Text>
           </Pressable>
         </View>
+        {tier === "ELITE" ? <Text style={styles.maxTierNote}>Max tier · {savingsLabel}</Text> : null}
       </View>
 
-      {/* 2. Savings stat */}
-      <View style={styles.statGrid}>
-        <View style={styles.statCard}>
-          <Text style={styles.statCardVal} numberOfLines={1}>
-            {savingsLabel}
-          </Text>
-          <Text style={styles.statCardLabel}>Savings vs next tier</Text>
-        </View>
-      </View>
-
-      {/* 3. Billing history entry */}
-      {payments.length > 0 ? (
-        <View style={styles.section}>
-          <Pressable style={styles.modalEntry} onPress={() => setPaymentsModalVisible(true)}>
-            <Text style={styles.sectionLabel}>Billing history</Text>
-            <Text style={[styles.sectionLink, { color: tierTheme.accent }]}>
-              {`See all ${payments.length} payment${payments.length === 1 ? "" : "s"}`}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {/* 4. Plan timeline entry */}
-      {hasTimeline ? (
-        <View style={styles.section}>
-          <Pressable style={styles.modalEntry} onPress={() => setTimelineModalVisible(true)}>
-            <Text style={styles.sectionLabel}>Plan timeline</Text>
-            <Text style={[styles.sectionLink, { color: tierTheme.accent }]}>View timeline</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {/* 5. Bottom history row */}
-      <View style={styles.bottomRow}>
-        <Pressable style={styles.bottomBtn} onPress={onExerciseHistory}>
-          <Ionicons name="barbell-outline" size={20} color={TEAL} />
-          <Text style={styles.bottomBtnText}>Exercise history</Text>
+      <View style={styles.linksCard}>
+        <Pressable style={styles.linkRow} onPress={() => setPaymentsModalVisible(true)}>
+          <View style={styles.linkIconTile}>
+            <Text style={styles.linkEmoji}>🧾</Text>
+          </View>
+          <Text style={styles.linkTitle}>Billing history</Text>
+          <Text style={styles.linkAction}>{`See all ${payments.length} payment${payments.length === 1 ? "" : "s"} ›`}</Text>
         </Pressable>
-        <Pressable style={styles.bottomBtn} onPress={onCalorieHistory}>
-          <Ionicons name="flame-outline" size={20} color="#E24B4A" />
-          <Text style={styles.bottomBtnText}>Calorie history</Text>
+        <Pressable style={[styles.linkRow, styles.linkRowLast]} onPress={() => setTimelineModalVisible(true)} disabled={!hasTimeline}>
+          <View style={styles.linkIconTile}>
+            <Text style={styles.linkEmoji}>📅</Text>
+          </View>
+          <Text style={styles.linkTitle}>Plan timeline</Text>
+          <Text style={[styles.linkAction, !hasTimeline && styles.linkActionDisabled]}>{hasTimeline ? "View ›" : "No events"}</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.historyButtonsRow}>
+        <Pressable style={styles.historyButton} onPress={onExerciseHistory}>
+          <View style={[styles.historyIconTile, { backgroundColor: BLUE_LIGHT }]}>
+            <Text style={styles.historyEmoji}>🏋️</Text>
+          </View>
+          <Text style={styles.historyButtonText}>Exercise history</Text>
+        </Pressable>
+        <Pressable style={styles.historyButton} onPress={onCalorieHistory}>
+          <View style={[styles.historyIconTile, { backgroundColor: ORANGE_LIGHT }]}>
+            <Text style={styles.historyEmoji}>🔥</Text>
+          </View>
+          <Text style={styles.historyButtonText}>Calorie history</Text>
         </Pressable>
       </View>
 
@@ -391,7 +352,7 @@ function BillingSheetModal({
               {subtitle ? <Text style={styles.modalSubtitle}>{subtitle}</Text> : null}
             </View>
             <Pressable style={styles.modalCloseBtn} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={22} color="#e2e8e4" />
+              <Ionicons name="close" size={22} color={TEXT} />
             </Pressable>
           </View>
           <ScrollView
@@ -409,7 +370,7 @@ function BillingSheetModal({
 
 function PaymentRow({ payment, isLast }: { payment: PaymentRecord; isLast: boolean }) {
   const tier = tierFromDescription(payment.description);
-  const statusColor = payment.status === "paid" ? TEAL : payment.status === "failed" ? "#e24b4a" : AMBER;
+  const statusColor = payment.status === "paid" ? GREEN : payment.status === "failed" ? ORANGE : GOLD;
   const statusLabel =
     payment.status === "paid" ? "Paid" : payment.status === "failed" ? "Failed" : payment.status;
 
@@ -457,7 +418,7 @@ function TimelineEntryRow({
         <View
           style={[
             styles.timelineDot,
-            isCurrent && { backgroundColor: TEAL, borderColor: TEAL },
+            isCurrent && { backgroundColor: GREEN, borderColor: GREEN },
           ]}
         />
         {showLine ? <View style={styles.timelineLine} /> : null}
@@ -485,217 +446,77 @@ function TimelineEntryRow({
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: 12 },
-  hero: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 10,
-  },
-  heroTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  heroTitleBlock: { flex: 1, gap: 8 },
-  heroPlanName: { fontSize: 22, fontWeight: "800", color: "#fff", letterSpacing: 0.3 },
-  statusPill: {
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderRadius: 99,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  statusPillText: { fontSize: 11, fontWeight: "700" },
+  wrap: { marginBottom: 14 },
+  hero: { backgroundColor: "#1A1A18", borderRadius: 18, padding: 16, marginBottom: 12 },
+  heroTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
+  heroTitleBlock: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  heroPlanName: { fontSize: 18, fontWeight: "900", color: GOLD, letterSpacing: 0.3 },
+  statusPill: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: GOLD },
+  statusPillText: { fontSize: 10, fontWeight: "900", color: TEXT },
   heroBillingRight: { alignItems: "flex-end" },
-  heroBillingLabel: { fontSize: 10, color: MUTED, textTransform: "uppercase", letterSpacing: 0.5 },
-  heroBillingDate: { fontSize: 12, color: "#e2e8e4", fontWeight: "600", marginTop: 2 },
-  heroSub: { fontSize: 12, color: MUTED, marginTop: 10, marginBottom: 14 },
-  heroStats: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    marginBottom: 14,
-  },
-  heroStat: { flex: 1, alignItems: "center" },
-  heroStatVal: { fontSize: 14, fontWeight: "700", color: "#fff" },
-  heroStatLabel: { fontSize: 10, color: MUTED, marginTop: 4, textAlign: "center" },
-  heroActions: { flexDirection: "row", gap: 8 },
-  btnPrimary: {
-    flex: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  btnPrimaryText: { fontSize: 13, fontWeight: "700" },
-  btnGhost: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  btnGhostFull: { flex: 1 },
-  btnGhostText: { fontSize: 13, fontWeight: "600" },
-  statGrid: { marginBottom: 12 },
-  modalEntry: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: CARD_BG,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  statCard: {
-    backgroundColor: CARD_BG,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
-    borderRadius: 12,
-    padding: 10,
-    alignItems: "center",
-  },
-  statCardVal: { fontSize: 13, fontWeight: "700", color: "#fff", textAlign: "center" },
-  statCardLabel: { fontSize: 9, color: MUTED, marginTop: 4, textAlign: "center" },
-  section: { marginBottom: 12 },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  sectionLabel: {
-    fontSize: 10,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    color: "rgba(226,232,228,0.35)",
-    fontWeight: "600",
-  },
-  sectionLink: { fontSize: 12, color: TEAL, fontWeight: "600" },
+  heroBillingLabel: { fontSize: 10, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 0.5 },
+  heroBillingDate: { fontSize: 13, color: GOLD, fontWeight: "900", marginTop: 2 },
+  heroBillingDays: { color: "rgba(255,255,255,0.45)", fontSize: 10, marginTop: 2 },
+  heroPriceStrip: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.06)", marginTop: 16 },
+  heroStatVal: { fontSize: 13, fontWeight: "900", color: WHITE, marginTop: 3 },
+  heroStatLabel: { fontSize: 10, color: "rgba(255,255,255,0.45)", fontWeight: "800" },
+  heroPriceText: { color: WHITE, fontSize: 16, fontWeight: "900" },
+  heroPriceUnit: { color: "rgba(255,255,255,0.45)", fontSize: 12, fontWeight: "700" },
+  heroActions: { flexDirection: "row", gap: 8, marginTop: 12 },
+  manageBtn: { flex: 1, borderWidth: 1.5, borderColor: GOLD, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
+  manageBtnFull: { flex: 1 },
+  manageBtnText: { fontSize: 13, fontWeight: "900", color: GOLD },
+  maxTierNote: { color: "rgba(255,255,255,0.3)", textAlign: "center", fontSize: 11, marginTop: 10, fontWeight: "700" },
+  linksCard: { backgroundColor: BG, borderRadius: 16, padding: 8, marginBottom: 12 },
+  linkRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderBottomWidth: 1, borderBottomColor: BORDER },
+  linkRowLast: { borderBottomWidth: 0 },
+  linkIconTile: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: GREEN_LIGHT },
+  linkEmoji: { fontSize: 16 },
+  linkTitle: { flex: 1, color: TEXT, fontSize: 13, fontWeight: "900" },
+  linkAction: { color: GREEN, fontSize: 12, fontWeight: "900" },
+  linkActionDisabled: { color: MUTED },
+  historyButtonsRow: { flexDirection: "row", gap: 10, marginBottom: 2 },
+  historyButton: { flex: 1, backgroundColor: BG, borderRadius: 14, padding: 12, alignItems: "center" },
+  historyIconTile: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", marginBottom: 7 },
+  historyEmoji: { fontSize: 18 },
+  historyButtonText: { color: TEXT, fontSize: 12, fontWeight: "900", textAlign: "center" },
   expandTitleRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 },
-  expandLink: { fontSize: 13, fontWeight: "700", color: TEAL },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "flex-end",
-  },
-  modalSheet: {
-    backgroundColor: "#0d1612",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
-    maxHeight: "82%",
-    paddingBottom: 24,
-  },
-  modalHandle: {
-    alignSelf: "center",
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
-  },
+  expandLink: { fontSize: 13, fontWeight: "900", color: GREEN },
+  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", justifyContent: "flex-end" },
+  modalSheet: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "82%", paddingBottom: 24 },
+  modalHandle: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: TRACK, marginTop: 10, marginBottom: 8 },
+  modalHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: BORDER },
   modalHeaderText: { flex: 1, paddingRight: 12 },
-  modalTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
+  modalTitle: { fontSize: 17, fontWeight: "900", color: TEXT },
   modalSubtitle: { fontSize: 12, color: MUTED, marginTop: 4 },
-  modalCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: CARD_BG,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
-  },
+  modalCloseBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: BG },
   modalScroll: { maxHeight: 480 },
   modalScrollContent: { padding: 16, paddingTop: 12 },
-  modalListCard: {
-    backgroundColor: CARD_BG,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  listCard: {
-    backgroundColor: CARD_BG,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.04)" },
+  modalListCard: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 12, overflow: "hidden" },
+  listCard: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 12, overflow: "hidden" },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: BORDER },
   planIcon: { alignItems: "center", justifyContent: "center", marginRight: 10 },
-  planIconLetter: { fontSize: 14, fontWeight: "800" },
+  planIconLetter: { fontSize: 14, fontWeight: "900" },
   payRow: { flexDirection: "row", alignItems: "center", padding: 12 },
   payMid: { flex: 1 },
-  payTitle: { fontSize: 13, color: "#e2e8e4", fontWeight: "600" },
+  payTitle: { fontSize: 13, color: TEXT, fontWeight: "800" },
   payDate: { fontSize: 11, color: MUTED, marginTop: 2 },
   payRight: { alignItems: "flex-end", gap: 4 },
-  payAmount: { fontSize: 14, fontWeight: "700", color: "#fff" },
+  payAmount: { fontSize: 14, fontWeight: "900", color: TEXT },
   paidBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
-  paidBadgeText: { fontSize: 10, fontWeight: "700" },
-  receiptLink: { fontSize: 10, color: TEAL },
+  paidBadgeText: { fontSize: 10, fontWeight: "900" },
+  receiptLink: { fontSize: 10, color: GREEN, fontWeight: "900" },
   timelineRow: { flexDirection: "row", padding: 12, alignItems: "flex-start" },
   timelineRowCompact: { paddingVertical: 10 },
-  timelineIndent: { paddingLeft: 24, backgroundColor: "rgba(0,0,0,0.15)" },
+  timelineIndent: { paddingLeft: 24, backgroundColor: BG },
   timelineRail: { width: 20, alignItems: "center", marginRight: 10 },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "rgba(226,232,228,0.25)",
-    borderWidth: 1,
-    borderColor: "rgba(226,232,228,0.35)",
-  },
-  timelineLine: {
-    width: 1,
-    flex: 1,
-    minHeight: 20,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    marginVertical: 4,
-  },
+  timelineDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: MUTED, borderWidth: 1, borderColor: MUTED },
+  timelineLine: { width: 1, flex: 1, minHeight: 20, backgroundColor: BORDER, marginVertical: 4 },
   timelineBody: { flex: 1, paddingRight: 8 },
-  timelineTitle: { fontSize: 13, fontWeight: "600", color: "#e2e8e4" },
+  timelineTitle: { fontSize: 13, fontWeight: "900", color: TEXT },
   timelineMeta: { fontSize: 11, color: MUTED, marginTop: 2 },
   timelineRight: { alignItems: "flex-end", gap: 4 },
-  entryBadge: {
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  entryBadgeText: { fontSize: 9, fontWeight: "700" },
-  timelinePrice: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  bottomRow: { flexDirection: "row", gap: 8, marginTop: 4 },
-  bottomBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: CARD_BG,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
-    borderRadius: 12,
-    paddingVertical: 14,
-  },
-  bottomBtnText: { fontSize: 12, fontWeight: "600", color: "#e2e8e4" },
+  entryBadge: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+  entryBadgeText: { fontSize: 9, fontWeight: "900" },
+  timelinePrice: { fontSize: 12, fontWeight: "800", color: TEXT },
 });

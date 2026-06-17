@@ -2,11 +2,27 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
-import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
 import { AGE_OPTIONS, getImperialHeightOptions, getImperialWeightOptions, getMetricHeightOptions, getMetricWeightOptions, SEX_OPTIONS } from "../../utils/onboardingOptions";
 import { cmToIn, inToCm, kgToLb, lbToKg, roundToNearest } from "../../utils/units";
+
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 const REQUIRED = "Required";
 
@@ -74,7 +90,7 @@ export default function Screen1Personal({ navigation }: any) {
           onChangeText={(v) => updatePersonal({ name: v })}
           autoCapitalize="words"
           placeholder="Enter full name"
-          placeholderTextColor={ONBOARDING_COLORS.textTertiary}
+          placeholderTextColor={MUTED}
           style={[styles.textInput, errors.name ? styles.inputError : null]}
         />
       </FieldCard>
@@ -149,23 +165,23 @@ const FieldCard = ({ title, badge, type, description, children, error }: any) =>
 );
 
 const styles = StyleSheet.create({
-  fieldCard: { backgroundColor: ONBOARDING_COLORS.card, borderRadius: 12, borderWidth: 1, borderColor: ONBOARDING_COLORS.border, padding: 16, marginBottom: 12 },
-  cardError: { borderColor: ONBOARDING_COLORS.danger },
+  fieldCard: { backgroundColor: BG, borderRadius: 14, borderWidth: 2, borderColor: "transparent", padding: 16, marginBottom: 12 },
+  cardError: { borderColor: ORANGE },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  fieldTitle: { fontSize: 16, fontWeight: "700", color: ONBOARDING_COLORS.textPrimary },
-  badge: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeRequired: { backgroundColor: ONBOARDING_COLORS.requiredBg, borderColor: ONBOARDING_COLORS.requiredText },
-  badgeOptional: { backgroundColor: ONBOARDING_COLORS.optionalBg, borderColor: ONBOARDING_COLORS.optionalText },
-  badgeText: { fontSize: 11, fontWeight: "700" },
-  badgeReqText: { color: ONBOARDING_COLORS.requiredText },
-  badgeOptText: { color: ONBOARDING_COLORS.optionalText },
-  desc: { fontSize: 13, color: ONBOARDING_COLORS.textSecondary, marginTop: 4, lineHeight: 19 },
-  textInput: { height: 48, borderWidth: 1, borderColor: ONBOARDING_COLORS.border, borderRadius: 10, paddingHorizontal: 14, color: ONBOARDING_COLORS.textPrimary, backgroundColor: ONBOARDING_COLORS.card },
-  inputError: { borderColor: ONBOARDING_COLORS.danger },
-  error: { marginTop: 4, fontSize: 12, color: ONBOARDING_COLORS.danger },
+  fieldTitle: { fontSize: 16, fontWeight: "800", color: TEXT },
+  badge: { borderRadius: 5, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeRequired: { backgroundColor: ORANGE_LIGHT },
+  badgeOptional: { backgroundColor: GREEN_LIGHT },
+  badgeText: { fontSize: 11, fontWeight: "800" },
+  badgeReqText: { color: ORANGE },
+  badgeOptText: { color: GREEN },
+  desc: { fontSize: 13, color: MUTED, marginTop: 4, lineHeight: 19 },
+  textInput: { height: 48, borderWidth: 1.5, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, color: TEXT, backgroundColor: WHITE, fontWeight: "700" },
+  inputError: { borderColor: ORANGE },
+  error: { marginTop: 4, fontSize: 12, color: ORANGE },
   segmentWrap: { flexDirection: "row", gap: 8 },
-  seg: { flex: 1, height: 48, borderRadius: 10, borderWidth: 1, borderColor: ONBOARDING_COLORS.border, alignItems: "center", justifyContent: "center" },
-  segActive: { borderColor: ONBOARDING_COLORS.primary, backgroundColor: "#1E1B3A" },
-  segText: { color: ONBOARDING_COLORS.textSecondary, fontSize: 13 },
-  segTextActive: { color: ONBOARDING_COLORS.primary, fontWeight: "700" },
+  seg: { flex: 1, height: 48, borderRadius: 12, backgroundColor: BG, alignItems: "center", justifyContent: "center" },
+  segActive: { backgroundColor: GREEN },
+  segText: { color: MUTED, fontSize: 13, fontWeight: "800" },
+  segTextActive: { color: WHITE, fontWeight: "900" },
 });

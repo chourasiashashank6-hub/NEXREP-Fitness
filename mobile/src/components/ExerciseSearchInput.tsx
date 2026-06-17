@@ -23,6 +23,8 @@ type ExerciseSearchInputProps = {
   resolveCatalogId?: (name: string) => number | undefined;
   placeholder?: string;
   disabled?: boolean;
+  chipMode?: boolean;
+  chipSelected?: boolean;
   colors: {
     text: string;
     muted: string;
@@ -30,6 +32,7 @@ type ExerciseSearchInputProps = {
     cardAlt: string;
     primary: string;
     inputBg: string;
+    tabBg?: string;
   };
   radius: { md: number; lg: number };
 };
@@ -64,6 +67,8 @@ export default function ExerciseSearchInput({
   resolveCatalogId,
   placeholder = "Search or select exercise",
   disabled = false,
+  chipMode = false,
+  chipSelected = false,
   colors,
   radius,
 }: ExerciseSearchInputProps) {
@@ -277,17 +282,31 @@ export default function ExerciseSearchInput({
   const showDropdown = isDropdownOpen && !disabled && sectionedRows.length > 0;
   const fieldValue = isDropdownOpen ? inputText : displayValue;
   const isPlaceholder = !fieldValue;
+  const chipIdleBg = colors.tabBg ?? colors.inputBg;
+  const fieldBackground = chipMode ? (chipSelected ? colors.inputBg : chipIdleBg) : colors.inputBg;
+  const fieldBorderColor = chipMode ? (chipSelected ? colors.primary : colors.border) : colors.border;
+  const fieldTextColor = chipMode
+    ? chipSelected
+      ? colors.text
+      : isPlaceholder
+        ? colors.muted
+        : colors.text
+    : isPlaceholder
+      ? colors.muted
+      : colors.text;
+  const chevronColor = chipMode ? (chipSelected ? colors.primary : colors.muted) : colors.muted;
 
   return (
-    <View style={styles.selectWrap}>
-      <Text style={[styles.selectLabel, { color: colors.muted }]}>Exercise</Text>
+    <View style={[styles.selectWrap, chipMode ? styles.selectWrapChip : null]}>
+      {!chipMode ? <Text style={[styles.selectLabel, { color: colors.muted }]}>Exercise</Text> : null}
       <View
         style={[
           styles.inputRow,
+          chipMode ? styles.inputRowChip : null,
           {
-            borderColor: colors.border,
-            backgroundColor: colors.inputBg,
-            borderRadius: radius.lg,
+            borderColor: fieldBorderColor,
+            backgroundColor: fieldBackground,
+            borderRadius: chipMode ? 14 : radius.lg,
           },
           disabled ? styles.selectDisabled : null,
         ]}
@@ -305,7 +324,11 @@ export default function ExerciseSearchInput({
             placeholder={placeholder}
             placeholderTextColor={colors.muted}
             editable={!disabled}
-            style={[styles.textInput, { color: isPlaceholder ? colors.muted : colors.text }]}
+            style={[
+              styles.textInput,
+              chipMode ? styles.textInputChip : null,
+              { color: fieldTextColor },
+            ]}
             autoCorrect={false}
             autoCapitalize="words"
           />
@@ -321,13 +344,19 @@ export default function ExerciseSearchInput({
             disabled={disabled}
             style={styles.chevronBtn}
           >
-            <Text style={[styles.selectChevron, { color: colors.muted }]}>{isDropdownOpen ? "▴" : "▾"}</Text>
+            <Text style={[styles.selectChevron, { color: chevronColor }]}>{isDropdownOpen ? "▴" : "▾"}</Text>
           </Pressable>
         )}
       </View>
 
       {showDropdown ? (
-        <View style={[styles.optionsCard, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.lg }]}>
+        <View
+          style={[
+            styles.optionsCard,
+            chipMode ? styles.optionsCardChip : null,
+            { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: chipMode ? 14 : radius.lg },
+          ]}
+        >
           <FlatList
             data={sectionedRows}
             keyExtractor={(item, index) =>
@@ -352,6 +381,7 @@ export default function ExerciseSearchInput({
 
 const styles = StyleSheet.create({
   selectWrap: { marginBottom: 14, zIndex: 20 },
+  selectWrapChip: { marginBottom: 10, zIndex: 20 },
   selectLabel: { fontSize: 12, fontWeight: "800", letterSpacing: 0.5, marginBottom: 8, textTransform: "uppercase" },
   inputRow: {
     borderWidth: 1.5,
@@ -361,8 +391,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minHeight: 48,
   },
+  inputRowChip: {
+    paddingVertical: 13,
+    minHeight: undefined,
+  },
   inputPressable: { flex: 1 },
   textInput: { flex: 1, fontWeight: "700", fontSize: 15, paddingVertical: 8 },
+  textInputChip: { fontWeight: "600", paddingVertical: 0 },
   selectChevron: { fontSize: 12, fontWeight: "800" },
   chevronBtn: { paddingHorizontal: 4, paddingVertical: 6, marginLeft: 4 },
   clearBtn: { paddingHorizontal: 4, paddingVertical: 2 },
@@ -378,6 +413,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
+  },
+  optionsCardChip: {
+    elevation: 0,
+    shadowOpacity: 0,
   },
   list: { maxHeight: 320 },
   sectionHeader: {

@@ -1,6 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { ONBOARDING_COLORS } from "../constants/onboarding";
+
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 type Option = { value: string | number | null; label: string; description?: string };
 
@@ -94,44 +110,44 @@ const styles = StyleSheet.create({
   wrap: { width: "100%" },
   trigger: {
     height: 48,
-    backgroundColor: ONBOARDING_COLORS.card,
-    borderWidth: 1,
-    borderColor: ONBOARDING_COLORS.border,
-    borderRadius: 10,
+    backgroundColor: BG,
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    borderRadius: 12,
     paddingHorizontal: 14,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  triggerActive: { borderColor: ONBOARDING_COLORS.primary },
+  triggerActive: { borderColor: GREEN },
   triggerOpen: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
-  triggerError: { borderColor: ONBOARDING_COLORS.danger },
-  triggerText: { color: ONBOARDING_COLORS.textPrimary, fontSize: 15 },
-  placeholder: { color: ONBOARDING_COLORS.textTertiary },
-  chevron: { color: ONBOARDING_COLORS.textTertiary, fontSize: 15 },
+  triggerError: { borderColor: ORANGE },
+  triggerText: { color: TEXT, fontSize: 15, fontWeight: "700" },
+  placeholder: { color: MUTED, fontWeight: "500" },
+  chevron: { color: MUTED, fontSize: 15 },
   chevronOpen: { transform: [{ rotate: "180deg" }] },
-  error: { marginTop: 4, fontSize: 12, color: ONBOARDING_COLORS.danger },
+  error: { marginTop: 4, fontSize: 12, color: ORANGE },
   panel: {
-    backgroundColor: ONBOARDING_COLORS.card,
-    borderWidth: 1,
-    borderColor: ONBOARDING_COLORS.primary,
+    backgroundColor: WHITE,
+    borderWidth: 1.5,
+    borderColor: GREEN,
     borderTopWidth: 0,
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
     paddingHorizontal: 14,
     paddingBottom: 6,
   },
-  title: { color: ONBOARDING_COLORS.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 6, marginTop: 10 },
+  title: { color: TEXT, fontSize: 16, fontWeight: "800", marginBottom: 6, marginTop: 10 },
   optionsList: { maxHeight: 260 },
   row: {
     height: 52,
     borderBottomWidth: 1,
-    borderBottomColor: ONBOARDING_COLORS.border,
+    borderBottomColor: BORDER,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  rowText: { color: ONBOARDING_COLORS.textPrimary, fontSize: 15 },
-  rowTextSelected: { color: ONBOARDING_COLORS.primary },
-  tick: { color: ONBOARDING_COLORS.primary, fontSize: 16, fontWeight: "700" },
+  rowText: { color: TEXT, fontSize: 15, fontWeight: "600" },
+  rowTextSelected: { color: GREEN, fontWeight: "800" },
+  tick: { color: GREEN, fontSize: 16, fontWeight: "800" },
 });

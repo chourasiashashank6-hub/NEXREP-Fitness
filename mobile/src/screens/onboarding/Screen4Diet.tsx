@@ -2,10 +2,26 @@ import { StyleSheet, Text, View } from "react-native";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { MultiChips } from "../../components/MultiChips";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
-import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
 import { ALLERGY_OPTIONS, DIET_TYPE_OPTIONS, MEALS_PER_DAY_OPTIONS } from "../../utils/onboardingOptions";
+
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 export default function Screen4Diet({ navigation }: any) {
   const { data, updateDietary } = useOnboardingContext();
@@ -38,4 +54,7 @@ export default function Screen4Diet({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({ block: { marginTop: 12 }, label: { color: ONBOARDING_COLORS.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 8 } });
+const styles = StyleSheet.create({
+  block: { marginTop: 12 },
+  label: { color: TEXT, fontSize: 16, fontWeight: "800", marginBottom: 8 },
+});

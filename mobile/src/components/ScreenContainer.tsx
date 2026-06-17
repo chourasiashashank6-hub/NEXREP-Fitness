@@ -1,14 +1,21 @@
-import { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
+import type { StyleProp, ViewStyle } from "react-native";
 import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 
-const HOME_BG = "#080c12";
+const SCREEN_BG = "#FFFFFF";
 
-export const ScreenContainer = ({ children }: PropsWithChildren) => {
+type ScreenContainerProps = PropsWithChildren<{
+  bg?: string;
+  style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
+}>;
+
+export const ScreenContainer = ({ children, bg = SCREEN_BG, style, contentStyle }: ScreenContainerProps) => {
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: HOME_BG }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: bg }, style]}>
       <ScrollView
-        style={[styles.root, { backgroundColor: HOME_BG }]}
-        contentContainerStyle={styles.content}
+        style={[styles.root, { backgroundColor: bg }]}
+        contentContainerStyle={[styles.content, contentStyle]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="on-drag"

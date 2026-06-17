@@ -1,10 +1,26 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
-import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
 import { BF_METHOD_OPTIONS, BODY_FAT_OPTIONS } from "../../utils/onboardingOptions";
+
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 export default function Screen5BodyComp({ navigation }: any) {
   const { data, updatePersonal } = useOnboardingContext();
@@ -27,7 +43,7 @@ export default function Screen5BodyComp({ navigation }: any) {
       }
     >
       <View style={styles.infoBox}>
-        <Text style={styles.infoText}>If you enter your body fat %, we switch from Mifflin-St Jeor to Katch-McArdle — more accurate for muscular or heavier users.</Text>
+        <Text style={styles.infoText}>💡 If you enter your body fat %, we switch from Mifflin-St Jeor to Katch-McArdle — more accurate for muscular or heavier users.</Text>
       </View>
       <Text style={styles.label}>Body fat percentage</Text>
       <BottomSheetPicker label="Body fat percentage" value={data.personal.body_fat_percentage} options={BODY_FAT_OPTIONS} onChange={(v) => updatePersonal({ body_fat_percentage: v as number | null, bf_measurement_method: v === null ? null : data.personal.bf_measurement_method })} placeholder="Skip — I don't know" />
@@ -43,8 +59,8 @@ export default function Screen5BodyComp({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  infoBox: { backgroundColor: "#1E1B3A", borderRadius: 10, padding: 14, marginBottom: 12 },
-  infoText: { color: "#AFA9EC", fontSize: 13 },
-  label: { color: ONBOARDING_COLORS.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 8 },
-  skip: { color: ONBOARDING_COLORS.textSecondary, fontSize: 13, marginBottom: 10 },
+  infoBox: { backgroundColor: GREEN_LIGHT, borderRadius: 14, padding: 14, marginBottom: 12 },
+  infoText: { color: GREEN, fontSize: 13, fontWeight: "800", lineHeight: 19 },
+  label: { color: TEXT, fontSize: 16, fontWeight: "800", marginBottom: 8 },
+  skip: { color: GREEN, fontSize: 13, marginBottom: 10, fontWeight: "900", textAlign: "center" },
 });

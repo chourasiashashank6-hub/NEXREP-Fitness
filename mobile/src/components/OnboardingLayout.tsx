@@ -11,7 +11,23 @@ import {
   Text,
   View,
 } from "react-native";
-import { ONBOARDING_COLORS } from "../constants/onboarding";
+
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 export const OnboardingLayout = ({
   step,
@@ -71,7 +87,7 @@ export const OnboardingLayout = ({
           <View style={styles.progressRow}>
             {Array.from({ length: 6 }, (_, idx) => {
               const i = idx + 1;
-              const bg = i < step ? ONBOARDING_COLORS.success : i === step ? ONBOARDING_COLORS.primary : ONBOARDING_COLORS.border;
+              const bg = i <= step ? GREEN : TRACK;
               return <View key={i} style={[styles.segment, { backgroundColor: bg }]} />;
             })}
           </View>
@@ -83,7 +99,7 @@ export const OnboardingLayout = ({
                 onPress={handleSaveExit}
                 disabled={saveDisabled || saveLoading}
               >
-                {saveLoading ? <ActivityIndicator size="small" color={ONBOARDING_COLORS.bg} /> : <Text style={styles.saveText}>Save</Text>}
+                {saveLoading ? <ActivityIndicator size="small" color={GREEN} /> : <Text style={styles.saveText}>Save</Text>}
               </Pressable>
             ) : null}
           </View>
@@ -103,7 +119,7 @@ export const OnboardingLayout = ({
         <View style={styles.footer}>
           {extraFooter}
           <View style={styles.navRow}>
-            {hideBack ? <View style={styles.spacer} /> : <Pressable style={styles.backBtn} onPress={onBack}><Text style={styles.backText}>Back</Text></Pressable>}
+            {hideBack ? <View style={styles.spacer} /> : <Pressable style={styles.backBtn} onPress={onBack}><Text style={styles.backText}>← Back</Text></Pressable>}
             <Text style={styles.counter} pointerEvents="none">{`${step} / 6`}</Text>
             <Pressable
               style={[styles.nextBtn, (nextDisabled || nextLoading) && styles.nextBtnDisabled]}
@@ -114,9 +130,9 @@ export const OnboardingLayout = ({
               accessibilityState={{ disabled: Boolean(nextDisabled || nextLoading) }}
             >
               {nextLoading ? (
-                <ActivityIndicator color={ONBOARDING_COLORS.bg} />
+                <ActivityIndicator color={WHITE} />
               ) : (
-                <Text style={styles.nextText}>{nextLabel}</Text>
+                <Text style={styles.nextText}>{step === 6 ? "Save & exit ✓" : `${nextLabel} →`}</Text>
               )}
             </Pressable>
           </View>
@@ -127,52 +143,48 @@ export const OnboardingLayout = ({
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: ONBOARDING_COLORS.bg },
+  safe: { flex: 1, backgroundColor: SCREEN_BG },
   topPad: { paddingHorizontal: 16, paddingTop: 8 },
-  progressRow: { flexDirection: "row", gap: 6, marginBottom: 14 },
+  progressRow: { flexDirection: "row", gap: 3, marginBottom: 14 },
   kickerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  segment: { flex: 1, height: 4, borderRadius: 2 },
-  kicker: { fontSize: 12, color: ONBOARDING_COLORS.textTertiary, letterSpacing: 1.2, textTransform: "uppercase" },
+  segment: { flex: 1, height: 4, borderRadius: 99 },
+  kicker: { fontSize: 13, color: MUTED, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: "700" },
   saveBtn: {
-    minWidth: 72,
+    minWidth: 64,
     height: 32,
-    borderRadius: 10,
+    borderRadius: 99,
     paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#FFFFFF",
+    backgroundColor: GREEN_LIGHT,
   },
   saveBtnDisabled: { opacity: 0.7 },
-  saveText: { color: ONBOARDING_COLORS.bg, fontWeight: "700", fontSize: 13 },
-  title: { marginTop: 6, fontSize: 28, fontWeight: "700", color: ONBOARDING_COLORS.textPrimary, marginBottom: 8 },
-  subtitle: { fontSize: 15, color: ONBOARDING_COLORS.textSecondary, lineHeight: 22, marginBottom: 12 },
+  saveText: { color: GREEN, fontWeight: "800", fontSize: 13 },
+  title: { marginTop: 10, fontSize: 20, fontWeight: "800", color: TEXT, marginBottom: 5 },
+  subtitle: { fontSize: 11, color: MUTED, lineHeight: 17, marginBottom: 14 },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: 16, paddingBottom: 14 },
+  content: { paddingHorizontal: 16, paddingBottom: 18 },
   footer: {
     borderTopWidth: 1,
-    borderTopColor: ONBOARDING_COLORS.border,
+    borderTopColor: BORDER,
     padding: 12,
-    backgroundColor: ONBOARDING_COLORS.bg,
+    backgroundColor: WHITE,
     zIndex: 20,
     elevation: 12,
   },
   navRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, zIndex: 21 },
   backBtn: {
-    height: 52,
-    borderRadius: 10,
-    borderColor: ONBOARDING_COLORS.border,
-    borderWidth: 1,
+    minHeight: 48,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
     flex: 1,
   },
-  backText: { color: ONBOARDING_COLORS.textPrimary, fontSize: 15 },
-  nextBtn: { height: 52, borderRadius: 10, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", flex: 1 },
+  backText: { color: MUTED, fontSize: 15, fontWeight: "800" },
+  nextBtn: { minHeight: 48, borderRadius: 12, backgroundColor: GREEN, alignItems: "center", justifyContent: "center", flex: 1 },
   nextBtnDisabled: { opacity: 0.65 },
-  nextText: { color: ONBOARDING_COLORS.bg, fontSize: 15, fontWeight: "600" },
-  counter: { color: ONBOARDING_COLORS.textTertiary, fontSize: 14, minWidth: 40, textAlign: "center" },
+  nextText: { color: WHITE, fontSize: 15, fontWeight: "800" },
+  counter: { color: MUTED, fontSize: 14, minWidth: 40, textAlign: "center", fontWeight: "700" },
   spacer: { flex: 1 },
 });

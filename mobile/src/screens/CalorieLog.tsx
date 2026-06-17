@@ -15,7 +15,7 @@ import {
   ToastAndroid,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
 import axios from "axios";
 import {
   CalorieDayPayload,
@@ -35,36 +35,26 @@ import {
 } from "../api/caloriesLog";
 import { loadOnboardingWithFallback } from "../api/onboarding";
 import { resolveApiBaseUrl } from "../api/client";
-import { ONBOARDING_COLORS } from "../constants/onboarding";
 import { FoodCameraButton } from "../components/FoodCameraButton";
-import { ScreenContainer } from "../components/ScreenContainer";
 import { useFoodRecognition } from "../hooks/useFoodRecognition";
 import type { FoodAnalysisResult } from "../services/foodRecognitionService";
 import { useAuthStore } from "../store/authStore";
 
-const UI = {
-  bg: "#080c12",
-  card: "#0f1620",
-  border: "rgba(255,255,255,0.07)",
-  text: "#F4F4F5",
-  muted: "#9CA3AF",
-  blue: "#5B9FFF",
-  green: "#4ADE80",
-  red: "#F87171",
-  proteinBar: "#5B9FFF",
-  carbsBar: "#4ADE80",
-  fatBar: "#FBBF24",
-  chipBg: "#2A2A2A",
-};
-
-const SECTION_ACCENTS = {
-  calories: "#fb7185",
-  macros: "#60a5fa",
-  water: "#22d3ee",
-  addFood: "#34d399",
-  quickAdd: "#fbbf24",
-  meals: "#a78bfa",
-} as const;
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 const MEAL_ORDER: MealType[] = ["Breakfast", "Lunch", "Dinner", "Snack", "Pre_Workout", "Post_Workout"];
 
@@ -84,6 +74,43 @@ const mealTypeFromLocalTime = (d: Date = new Date()): MealType => {
   if (h >= 15 && h < 18) return "Snack";
   if (h >= 18 && h < 22) return "Dinner";
   return "Snack";
+};
+
+const MEAL_TYPE_EMOJI: Record<MealType, string> = {
+  Breakfast: "🌅",
+  Lunch: "🥙",
+  Dinner: "🍽️",
+  Snack: "🍎",
+  Pre_Workout: "⚡",
+  Post_Workout: "🏁",
+};
+
+const QUICK_FOOD_EMOJI: Record<string, string> = {
+  "Chicken breast": "🍗",
+  "Brown rice": "🌾",
+  "Whole egg": "🥚",
+  Oats: "🥣",
+  Banana: "🍌",
+  "Greek yogurt": "🥛",
+  Almonds: "🥜",
+  Paneer: "🧀",
+  "Dal cooked": "🫘",
+  Chapati: "🫓",
+  Salmon: "🐟",
+  Broccoli: "🥦",
+};
+
+const formatDisplayDate = (iso: string) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+};
+
+const parseMacroSplit = (label: string) => {
+  const p = /Protein\s+(\d+)%/.exec(label)?.[1] ?? "—";
+  const c = /Carbs\s+(\d+)%/.exec(label)?.[1] ?? "—";
+  const f = /Fat\s+(\d+)%/.exec(label)?.[1] ?? "—";
+  return { p, c, f };
 };
 
 type QuickFood = { label: string; cal: number; p: number; c: number; f: number; fi: number };
@@ -119,19 +146,25 @@ const sanitizeNumericInput = (raw: string): string => {
 };
 
 function MacroBar({
+  emoji,
   label,
   consumed,
   target,
-  color,
+  barColor,
+  valueColor,
   anim,
   unit = "g",
+  isLast = false,
 }: {
+  emoji: string;
   label: string;
   consumed: number;
   target: number;
-  color: string;
+  barColor: string;
+  valueColor: string;
   anim: Animated.Value;
   unit?: string;
+  isLast?: boolean;
 }) {
   const pct = target > 0 ? Math.min(100, (consumed / target) * 100) : 0;
   useEffect(() => {
@@ -148,16 +181,21 @@ function MacroBar({
   });
 
   return (
-    <View style={{ marginBottom: 12 }}>
+    <View style={[styles.macroRow, !isLast && styles.macroRowDivider]}>
       <View style={styles.macroRowTop}>
-        <Text style={styles.macroLabel}>{label}</Text>
+        <Text style={styles.macroLabel}>
+          {emoji} {label}
+        </Text>
         <Text style={styles.macroNums}>
-          {fmt1(consumed)}/{fmt1(target)}
-          {unit}
+          <Text style={{ color: valueColor, fontWeight: "700" }}>{fmt1(consumed)}</Text>
+          <Text style={styles.macroNumsMuted}>
+            /{fmt1(target)}
+            {unit}
+          </Text>
         </Text>
       </View>
-      <View style={styles.barTrack}>
-        <Animated.View style={[styles.barFill, { width: widthInterpolated, backgroundColor: color }]} />
+      <View style={styles.macroBarTrack}>
+        <Animated.View style={[styles.macroBarFill, { width: widthInterpolated, backgroundColor: barColor }]} />
       </View>
     </View>
   );
@@ -670,20 +708,20 @@ export const CalorieLog = () => {
 
   if (loading) {
     return (
-      <ScreenContainer>
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         <View style={styles.center}>
-          <ActivityIndicator color={UI.blue} size="large" />
-          <Text style={{ color: UI.muted, marginTop: 12 }}>Loading log…</Text>
+          <ActivityIndicator color={GREEN} size="large" />
+          <Text style={styles.loadingText}>Loading log…</Text>
         </View>
-      </ScreenContainer>
+      </SafeAreaView>
     );
   }
 
   if (loadError || !day) {
     return (
-      <ScreenContainer>
-        <View style={[styles.pageBg, { backgroundColor: UI.bg, minHeight: 280 }]}>
-          <Text style={styles.pageTitle}>Calorie Log</Text>
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <Text style={styles.pageTitle}>Calorie Log 🥗</Text>
           <Text style={styles.errorText}>{loadError ?? "Something went wrong."}</Text>
           <Pressable
             style={styles.retryBtn}
@@ -694,8 +732,8 @@ export const CalorieLog = () => {
           >
             <Text style={styles.retryBtnText}>Retry</Text>
           </Pressable>
-        </View>
-      </ScreenContainer>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -703,100 +741,122 @@ export const CalorieLog = () => {
   const fiberConsumed = Number((log as Record<string, unknown>).total_fiber_g ?? 0);
   const fiberTarget = Number((log as Record<string, unknown>).target_fiber_g ?? targets?.macros?.fiber_g ?? 0);
   const remaining = log.calories_remaining;
-  const remainingColor = remaining > 0 ? UI.green : remaining < 0 ? UI.red : UI.muted;
+  const remainingColor = remaining > 0 ? GREEN : remaining < 0 ? ORANGE : MUTED;
+  const caloriePct =
+    log.target_calories > 0 ? clamp(log.total_calories / log.target_calories, 0, 1) * 100 : 0;
+  const macroSplit = parseMacroSplit(macro_split_label);
+  const totalGlasses = Math.round(log.target_water_l / 0.25);
 
   return (
-    <ScreenContainer>
-      <View style={[styles.pageBg, { backgroundColor: UI.bg }]}>
-        <Text style={styles.pageTitle}>Calorie Log</Text>
-        <Text style={styles.pageSub}>Daily nutrition & hydration</Text>
-        <View style={styles.section}>
-          <LinearGradient colors={[SECTION_ACCENTS.calories, `${SECTION_ACCENTS.calories}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.sectionAccent} />
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionHeadTag}>CALORIES CONSUMED PER DAY</Text>
-            <Text style={styles.sectionMeta}>
-              {fmt1(log.total_calories)}/{fmt1(log.target_calories)} kcal
-            </Text>
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="on-drag"
+      >
+        <Text style={styles.dateLabel}>{formatDisplayDate(logDate)}</Text>
+        <Text style={styles.pageTitle}>Calorie Log 🥗</Text>
+
+        <View style={styles.card}>
+          <View style={styles.calorieHeroRow}>
+            <View style={styles.calorieHeroLeft}>
+              <Text style={styles.cardLabel}>CALORIES TODAY</Text>
+              <View style={styles.calorieValueRow}>
+                <Text style={styles.calorieBig}>{fmt1(log.total_calories)}</Text>
+                <Text style={styles.calorieTarget}> / {fmt1(log.target_calories)} kcal</Text>
+              </View>
+            </View>
+            <View style={styles.calorieHeroRight}>
+              <Text style={styles.remainingLabel}>Remaining</Text>
+              <Text style={[styles.remainingValue, { color: remainingColor }]}>{fmt1(remaining)}</Text>
+              <Text style={styles.remainingUnit}>kcal</Text>
+            </View>
           </View>
-          <View style={styles.barTrack}>
-            <View
-              style={[
-                styles.barFill,
-                {
-                  width: `${Math.min(100, log.target_calories > 0 ? (log.total_calories / log.target_calories) * 100 : 0)}%`,
-                  backgroundColor: UI.blue,
-                },
-              ]}
-            />
+          <View style={styles.calorieBarTrack}>
+            <View style={[styles.calorieBarFill, { width: `${caloriePct}%` }]} />
           </View>
-          <Text style={styles.calorieConsumedHint}>
-            Remaining: <Text style={{ color: remainingColor }}>{fmt1(remaining)} kcal</Text>
-          </Text>
         </View>
 
-        <View style={styles.section}>
-          <LinearGradient colors={[SECTION_ACCENTS.macros, `${SECTION_ACCENTS.macros}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.sectionAccent} />
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionHeadTag}>MACROS</Text>
-            <Text style={styles.sectionMeta}>{macro_split_label}</Text>
+        <View style={styles.card}>
+          <View style={styles.macrosHeader}>
+            <Text style={styles.cardLabel}>MACROS</Text>
+            <View style={styles.macroPills}>
+              <View style={[styles.macroPill, { backgroundColor: BLUE_LIGHT }]}>
+                <Text style={[styles.macroPillText, { color: BLUE }]}>P {macroSplit.p}%</Text>
+              </View>
+              <View style={[styles.macroPill, { backgroundColor: GREEN_LIGHT }]}>
+                <Text style={[styles.macroPillText, { color: GREEN }]}>C {macroSplit.c}%</Text>
+              </View>
+              <View style={[styles.macroPill, { backgroundColor: ORANGE_LIGHT }]}>
+                <Text style={[styles.macroPillText, { color: ORANGE }]}>F {macroSplit.f}%</Text>
+              </View>
+            </View>
           </View>
-          <MacroBar label="Protein" consumed={log.total_protein_g} target={log.target_protein_g} color={UI.proteinBar} anim={animP} />
-          <MacroBar label="Carbs" consumed={log.total_carbs_g} target={log.target_carbs_g} color={UI.carbsBar} anim={animC} />
-          <MacroBar label="Fat" consumed={log.total_fat_g} target={log.target_fat_g} color={UI.fatBar} anim={animF} />
-          <MacroBar label="Water" consumed={waterTotal} target={waterTarget} color={UI.blue} anim={animW} unit="L" />
-          <MacroBar label="Fibre" consumed={fiberConsumed} target={fiberTarget} color="#A78BFA" anim={animFi} />
+          <MacroBar emoji="🥩" label="Protein" consumed={log.total_protein_g} target={log.target_protein_g} barColor={BLUE} valueColor={BLUE} anim={animP} />
+          <MacroBar emoji="🌾" label="Carbs" consumed={log.total_carbs_g} target={log.target_carbs_g} barColor={GREEN} valueColor={GREEN} anim={animC} />
+          <MacroBar emoji="🥑" label="Fat" consumed={log.total_fat_g} target={log.target_fat_g} barColor={ORANGE} valueColor={ORANGE} anim={animF} />
+          <MacroBar emoji="💧" label="Water" consumed={waterTotal} target={waterTarget} barColor={BLUE} valueColor={BLUE} anim={animW} unit="L" />
+          <MacroBar emoji="🥦" label="Fibre" consumed={fiberConsumed} target={fiberTarget} barColor={PURPLE} valueColor={PURPLE} anim={animFi} isLast />
         </View>
 
-        <View style={styles.section}>
-          <LinearGradient colors={[SECTION_ACCENTS.water, `${SECTION_ACCENTS.water}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.sectionAccent} />
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionHeadTag}>WATER INTAKE</Text>
-            <Text style={styles.sectionMeta}>
-              {fmt1(waterTotal)}/{fmt1(waterTarget)}L
+        <View style={styles.card}>
+          <View style={styles.waterHeader}>
+            <Text style={styles.waterTitle}>💧 Water intake</Text>
+            <Text style={styles.waterHeaderValue}>
+              {fmt1(waterTotal)}L / {fmt1(waterTarget)}L
             </Text>
           </View>
-          <View style={styles.waterBtns}>
-            <Pressable style={styles.waterSq} onPress={() => bumpWater(-0.25)} disabled={saving}>
-              <Text style={styles.waterSqText}>−</Text>
-            </Pressable>
-            <Pressable style={styles.waterSq} onPress={() => bumpWater(0.25)} disabled={saving}>
-              <Text style={styles.waterSqText}>+</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.waterHint}>Each glass = 250ml · tap a glass to fill to that level</Text>
-          <View style={styles.glassRow}>
-            {Array.from({ length: glassCount }).map((_, i) => {
+          <View style={styles.glassGrid}>
+            {Array.from({ length: totalGlasses > 0 ? totalGlasses : glassCount }).map((_, i) => {
               const level = (i + 1) * 0.25;
               const filled = waterTotal >= level - 1e-6;
               return (
                 <Pressable
                   key={i}
                   onPress={() => setWaterLevel(level)}
-                  style={[styles.glass, filled ? styles.glassFilled : styles.glassEmpty]}
-                />
+                  disabled={saving}
+                  style={[styles.glassTile, filled ? styles.glassTileFilled : styles.glassTileEmpty]}
+                >
+                  <Text style={styles.glassEmoji}>{filled ? "💧" : "🥛"}</Text>
+                </Pressable>
               );
             })}
+          </View>
+          <View style={styles.waterControlsRow}>
+            <Text style={styles.waterHint}>Each glass = 250ml</Text>
+            <View style={styles.waterBtns}>
+              <Pressable style={styles.waterMinusBtn} onPress={() => bumpWater(-0.25)} disabled={saving}>
+                <Text style={styles.waterMinusText}>−</Text>
+              </Pressable>
+              <Pressable style={styles.waterPlusBtn} onPress={() => bumpWater(0.25)} disabled={saving}>
+                <Text style={styles.waterPlusText}>+</Text>
+              </Pressable>
+            </View>
           </View>
           <View style={styles.waterBarTrack}>
             <View style={[styles.waterBarFill, { width: `${waterPct}%` }]} />
           </View>
           <View style={styles.waterBarLabels}>
             <Text style={styles.waterMini}>0L</Text>
-            <Text style={styles.waterMini}>{fmt1(waterPct)}%</Text>
-            <Text style={styles.waterMini}>{fmt1(waterTarget)}L</Text>
+            <Text style={styles.waterMini}>
+              {fmt1(waterTotal)}L / {fmt1(waterTarget)}L
+            </Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <LinearGradient colors={[SECTION_ACCENTS.addFood, `${SECTION_ACCENTS.addFood}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.sectionAccent} />
-          <View style={styles.addFoodHeadingRow}>
-            <Text style={styles.sectionTag}>ADD FOOD</Text>
-            <FoodCameraButton disabled={saving || isAnalyzing} onImageSelected={runFoodRecognition} />
+        <View style={styles.card}>
+          <View style={styles.addFoodHeader}>
+            <Text style={styles.cardLabel}>ADD FOOD</Text>
+            <View style={styles.cameraTile}>
+              <FoodCameraButton disabled={saving || isAnalyzing} onImageSelected={runFoodRecognition} />
+            </View>
           </View>
           <View style={styles.searchWrap}>
             <TextInput
               placeholder="Search food (type at least 2 letters)"
-              placeholderTextColor={UI.muted}
+              placeholderTextColor={MUTED}
               value={foodQuery}
               onFocus={() => {
                 if (foodResults.length > 0) setFoodDropdownOpen(true);
@@ -809,7 +869,7 @@ export const CalorieLog = () => {
                   resetAddFoodFormValues();
                 }
               }}
-              style={styles.inputFull}
+              style={styles.searchInput}
             />
             {foodSearchLoading ? <Text style={styles.foodSearchHint}>Searching...</Text> : null}
             {!foodSearchLoading && selectedFoodId ? <Text style={styles.foodSearchHint}>Selected from database</Text> : null}
@@ -834,188 +894,211 @@ export const CalorieLog = () => {
               </View>
             ) : null}
           </View>
-          <Pressable style={styles.mealSelect} onPress={() => setMealPickerOpen(true)}>
-            <Text style={styles.mealSelectText}>{mealHeading(mealType)}</Text>
-            <Text style={styles.mealSelectChev}>▾</Text>
+
+          <Pressable style={styles.mealChip} onPress={() => setMealPickerOpen(true)}>
+            <Text style={styles.mealChipText}>
+              {MEAL_TYPE_EMOJI[mealType]} {mealHeading(mealType)}
+            </Text>
+            <Text style={styles.mealChipChev}>▾</Text>
           </Pressable>
 
-          <View style={styles.inputGrid}>
-            <RightPlaceholderInput
-              placeholder={inputMode === "camera" ? "Qty" : "Qty (g)"}
-              keyboardType="decimal-pad"
-              value={qty}
-              onChangeText={(v) => {
-                const nextQtyText = sanitizeNumericInput(v);
-                setQty(nextQtyText);
-                if (inputMode === "camera" && cameraBase) {
-                  const nextQty = parseFloat(nextQtyText);
-                  const baseQty = cameraBase.qty > 0 ? cameraBase.qty : 1;
-                  const factor = Number.isFinite(nextQty) && nextQty > 0 ? nextQty / baseQty : 1;
-                  const scaled = (n: number) => (Math.round(n * factor * 10) / 10).toString();
-                  setCal100(scaled(cameraBase.cal));
-                  setP100(scaled(cameraBase.p));
-                  setC100(scaled(cameraBase.c));
-                  setF100(scaled(cameraBase.f));
-                  setFi100(scaled(cameraBase.fi));
-                }
-                setAiEstimated(false);
-              }}
-              style={styles.inputHalf}
-              pinPlaceholderWithValue
-            />
-            <RightPlaceholderInput
-              placeholder={inputMode === "camera" ? "Cal" : "Cal/100g"}
-              keyboardType="decimal-pad"
-              value={cal100}
-              onChangeText={(v) => {
-                setCal100(sanitizeNumericInput(v));
-                setAiEstimated(false);
-              }}
-              style={styles.inputHalf}
-              pinPlaceholderWithValue
-            />
-            <RightPlaceholderInput
-              placeholder={inputMode === "camera" ? "Protein" : "Protein/100g"}
-              keyboardType="decimal-pad"
-              value={p100}
-              onChangeText={(v) => {
-                setP100(sanitizeNumericInput(v));
-                setAiEstimated(false);
-              }}
-              style={styles.inputHalf}
-              pinPlaceholderWithValue
-            />
-            <RightPlaceholderInput
-              placeholder={inputMode === "camera" ? "Carbs" : "Carbs/100g"}
-              keyboardType="decimal-pad"
-              value={c100}
-              onChangeText={(v) => {
-                setC100(sanitizeNumericInput(v));
-                setAiEstimated(false);
-              }}
-              style={styles.inputHalf}
-              pinPlaceholderWithValue
-            />
-            <RightPlaceholderInput
-              placeholder={inputMode === "camera" ? "Fat" : "Fat/100g"}
-              keyboardType="decimal-pad"
-              value={f100}
-              onChangeText={(v) => {
-                setF100(sanitizeNumericInput(v));
-                setAiEstimated(false);
-              }}
-              style={styles.inputHalf}
-              pinPlaceholderWithValue
-            />
-            <RightPlaceholderInput
-              placeholder={inputMode === "camera" ? "Fibre" : "Fibre/100g"}
-              keyboardType="decimal-pad"
-              value={fi100}
-              onChangeText={(v) => {
-                setFi100(sanitizeNumericInput(v));
-                setAiEstimated(false);
-              }}
-              style={styles.inputHalf}
-              pinPlaceholderWithValue
-            />
-            <Pressable style={[styles.addBtn, saving && { opacity: 0.6 }]} onPress={submitMeal} disabled={saving}>
-              <Text style={styles.addBtnText}>Add</Text>
-            </Pressable>
+          <View style={styles.nutrientGrid}>
+            <View style={styles.nutrientTile}>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Qty" : "Qty (g)"}</Text>
+              <RightPlaceholderInput
+                placeholder=""
+                keyboardType="decimal-pad"
+                value={qty}
+                onChangeText={(v) => {
+                  const nextQtyText = sanitizeNumericInput(v);
+                  setQty(nextQtyText);
+                  if (inputMode === "camera" && cameraBase) {
+                    const nextQty = parseFloat(nextQtyText);
+                    const baseQty = cameraBase.qty > 0 ? cameraBase.qty : 1;
+                    const factor = Number.isFinite(nextQty) && nextQty > 0 ? nextQty / baseQty : 1;
+                    const scaled = (n: number) => (Math.round(n * factor * 10) / 10).toString();
+                    setCal100(scaled(cameraBase.cal));
+                    setP100(scaled(cameraBase.p));
+                    setC100(scaled(cameraBase.c));
+                    setF100(scaled(cameraBase.f));
+                    setFi100(scaled(cameraBase.fi));
+                  }
+                  setAiEstimated(false);
+                }}
+                style={styles.nutrientInput}
+              />
+            </View>
+            <View style={styles.nutrientTile}>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Cal" : "Cal/100g"}</Text>
+              <RightPlaceholderInput
+                placeholder=""
+                keyboardType="decimal-pad"
+                value={cal100}
+                onChangeText={(v) => {
+                  setCal100(sanitizeNumericInput(v));
+                  setAiEstimated(false);
+                }}
+                style={styles.nutrientInput}
+              />
+            </View>
+            <View style={styles.nutrientTile}>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Protein" : "Protein/100g"}</Text>
+              <RightPlaceholderInput
+                placeholder=""
+                keyboardType="decimal-pad"
+                value={p100}
+                onChangeText={(v) => {
+                  setP100(sanitizeNumericInput(v));
+                  setAiEstimated(false);
+                }}
+                style={styles.nutrientInput}
+              />
+            </View>
+            <View style={styles.nutrientTile}>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Carbs" : "Carbs/100g"}</Text>
+              <RightPlaceholderInput
+                placeholder=""
+                keyboardType="decimal-pad"
+                value={c100}
+                onChangeText={(v) => {
+                  setC100(sanitizeNumericInput(v));
+                  setAiEstimated(false);
+                }}
+                style={styles.nutrientInput}
+              />
+            </View>
+            <View style={styles.nutrientTile}>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Fat" : "Fat/100g"}</Text>
+              <RightPlaceholderInput
+                placeholder=""
+                keyboardType="decimal-pad"
+                value={f100}
+                onChangeText={(v) => {
+                  setF100(sanitizeNumericInput(v));
+                  setAiEstimated(false);
+                }}
+                style={styles.nutrientInput}
+              />
+            </View>
+            <View style={styles.nutrientTile}>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Fibre" : "Fibre/100g"}</Text>
+              <RightPlaceholderInput
+                placeholder=""
+                keyboardType="decimal-pad"
+                value={fi100}
+                onChangeText={(v) => {
+                  setFi100(sanitizeNumericInput(v));
+                  setAiEstimated(false);
+                }}
+                style={styles.nutrientInput}
+              />
+            </View>
           </View>
-          {foodRecognitionError ? <Text style={styles.foodRecognitionError}>{foodRecognitionError}</Text> : null}
-          {aiEstimated ? <Text style={styles.aiCaption}>✨ AI estimated — verify before saving</Text> : null}
 
-          <View style={styles.previewRow}>
+          {foodRecognitionError ? <Text style={styles.foodRecognitionError}>{foodRecognitionError}</Text> : null}
+          {aiEstimated ? <Text style={styles.aiCaption}>✨ AI estimated</Text> : null}
+
+          <View style={styles.previewTile}>
             <Text style={styles.previewText}>
-              Preview: <Text style={styles.previewStrong}>{fmt1(preview.kcal)} kcal</Text> P{" "}
-              <Text style={styles.previewStrong}>{fmt1(preview.p)}g</Text> C{" "}
-              <Text style={styles.previewStrong}>{fmt1(preview.c)}g</Text> F{" "}
-              <Text style={styles.previewStrong}>{fmt1(preview.f)}g</Text>
-              {" "}Fi <Text style={styles.previewStrong}>{fmt1(preview.fi)}g</Text>
+              Preview:{" "}
+              <Text style={styles.previewStrong}>
+                {fmt1(preview.kcal)} kcal · P {fmt1(preview.p)}g · C {fmt1(preview.c)}g · F {fmt1(preview.f)}g · Fi {fmt1(preview.fi)}g
+              </Text>
             </Text>
           </View>
+
+          <Pressable style={[styles.addFoodBtn, saving && styles.addFoodBtnDisabled]} onPress={submitMeal} disabled={saving}>
+            <Text style={styles.addFoodBtnText}>Add food ✅</Text>
+          </Pressable>
         </View>
 
-        <View style={styles.section}>
-          <LinearGradient colors={[SECTION_ACCENTS.quickAdd, `${SECTION_ACCENTS.quickAdd}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.sectionAccent} />
-          <Text style={styles.sectionTag}>QUICK ADD</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            {QUICK_FOODS.map((q) => (
-              <Pressable key={q.label} style={styles.chip} onPress={() => applyChip(q)}>
-                <Text style={styles.chipText}>{q.label}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
+        <Text style={styles.quickAddLabel}>⚡ QUICK ADD</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickAddRow}>
+          {QUICK_FOODS.map((q) => (
+            <Pressable key={q.label} style={styles.quickChip} onPress={() => applyChip(q)}>
+              <Text style={styles.quickChipText}>
+                {QUICK_FOOD_EMOJI[q.label] ?? "🍽️"} {q.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
-        <View style={styles.section}>
-          <LinearGradient colors={[SECTION_ACCENTS.meals, `${SECTION_ACCENTS.meals}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.sectionAccent} />
-          <Text style={styles.sectionTag}>TODAY'S MEALS</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>TODAY&apos;S MEALS</Text>
           {day.meals.length === 0 ? (
-            <Text style={styles.empty}>No food logged yet — add your first meal above.</Text>
+            <Text style={styles.emptyMeals}>No meals logged yet</Text>
           ) : (
             <>
-              {day.meals.map((m) => (
-                <View key={m.meal_id} style={styles.mealRow}>
-                  <View style={{ flex: 1 }}>
+              {day.meals.map((m, idx) => (
+                <View key={m.meal_id} style={[styles.mealRow, idx > 0 && styles.mealRowDivider]}>
+                  <View style={styles.mealRowLeft}>
                     <Text style={styles.mealName}>
-                      {m.food_name} - {mealRowLabel(m.meal_type)}
+                      {MEAL_TYPE_EMOJI[m.meal_type]} {m.food_name}
                     </Text>
-                    <Text style={styles.mealMeta}>
-                      {m.source_type === "camera_ai" ? `${fmt1(m.quantity_g)} Qty` : `${fmt1(m.quantity_g)}g`} · P {fmt1(m.total_protein_g)} · C {fmt1(m.total_carbs_g)} · F {fmt1(m.total_fat_g)} ·{" "}
-                      Fi {fmt1((m as Record<string, number>).total_fiber_g || 0)} ·{" "}
-                      {fmt1(m.total_calories)} kcal
+                    <Text style={styles.mealSubMeta}>
+                      {mealRowLabel(m.meal_type)} · {m.source_type === "camera_ai" ? `${fmt1(m.quantity_g)} Qty` : `${fmt1(m.quantity_g)}g`}
+                    </Text>
+                    <Text style={styles.mealMacroMeta}>
+                      P {fmt1(m.total_protein_g)} · C {fmt1(m.total_carbs_g)} · F {fmt1(m.total_fat_g)} · Fi {fmt1((m as Record<string, number>).total_fiber_g || 0)} ·{" "}
+                      <Text style={styles.mealKcal}>{fmt1(m.total_calories)} kcal</Text>
                     </Text>
                   </View>
-                  {m.source_type !== "camera_ai" ? (
+                  <View style={styles.mealActions}>
+                    {m.source_type !== "camera_ai" ? (
+                      <Pressable
+                        style={[styles.editPill, saving && styles.btnDisabled]}
+                        onPress={() => openEditMeal(m.meal_id, m.quantity_g)}
+                        hitSlop={8}
+                        disabled={saving}
+                      >
+                        <Text style={styles.editPillText}>Edit</Text>
+                      </Pressable>
+                    ) : null}
                     <Pressable
-                      style={[styles.editBtn, saving && { opacity: 0.6 }]}
-                      onPress={() => openEditMeal(m.meal_id, m.quantity_g)}
+                      style={[styles.deletePill, saving && styles.btnDisabled]}
+                      onPress={() => void onDeleteMeal(m.meal_id, m.source_type)}
                       hitSlop={8}
                       disabled={saving}
                     >
-                      <Text style={styles.editBtnText}>Edit</Text>
+                      <Text style={styles.deletePillText}>✕</Text>
                     </Pressable>
-                  ) : null}
-                  <Pressable
-                    style={[styles.delBtn, saving && { opacity: 0.6 }]}
-                    onPress={() => void onDeleteMeal(m.meal_id, m.source_type)}
-                    hitSlop={8}
-                    disabled={saving}
-                  >
-                    <Text style={styles.delBtnText}>✕</Text>
-                  </Pressable>
+                  </View>
                 </View>
               ))}
-              <View style={styles.grandTotal}>
-                <Text style={styles.grandLabel}>Day total</Text>
-                <Text style={styles.grandValue}>
-                  {fmt1(log.total_calories)} kcal · P {fmt1(log.total_protein_g)} · C {fmt1(log.total_carbs_g)} · F {fmt1(log.total_fat_g)} · Fi {fmt1((log as Record<string, number>).total_fiber_g || 0)}
+              <View style={styles.dayTotalRow}>
+                <Text style={styles.dayTotalLabel}>Day total</Text>
+                <Text style={styles.dayTotalValue}>
+                  {fmt1(log.total_calories)} kcal · {fmt1(log.total_protein_g)}p · {fmt1(log.total_carbs_g)}c · {fmt1(log.total_fat_g)}f · {fmt1((log as Record<string, number>).total_fiber_g || 0)}fi
                 </Text>
               </View>
             </>
           )}
         </View>
-
-      </View>
+      </ScrollView>
 
       <Modal visible={mealPickerOpen} transparent animationType="fade">
         <Pressable style={styles.modalBackdrop} onPress={() => setMealPickerOpen(false)}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Meal type</Text>
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Select meal type</Text>
             {MEAL_ORDER.map((t) => (
               <Pressable
                 key={t}
-                style={styles.modalRow}
+                style={styles.modalMealRow}
                 onPress={() => {
                   setMealType(t);
                   setMealPickerOpen(false);
                 }}
               >
-                <Text style={[styles.modalRowText, mealType === t && { color: UI.blue }]}>{mealHeading(t)}</Text>
+                <Text style={styles.modalMealRowText}>
+                  {MEAL_TYPE_EMOJI[t]} {mealHeading(t)}
+                </Text>
+                {mealType === t ? <Text style={styles.modalCheck}>✓</Text> : <View style={styles.modalCheckSpacer} />}
               </Pressable>
             ))}
-          </View>
+            <Pressable style={styles.modalCancelBtn} onPress={() => setMealPickerOpen(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </Pressable>
         </Pressable>
       </Modal>
 
@@ -1025,17 +1108,17 @@ export const CalorieLog = () => {
             <Text style={styles.modalTitle}>Edit meal quantity</Text>
             <TextInput
               placeholder="Qty (g)"
-              placeholderTextColor={UI.muted}
+              placeholderTextColor={MUTED}
               keyboardType="decimal-pad"
               value={editQty}
               onChangeText={(v) => setEditQty(sanitizeNumericInput(v))}
-              style={styles.inputFull}
+              style={styles.editQtyInput}
             />
             <View style={styles.editActions}>
               <Pressable style={styles.editCancelBtn} onPress={() => setEditMealId(null)}>
                 <Text style={styles.editCancelText}>Cancel</Text>
               </Pressable>
-              <Pressable style={[styles.editSaveBtn, saving && { opacity: 0.6 }]} onPress={submitEditMealQty} disabled={saving}>
+              <Pressable style={[styles.editSaveBtn, saving && styles.btnDisabled]} onPress={submitEditMealQty} disabled={saving}>
                 <Text style={styles.editSaveText}>Save</Text>
               </Pressable>
             </View>
@@ -1046,50 +1129,282 @@ export const CalorieLog = () => {
       <Modal visible={isAnalyzing} transparent animationType="fade">
         <View style={styles.analyzingOverlay}>
           <View style={styles.analyzingCard}>
-            <ActivityIndicator size="large" color={UI.blue} />
-            <Text style={styles.analyzingText}>Analyzing your food...</Text>
+            <ActivityIndicator size="large" color={GREEN} />
+            <Text style={styles.analyzingText}>Analyzing your food…</Text>
           </View>
         </View>
       </Modal>
-    </ScreenContainer>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  pageBg: { marginHorizontal: -16, paddingHorizontal: 16, paddingBottom: 32, marginTop: -8 },
-  center: { flex: 1, minHeight: 200, alignItems: "center", justifyContent: "center" },
-  errorText: { color: UI.muted, fontSize: 15, lineHeight: 22, marginTop: 12, marginBottom: 20 },
+  safeArea: { flex: 1, backgroundColor: SCREEN_BG },
+  scroll: { flex: 1, backgroundColor: SCREEN_BG },
+  scrollContent: { padding: 16, paddingBottom: 40, maxWidth: 860, width: "100%", alignSelf: "center" },
+  center: { flex: 1, minHeight: 200, alignItems: "center", justifyContent: "center", backgroundColor: SCREEN_BG },
+  loadingText: { color: MUTED, marginTop: 12, fontSize: 14 },
+  dateLabel: { color: MUTED, fontSize: 13, marginBottom: 4 },
+  pageTitle: { color: TEXT, fontSize: 22, fontWeight: "800", marginBottom: 16 },
+  errorText: { color: MUTED, fontSize: 15, lineHeight: 22, marginTop: 12, marginBottom: 20 },
   retryBtn: {
     alignSelf: "flex-start",
-    backgroundColor: UI.blue,
+    backgroundColor: GREEN,
     paddingHorizontal: 22,
     paddingVertical: 12,
-    borderRadius: 10,
-  },
-  retryBtnText: { color: "#0B1220", fontWeight: "800", fontSize: 15 },
-  pageTitle: { color: UI.text, fontSize: 26, fontWeight: "800", marginBottom: 4 },
-  pageSub: { color: UI.muted, fontSize: 14, marginBottom: 18 },
-  section: {
-    backgroundColor: UI.card,
     borderRadius: 12,
+  },
+  retryBtnText: { color: WHITE, fontWeight: "800", fontSize: 15 },
+  card: {
+    backgroundColor: BG,
+    borderRadius: 16,
     padding: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: UI.border,
+    borderColor: BORDER,
+  },
+  cardLabel: {
+    color: MUTED,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+  },
+  calorieHeroRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  calorieHeroLeft: { flex: 1, paddingRight: 12 },
+  calorieHeroRight: { alignItems: "flex-end" },
+  calorieValueRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", marginTop: 4 },
+  calorieBig: { color: TEXT, fontSize: 32, fontWeight: "800" },
+  calorieTarget: { color: MUTED, fontSize: 14 },
+  remainingLabel: { color: MUTED, fontSize: 11, fontWeight: "600" },
+  remainingValue: { fontSize: 18, fontWeight: "800", marginTop: 2 },
+  remainingUnit: { color: MUTED, fontSize: 11, marginTop: 2 },
+  calorieBarTrack: { height: 7, borderRadius: 4, backgroundColor: TRACK, overflow: "hidden" },
+  calorieBarFill: { height: 7, borderRadius: 4, backgroundColor: GREEN },
+  macrosHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 8,
+  },
+  macroPills: { flexDirection: "row", gap: 5, flexShrink: 1, flexWrap: "wrap", justifyContent: "flex-end" },
+  macroPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99 },
+  macroPillText: { fontSize: 10, fontWeight: "700" },
+  macroRow: { paddingVertical: 10 },
+  macroRowDivider: { borderBottomWidth: 1, borderBottomColor: BORDER },
+  macroRowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
+  macroLabel: { color: TEXT, fontWeight: "600", fontSize: 14 },
+  macroNums: { fontSize: 13 },
+  macroNumsMuted: { color: MUTED },
+  macroBarTrack: { height: 6, borderRadius: 4, backgroundColor: TRACK, overflow: "hidden" },
+  macroBarFill: { height: 6, borderRadius: 4 },
+  waterHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  waterTitle: { color: MUTED, fontSize: 13, fontWeight: "600" },
+  waterHeaderValue: { color: TEXT, fontSize: 14, fontWeight: "800" },
+  glassGrid: { flexDirection: "row", flexWrap: "wrap", gap: 5, marginBottom: 12 },
+  glassTile: {
+    width: 28,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  glassTileFilled: { backgroundColor: BLUE_LIGHT },
+  glassTileEmpty: { backgroundColor: TRACK },
+  glassEmoji: { fontSize: 14 },
+  waterControlsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  waterHint: { color: MUTED, fontSize: 11 },
+  waterBtns: { flexDirection: "row", gap: 8 },
+  waterMinusBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: TRACK,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  waterMinusText: { color: TEXT, fontSize: 18, fontWeight: "700" },
+  waterPlusBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  waterPlusText: { color: WHITE, fontSize: 18, fontWeight: "700" },
+  waterBarTrack: { height: 6, borderRadius: 4, backgroundColor: TRACK, overflow: "hidden" },
+  waterBarFill: { height: 6, borderRadius: 4, backgroundColor: BLUE },
+  waterBarLabels: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
+  waterMini: { color: MUTED, fontSize: 11 },
+  addFoodHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  cameraTile: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: GREEN_LIGHT,
+    alignItems: "center",
+    justifyContent: "center",
     overflow: "hidden",
   },
-  sectionAccent: { height: 3, width: "100%", borderRadius: 2, marginBottom: 12 },
-  sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
-  sectionTag: { color: UI.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, marginBottom: 8 },
-  addFoodHeadingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
-  sectionHeadTag: { color: UI.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 },
-  sectionMeta: { color: UI.muted, fontSize: 11, flex: 1, textAlign: "right", marginLeft: 8 },
-  macroRowTop: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
-  macroLabel: { color: UI.text, fontWeight: "600", fontSize: 14 },
-  macroNums: { color: UI.muted, fontSize: 13 },
-  barTrack: { height: 10, borderRadius: 6, backgroundColor: "#2C2C2C", overflow: "hidden" },
-  barFill: { height: 10, borderRadius: 6 },
-  calorieConsumedHint: { color: UI.muted, fontSize: 12, marginTop: 8 },
+  searchWrap: { position: "relative", marginBottom: 10, zIndex: 20 },
+  searchInput: {
+    backgroundColor: WHITE,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: TEXT,
+    borderWidth: 1,
+    borderColor: BORDER,
+    fontSize: 15,
+  },
+  foodSearchHint: { color: MUTED, fontSize: 11, marginTop: 4, marginLeft: 2 },
+  foodDropdown: {
+    marginTop: 6,
+    backgroundColor: WHITE,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: BORDER,
+    maxHeight: 220,
+    overflow: "hidden",
+  },
+  foodDropdownScroll: { maxHeight: 220 },
+  foodOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+  },
+  foodOptionLast: { borderBottomWidth: 0 },
+  foodOptionName: { color: TEXT, fontWeight: "700", fontSize: 14 },
+  foodOptionMeta: { color: MUTED, marginTop: 2, fontSize: 12 },
+  foodEmpty: { color: MUTED, fontSize: 13, padding: 12 },
+  mealChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: WHITE,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: GREEN,
+  },
+  mealChipText: { color: TEXT, fontWeight: "600", fontSize: 15 },
+  mealChipChev: { color: MUTED, fontSize: 14 },
+  nutrientGrid: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  nutrientTile: {
+    width: "48%",
+    flexGrow: 1,
+    backgroundColor: WHITE,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minWidth: "46%",
+  },
+  nutrientLabel: { color: MUTED, fontSize: 10, marginBottom: 4, fontWeight: "600" },
+  nutrientInput: { minHeight: 24 },
+  foodRecognitionError: { marginTop: 10, color: ORANGE, fontSize: 12, lineHeight: 18 },
+  aiCaption: { marginTop: 8, color: PURPLE, fontSize: 11, fontWeight: "700" },
+  previewTile: {
+    marginTop: 12,
+    backgroundColor: WHITE,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: BORDER,
+    padding: 10,
+  },
+  previewText: { color: MUTED, fontSize: 13 },
+  previewStrong: { color: TEXT, fontWeight: "700" },
+  addFoodBtn: {
+    marginTop: 12,
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+  },
+  addFoodBtnDisabled: { opacity: 0.5 },
+  addFoodBtnText: { color: WHITE, fontWeight: "800", fontSize: 15 },
+  quickAddLabel: {
+    color: MUTED,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    marginTop: 2,
+  },
+  quickAddRow: { flexDirection: "row", gap: 8, paddingBottom: 14 },
+  quickChip: {
+    backgroundColor: WHITE,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 99,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  quickChipText: { color: TEXT, fontSize: 13, fontWeight: "600" },
+  emptyMeals: { color: MUTED, fontSize: 14, textAlign: "center", paddingVertical: 16 },
+  mealRow: { flexDirection: "row", alignItems: "flex-start", paddingVertical: 10, gap: 8 },
+  mealRowDivider: { borderTopWidth: 1, borderTopColor: BORDER },
+  mealRowLeft: { flex: 1 },
+  mealName: { color: TEXT, fontWeight: "700", fontSize: 13 },
+  mealSubMeta: { color: MUTED, fontSize: 11, marginTop: 2 },
+  mealMacroMeta: { color: MUTED, fontSize: 11, marginTop: 2 },
+  mealKcal: { color: TEXT, fontWeight: "700" },
+  mealActions: { flexDirection: "row", alignItems: "center", gap: 6, paddingTop: 2 },
+  editPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: GREEN_LIGHT,
+  },
+  editPillText: { color: GREEN, fontSize: 11, fontWeight: "700" },
+  deletePill: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: ORANGE_LIGHT,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deletePillText: { color: ORANGE, fontSize: 13, fontWeight: "700" },
+  btnDisabled: { opacity: 0.5 },
+  dayTotalRow: {
+    marginTop: 4,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: BORDER,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  dayTotalLabel: { color: MUTED, fontSize: 12 },
+  dayTotalValue: { color: TEXT, fontWeight: "700", fontSize: 13, flex: 1, textAlign: "right" },
   rpShell: {
     position: "relative",
     justifyContent: "center",
@@ -1100,7 +1415,7 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     padding: 0,
     margin: 0,
-    color: UI.text,
+    color: TEXT,
     fontSize: 15,
     minHeight: 22,
     width: "100%",
@@ -1121,7 +1436,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   rpPinnedHint: {
-    color: UI.muted,
+    color: MUTED,
     fontSize: 15,
     fontWeight: "500",
     textAlign: "right",
@@ -1134,221 +1449,89 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "flex-end",
-    paddingRight: 12,
-    paddingLeft: 56,
+    paddingRight: 4,
+    paddingLeft: 40,
     maxWidth: "100%",
   },
   rpPhText: {
-    color: UI.muted,
+    color: MUTED,
     fontSize: 15,
     fontWeight: "500",
     textAlign: "right",
     width: "100%",
   },
-  inputFull: {
-    backgroundColor: "#2A2A2A",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 10,
-    color: UI.text,
-    borderWidth: 1,
-    borderColor: UI.border,
-  },
-  searchWrap: {
-    position: "relative",
-    marginBottom: 10,
-    zIndex: 20,
-  },
-  foodSearchHint: {
-    color: UI.muted,
-    fontSize: 11,
-    marginTop: 4,
-    marginLeft: 2,
-  },
-  foodDropdown: {
-    marginTop: 6,
-    backgroundColor: "#222",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: UI.border,
-    maxHeight: 220,
-    overflow: "hidden",
-  },
-  foodDropdownScroll: { maxHeight: 220 },
-  foodOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: UI.border,
-  },
-  foodOptionLast: { borderBottomWidth: 0 },
-  foodOptionName: { color: UI.text, fontWeight: "700", fontSize: 14 },
-  foodOptionMeta: { color: UI.muted, marginTop: 2, fontSize: 12 },
-  foodEmpty: { color: UI.muted, fontSize: 13, padding: 12 },
-  mealSelect: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#2A2A2A",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: UI.border,
-  },
-  mealSelectText: { color: UI.text, fontWeight: "600", fontSize: 15 },
-  mealSelectChev: { color: UI.muted, fontSize: 14 },
-  inputGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  inputHalf: {
-    width: "48%",
-    flexGrow: 1,
-    backgroundColor: "#2A2A2A",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    color: UI.text,
-    borderWidth: 1,
-    borderColor: UI.border,
-  },
-  addBtn: {
-    width: "48%",
-    flexGrow: 1,
-    backgroundColor: UI.blue,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-  },
-  addBtnText: { color: "#0B1220", fontWeight: "800", fontSize: 15 },
-  foodRecognitionError: { marginTop: 10, color: "#F87171", fontSize: 12, lineHeight: 18 },
-  previewRow: {
-    marginTop: 12,
-    backgroundColor: "#252525",
-    borderRadius: 8,
-    padding: 10,
-  },
-  previewText: { color: UI.muted, fontSize: 13 },
-  previewStrong: { color: UI.text, fontWeight: "700" },
-  aiCaption: { marginTop: 10, color: "#fbbf24", fontSize: 12, fontWeight: "700" },
-  chipRow: { flexDirection: "row", gap: 8, paddingVertical: 4 },
-  chip: {
-    backgroundColor: UI.chipBg,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: UI.border,
-  },
-  chipText: { color: UI.text, fontSize: 13, fontWeight: "600" },
-  empty: { color: UI.muted, fontSize: 14, lineHeight: 20 },
-  mealRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: UI.border,
-    gap: 8,
-  },
-  mealName: { color: UI.text, fontWeight: "700", fontSize: 14 },
-  mealMeta: { color: UI.muted, fontSize: 12, marginTop: 2 },
-  editBtn: {
-    height: 32,
-    minWidth: 54,
-    borderRadius: 8,
-    backgroundColor: "#2A2A2A",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: UI.border,
-    paddingHorizontal: 10,
-  },
-  editBtnText: { color: UI.blue, fontSize: 12, fontWeight: "700" },
-  delBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "#2A2A2A",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: UI.border,
-  },
-  delBtnText: { color: UI.muted, fontSize: 14, fontWeight: "700" },
-  grandTotal: { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: UI.border },
-  grandLabel: { color: UI.muted, fontSize: 12, marginBottom: 4 },
-  grandValue: { color: UI.text, fontWeight: "800", fontSize: 15 },
-  waterBtns: { flexDirection: "row", gap: 10, marginBottom: 10 },
-  waterSq: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: "#2A2A2A",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: UI.border,
-  },
-  waterSqText: { color: UI.text, fontSize: 22, fontWeight: "700" },
-  waterHint: { color: UI.muted, fontSize: 12, marginBottom: 12 },
-  glassRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  glass: { width: 28, height: 36, borderRadius: 6, borderWidth: 1 },
-  glassEmpty: { backgroundColor: "#2C2C2C", borderColor: UI.border },
-  glassFilled: { backgroundColor: UI.blue, borderColor: UI.blue },
-  waterBarTrack: { height: 6, borderRadius: 4, backgroundColor: "#2C2C2C", overflow: "hidden" },
-  waterBarFill: { height: 6, backgroundColor: UI.blue, borderRadius: 4 },
-  waterBarLabels: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
-  waterMini: { color: UI.muted, fontSize: 11 },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(26,26,24,0.35)",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
   },
-  modalCard: { backgroundColor: UI.card, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: UI.border },
-  modalTitle: { color: UI.text, fontWeight: "800", fontSize: 16, marginBottom: 8 },
-  editActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 4 },
-  editCancelBtn: {
-    backgroundColor: "#2A2A2A",
-    borderRadius: 10,
+  modalCard: {
+    backgroundColor: WHITE,
+    borderRadius: 20,
+    padding: 16,
+    width: "100%",
+    maxWidth: 360,
     borderWidth: 1,
-    borderColor: UI.border,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderColor: BORDER,
   },
-  editCancelText: { color: UI.muted, fontSize: 13, fontWeight: "700" },
-  editSaveBtn: {
-    backgroundColor: UI.blue,
+  modalTitle: { color: TEXT, fontWeight: "800", fontSize: 16, marginBottom: 12 },
+  modalMealRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+  },
+  modalMealRowText: { color: TEXT, fontSize: 15, fontWeight: "600" },
+  modalCheck: { color: GREEN, fontSize: 18, fontWeight: "800" },
+  modalCheckSpacer: { width: 18 },
+  modalCancelBtn: { marginTop: 12, alignItems: "center", paddingVertical: 10 },
+  modalCancelText: { color: ORANGE, fontSize: 15, fontWeight: "700" },
+  editQtyInput: {
+    backgroundColor: WHITE,
     borderRadius: 10,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: TEXT,
+    borderWidth: 1,
+    borderColor: BORDER,
+    fontSize: 15,
+    marginBottom: 12,
+  },
+  editActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10 },
+  editCancelBtn: { paddingHorizontal: 14, paddingVertical: 10 },
+  editCancelText: { color: MUTED, fontSize: 14, fontWeight: "700" },
+  editSaveBtn: {
+    backgroundColor: GREEN,
+    borderRadius: 99,
+    paddingHorizontal: 18,
     paddingVertical: 10,
   },
-  editSaveText: { color: "#0B1220", fontSize: 13, fontWeight: "800" },
-  modalRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: UI.border },
-  modalRowText: { color: UI.text, fontSize: 16 },
+  editSaveText: { color: WHITE, fontSize: 14, fontWeight: "800" },
   analyzingOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.52)",
+    backgroundColor: "rgba(255,255,255,0.82)",
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
   },
   analyzingCard: {
-    backgroundColor: UI.card,
-    borderRadius: 14,
+    backgroundColor: WHITE,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: UI.border,
+    borderColor: BORDER,
     paddingVertical: 22,
     paddingHorizontal: 18,
     alignItems: "center",
     minWidth: 240,
   },
   analyzingText: {
-    color: UI.text,
+    color: MUTED,
     marginTop: 12,
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "600",
   },
 });

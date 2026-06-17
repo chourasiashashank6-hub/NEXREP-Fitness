@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -14,23 +15,21 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Circle } from "react-native-svg";
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { apiClient, resolveApiBaseUrl } from "../api/client";
 import { getDailyCalorieLog, todayLocal } from "../api/caloriesLog";
 import { submitFeedback } from "../api/feedback";
-import { fetchOnboardingMe, upsertOnboardingMe } from "../api/onboarding";
-import { getProfile, updateProfile } from "../api/user";
+import { fetchOnboardingMe } from "../api/onboarding";
+import { getProfile } from "../api/user";
 import { getWorkoutHistory } from "../api/workout";
 import DevSubscriptionToggle from "../components/DevSubscriptionToggle";
 import SubscriptionBillingSection from "../components/SubscriptionBillingSection";
-import { HeroHeader } from "../components/HeroHeader";
 import { ScreenContainer } from "../components/ScreenContainer";
 import { signOutSession } from "../services/authService";
 import { useAuthStore } from "../store/authStore";
 import { useSubscriptionStore } from "../store/subscriptionStore";
-import { useAppTheme } from "../theme";
-import { calculateNutritionTargets } from "../engine/calculator";
 
 type GoalTag = "Fat Loss" | "Muscle Gain" | "Strength";
 
@@ -40,18 +39,31 @@ const goalColors: Record<GoalTag, { primary: string; bg: string; text: string }>
   Strength: { primary: "#D85A30", bg: "#FAECE7", text: "#4A1B0C" },
 };
 
-const goalPaceOptions = [0.25, 0.5, 0.75, 1.0];
-const difficultyOptions = ["Beginner", "Intermediate", "Advanced"];
 const toGoalTag = (v: unknown): GoalTag => (v === "Muscle Gain" || v === "Strength" ? (v as GoalTag) : "Fat Loss");
 const monthYear = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+const dayLabel = (d: Date = new Date()) => d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
 const getInitials = (first: string, last: string) => `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "U";
 const numFmt = (n: number) => Math.round(n).toLocaleString();
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const DAY_WINDOW = 30;
 const MAX_SELECTABLE_RANGE_DAYS = 30;
 const CALENDAR_NAV_YEARS = 10;
-const HOME_CARD_BG = "#0f1620";
-const HOME_CARD_BORDER = "rgba(255,255,255,0.07)";
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 type DailyExerciseHistory = {
   date: string;
@@ -128,7 +140,6 @@ type OnboardingGoalType = "fat_loss" | "muscle_gain" | "strength" | "maintain" |
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 
 export const ProfileScreen = () => {
-  const { colors } = useAppTheme();
   const navigation = useNavigation<any>();
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -155,8 +166,6 @@ export const ProfileScreen = () => {
   const setNeedsOnboarding = useAuthStore((s) => s.setNeedsOnboarding);
   const setReturnToProfileAfterOnboarding = useAuthStore((s) => s.setReturnToProfileAfterOnboarding);
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
   const [showExerciseHistory, setShowExerciseHistory] = useState(false);
   const [showCalorieHistory, setShowCalorieHistory] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -200,16 +209,6 @@ export const ProfileScreen = () => {
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
   const fetchPayments = useSubscriptionStore((s) => s.fetchPayments);
   const subscriptionTier = useSubscriptionStore((s) => s.subscription?.tier ?? "FREE");
-
-  const [editForm, setEditForm] = useState({
-    firstName: "",
-    lastName: "",
-    currentWeightKg: "0",
-    targetWeightKg: "0",
-    goalTag: "Fat Loss" as GoalTag,
-    paceKgPerWeek: "0.5",
-    difficulty: "Intermediate",
-  });
 
   const load = useCallback(async () => {
     try {
@@ -356,15 +355,6 @@ export const ProfileScreen = () => {
       setExerciseToDate((prev) => prev || defaultTo);
       setCalorieFromDate((prev) => prev || defaultFrom);
       setCalorieToDate((prev) => prev || defaultTo);
-      setEditForm({
-        firstName: f || "User",
-        lastName: l || "",
-        currentWeightKg: String(Math.round(Number(profile.weight || 0))),
-        targetWeightKg: String(Math.round(targetKg || profile.weight || 0)),
-        goalTag: toGoalTag(profile.goalTag),
-        paceKgPerWeek: String(pace),
-        difficulty: profile.difficulty || "Intermediate",
-      });
     } catch {
       Alert.alert("Error", "Could not load profile data.");
     }
@@ -668,47 +658,6 @@ export const ProfileScreen = () => {
     setActiveDatePicker({ overlay, field });
   };
 
-  const saveEdit = async () => {
-    const nextName = `${editForm.firstName} ${editForm.lastName}`.trim();
-    const nextCurrent = Number(editForm.currentWeightKg || 0);
-    const nextTarget = Number(editForm.targetWeightKg || 0);
-    const nextPace = Number(editForm.paceKgPerWeek || 0.5);
-    if (!nextName || nextCurrent <= 0 || nextTarget <= 0) {
-      Alert.alert("Validation", "Please enter valid name and weights.");
-      return;
-    }
-    try {
-      await updateProfile({
-        name: nextName,
-        age,
-        weight: nextCurrent,
-        goals: editForm.goalTag,
-        goalTag: editForm.goalTag,
-        difficulty: editForm.difficulty,
-      });
-      const onboard = await fetchOnboardingMe().catch(() => null);
-      if (onboard?.onboarding) {
-        const nextOnboarding: any = {
-          ...onboard.onboarding,
-          personal: { ...onboard.onboarding.personal, name: nextName, weight_kg: nextCurrent, weight_lb: nextCurrent * 2.20462 },
-          goal: {
-            ...onboard.onboarding.goal,
-            type: editForm.goalTag === "Fat Loss" ? "fat_loss" : editForm.goalTag === "Muscle Gain" ? "muscle_gain" : "strength",
-            pace: nextPace === 0.25 ? "slow" : nextPace === 0.5 ? "moderate" : "aggressive",
-            target_weight_kg: nextTarget,
-            target_weight_lb: nextTarget * 2.20462,
-          },
-        };
-        const targets = calculateNutritionTargets(nextOnboarding);
-        await upsertOnboardingMe({ onboarding: nextOnboarding, targets });
-      }
-      setEditOpen(false);
-      await load();
-    } catch {
-      Alert.alert("Error", "Could not save profile changes.");
-    }
-  };
-
   const onSubmitFeedback = async () => {
     const subject = feedbackSubject.trim();
     const body = feedbackBody.trim();
@@ -735,187 +684,210 @@ export const ProfileScreen = () => {
     }
   };
 
+  const planBadgeLabel = (plan_id || "free").toUpperCase();
+  const planBadgeStyle =
+    planBadgeLabel === "ELITE" ? styles.planBadgeElite : planBadgeLabel === "PRO" ? styles.planBadgePro : styles.planBadgeFree;
+  const planBadgeTextStyle =
+    planBadgeLabel === "ELITE" ? styles.planBadgeEliteText : planBadgeLabel === "PRO" ? styles.planBadgeProText : styles.planBadgeFreeText;
+  const avatarRadius = 28;
+  const avatarCircumference = 2 * Math.PI * avatarRadius;
+  const avatarOffset = avatarCircumference * (1 - Math.max(0, Math.min(100, progressPct)) / 100);
+  const dailyAdjustmentLabel = `${dailyCalorieAdjustment > 0 ? "+" : "−"}${Math.abs(Math.round(dailyCalorieAdjustment))} kcal`;
+
   return (
-    <ScreenContainer>
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        <HeroHeader title="Profile" subtitle="Fitness identity and progress" />
+    <ScreenContainer bg={SCREEN_BG} contentStyle={styles.screenContent}>
+      <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BG} />
+      <View style={styles.inlineHeader}>
+        <Text style={styles.dateLabel}>{dayLabel()}</Text>
+        <Text style={styles.pageTitle}>Profile 👤</Text>
+      </View>
 
-        {plan_id === "free" && subscriptionTier === "FREE" ? (
-          <Pressable
-            onPress={() => navigation.navigate("Subscription")}
-            style={[styles.proCta, { borderColor: "#E84545", backgroundColor: "rgba(232,69,69,0.12)" }]}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.proCtaTitle, { color: "#E84545" }]}>NexRep PRO</Text>
-              <Text style={[styles.proCtaSub, { color: colors.muted }]}>Unlock AI tracking & premium coaching</Text>
+      <View style={styles.identityCard}>
+        <View style={styles.decorCircleTop} />
+        <View style={styles.decorCircleBottom} />
+        <View style={styles.identityTopRow}>
+          <View style={styles.avatarRingWrap}>
+            <Svg width={62} height={62} viewBox="0 0 62 62" style={styles.avatarSvg}>
+              <Circle cx={31} cy={31} r={avatarRadius} stroke="rgba(255,255,255,0.2)" strokeWidth={4} fill="transparent" />
+              <Circle
+                cx={31}
+                cy={31}
+                r={avatarRadius}
+                stroke={GOLD}
+                strokeWidth={4}
+                fill="transparent"
+                strokeLinecap="round"
+                strokeDasharray={`${avatarCircumference} ${avatarCircumference}`}
+                strokeDashoffset={avatarOffset}
+                rotation="-90"
+                origin="31,31"
+              />
+            </Svg>
+            <View style={styles.avatarInner}>
+              <Text style={styles.avatarText}>{getInitials(firstName, lastName)}</Text>
             </View>
-            <Text style={{ color: "#E84545", fontSize: 22, fontWeight: "300" }}>›</Text>
-          </Pressable>
-        ) : null}
-
-        <View style={[styles.headerCard, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}>
+          </View>
+          <View style={styles.identityTextBlock}>
+            <View style={styles.nameBadgeRow}>
+              <Text style={styles.nameText}>{`${firstName} ${lastName}`.trim()}</Text>
+              <View style={[styles.planBadge, planBadgeStyle]}>
+                <Text style={[styles.planBadgeText, planBadgeTextStyle]}>{planBadgeLabel}</Text>
+              </View>
+            </View>
+            {userEmail ? <Text style={styles.emailText}>{userEmail}</Text> : null}
+            <Text style={styles.memberMeta}>{`${difficulty} · ${memberSince || "Member"}`}</Text>
+          </View>
           <Pressable
-            style={[styles.editTopRightBtn, { borderColor: colors.border }]}
+            style={styles.heroEditBtn}
             onPress={() => {
               setReturnToProfileAfterOnboarding(true);
               setNeedsOnboarding(true);
             }}
           >
-            <Text style={[styles.headerBtnText, { color: colors.text }]}>Edit profile</Text>
+            <Text style={styles.heroEditText}>Edit ✏️</Text>
           </Pressable>
-
-          <View style={styles.headerLeft}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{getInitials(firstName, lastName)}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.nameText}>{`${firstName} ${lastName}`.trim()}</Text>
-              {userEmail ? (
-                <Text style={[styles.emailText, { color: colors.muted }]}>{userEmail}</Text>
-              ) : null}
-              <Text style={[styles.metaText, { color: colors.muted }]}>
-                {`Member since ${memberSince} · ${difficulty}`}
-              </Text>
-              <Text
-                style={[
-                  styles.metaText,
-                  {
-                    marginTop: 2,
-                    color:
-                      plan_id === "elite" ? "#a5a0f0" : plan_id === "pro" ? "#3fcf8e" : colors.muted,
-                    fontWeight: "600",
-                  },
-                ]}
-              >
-                {plan_id.toUpperCase()} plan
-              </Text>
-            </View>
-          </View>
-          <View style={styles.headerBtns}>
-          </View>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tilesRow}>
-          <View style={[styles.tile, { borderColor: HOME_CARD_BORDER, backgroundColor: HOME_CARD_BG }]}>
-            <Text style={styles.tileLabel}>CURRENT WEIGHT</Text>
+        <View style={styles.goalPillsRow}>
+          <Tile label="Goal" value={goalTag} emoji="🔥" variant="hero" />
+          <Tile label={dailyCalorieAdjustment < 0 ? "Deficit" : "Surplus"} value={dailyAdjustmentLabel} emoji="⚡" variant="hero" />
+          <Tile label="Pace" value={`${paceKgPerWeek} kg/w`} emoji="📉" variant="hero" />
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.cardHeaderRow}>
+          <Text style={styles.cardTitle}>⚖️ Weight journey</Text>
+          {progressPct >= 100 ? (
+            <View style={styles.goalReachedPill}>
+              <Text style={styles.goalReachedText}>🏁 Goal reached!</Text>
+            </View>
+          ) : (
+            <Text style={styles.progressMuted}>{progressPct}%</Text>
+          )}
+        </View>
+        <View style={styles.weightPathRow}>
+          <View style={styles.weightPoint}>
+            <Text style={styles.weightPointLabel}>Start</Text>
+            <Text style={styles.weightStartValue}>{round1(startWeightKg)}</Text>
+          </View>
+          <View style={styles.weightGradientTrack}>
+            <View style={styles.weightGradientOrange} />
+            <View style={styles.weightGradientGold} />
+            <View style={styles.weightGradientGreen} />
+          </View>
+          <View style={styles.weightPoint}>
+            <Text style={styles.weightPointLabel}>Target</Text>
+            <Text style={styles.weightTargetValue}>{round1(targetWeightKg)}</Text>
+          </View>
+        </View>
+        <View style={styles.weightTilesRow}>
+          <View style={styles.currentWeightTile}>
+            <Text style={styles.tileMuted}>Current</Text>
             {loadingWeight ? (
-              <ActivityIndicator size="small" color="#22D3EE" style={{ marginTop: 6 }} />
+              <ActivityIndicator size="small" color={GREEN} style={styles.weightLoader} />
             ) : (
               <>
-                <Text style={styles.tileValue}>{round1(displayCurrentWeight)} kg</Text>
+                <Text style={styles.currentWeightValue}>{round1(displayCurrentWeight)} kg</Text>
                 {latestWeightLog?.log_date ? (
-                  <Text style={styles.statSubtext}>
-                    {latestWeightLog.days_since_log === 0
-                      ? "Updated today"
-                      : `${latestWeightLog.days_since_log}d ago`}
+                  <Text style={[styles.weightFreshness, latestWeightLog.days_since_log === 0 && styles.weightFreshnessToday]}>
+                    {latestWeightLog.days_since_log === 0 ? "✓ Updated today" : `${latestWeightLog.days_since_log}d ago`}
                   </Text>
-                ) : null}
-                {!latestWeightLog?.has_logs ? <Text style={styles.statSubtextMuted}>From profile</Text> : null}
+                ) : (
+                  <Text style={styles.weightFreshness}>From profile</Text>
+                )}
               </>
             )}
           </View>
-          <Tile label="TARGET WEIGHT" value={`${round1(targetWeightKg)} kg`} valueColor="#55B56A" />
-          <Tile label="GOAL" value={goalTag} sub={`${dailyCalorieAdjustment > 0 ? "+" : ""}${Math.round(dailyCalorieAdjustment)} kcal/day`} valueColor={goalColors[goalTag].primary} />
-          <Tile label="PACE" value={String(paceKgPerWeek)} sub="kg/week" />
-        </ScrollView>
-
-        <View style={[styles.progressCard, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}>
-          <View style={styles.progressHead}>
-            <Text style={styles.progressTitle}>{progressTitle}</Text>
-            <Text style={[styles.progressTopRight, { color: colors.text }]}>
-              {`${round1(startWeightKg)} kg → ${round1(targetWeightKg)} kg · ${kgToGo} kg to go`}
-            </Text>
-          </View>
-          <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { width: `${progressPct}%`, backgroundColor: progressBarColor },
-              ]}
-            />
-          </View>
-          <View style={styles.progressBottom}>
-            <Text style={[styles.progressSmall, { color: colors.muted }]}>{`Start: ${round1(startWeightKg)} kg`}</Text>
-            <Text
-              style={[
-                styles.progressLabelCenter,
-                progressPct === 0 && styles.progressLabelZero,
-                progressPct >= 100 && styles.progressLabelComplete,
-              ]}
-            >
-              {progressCenterLabel}
-            </Text>
-            <Text style={[styles.progressSmall, { color: colors.muted }]}>{`Target: ${round1(targetWeightKg)} kg`}</Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.quickWeighInBtn}
+          <Pressable
+            style={styles.logWeightTile}
             onPress={() => {
               setWeighInValue(String(displayCurrentWeight || ""));
               setShowWeighInModal(true);
             }}
           >
-            <Ionicons name="scale-outline" size={14} color="#22D3EE" />
-            <Text style={styles.quickWeighInText}>
-              {latestWeightLog?.has_logs
-                ? `Update weight (last: ${round1(latestWeightLog.weight_kg)}kg)`
-                : "Log your current weight"}
+            <Text style={styles.logWeightEmoji}>📅</Text>
+            <Text style={styles.logWeightText}>Log weight</Text>
+            <Text style={styles.logWeightSub}>
+              {latestWeightLog?.has_logs ? `last: ${round1(latestWeightLog.weight_kg)} kg` : "start tracking"}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
+      </View>
 
-        <View style={styles.achievementsRow}>
-          <StatTile value={numFmt(stats.totalWorkoutsDone)} label="Workouts done" valueColor="#534AB7" />
-          <StatTile value={numFmt(stats.totalKcalBurned)} label="Total kcal burned" valueColor="#E24B4A" />
-          <StatTile value={numFmt(stats.currentDayStreak)} label="Day streak" valueColor="#1D9E75" />
-          <StatTile value={String(stats.avgSessionsPerWeek)} label="Avg sessions/week" valueColor="#BA7517" />
+      <View style={styles.card}>
+        <Text style={styles.sectionLabel}>ACTIVITY OVERVIEW</Text>
+        <View style={styles.activityStatsRow}>
+          <StatTile value={numFmt(stats.totalWorkoutsDone)} label="Workouts" valueColor={BLUE} icon="🏋️" iconBg={BLUE_LIGHT} />
+          <StatTile value={numFmt(stats.totalKcalBurned)} label="kcal burned" valueColor={ORANGE} icon="🔥" iconBg={ORANGE_LIGHT} />
+          <StatTile value={numFmt(stats.currentDayStreak)} label="Day streak" valueColor={GREEN} icon="⚡" iconBg={GREEN_LIGHT} />
+          <StatTile value={String(stats.avgSessionsPerWeek)} label="Avg/week" valueColor={PURPLE} icon="📊" iconBg={PURPLE_LIGHT} isLast />
         </View>
+      </View>
 
-        {userId ? (
-          <SubscriptionBillingSection
-            userId={userId}
-            memberSince={memberSince}
-            onExerciseHistory={() => setShowExerciseHistory(true)}
-            onCalorieHistory={() => setShowCalorieHistory(true)}
-          />
+      {plan_id === "free" ? (
+        <Pressable onPress={() => navigation.navigate("Subscription")} style={styles.proCta}>
+          <View style={styles.proCtaIcon}>
+            <Text style={styles.proCtaEmoji}>✨</Text>
+          </View>
+          <View style={styles.proCtaCopy}>
+            <Text style={styles.proCtaTitle}>NexRep PRO</Text>
+            <Text style={styles.proCtaSub}>Unlock AI tracking & premium coaching</Text>
+          </View>
+          <Text style={styles.proCtaArrow}>›</Text>
+        </Pressable>
+      ) : null}
+
+      {userId ? (
+        <SubscriptionBillingSection
+          userId={userId}
+          memberSince={memberSince}
+          onExerciseHistory={() => setShowExerciseHistory(true)}
+          onCalorieHistory={() => setShowCalorieHistory(true)}
+        />
+      ) : null}
+
+      <View style={styles.footerCard}>
+        {__DEV__ ? (
+          <Pressable style={styles.footerRow} onPress={() => navigation.navigate("AdminStack")}>
+            <View style={styles.footerIconTile}>
+              <Text style={styles.footerEmoji}>🔧</Text>
+            </View>
+            <Text style={styles.footerLabel}>Go to Admin</Text>
+            <Text style={styles.footerChevron}>›</Text>
+          </Pressable>
         ) : null}
-
-        <DevSubscriptionToggle email={userEmail} userId={userId} />
-
+        <Pressable
+          style={styles.footerRow}
+          onPress={() => {
+            setFeedbackSent(false);
+            setFeedbackOpen(true);
+          }}
+        >
+          <View style={styles.footerIconTile}>
+            <Text style={styles.footerEmoji}>💬</Text>
+          </View>
+          <Text style={styles.footerLabel}>Feedback</Text>
+          <Text style={styles.footerChevron}>›</Text>
+        </Pressable>
         <TouchableOpacity
           onPress={handleVersionTap}
           activeOpacity={1}
           hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
           style={styles.versionWrap}
         >
-          <Text style={[styles.versionText, { color: colors.muted }]}>Version {APP_VERSION}</Text>
+          <Text style={styles.versionText}>Version {APP_VERSION}</Text>
         </TouchableOpacity>
-        <View style={styles.footerActions}>
-          {__DEV__ ? (
-            <Pressable
-              style={[styles.footerActionBtn, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}
-              onPress={() => navigation.navigate("AdminStack")}
-            >
-              <Text style={[styles.feedbackText, { color: colors.text }]}>Go to Admin</Text>
-            </Pressable>
-          ) : null}
-          <Pressable
-            style={[styles.footerActionBtn, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}
-            onPress={() => void signOutSession()}
-          >
-            <Text style={styles.logoutText}>Logout</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.footerActionBtn, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}
-            onPress={() => {
-              setFeedbackSent(false);
-              setFeedbackOpen(true);
-            }}
-          >
-            <Text style={[styles.feedbackText, { color: colors.text }]}>Feedback</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
+        <Pressable style={[styles.footerRow, styles.footerRowLast]} onPress={() => void signOutSession()}>
+          <View style={styles.logoutIconTile}>
+            <Text style={styles.footerEmoji}>🚪</Text>
+          </View>
+          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutChevron}>›</Text>
+        </Pressable>
+      </View>
+
+      <DevSubscriptionToggle email={userEmail} userId={userId} />
 
       <Modal visible={showWeighInModal} transparent animationType="slide" onRequestClose={() => setShowWeighInModal(false)}>
         <View style={styles.modalBackdropBottom}>
@@ -979,19 +951,19 @@ export const ProfileScreen = () => {
 
       <Modal visible={feedbackOpen} transparent animationType="slide" onRequestClose={() => setFeedbackOpen(false)}>
         <View style={styles.modalBackdropBottom}>
-          <View style={[styles.feedbackSheet, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          <View style={styles.feedbackSheet}>
             {feedbackSent ? (
               <View style={styles.feedbackSentWrap}>
                 <View style={[styles.feedbackTickCircle, { backgroundColor: "rgba(85,181,106,0.16)" }]}>
                   <Text style={styles.feedbackTick}>✓</Text>
                 </View>
-                <Text style={[styles.feedbackTitle, { color: colors.text, textAlign: "center", marginBottom: 6 }]}>Sent successfully</Text>
-                <Text style={[styles.feedbackSub, { color: colors.muted, textAlign: "center" }]}>
+                <Text style={[styles.feedbackTitle, { textAlign: "center", marginBottom: 6 }]}>Sent successfully</Text>
+                <Text style={[styles.feedbackSub, { textAlign: "center" }]}>
                   Your message was delivered to admin@nexrep.in
                 </Text>
                 <View style={styles.feedbackActions}>
                   <Pressable
-                    style={[styles.feedbackActionBtn, { borderColor: colors.border }]}
+                    style={styles.feedbackActionBtn}
                     onPress={() => {
                       setFeedbackOpen(false);
                       setFeedbackSent(false);
@@ -999,46 +971,46 @@ export const ProfileScreen = () => {
                       setFeedbackBody("");
                     }}
                   >
-                    <Text style={[styles.feedbackCancelText, { color: colors.text }]}>Close</Text>
+                    <Text style={styles.feedbackCancelText}>Close</Text>
                   </Pressable>
                 </View>
               </View>
             ) : (
               <>
-                <Text style={[styles.feedbackTitle, { color: colors.text }]}>Send Feedback</Text>
-                <Text style={[styles.feedbackSub, { color: colors.muted }]}>This will be sent to admin@nexrep.in</Text>
+                <Text style={styles.feedbackTitle}>Send Feedback</Text>
+                <Text style={styles.feedbackSub}>This will be sent to admin@nexrep.in</Text>
                 <View style={styles.feedbackField}>
-                  <Text style={[styles.editLabel, { color: colors.muted }]}>Subject</Text>
+                  <Text style={styles.editLabel}>Subject</Text>
                   <TextInput
                     value={feedbackSubject}
                     onChangeText={setFeedbackSubject}
                     placeholder="Type subject"
-                    placeholderTextColor={colors.muted}
-                    style={[styles.feedbackInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.cardAlt }]}
+                    placeholderTextColor={MUTED}
+                    style={styles.feedbackInput}
                   />
                 </View>
                 <View style={styles.feedbackField}>
-                  <Text style={[styles.editLabel, { color: colors.muted }]}>Body</Text>
+                  <Text style={styles.editLabel}>Body</Text>
                   <TextInput
                     value={feedbackBody}
                     onChangeText={setFeedbackBody}
                     placeholder="Write your feedback..."
-                    placeholderTextColor={colors.muted}
+                    placeholderTextColor={MUTED}
                     multiline
                     textAlignVertical="top"
-                    style={[styles.feedbackBodyInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.cardAlt }]}
+                    style={styles.feedbackBodyInput}
                   />
                 </View>
                 <View style={styles.feedbackActions}>
                   <Pressable
-                    style={[styles.feedbackActionBtn, { borderColor: colors.border }]}
+                    style={styles.feedbackActionBtn}
                     onPress={() => setFeedbackOpen(false)}
                     disabled={sendingFeedback}
                   >
-                    <Text style={[styles.feedbackCancelText, { color: colors.text }]}>Cancel</Text>
+                    <Text style={styles.feedbackCancelText}>Cancel</Text>
                   </Pressable>
                   <Pressable
-                    style={[styles.feedbackActionBtn, { backgroundColor: colors.primary }]}
+                    style={[styles.feedbackActionBtn, styles.feedbackSendBtn]}
                     onPress={() => void onSubmitFeedback()}
                     disabled={sendingFeedback}
                   >
@@ -1051,69 +1023,36 @@ export const ProfileScreen = () => {
         </View>
       </Modal>
 
-      <Modal visible={editOpen} transparent animationType="slide" onRequestClose={() => setEditOpen(false)}>
-        <View style={styles.modalBackdropBottom}>
-          <View style={[styles.editSheet, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <Text style={styles.editTitle}>Edit profile</Text>
-            <EditField label="First name" value={editForm.firstName} onChange={(v) => setEditForm((p) => ({ ...p, firstName: v }))} />
-            <EditField label="Last name" value={editForm.lastName} onChange={(v) => setEditForm((p) => ({ ...p, lastName: v }))} />
-            <EditField label="Current weight (kg)" value={editForm.currentWeightKg} numeric onChange={(v) => setEditForm((p) => ({ ...p, currentWeightKg: v.replace(/[^\d.]/g, "") }))} />
-            <EditField label="Target weight (kg)" value={editForm.targetWeightKg} numeric onChange={(v) => setEditForm((p) => ({ ...p, targetWeightKg: v.replace(/[^\d.]/g, "") }))} />
-            <SelectRow
-              label="Goal tag"
-              options={["Fat Loss", "Muscle Gain", "Strength"]}
-              selected={editForm.goalTag}
-              onSelect={(v) => setEditForm((p) => ({ ...p, goalTag: v as GoalTag }))}
-            />
-            <SelectRow
-              label="Pace (kg/week)"
-              options={goalPaceOptions.map(String)}
-              selected={editForm.paceKgPerWeek}
-              onSelect={(v) => setEditForm((p) => ({ ...p, paceKgPerWeek: v }))}
-            />
-            <SelectRow
-              label="Difficulty"
-              options={difficultyOptions}
-              selected={editForm.difficulty}
-              onSelect={(v) => setEditForm((p) => ({ ...p, difficulty: v }))}
-            />
-            <Pressable style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={() => void saveEdit()}>
-              <Text style={styles.saveBtnText}>Save</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
       <Modal visible={showExerciseHistory} transparent animationType="slide" onRequestClose={() => setShowExerciseHistory(false)}>
         <View style={styles.modalBackdropBottom}>
-          <View style={[styles.historyOverlaySheet, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}>
+          <View style={styles.historyOverlaySheet}>
             <View style={styles.historyOverlayHeader}>
-              <Text style={[styles.historyOverlayTitle, { color: colors.text }]}>Exercise History</Text>
-              <Pressable style={[styles.historyOverlayCloseBtn, { borderColor: colors.border, backgroundColor: colors.card }]} onPress={() => setShowExerciseHistory(false)}>
-                <Text style={[styles.historyOverlayCloseText, { color: colors.text }]}>Close</Text>
+              <Text style={styles.historyOverlayTitle}>Exercise History</Text>
+              <Pressable style={styles.historyOverlayCloseBtn} onPress={() => setShowExerciseHistory(false)}>
+                <Text style={styles.historyOverlayCloseText}>Close</Text>
               </Pressable>
             </View>
-            <Text style={[styles.historyOverlaySub, { color: colors.muted }]}>Select From/To dates (max 30 days)</Text>
+            <Text style={styles.historyOverlaySub}>Select From/To dates (max 30 days)</Text>
             <View style={styles.overlayRangeRow}>
               <Pressable
-                style={[styles.overlayDateBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+                style={styles.overlayDateBtn}
                 onPress={() => openDateSelector("exercise", "from")}
               >
-                <Text style={[styles.overlayDateLabel, { color: colors.muted }]}>From</Text>
-                <Text style={[styles.overlayDateValue, { color: colors.text }]}>{exerciseFromDate || "Select date"}</Text>
+                <Text style={styles.overlayDateLabel}>From</Text>
+                <Text style={styles.overlayDateValue}>{exerciseFromDate || "Select date"}</Text>
               </Pressable>
               <Pressable
-                style={[styles.overlayDateBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+                style={styles.overlayDateBtn}
                 onPress={() => openDateSelector("exercise", "to")}
               >
-                <Text style={[styles.overlayDateLabel, { color: colors.muted }]}>To</Text>
-                <Text style={[styles.overlayDateValue, { color: colors.text }]}>{exerciseToDate || "Select date"}</Text>
+                <Text style={styles.overlayDateLabel}>To</Text>
+                <Text style={styles.overlayDateValue}>{exerciseToDate || "Select date"}</Text>
               </Pressable>
             </View>
             <ScrollView style={styles.historyOverlayList} contentContainerStyle={styles.historyOverlayListContent}>
               {filteredExerciseHistory.map((row) => (
-                <View key={`overlay-exercise-${row.date}`} style={[styles.historyRowLine, { borderBottomColor: colors.border }]}>
-                  <Text style={[styles.historyDateText, { color: colors.text }]}>
+                <View key={`overlay-exercise-${row.date}`} style={styles.historyRowLine}>
+                  <Text style={styles.historyDateText}>
                     {`${row.date}, ${
                       row.workouts.length > 0
                         ? row.workouts.map((workout) => `${workout.bodyPart} - ${workout.exerciseName}`).join(", ")
@@ -1122,7 +1061,7 @@ export const ProfileScreen = () => {
                   </Text>
                 </View>
               ))}
-              {filteredExerciseHistory.length === 0 ? <Text style={[styles.historyEmptyText, { color: colors.muted }]}>No exercise history in selected range.</Text> : null}
+              {filteredExerciseHistory.length === 0 ? <Text style={styles.historyEmptyText}>No exercise history in selected range.</Text> : null}
             </ScrollView>
           </View>
         </View>
@@ -1130,40 +1069,40 @@ export const ProfileScreen = () => {
 
       <Modal visible={showCalorieHistory} transparent animationType="slide" onRequestClose={() => setShowCalorieHistory(false)}>
         <View style={styles.modalBackdropBottom}>
-          <View style={[styles.historyOverlaySheet, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}>
+          <View style={styles.historyOverlaySheet}>
             <View style={styles.historyOverlayHeader}>
-              <Text style={[styles.historyOverlayTitle, { color: colors.text }]}>Calorie History</Text>
-              <Pressable style={[styles.historyOverlayCloseBtn, { borderColor: colors.border, backgroundColor: colors.card }]} onPress={() => setShowCalorieHistory(false)}>
-                <Text style={[styles.historyOverlayCloseText, { color: colors.text }]}>Close</Text>
+              <Text style={styles.historyOverlayTitle}>Calorie History</Text>
+              <Pressable style={styles.historyOverlayCloseBtn} onPress={() => setShowCalorieHistory(false)}>
+                <Text style={styles.historyOverlayCloseText}>Close</Text>
               </Pressable>
             </View>
-            <Text style={[styles.historyOverlaySub, { color: colors.muted }]}>Select From/To dates (max 30 days)</Text>
+            <Text style={styles.historyOverlaySub}>Select From/To dates (max 30 days)</Text>
             <View style={styles.overlayRangeRow}>
               <Pressable
-                style={[styles.overlayDateBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+                style={styles.overlayDateBtn}
                 onPress={() => openDateSelector("calorie", "from")}
               >
-                <Text style={[styles.overlayDateLabel, { color: colors.muted }]}>From</Text>
-                <Text style={[styles.overlayDateValue, { color: colors.text }]}>{calorieFromDate || "Select date"}</Text>
+                <Text style={styles.overlayDateLabel}>From</Text>
+                <Text style={styles.overlayDateValue}>{calorieFromDate || "Select date"}</Text>
               </Pressable>
               <Pressable
-                style={[styles.overlayDateBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+                style={styles.overlayDateBtn}
                 onPress={() => openDateSelector("calorie", "to")}
               >
-                <Text style={[styles.overlayDateLabel, { color: colors.muted }]}>To</Text>
-                <Text style={[styles.overlayDateValue, { color: colors.text }]}>{calorieToDate || "Select date"}</Text>
+                <Text style={styles.overlayDateLabel}>To</Text>
+                <Text style={styles.overlayDateValue}>{calorieToDate || "Select date"}</Text>
               </Pressable>
             </View>
             <ScrollView style={styles.historyOverlayList} contentContainerStyle={styles.historyOverlayListContent}>
               {filteredCalorieHistory.map((row) => (
-                <View key={`overlay-calorie-${row.date}`} style={[styles.historyRowLine, { borderBottomColor: colors.border }]}>
-                  <Text style={[styles.historyDateText, { color: colors.text }]}>{row.date}</Text>
-                  <Text style={[styles.historyValueText, { color: colors.muted }]}>
+                <View key={`overlay-calorie-${row.date}`} style={styles.historyRowLine}>
+                  <Text style={styles.historyDateText}>{row.date}</Text>
+                  <Text style={styles.historyValueText}>
                     Protein: {row.protein}g, Fat: {row.fat}g, Fibre: {row.fiber}g, Water: {row.water}L, Carbs: {row.carbs}g
                   </Text>
                 </View>
               ))}
-              {filteredCalorieHistory.length === 0 ? <Text style={[styles.historyEmptyText, { color: colors.muted }]}>No calorie history in selected range.</Text> : null}
+              {filteredCalorieHistory.length === 0 ? <Text style={styles.historyEmptyText}>No calorie history in selected range.</Text> : null}
             </ScrollView>
           </View>
         </View>
@@ -1171,32 +1110,32 @@ export const ProfileScreen = () => {
 
       <Modal visible={activeDatePicker !== null && Platform.OS !== "android"} transparent animationType="fade" onRequestClose={() => setActiveDatePicker(null)}>
         <View style={styles.modalBackdropBottom}>
-          <View style={[styles.datePickerSheet, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}>
-            <Text style={[styles.datePickerTitle, { color: colors.text }]}>
+          <View style={styles.datePickerSheet}>
+            <Text style={styles.datePickerTitle}>
               Select {activeDatePicker?.field === "from" ? "From" : "To"} Date
             </Text>
             {Platform.OS === "web" ? (
               <View style={styles.webCalendarWrap}>
                 <View style={styles.webCalendarHeader}>
                   <Pressable
-                    style={[styles.webMonthNavBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+                    style={styles.webMonthNavBtn}
                     onPress={() => setCalendarCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
                     disabled={monthStart(calendarCursor) <= monthStart(calendarNavBounds.minimumDate)}
                   >
-                    <Text style={[styles.webMonthNavText, { color: colors.text }]}>‹</Text>
+                    <Text style={styles.webMonthNavText}>‹</Text>
                   </Pressable>
-                  <Text style={[styles.webCalendarMonth, { color: colors.text }]}>{monthLabel(calendarCursor)}</Text>
+                  <Text style={styles.webCalendarMonth}>{monthLabel(calendarCursor)}</Text>
                   <Pressable
-                    style={[styles.webMonthNavBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+                    style={styles.webMonthNavBtn}
                     onPress={() => setCalendarCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
                     disabled={monthStart(calendarCursor) >= monthStart(calendarNavBounds.maximumDate)}
                   >
-                    <Text style={[styles.webMonthNavText, { color: colors.text }]}>›</Text>
+                    <Text style={styles.webMonthNavText}>›</Text>
                   </Pressable>
                 </View>
                 <View style={styles.webWeekHeaderRow}>
                   {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => (
-                    <Text key={d} style={[styles.webWeekHeaderCell, { color: colors.muted }]}>{d}</Text>
+                    <Text key={d} style={styles.webWeekHeaderCell}>{d}</Text>
                   ))}
                 </View>
                 <View style={styles.webGrid}>
@@ -1209,8 +1148,8 @@ export const ProfileScreen = () => {
                         style={[
                           styles.webDayCell,
                           {
-                            borderColor: colors.border,
-                            backgroundColor: isSelected ? colors.primary : colors.card,
+                            borderColor: BORDER,
+                            backgroundColor: isSelected ? GREEN : BG,
                             opacity: cell.inMonth ? 1 : 0.5,
                           },
                         ]}
@@ -1223,7 +1162,7 @@ export const ProfileScreen = () => {
                         <Text
                           style={[
                             styles.webDayText,
-                            { color: isSelected ? colors.background : cell.disabled ? colors.muted : colors.text },
+                            { color: isSelected ? WHITE : cell.disabled ? MUTED : TEXT },
                           ]}
                         >
                           {cell.date.getDate()}
@@ -1241,10 +1180,10 @@ export const ProfileScreen = () => {
                 onChange={onDateChange}
                 minimumDate={calendarNavBounds.minimumDate}
                 maximumDate={calendarNavBounds.maximumDate}
-                textColor={colors.text}
+                textColor={TEXT}
               />
             )}
-            <Pressable style={[styles.datePickerDoneBtn, { backgroundColor: colors.primary }]} onPress={() => setActiveDatePicker(null)}>
+            <Pressable style={styles.datePickerDoneBtn} onPress={() => setActiveDatePicker(null)}>
               <Text style={styles.datePickerDoneText}>Done</Text>
             </Pressable>
           </View>
@@ -1256,283 +1195,191 @@ export const ProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  proCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-  },
-  proCtaTitle: { fontSize: 16, fontWeight: "800" },
-  proCtaSub: { fontSize: 12, marginTop: 4 },
-  headerCard: { borderWidth: 0.5, borderRadius: 12, padding: 12, marginBottom: 12, position: "relative" },
-  editTopRightBtn: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    borderWidth: 0.5,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    zIndex: 5,
-  },
-  headerLeft: { flexDirection: "row", gap: 12, alignItems: "center", marginBottom: 10 },
-  avatar: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", backgroundColor: "#404060" },
-  avatarText: { color: "#fff", fontSize: 17, fontWeight: "500" },
-  nameText: { color: "#fff", fontSize: 19, fontWeight: "500" },
-  emailText: { fontSize: 12, marginTop: 2 },
-  metaText: { fontSize: 11 },
-  headerBtns: { flexDirection: "row", gap: 8, alignItems: "center" },
-  headerBtn: { borderWidth: 0.5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
-  headerBtnText: { fontSize: 11, fontWeight: "500" },
-  headerBtnFilled: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
-  headerBtnFilledText: { color: "#111", fontSize: 11, fontWeight: "600" },
-  tilesRow: { gap: 10, paddingBottom: 10 },
-  tile: { width: 142, borderRadius: 12, borderWidth: 0.5, padding: 10 },
-  tileLabel: { color: "#9AA8C4", fontSize: 9, fontWeight: "500", marginBottom: 6, letterSpacing: 0.5 },
-  tileValue: { color: "#fff", fontSize: 15, fontWeight: "500" },
-  tileSub: { color: "#9AA8C4", fontSize: 10, marginTop: 2 },
-  progressCard: { borderWidth: 0.5, borderRadius: 12, padding: 12, marginBottom: 12 },
-  progressHead: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8, gap: 10 },
-  progressTitle: { color: "#fff", fontSize: 13, fontWeight: "500" },
-  progressTopRight: { fontSize: 10, flex: 1, textAlign: "right" },
-  progressTrack: { height: 8, borderRadius: 99, overflow: "hidden" },
-  progressFill: { height: 8, borderRadius: 99 },
-  progressBarBg: {
-    height: 8,
-    borderRadius: 4,
-    overflow: "hidden",
-    marginVertical: 8,
-  },
-  progressBarFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  progressBottom: { flexDirection: "row", justifyContent: "space-between", marginTop: 7 },
-  progressSmall: { fontSize: 9 },
-  progressLabelCenter: {
-    color: "#4ADE80",
-    fontSize: 10,
-    fontWeight: "600",
-    textAlign: "center",
-    flex: 1,
-  },
-  progressLabelZero: { color: "#64748B" },
-  progressLabelComplete: { color: "#F59E0B" },
-  statSubtext: {
-    color: "#22D3EE",
-    fontSize: 10,
-    marginTop: 2,
-  },
-  statSubtextMuted: {
-    color: "#475569",
-    fontSize: 10,
-    marginTop: 2,
-  },
-  quickWeighInBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    marginTop: 4,
-  },
-  quickWeighInText: {
-    color: "#22D3EE",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  weighInModal: {
-    backgroundColor: "#141b2d",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  weighInModalTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "700", marginBottom: 4 },
-  weighInModalSubtitle: { color: "#64748B", fontSize: 13, marginBottom: 20 },
-  weightInputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-  weightInput: {
-    fontSize: 48,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    textAlign: "center",
-    minWidth: 120,
-    borderBottomWidth: 2,
-    borderBottomColor: "#22D3EE",
-    paddingBottom: 4,
-  },
-  weightUnit: { color: "#64748B", fontSize: 20, marginTop: 16 },
-  quickAdjustRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-  quickAdjustBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  quickAdjustText: { color: "#94A3B8", fontSize: 14, fontWeight: "600" },
-  weighInLastRef: { color: "#475569", fontSize: 12, textAlign: "center", marginBottom: 20 },
+  screenContent: { paddingBottom: 28 },
+  inlineHeader: { marginBottom: 14 },
+  dateLabel: { color: MUTED, fontSize: 13, fontWeight: "700", marginBottom: 4 },
+  pageTitle: { color: TEXT, fontSize: 22, fontWeight: "900" },
+  identityCard: { backgroundColor: GREEN, borderRadius: 20, padding: 20, marginBottom: 14, overflow: "hidden" },
+  decorCircleTop: { position: "absolute", width: 150, height: 150, borderRadius: 75, backgroundColor: "rgba(255,255,255,0.05)", top: -68, right: -42 },
+  decorCircleBottom: { position: "absolute", width: 112, height: 112, borderRadius: 56, backgroundColor: "rgba(255,255,255,0.05)", bottom: -52, left: -30 },
+  identityTopRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  avatarRingWrap: { width: 62, height: 62, alignItems: "center", justifyContent: "center" },
+  avatarSvg: { position: "absolute" },
+  avatarInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
+  avatarText: { color: WHITE, fontSize: 18, fontWeight: "900" },
+  identityTextBlock: { flex: 1 },
+  nameBadgeRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  nameText: { color: WHITE, fontSize: 18, fontWeight: "900" },
+  planBadge: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4 },
+  planBadgeElite: { backgroundColor: GOLD },
+  planBadgePro: { backgroundColor: WHITE },
+  planBadgeFree: { backgroundColor: MUTED },
+  planBadgeText: { fontSize: 9, fontWeight: "900" },
+  planBadgeEliteText: { color: TEXT },
+  planBadgeProText: { color: GREEN },
+  planBadgeFreeText: { color: TEXT },
+  emailText: { color: "rgba(255,255,255,0.55)", fontSize: 11, marginTop: 4 },
+  memberMeta: { color: "rgba(255,255,255,0.45)", fontSize: 11, marginTop: 2, fontWeight: "700" },
+  heroEditBtn: { backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9 },
+  heroEditText: { color: WHITE, fontSize: 12, fontWeight: "900" },
+  goalPillsRow: { flexDirection: "row", gap: 8, marginTop: 18 },
+  heroTile: { flex: 1, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.12)", padding: 10 },
+  heroTileLabel: { color: "rgba(255,255,255,0.55)", fontSize: 10, fontWeight: "800" },
+  heroTileValue: { color: WHITE, fontSize: 12, fontWeight: "900", marginTop: 4 },
+  card: { backgroundColor: BG, borderRadius: 16, padding: 14, marginBottom: 14 },
+  cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14 },
+  cardTitle: { color: TEXT, fontSize: 14, fontWeight: "900" },
+  progressMuted: { color: MUTED, fontSize: 13, fontWeight: "900" },
+  goalReachedPill: { backgroundColor: GREEN_LIGHT, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
+  goalReachedText: { color: GREEN, fontSize: 11, fontWeight: "900" },
+  weightPathRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 },
+  weightPoint: { alignItems: "center", minWidth: 58 },
+  weightPointLabel: { color: MUTED, fontSize: 10, fontWeight: "800" },
+  weightStartValue: { color: ORANGE, fontSize: 20, fontWeight: "900" },
+  weightTargetValue: { color: GREEN, fontSize: 20, fontWeight: "900" },
+  weightGradientTrack: { flex: 1, height: 8, borderRadius: 99, overflow: "hidden", flexDirection: "row" },
+  weightGradientOrange: { flex: 1, backgroundColor: ORANGE },
+  weightGradientGold: { flex: 1, backgroundColor: "#FFB800" },
+  weightGradientGreen: { flex: 1, backgroundColor: GREEN },
+  weightTilesRow: { flexDirection: "row", gap: 9 },
+  currentWeightTile: { flex: 1, backgroundColor: WHITE, borderWidth: 1.5, borderColor: GREEN, borderRadius: 12, padding: 12 },
+  tileMuted: { color: MUTED, fontSize: 11, fontWeight: "800" },
+  currentWeightValue: { color: TEXT, fontSize: 22, fontWeight: "900", marginTop: 6 },
+  weightFreshness: { color: MUTED, fontSize: 11, marginTop: 4, fontWeight: "700" },
+  weightFreshnessToday: { color: GREEN },
+  weightLoader: { marginTop: 10 },
+  logWeightTile: { flex: 1, backgroundColor: GREEN_LIGHT, borderRadius: 12, padding: 12, alignItems: "center", justifyContent: "center" },
+  logWeightEmoji: { fontSize: 20, marginBottom: 4 },
+  logWeightText: { color: GREEN, fontSize: 14, fontWeight: "900" },
+  logWeightSub: { color: MUTED, fontSize: 11, marginTop: 3, fontWeight: "700" },
+  sectionLabel: { color: MUTED, fontSize: 11, fontWeight: "900", letterSpacing: 0.8, marginBottom: 12 },
+  activityStatsRow: { flexDirection: "row" },
+  statTile: { flex: 1, alignItems: "center", paddingHorizontal: 6, borderRightWidth: 1, borderRightColor: BORDER },
+  statTileLast: { borderRightWidth: 0 },
+  statIconTile: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", marginBottom: 7 },
+  statIcon: { fontSize: 18 },
+  statValue: { fontSize: 17, fontWeight: "900", marginBottom: 2 },
+  statLabel: { color: MUTED, fontSize: 10, textAlign: "center", fontWeight: "700" },
+  proCta: { backgroundColor: GREEN_LIGHT, borderRadius: 16, padding: 14, marginBottom: 14, flexDirection: "row", alignItems: "center", gap: 12 },
+  proCtaIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: WHITE, alignItems: "center", justifyContent: "center" },
+  proCtaEmoji: { fontSize: 18 },
+  proCtaCopy: { flex: 1 },
+  proCtaTitle: { color: GREEN, fontSize: 16, fontWeight: "900" },
+  proCtaSub: { color: TEXT, opacity: 0.55, fontSize: 12, marginTop: 3, fontWeight: "700" },
+  proCtaArrow: { color: GREEN, fontSize: 24, fontWeight: "300" },
+  footerCard: { backgroundColor: BG, borderRadius: 16, padding: 8, gap: 2, marginBottom: 14 },
+  footerRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderBottomWidth: 1, borderBottomColor: BORDER },
+  footerRowLast: { borderBottomWidth: 0, backgroundColor: ORANGE_LIGHT, borderRadius: 12, marginTop: 2 },
+  footerIconTile: { width: 34, height: 34, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: "center", justifyContent: "center" },
+  logoutIconTile: { width: 34, height: 34, borderRadius: 10, backgroundColor: ORANGE_LIGHT, alignItems: "center", justifyContent: "center" },
+  footerEmoji: { fontSize: 16 },
+  footerLabel: { flex: 1, color: TEXT, fontSize: 13, fontWeight: "800" },
+  footerChevron: { color: GREEN, fontSize: 20 },
+  logoutText: { flex: 1, color: ORANGE, fontSize: 13, fontWeight: "900" },
+  logoutChevron: { color: ORANGE, fontSize: 20 },
+  versionWrap: { alignItems: "center", paddingVertical: 8 },
+  versionText: { color: MUTED, fontSize: 12, fontWeight: "700" },
+  modalBackdropBottom: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", justifyContent: "flex-end" },
+  weighInModal: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
+  weighInModalTitle: { color: TEXT, fontSize: 18, fontWeight: "900", marginBottom: 4 },
+  weighInModalSubtitle: { color: MUTED, fontSize: 13, marginBottom: 20 },
+  weightInputRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 },
+  weightInput: { fontSize: 48, fontWeight: "900", color: TEXT, textAlign: "center", minWidth: 120, borderBottomWidth: 2, borderBottomColor: GREEN, paddingBottom: 4 },
+  weightUnit: { color: MUTED, fontSize: 20, marginTop: 16 },
+  quickAdjustRow: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 16 },
+  quickAdjustBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, backgroundColor: BG },
+  quickAdjustText: { color: GREEN, fontSize: 14, fontWeight: "900" },
+  weighInLastRef: { color: MUTED, fontSize: 12, textAlign: "center", marginBottom: 20 },
   weighInActions: { flexDirection: "row", gap: 12, marginTop: 8 },
-  weighInCancel: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    alignItems: "center",
-  },
-  weighInCancelText: { color: "#94A3B8", fontSize: 15, fontWeight: "600" },
-  weighInSave: {
-    flex: 2,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#22D3EE",
-    alignItems: "center",
-  },
+  weighInCancel: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: BG, alignItems: "center" },
+  weighInCancelText: { color: MUTED, fontSize: 15, fontWeight: "800" },
+  weighInSave: { flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: GREEN, alignItems: "center" },
   weighInSaveDisabled: { opacity: 0.6 },
-  weighInSaveText: { color: "#000", fontSize: 15, fontWeight: "700" },
-  achievementsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  historyCardsRow: { flexDirection: "row", gap: 8, alignItems: "flex-start", marginBottom: 10 },
-  historySectionCard: { borderWidth: 0.5, borderRadius: 12, padding: 10, marginBottom: 10 },
-  historySectionHalf: { flex: 1, minWidth: 0, marginBottom: 0 },
-  historySectionButton: {
-    borderWidth: 0.5,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  historySectionButtonText: { fontSize: 13, fontWeight: "600" },
-  historySectionChevron: { fontSize: 14, fontWeight: "700" },
-  historyRowLine: { paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  historyDateText: { fontSize: 12, fontWeight: "700", marginBottom: 2 },
-  historyValueText: { fontSize: 11, lineHeight: 16 },
-  historyWorkoutText: { fontSize: 11, lineHeight: 16, marginTop: 4, fontWeight: "600" },
-  historyEmptyText: { fontSize: 11, fontStyle: "italic", paddingVertical: 6 },
-  historyOverlaySheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 0.5, padding: 12, maxHeight: "82%" },
-  historyOverlayHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
-  historyOverlayTitle: { fontSize: 16, fontWeight: "700" },
-  historyOverlaySub: { fontSize: 11, marginBottom: 8 },
-  overlayRangeRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  overlayDateBtn: { flex: 1, borderWidth: 0.5, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 9 },
-  overlayDateLabel: { fontSize: 10, fontWeight: "600", marginBottom: 3 },
-  overlayDateValue: { fontSize: 12, fontWeight: "700" },
-  historyOverlayCloseBtn: { borderWidth: 0.5, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 7 },
-  historyOverlayCloseText: { fontSize: 12, fontWeight: "700" },
-  historyOverlayList: { flexGrow: 0 },
-  historyOverlayListContent: { paddingBottom: 8 },
-  datePickerSheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 0.5, padding: 14 },
-  datePickerTitle: { fontSize: 15, fontWeight: "700", marginBottom: 8, textAlign: "center" },
-  webCalendarWrap: { marginBottom: 8 },
-  webCalendarHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  webMonthNavBtn: { width: 34, height: 30, borderWidth: 0.5, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  webMonthNavText: { fontSize: 18, fontWeight: "700", lineHeight: 20 },
-  webCalendarMonth: { fontSize: 14, fontWeight: "700" },
-  webWeekHeaderRow: { flexDirection: "row", marginBottom: 6 },
-  webWeekHeaderCell: { flex: 1, textAlign: "center", fontSize: 11, fontWeight: "600" },
-  webGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  webDayCell: {
-    width: "13.4%",
-    aspectRatio: 1,
-    borderWidth: 0.5,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  webDayText: { fontSize: 12, fontWeight: "700" },
-  datePickerDoneBtn: { borderRadius: 10, alignItems: "center", justifyContent: "center", paddingVertical: 10, marginTop: 8 },
-  datePickerDoneText: { color: "#111", fontSize: 12, fontWeight: "700" },
-  statTile: { flex: 1, minWidth: "47%", borderRadius: 12, borderWidth: 0.5, padding: 10, alignItems: "center" },
-  statValue: { fontSize: 20, fontWeight: "500", marginBottom: 4 },
-  statLabel: { color: "#9AA8C4", fontSize: 9, textAlign: "center" },
-  versionWrap: { marginTop: 16, marginBottom: 4, alignItems: "center" },
-  versionText: { fontSize: 11 },
-  footerActions: {
-    marginTop: 8,
-    gap: 8,
-  },
-  footerActionBtn: {
-    borderWidth: 0.5,
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoutText: { color: "#E24B4A", fontSize: 12, fontWeight: "600" },
-  feedbackText: { fontSize: 12, fontWeight: "600" },
-  modalBackdropBottom: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  feedbackSheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 0.5, padding: 14 },
-  feedbackTitle: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
-  feedbackSub: { fontSize: 11, marginBottom: 10 },
+  weighInSaveText: { color: WHITE, fontSize: 15, fontWeight: "900" },
+  feedbackSheet: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18 },
+  feedbackTitle: { color: TEXT, fontSize: 16, fontWeight: "900", marginBottom: 4 },
+  feedbackSub: { color: MUTED, fontSize: 11, marginBottom: 10 },
   feedbackField: { marginBottom: 10 },
-  feedbackInput: { borderWidth: 0.5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 9, fontSize: 12 },
-  feedbackBodyInput: { borderWidth: 0.5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 10, fontSize: 12, minHeight: 110 },
-  feedbackActions: { flexDirection: "row", gap: 8, marginTop: 6 },
-  feedbackActionBtn: { flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: "center", justifyContent: "center", borderWidth: 0.5 },
-  feedbackCancelText: { fontSize: 12, fontWeight: "600" },
-  feedbackSendText: { color: "#111", fontSize: 12, fontWeight: "700" },
+  editLabel: { color: MUTED, fontSize: 10, marginBottom: 5, fontWeight: "800" },
+  feedbackInput: { color: TEXT, borderWidth: 1.5, borderColor: BORDER, backgroundColor: WHITE, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 13 },
+  feedbackBodyInput: { color: TEXT, borderWidth: 1.5, borderColor: BORDER, backgroundColor: WHITE, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, fontSize: 13, minHeight: 110 },
+  feedbackActions: { flexDirection: "row", gap: 8, marginTop: 8 },
+  feedbackActionBtn: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: BORDER },
+  feedbackSendBtn: { backgroundColor: GREEN, borderColor: GREEN },
+  feedbackCancelText: { color: TEXT, fontSize: 13, fontWeight: "800" },
+  feedbackSendText: { color: WHITE, fontSize: 13, fontWeight: "900" },
   feedbackSentWrap: { alignItems: "center", paddingVertical: 6 },
   feedbackTickCircle: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginBottom: 14 },
-  feedbackTick: { color: "#2E7D32", fontSize: 42, fontWeight: "700", lineHeight: 44 },
-  editSheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 0.5, padding: 14, maxHeight: "85%" },
-  editTitle: { color: "#fff", fontSize: 14, fontWeight: "500", marginBottom: 10 },
-  editField: { marginBottom: 8 },
-  editLabel: { color: "#9AA8C4", fontSize: 9, marginBottom: 4 },
-  editInput: { borderWidth: 0.5, borderColor: "#333", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: "#fff", fontSize: 11 },
-  selectRow: { marginBottom: 8 },
-  selectWrap: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  selectChip: { borderWidth: 0.5, borderColor: "#333", borderRadius: 99, paddingHorizontal: 8, paddingVertical: 6 },
-  selectChipActive: { backgroundColor: "#fff" },
-  selectChipText: { color: "#9AA8C4", fontSize: 10 },
-  selectChipTextActive: { color: "#111", fontWeight: "500" },
-  saveBtn: { borderRadius: 10, alignItems: "center", justifyContent: "center", paddingVertical: 10, marginTop: 8 },
-  saveBtnText: { color: "#111", fontSize: 11, fontWeight: "600" },
+  feedbackTick: { color: GREEN, fontSize: 42, fontWeight: "900", lineHeight: 44 },
+  historyOverlaySheet: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, maxHeight: "82%" },
+  historyOverlayHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
+  historyOverlayTitle: { color: TEXT, fontSize: 16, fontWeight: "900" },
+  historyOverlaySub: { color: MUTED, fontSize: 11, marginBottom: 8 },
+  overlayRangeRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  overlayDateBtn: { flex: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 9, backgroundColor: GREEN_LIGHT },
+  overlayDateLabel: { color: MUTED, fontSize: 10, fontWeight: "800", marginBottom: 3 },
+  overlayDateValue: { color: TEXT, fontSize: 12, fontWeight: "900" },
+  historyOverlayCloseBtn: { backgroundColor: GREEN_LIGHT, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
+  historyOverlayCloseText: { color: GREEN, fontSize: 12, fontWeight: "900" },
+  historyOverlayList: { flexGrow: 0 },
+  historyOverlayListContent: { paddingBottom: 8 },
+  historyRowLine: { paddingVertical: 9, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: BORDER },
+  historyDateText: { color: TEXT, fontSize: 12, fontWeight: "900", marginBottom: 2 },
+  historyValueText: { color: MUTED, fontSize: 11, lineHeight: 16 },
+  historyWorkoutText: { color: BLUE, fontSize: 11, lineHeight: 16, marginTop: 4, fontWeight: "800" },
+  historyEmptyText: { color: MUTED, fontSize: 11, fontStyle: "italic", paddingVertical: 6 },
+  datePickerSheet: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16 },
+  datePickerTitle: { color: TEXT, fontSize: 15, fontWeight: "900", marginBottom: 8, textAlign: "center" },
+  webCalendarWrap: { marginBottom: 8 },
+  webCalendarHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  webMonthNavBtn: { width: 34, height: 30, borderWidth: 1, borderColor: BORDER, borderRadius: 8, alignItems: "center", justifyContent: "center", backgroundColor: BG },
+  webMonthNavText: { color: TEXT, fontSize: 18, fontWeight: "900", lineHeight: 20 },
+  webCalendarMonth: { color: TEXT, fontSize: 14, fontWeight: "900" },
+  webWeekHeaderRow: { flexDirection: "row", marginBottom: 6 },
+  webWeekHeaderCell: { flex: 1, color: MUTED, textAlign: "center", fontSize: 11, fontWeight: "800" },
+  webGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  webDayCell: { width: "13.4%", aspectRatio: 1, borderWidth: 1, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  webDayText: { fontSize: 12, fontWeight: "900" },
+  datePickerDoneBtn: { backgroundColor: GREEN, borderRadius: 12, alignItems: "center", justifyContent: "center", paddingVertical: 12, marginTop: 8 },
+  datePickerDoneText: { color: WHITE, fontSize: 13, fontWeight: "900" },
 });
 
-const Tile = ({ label, value, sub, valueColor }: { label: string; value: string; sub?: string; valueColor?: string }) => (
-  <View style={[styles.tile, { borderColor: HOME_CARD_BORDER, backgroundColor: HOME_CARD_BG }]}>
-    <Text style={styles.tileLabel}>{label}</Text>
-    <Text style={[styles.tileValue, valueColor && { color: valueColor }]}>{value}</Text>
-    {sub ? <Text style={styles.tileSub}>{sub}</Text> : null}
+const Tile = ({
+  label,
+  value,
+  emoji,
+}: {
+  label: string;
+  value: string;
+  emoji?: string;
+  variant?: "hero";
+}) => (
+  <View style={styles.heroTile}>
+    <Text style={styles.heroTileLabel}>{emoji ? `${emoji} ` : ""}{label}</Text>
+    <Text style={styles.heroTileValue}>{value}</Text>
   </View>
 );
 
-const StatTile = ({ value, label, valueColor }: { value: string; label: string; valueColor: string }) => (
-  <View style={[styles.statTile, { borderColor: HOME_CARD_BORDER, backgroundColor: HOME_CARD_BG }]}>
+const StatTile = ({
+  value,
+  label,
+  valueColor,
+  icon,
+  iconBg,
+  isLast,
+}: {
+  value: string;
+  label: string;
+  valueColor: string;
+  icon: string;
+  iconBg: string;
+  isLast?: boolean;
+}) => (
+  <View style={[styles.statTile, isLast && styles.statTileLast]}>
+    <View style={[styles.statIconTile, { backgroundColor: iconBg }]}>
+      <Text style={styles.statIcon}>{icon}</Text>
+    </View>
     <Text style={[styles.statValue, { color: valueColor }]}>{value}</Text>
     <Text style={styles.statLabel}>{label}</Text>
-  </View>
-);
-
-const EditField = ({ label, value, onChange, numeric }: { label: string; value: string; onChange: (v: string) => void; numeric?: boolean }) => (
-  <View style={styles.editField}>
-    <Text style={styles.editLabel}>{label}</Text>
-    <TextInput value={value} onChangeText={onChange} keyboardType={numeric ? "decimal-pad" : "default"} style={styles.editInput} />
-  </View>
-);
-
-const SelectRow = ({ label, options, selected, onSelect }: { label: string; options: string[]; selected: string; onSelect: (v: string) => void }) => (
-  <View style={styles.selectRow}>
-    <Text style={styles.editLabel}>{label}</Text>
-    <View style={styles.selectWrap}>
-      {options.map((o) => (
-        <Pressable key={o} style={[styles.selectChip, selected === o && styles.selectChipActive]} onPress={() => onSelect(o)}>
-          <Text style={[styles.selectChipText, selected === o && styles.selectChipTextActive]}>{o}</Text>
-        </Pressable>
-      ))}
-    </View>
   </View>
 );

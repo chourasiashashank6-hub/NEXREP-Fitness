@@ -1,5 +1,21 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { ONBOARDING_COLORS } from "../constants/onboarding";
+
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 export const TapCards = ({
   options,
@@ -26,16 +42,16 @@ export const TapCards = ({
 const styles = StyleSheet.create({
   wrap: { gap: 8 },
   card: {
-    minHeight: 52,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: ONBOARDING_COLORS.border,
-    backgroundColor: ONBOARDING_COLORS.card,
+    minHeight: 58,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "transparent",
+    backgroundColor: BG,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
-  cardSelected: { borderColor: ONBOARDING_COLORS.primary, backgroundColor: "#1E1B3A" },
-  title: { color: ONBOARDING_COLORS.textPrimary, fontSize: 15, fontWeight: "700" },
-  titleSelected: { color: ONBOARDING_COLORS.primary },
-  desc: { marginTop: 3, color: ONBOARDING_COLORS.textSecondary, fontSize: 13 },
+  cardSelected: { borderColor: GREEN, backgroundColor: GREEN_LIGHT },
+  title: { color: TEXT, fontSize: 15, fontWeight: "800" },
+  titleSelected: { color: GREEN },
+  desc: { marginTop: 3, color: MUTED, fontSize: 13 },
 });

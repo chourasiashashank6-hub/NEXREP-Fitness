@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
   Easing,
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,16 +13,24 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle, Polyline } from "react-native-svg";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Circle } from "react-native-svg";
 import type { CalorieDayPayload } from "../api/caloriesLog";
 import { getDailyCalorieLog, todayLocal } from "../api/caloriesLog";
 import { resolveApiBaseUrl } from "../api/client";
 import { fetchOnboardingMe } from "../api/onboarding";
 import { getProfile } from "../api/user";
 import { getWorkoutHistory } from "../api/workout";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "../store/authStore";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
+import {
+  computeCombinedStreak,
+  getLast7DaysMeta,
+  getStreakMeta,
+  listPastDateKeys,
+  type DayMeta,
+} from "../utils/streakEngine";
 
 interface LatestWeightData {
   weight_kg: number;
@@ -48,44 +55,25 @@ interface GoalProgressData {
   diet_delta_kcal?: number | null;
   total_change_kg?: number | null;
   weight_change_label?: string | null;
+  needs_weigh_in?: boolean;
   timeline?: Record<string, unknown>;
 }
 
-const formatDate = (dateStr: string | null): string => {
-  if (!dateStr) return "—";
-  const d = new Date(`${dateStr}T12:00:00`);
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-};
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FEF1EE";
+const BG = "#F7F6F3";
+const CARD = "#FFFFFF";
+const TEXT_PRIMARY = "#1A1A18";
+const TEXT_MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BEST_STREAK_KEY = "nexrep_best_streak";
+const STREAK_LOOKBACK_DAYS = 60;
 
-const formatDateShort = (dateStr: string | undefined): string => {
-  if (!dateStr) return "";
-  const d = new Date(`${dateStr}T12:00:00`);
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-};
-
-const WeightSparkline = ({ entries }: { entries: WeightEntry[] }) => {
-  if (entries.length < 2) return null;
-
-  const width = 320;
-  const height = 60;
-  const padding = 8;
-
-  const weights = entries.map((e) => e.weight_kg);
-  const minW = Math.min(...weights) - 0.5;
-  const maxW = Math.max(...weights) + 0.5;
-
-  const x = (i: number) => padding + (i / (entries.length - 1)) * (width - padding * 2);
-  const y = (w: number) => height - padding - ((w - minW) / (maxW - minW)) * (height - padding * 2);
-
-  const points = entries.map((e, i) => `${x(i)},${y(e.weight_kg)}`).join(" ");
-
-  return (
-    <Svg width={width} height={height}>
-      <Polyline points={points} fill="none" stroke="#22D3EE" strokeWidth={2} strokeLinejoin="round" />
-      <Circle cx={x(entries.length - 1)} cy={y(weights[weights.length - 1])} r={4} fill="#22D3EE" />
-    </Svg>
-  );
-};
+const RING_SIZE = 200;
+const RING_STROKE = 18;
+const RING_CIRCUMFERENCE = 628;
 
 type BurnProfile = {
   name: string;
@@ -99,28 +87,12 @@ type BurnProfile = {
   activity_level: "sedentary" | "light" | "moderate" | "active" | "very_active";
 };
 
-const BG_MAIN = "#080c12";
-const BG_CARD = "#0f1620";
-const BG_SURFACE = "rgba(255,255,255,0.03)";
-const ACCENT_GREEN = "#00e5a0";
-const ACCENT_BLUE = "#00aaff";
-const ACCENT_RED = "#f87171";
-const ACCENT_PURPLE = "#a78bfa";
-const TEXT_PRIMARY = "#ffffff";
-const TEXT_MUTED = "rgba(255,255,255,0.35)";
-const BORDER = "rgba(255,255,255,0.07)";
-
-const ffDisplay = "System";
-const ffBody = "System";
-const ffMedium = "System";
-const ffSemi = "System";
-
 function computeGreetingForNow(now: Date): string {
   const hour = now.getHours();
-  if (hour >= 5 && hour < 12) return "GOOD MORNING";
-  if (hour >= 12 && hour < 17) return "GOOD AFTERNOON";
-  if (hour >= 17 && hour < 21) return "GOOD EVENING";
-  return "GOOD NIGHT";
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  if (hour >= 17 && hour < 21) return "Good evening";
+  return "Good night";
 }
 
 function formatHeaderDate(now: Date): string {
@@ -150,6 +122,18 @@ function formatDisplayName(rawName: string | null | undefined): string {
   return lastInitial ? `${first} ${lastInitial}` : first;
 }
 
+function firstNameFromDisplayName(displayName: string): string {
+  return displayName.replace(/\s+\S+\.$/, "").split(/\s+/)[0] || "Athlete";
+}
+
+function initialsFromDisplayName(displayName: string): string {
+  const base = displayName.replace(/\./g, "").trim();
+  const parts = base.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "A";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
 const clamp01 = (v: number) => Math.min(1, Math.max(0, Number.isFinite(v) ? v : 0));
 const formatNum = (v: number) => Math.round(v || 0).toLocaleString();
 type EnergyMode = "deficit" | "surplus" | "maintenance";
@@ -157,7 +141,6 @@ type EnergyMode = "deficit" | "surplus" | "maintenance";
 const parseServerDate = (value: unknown): Date | null => {
   const raw = String(value ?? "").trim();
   if (!raw) return null;
-  // Backend can emit naive ISO strings; normalize to UTC so local-day checks are correct.
   const normalized = /^\d{4}-\d{2}-\d{2}T/.test(raw) && !/(Z|[+-]\d{2}:\d{2})$/.test(raw) ? `${raw}Z` : raw;
   const parsed = new Date(normalized);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -214,6 +197,112 @@ function toBurnProfile(onboarding: any): BurnProfile | null {
   };
 }
 
+function streakTileStyle(meta: DayMeta) {
+  if (meta.isToday) {
+    return { backgroundColor: CARD, borderColor: GREEN, color: GREEN, borderWidth: 2 as const };
+  }
+  if (meta.foodLogged && meta.workoutDone) {
+    return { backgroundColor: GREEN, borderColor: GREEN, color: CARD, borderWidth: 0 as const };
+  }
+  if (meta.foodLogged) {
+    return { backgroundColor: GREEN_LIGHT, borderColor: GREEN_LIGHT, color: GREEN, borderWidth: 0 as const };
+  }
+  if (meta.workoutDone) {
+    return { backgroundColor: "#FFF1EE", borderColor: "#FFF1EE", color: ORANGE, borderWidth: 0 as const };
+  }
+  return { backgroundColor: "#ECEAE5", borderColor: "#ECEAE5", color: "#bbb", borderWidth: 0 as const };
+}
+
+function StreakDayColumn({ meta }: { meta: DayMeta }) {
+  const tile = streakTileStyle(meta);
+  return (
+    <View style={styles.streakDayCol}>
+      <View style={styles.streakDots}>
+        <View style={[styles.streakDot, { backgroundColor: meta.foodLogged ? GREEN : TRACK }]} />
+        <View style={[styles.streakDot, { backgroundColor: meta.workoutDone ? ORANGE : TRACK }]} />
+      </View>
+      <View
+        style={[
+          styles.streakDateTile,
+          {
+            backgroundColor: tile.backgroundColor,
+            borderColor: tile.borderColor,
+            borderWidth: tile.borderWidth,
+          },
+        ]}
+      >
+        <Text style={[styles.streakDateNum, { color: tile.color }]}>{meta.dayNum}</Text>
+      </View>
+      <Text style={[styles.streakDayLabel, meta.isToday && styles.streakDayLabelToday]}>
+        {meta.isToday ? "Today" : meta.dayLabel}
+      </Text>
+    </View>
+  );
+}
+
+function ProgressBar({ percent, color }: { percent: number; color: string }) {
+  const widthPct = `${Math.round(clamp01(percent) * 100)}%`;
+  return (
+    <View style={styles.progressTrack}>
+      <View style={[styles.progressFill, { width: widthPct, backgroundColor: color }]} />
+    </View>
+  );
+}
+
+function CalorieRing({
+  eaten,
+  target,
+  remaining,
+  size = RING_SIZE,
+}: {
+  eaten: number;
+  target: number;
+  remaining: number;
+  size?: number;
+}) {
+  const ringCircumference = Math.round((size / RING_SIZE) * RING_CIRCUMFERENCE);
+  const fillLength = target > 0 ? clamp01(eaten / target) * ringCircumference : 0;
+  const radius = (size - RING_STROKE) / 2;
+  const center = size / 2;
+  const valueSize = size >= RING_SIZE ? 36 : 28;
+  const unitSize = size >= RING_SIZE ? 12 : 10;
+  const labelSize = size >= RING_SIZE ? 10 : 9;
+
+  return (
+    <View style={[styles.ringContainer, { width: size, height: size }]}>
+      <Svg width={size} height={size}>
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={TRACK}
+          strokeWidth={RING_STROKE}
+          fill="none"
+        />
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={GREEN}
+          strokeWidth={RING_STROKE}
+          fill="none"
+          strokeDasharray={`${fillLength} ${ringCircumference}`}
+          strokeLinecap="round"
+          rotation={-90}
+          origin={`${center}, ${center}`}
+        />
+      </Svg>
+      <View style={styles.ringCenterOverlay}>
+        <Text style={[styles.ringCenterLabel, { fontSize: labelSize }]}>REMAINING</Text>
+        <Text style={[styles.ringCenterValue, { fontSize: valueSize, lineHeight: valueSize + 4 }]}>
+          {formatNum(remaining)}
+        </Text>
+        <Text style={[styles.ringCenterUnit, { fontSize: unitSize }]}>kcal</Text>
+      </View>
+    </View>
+  );
+}
+
 export const HomeScreen = () => {
   const token = useAuthStore((s) => s.token);
   const [headerGreeting, setHeaderGreeting] = useState(() => computeGreetingForNow(new Date()));
@@ -229,6 +318,9 @@ export const HomeScreen = () => {
   const [showWeighInModal, setShowWeighInModal] = useState(false);
   const [weighInValue, setWeighInValue] = useState("");
   const [isLoggingWeight, setIsLoggingWeight] = useState(false);
+  const [workoutHistory, setWorkoutHistory] = useState<{ date: string; caloriesBurned: number }[]>([]);
+  const [streakCalorieLogs, setStreakCalorieLogs] = useState<{ date: string; total_calories: number }[]>([]);
+  const [personalBestStreak, setPersonalBestStreak] = useState(0);
 
   const sectionAnim = useRef([0, 1, 2, 3, 4].map(() => new Animated.Value(0))).current;
 
@@ -240,6 +332,17 @@ export const HomeScreen = () => {
       ),
     ).start();
   }, [sectionAnim]);
+
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      setHeaderGreeting(computeGreetingForNow(now));
+      setHeaderDateLabel(formatHeaderDate(now));
+    };
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const isSameLocalDay = (isoDate: string, day: Date): boolean => {
     const d = parseServerDate(isoDate);
@@ -264,6 +367,9 @@ export const HomeScreen = () => {
       setWeightHistory([]);
       setGoalProgress(null);
       setHeaderName("Athlete");
+      setWorkoutHistory([]);
+      setStreakCalorieLogs([]);
+      setPersonalBestStreak(0);
       return;
     }
     const apiBase = resolveApiBaseUrl();
@@ -300,6 +406,49 @@ export const HomeScreen = () => {
       const profileName = typeof profileRes?.name === "string" ? profileRes.name : "";
       const onboardingName = typeof onboardingRes?.onboarding?.personal?.name === "string" ? onboardingRes.onboarding.personal.name : "";
       setHeaderName(formatDisplayName(profileName || onboardingName));
+
+      const todayKey = todayLocal();
+      const streakDates = listPastDateKeys(STREAK_LOOKBACK_DAYS);
+      const datesExceptToday = streakDates.filter((d) => d !== todayKey);
+      const [streakWorkoutRes, storedBestRaw, ...pastDayLogs] = await Promise.all([
+        getWorkoutHistory(24 * STREAK_LOOKBACK_DAYS).catch(() => ({ items: [] })),
+        AsyncStorage.getItem(BEST_STREAK_KEY).catch(() => null),
+        ...datesExceptToday.map((date) => getDailyCalorieLog(date).catch(() => null)),
+      ]);
+
+      const calorieLogsForStreak = streakDates.map((date) => {
+        if (date === todayKey) {
+          return { date, total_calories: Number(dayRes?.log?.total_calories ?? 0) };
+        }
+        const idx = datesExceptToday.indexOf(date);
+        const payload = pastDayLogs[idx];
+        return { date, total_calories: Number(payload?.log?.total_calories ?? 0) };
+      });
+
+      const workoutItems = (streakWorkoutRes.items ?? []).map((item) => ({
+        date: item.date,
+        caloriesBurned: Number(item.caloriesBurned) || 0,
+      }));
+
+      // Merge the 7-day history fetch so today's workouts always match the burn bar.
+      for (const item of historyRes.items ?? []) {
+        if (!item?.date) continue;
+        workoutItems.push({
+          date: item.date,
+          caloriesBurned: Number(item.caloriesBurned) || 0,
+        });
+      }
+
+      setWorkoutHistory(workoutItems);
+      setStreakCalorieLogs(calorieLogsForStreak);
+
+      const currentStreak = computeCombinedStreak(calorieLogsForStreak, workoutItems);
+      const previousBest = storedBestRaw ? Math.max(0, parseInt(storedBestRaw, 10) || 0) : 0;
+      const bestStreak = Math.max(currentStreak, previousBest);
+      if (bestStreak > previousBest) {
+        await AsyncStorage.setItem(BEST_STREAK_KEY, String(bestStreak)).catch(() => {});
+      }
+      setPersonalBestStreak(bestStreak);
     } catch {
       Alert.alert("Error", "Could not load home dashboard.");
     }
@@ -448,236 +597,199 @@ export const HomeScreen = () => {
     };
   })();
 
-  const ringSize = 80;
-  const ringStroke = 7;
   const animatedStyle = (idx: number) => ({
     opacity: sectionAnim[idx],
     transform: [{ translateY: sectionAnim[idx].interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
   });
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Animated.View style={[styles.headerWrap, animatedStyle(0)]}>
-          <View style={styles.brandRow}>
-            <LinearGradient colors={[ACCENT_GREEN, ACCENT_BLUE]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.brandTextGradient}>
-              <Text style={styles.brandText}>NexRep</Text>
-            </LinearGradient>
-          </View>
-          <Text style={styles.greeting}>{headerGreeting}</Text>
-          <Text style={styles.userName}>{headerName}</Text>
-          <View style={styles.datePill}>
-            <View style={styles.dateDot} />
-            <Text style={styles.dateText}>{headerDateLabel}</Text>
-          </View>
-        </Animated.View>
+  const needsWeighIn =
+    goalProgress?.needs_weigh_in === true ||
+    (latestWeight != null && (latestWeight.days_since_log === null || latestWeight.days_since_log >= 7));
 
-        {latestWeight && (latestWeight.days_since_log === null || latestWeight.days_since_log >= 7) ? (
-          <TouchableOpacity
-            style={styles.weighInCard}
-            onPress={() => {
-              setWeighInValue(String(latestWeight.weight_kg || ""));
-              setShowWeighInModal(true);
-            }}
-            activeOpacity={0.85}
-          >
-            <View style={styles.weighInLeft}>
-              <Text style={styles.weighInIcon}>⚖️</Text>
-              <View>
-                <Text style={styles.weighInTitle}>
-                  {latestWeight.days_since_log === null
-                    ? "Log your starting weight"
-                    : `Weigh-in due — ${latestWeight.days_since_log} days ago`}
-                </Text>
-                <Text style={styles.weighInSubtitle}>
-                  {latestWeight.days_since_log === null
-                    ? "Needed to track your progress accurately"
-                    : `Last: ${latestWeight.weight_kg}kg on ${formatDate(latestWeight.log_date)}`}
+  const caloriesRemainingDisplay =
+    log?.calories_remaining != null && Number.isFinite(Number(log.calories_remaining))
+      ? Math.round(Number(log.calories_remaining))
+      : Math.max(0, remainingCalories);
+
+  const tdeeValue = burnPlan?.tdee ?? 1690;
+  const milestonePct = Math.round(goalWeeksProgress * 100);
+  const burnedProgress = exerciseDeltaDisplay > 0 ? clamp01(caloriesBurnedSoFar / exerciseDeltaDisplay) : 0;
+
+  const openWeighInModal = () => {
+    setWeighInValue(String(latestWeight?.weight_kg || ""));
+    setShowWeighInModal(true);
+  };
+
+  const streakMeta = useMemo(() => {
+    const streak = computeCombinedStreak(streakCalorieLogs, workoutHistory);
+    return getStreakMeta(streak);
+  }, [streakCalorieLogs, workoutHistory]);
+
+  const last7Days = useMemo(
+    () => getLast7DaysMeta(streakCalorieLogs, workoutHistory),
+    [streakCalorieLogs, workoutHistory],
+  );
+
+  const displayBestStreak = Math.max(personalBestStreak, streakMeta.streak);
+
+  return (
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Animated.View style={animatedStyle(0)}>
+          <View style={styles.greetingRow}>
+            <View style={styles.greetingLeft}>
+              <Text style={styles.greetingSmall}>{headerGreeting}</Text>
+              <Text style={styles.greetingName}>
+                {firstNameFromDisplayName(headerName)} 👋
+              </Text>
+            </View>
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarText}>{initialsFromDisplayName(headerName)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.streakCard}>
+            <View style={styles.streakTopRow}>
+              <View style={styles.streakBadgeLeft}>
+                <View style={styles.streakEmojiTile}>
+                  <Text style={styles.streakEmoji}>{streakMeta.emoji}</Text>
+                </View>
+                <View style={styles.streakBadgeText}>
+                  <Text style={styles.streakCountLine}>
+                    {streakMeta.streak} day{streakMeta.streak === 1 ? "" : "s"} streak
+                  </Text>
+                  <Text style={styles.streakMotivation}>{streakMeta.label}</Text>
+                </View>
+              </View>
+              <View style={styles.streakBestCol}>
+                <Text style={styles.streakBestLabel}>Best</Text>
+                <Text style={styles.streakBestValue}>
+                  {displayBestStreak} 🏆
                 </Text>
               </View>
             </View>
-            <View style={styles.weighInBadge}>
-              <Text style={styles.weighInBadgeText}>Log now</Text>
+
+            <View style={styles.streakDivider} />
+
+            <View style={styles.streakWeekRow}>
+              {last7Days.map((day) => (
+                <StreakDayColumn key={day.date} meta={day} />
+              ))}
             </View>
-          </TouchableOpacity>
+
+            <View style={styles.streakLegendRow}>
+              <View style={styles.streakLegendItem}>
+                <View style={[styles.streakLegendDot, { backgroundColor: GREEN }]} />
+                <Text style={styles.streakLegendText}>Food logged</Text>
+              </View>
+              <Text style={styles.streakLegendSep}>·</Text>
+              <View style={styles.streakLegendItem}>
+                <View style={[styles.streakLegendDot, { backgroundColor: ORANGE }]} />
+                <Text style={styles.streakLegendText}>Workout done</Text>
+              </View>
+              <Text style={styles.streakLegendSep}>·</Text>
+              <View style={styles.streakLegendItem}>
+                <View style={[styles.streakLegendDot, { backgroundColor: TRACK }]} />
+                <Text style={styles.streakLegendText}>Missed</Text>
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+
+        {needsWeighIn ? (
+          <Animated.View style={animatedStyle(1)}>
+            <TouchableOpacity style={styles.weighInPrompt} onPress={openWeighInModal} activeOpacity={0.85}>
+              <Text style={styles.weighInEmoji}>⚖️</Text>
+              <Text style={styles.weighInPromptText}>Log your starting weight for accurate tracking</Text>
+              <Text style={styles.weighInPromptAction}>Log →</Text>
+            </TouchableOpacity>
+          </Animated.View>
         ) : null}
 
-        <Animated.View style={animatedStyle(1)}>
-          <Text style={styles.sectionLabel}>Goal Overview</Text>
-          <View style={styles.card}>
-            <LinearGradient colors={["#7c3aed", ACCENT_PURPLE, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.accentTop} />
-            <View style={styles.cardBody}>
-              <Text style={styles.cardMicro}>GOAL TIMELINE</Text>
-              <Text style={styles.cardTitle}>Weeks to goal milestone</Text>
-              <View style={styles.goalTopRow}>
-                <View>
-                  <View style={styles.goalWeeksLine}>
-                    <Text style={styles.goalWeeks}>{weeksToGoal}</Text>
-                    <Text style={styles.goalWeeksUnit}>weeks</Text>
-                  </View>
-                  <Text style={styles.goalSub}>{paceLabel}</Text>
+        <Animated.View style={[styles.section, animatedStyle(2)]}>
+          <View style={styles.heroRow}>
+            <CalorieRing
+              eaten={eatenToday}
+              target={dailyGoal}
+              remaining={caloriesRemainingDisplay}
+              size={168}
+            />
+            <View style={styles.kpiColumn}>
+              <View style={styles.kpiPill}>
+                <View style={styles.kpiPillLeft}>
+                  <Text style={styles.kpiEmoji}>🍽️</Text>
+                  <Text style={styles.kpiLabel}>to eat</Text>
                 </View>
-                <View style={styles.goalRight}>
-                  <Text style={styles.goalKcal}>{formatNum(deltaDisplay)} kcal</Text>
-                  <Text style={styles.goalPerDay}>/day</Text>
-                  <Text style={styles.goalSub}>{dailyDeltaLabel}</Text>
+                <Text style={styles.kpiValue}>{formatNum(dailyGoal)}</Text>
+              </View>
+              <View style={styles.kpiPill}>
+                <View style={styles.kpiPillLeft}>
+                  <Text style={styles.kpiEmoji}>🔥</Text>
+                  <Text style={styles.kpiLabel}>to burn</Text>
                 </View>
+                <Text style={[styles.kpiValue, styles.kpiValueOrange]}>{formatNum(exerciseDeltaDisplay)}</Text>
               </View>
-              <View style={styles.progressHead}>
-                <Text style={styles.cardMicro}>MILESTONE PROGRESS</Text>
-                <Text style={styles.progressPct}>{Math.round(goalWeeksProgress * 100)}%</Text>
-              </View>
-              <View style={styles.progressTrack}>
-                <LinearGradient colors={["#7c3aed", ACCENT_PURPLE]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${Math.round(goalWeeksProgress * 100)}%` }]} />
-              </View>
-              <View style={styles.goalSplitSection}>
-                <Text style={styles.cardMicro}>PLAN VS LOGGED WORKOUTS</Text>
-                <Text style={[styles.goalSplitLine, { color: TEXT_MUTED }]}>
-                  Diet portion: {formatNum(dietDeltaDisplay)} kcal ({Math.round(dietSharePct * 100)}%) · Workout portion: {formatNum(exerciseDeltaDisplay)} kcal (
-                  {Math.round(exerciseSharePct * 100)}%)
-                </Text>
-                <Text style={[styles.goalSplitLine, { color: TEXT_MUTED, marginTop: 6 }]}>
-                  Logged today (MET, same as Workout tab): {formatNum(caloriesBurnedSoFar)} kcal · Toward workout portion: {formatNum(exerciseTargetRemaining)} kcal
-                  left
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {weightHistory.length >= 2 ? (
-            <View style={styles.weightChartCard}>
-              <View style={styles.weightChartHeader}>
-                <Text style={styles.weightChartTitle}>Weight Trend</Text>
-                <Text style={styles.weightChartSub}>
-                  {latestWeight?.weight_kg}kg current
-                  {goalProgress?.total_change_kg != null && goalProgress.total_change_kg !== 0
-                    ? ` · ${goalProgress.weight_change_label}`
-                    : ""}
-                </Text>
-              </View>
-              <WeightSparkline entries={weightHistory.slice(-8)} />
-              <View style={styles.weightChartXAxis}>
-                <Text style={styles.weightChartDate}>
-                  {formatDateShort(weightHistory[Math.max(0, weightHistory.length - 8)]?.log_date)}
-                </Text>
-                <Text style={styles.weightChartDate}>
-                  {formatDateShort(weightHistory[weightHistory.length - 1]?.log_date)}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-        </Animated.View>
-
-        <Animated.View style={animatedStyle(2)}>
-          <Text style={styles.sectionLabel}>Today's Burn</Text>
-          <View style={styles.card}>
-            <LinearGradient colors={["#ef4444", ACCENT_RED, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.accentTop} />
-            <View style={styles.cardBody}>
-              <View style={styles.rowBetween}>
-                <Text style={styles.cardMicro}>CALORIES TO BURN TODAY</Text>
-                <View style={styles.burnBadge}><Text style={styles.burnBadgeText}>Burn needed</Text></View>
-              </View>
-              <View style={styles.userChip}>
-                <Text style={styles.userChipText}>{`${headerName.replace(".", "")} · ${Math.round(effectiveWeightKg || 71)} kg · ${burnProfile?.goal_tag || "Strength"} · Age ${burnProfile?.age || 25}`}</Text>
-              </View>
-              <View style={styles.centerRow}>
-                <View style={styles.ringWrap}>
-                  <View style={[styles.ringTrack, { width: ringSize, height: ringSize, borderRadius: ringSize / 2, borderWidth: ringStroke }]} />
-                  <View
-                    style={[
-                      styles.ringFillFallback,
-                      {
-                        width: ringSize,
-                        height: ringSize,
-                        borderRadius: ringSize / 2,
-                        borderWidth: ringStroke,
-                        opacity: 0.35 + workoutShareProgress * 0.65,
-                      },
-                    ]}
-                  />
-                  <View style={styles.ringCenter}>
-                    <Text style={styles.ringPct}>{exerciseProgressPct}%</Text>
-                    <Text style={styles.ringLabel}>progress</Text>
-                  </View>
+              <View style={styles.kpiPill}>
+                <View style={styles.kpiPillLeft}>
+                  <Text style={styles.kpiEmoji}>📉</Text>
+                  <Text style={styles.kpiLabel}>deficit</Text>
                 </View>
-                <View style={styles.centerCopy}>
-                  <Text style={styles.kcalBig}>{mode === "deficit" ? formatNum(remainingExercise) : `${exerciseProgressPct}%`}</Text>
-                  <Text style={styles.kcalLine}>{interpreter.headline}</Text>
-                  <Text style={styles.aiLine}>{interpreter.subtext}</Text>
-                </View>
-              </View>
-              <View style={styles.statsGrid}>
-                <View style={styles.statCell}>
-                  <Text style={styles.statLabel}>Body weight</Text>
-                  <Text style={styles.statValue}>{Math.round(effectiveWeightKg || 71)}</Text>
-                  <Text style={styles.statUnit}>kg</Text>
-                </View>
-                <View style={styles.statCell}>
-                  <Text style={styles.statLabel}>TDEE</Text>
-                  <Text style={styles.statValue}>{formatNum(burnPlan?.tdee || 1690)}</Text>
-                  <Text style={styles.statUnit}>kcal/day</Text>
-                </View>
-                <View style={styles.statCell}>
-                  <Text style={styles.statLabel}>Daily goal</Text>
-                  <Text style={styles.statValue}>{formatNum(dailyGoal)}</Text>
-                  <Text style={styles.statUnit}>kcal target</Text>
-                </View>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLeft}>FOOD INTAKE VS TARGET</Text>
-                <Text style={styles.infoRight}>{`${formatNum(eatenToday)} / ${formatNum(dailyGoal)} kcal`}</Text>
-              </View>
-              <View style={styles.progressTrack}>
-                <LinearGradient colors={[ACCENT_GREEN, ACCENT_BLUE]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${Math.round(intakePercent * 100)}%` }]} />
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLeft}>{interpreter.progressLabel.toUpperCase()}</Text>
-                <Text style={[styles.infoRight, { color: ACCENT_GREEN }]}>{`${formatNum(workoutShareAchieved)} / ${formatNum(exerciseDeltaDisplay)} kcal`}</Text>
-              </View>
-              <View style={styles.progressTrack}>
-                <LinearGradient colors={[ACCENT_GREEN, ACCENT_BLUE]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${exerciseProgressPct}%` }]} />
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLeft}>REMAINING CALORIES</Text>
-                <Text style={[styles.infoRight, { color: remainingCalories < 0 ? ACCENT_RED : ACCENT_GREEN }]}>{`${formatNum(remainingCalories)} kcal`}</Text>
-              </View>
-              <View style={styles.progressTrack}>
-                <LinearGradient colors={[ACCENT_GREEN, ACCENT_BLUE]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${Math.round(intakePercent * 100)}%` }]} />
+                <Text style={styles.kpiValue}>{formatNum(deltaDisplay)}</Text>
               </View>
             </View>
           </View>
         </Animated.View>
 
-        <Animated.View style={animatedStyle(3)}>
-          <Text style={styles.sectionLabel}>Calculation Breakdown</Text>
-          <View style={styles.card}>
-            <LinearGradient colors={[ACCENT_GREEN, ACCENT_BLUE, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.accentTop} />
-            <View style={styles.cardBody}>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakLabel}>Calories eaten today</Text>
-                <Text style={styles.breakValueMuted}>{`${formatNum(eatenToday)} kcal`}</Text>
+        <Animated.View style={[styles.section, animatedStyle(3)]}>
+          <View style={styles.tdeeCard}>
+            <View style={styles.tdeeLeft}>
+              <View style={styles.tdeeTitleRow}>
+                <Text style={styles.tdeeEmoji}>⚡</Text>
+                <Text style={styles.tdeeTitle}>TDEE</Text>
               </View>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakLabel}>Minus daily calorie goal</Text>
-                <Text style={styles.breakValueRed}>{`−${formatNum(dailyGoal)} kcal`}</Text>
+              <View style={styles.tdeePill}>
+                <Text style={styles.tdeePillText}>Total Daily Energy Expenditure</Text>
               </View>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakLabel}>Diet share ({Math.round(dietSharePct * 100)}%)</Text>
-                <Text style={styles.breakValueMuted}>{`${formatNum(dietDeltaDisplay)} kcal`}</Text>
-              </View>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakLabel}>Workout share ({Math.round(exerciseSharePct * 100)}%)</Text>
-                <Text style={styles.breakValueRed}>{`${formatNum(exerciseDeltaDisplay)} kcal`}</Text>
-              </View>
-              <View style={[styles.breakdownRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.breakLabel}>Minus already burned</Text>
-                <Text style={styles.breakValueGreen}>{`−${formatNum(caloriesBurnedSoFar)} kcal`}</Text>
-              </View>
-              <View style={styles.stillRow}>
-                <Text style={styles.stillLabel}>{summaryTargetLabel}</Text>
-                <Text style={[styles.stillValue, { color: needsBurnFromExercise ? ACCENT_RED : ACCENT_GREEN }]}>{`${formatNum(summaryTargetValue)} kcal`}</Text>
-              </View>
+              <Text style={styles.tdeeDesc}>Calories your body burns daily at rest + activity.</Text>
             </View>
+            <View style={styles.tdeeRight}>
+              <Text style={styles.tdeeValue}>{formatNum(tdeeValue)}</Text>
+              <Text style={styles.tdeeUnit}>kcal / day</Text>
+            </View>
+          </View>
+
+          <View style={styles.barCard}>
+            <View style={styles.barHeader}>
+              <Text style={styles.barTitle}>🍽️ Calories eaten</Text>
+              <Text style={styles.barMeta}>
+                {formatNum(eatenToday)} / {formatNum(dailyGoal)} kcal
+              </Text>
+            </View>
+            <ProgressBar percent={intakePercent} color={GREEN} />
+          </View>
+
+          <View style={styles.barCard}>
+            <View style={styles.barHeader}>
+              <Text style={styles.barTitle}>🔥 Calories burnt</Text>
+              <Text style={styles.barMeta}>
+                <Text style={styles.burnedOrange}>{formatNum(caloriesBurnedSoFar)}</Text>
+                {` / ${formatNum(exerciseDeltaDisplay)} kcal`}
+              </Text>
+            </View>
+            <ProgressBar percent={burnedProgress} color={ORANGE} />
+          </View>
+        </Animated.View>
+
+        <Animated.View style={[styles.section, animatedStyle(4)]}>
+          <View style={styles.barCard}>
+            <View style={styles.barHeader}>
+              <Text style={styles.barTitle}>🏆 8-week goal</Text>
+              <Text style={styles.milestonePct}>{milestonePct}%</Text>
+            </View>
+            <ProgressBar percent={goalWeeksProgress} color={GREEN} />
+            <Text style={styles.goalFooter}>
+              {weeksToGoal} weeks left · {paceLabel}
+            </Text>
           </View>
         </Animated.View>
       </ScrollView>
@@ -751,92 +863,198 @@ export const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG_MAIN },
-  scroll: { flex: 1, backgroundColor: BG_MAIN },
-  content: { paddingHorizontal: 16, paddingBottom: 34, paddingTop: 20 },
-  headerWrap: { alignItems: "center", width: "100%", paddingBottom: 6 },
-  brandRow: { alignItems: "center", justifyContent: "center" },
-  brandTextGradient: { borderRadius: 6, paddingHorizontal: 2 },
-  brandText: { fontFamily: ffDisplay, fontSize: 34, lineHeight: 34, letterSpacing: 2, color: TEXT_PRIMARY, opacity: 0.98 },
-  greeting: { marginTop: 10, fontFamily: ffMedium, fontSize: 11, letterSpacing: 2.4, color: ACCENT_GREEN },
-  userName: { fontFamily: ffDisplay, fontSize: 42, letterSpacing: 1.5, color: TEXT_PRIMARY, marginTop: 6 },
-  datePill: { marginTop: 12, paddingVertical: 5, paddingHorizontal: 14, borderRadius: 100, backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: BORDER, flexDirection: "row", alignItems: "center", gap: 8 },
-  dateDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: ACCENT_GREEN },
-  dateText: { fontFamily: ffBody, fontSize: 11, color: TEXT_MUTED },
-  sectionLabel: { marginTop: 20, marginBottom: 10, fontFamily: ffMedium, fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.3)" },
-  card: { backgroundColor: BG_CARD, borderRadius: 18, borderWidth: 1, borderColor: BORDER, overflow: "hidden", marginBottom: 12 },
-  accentTop: { height: 3, width: "100%" },
-  cardBody: { padding: 16 },
-  cardMicro: { fontFamily: ffMedium, fontSize: 9, letterSpacing: 2, color: TEXT_MUTED, textTransform: "uppercase" },
-  cardTitle: { marginTop: 4, fontFamily: ffSemi, fontSize: 13, color: TEXT_PRIMARY },
-  goalTopRow: { marginTop: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
-  goalWeeksLine: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
-  goalWeeks: { fontFamily: ffDisplay, fontSize: 48, color: TEXT_PRIMARY, lineHeight: 48 },
-  goalWeeksUnit: { fontFamily: ffSemi, fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 8 },
-  goalSub: { fontFamily: ffBody, fontSize: 11, color: TEXT_MUTED, marginTop: 2 },
-  goalRight: { alignItems: "flex-end" },
-  goalKcal: { fontFamily: ffDisplay, fontSize: 28, color: ACCENT_GREEN, lineHeight: 28 },
-  goalPerDay: { fontFamily: ffBody, fontSize: 11, color: "rgba(0,229,160,0.6)" },
-  progressHead: { marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  progressPct: { fontFamily: ffSemi, fontSize: 12, color: "rgba(255,255,255,0.5)" },
-  progressTrack: { marginTop: 8, width: "100%", height: 4, borderRadius: 100, backgroundColor: "rgba(255,255,255,0.07)", overflow: "hidden" },
-  progressFill: { height: 4, borderRadius: 100 },
-  goalSplitSection: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: BORDER },
-  goalSplitLine: { fontFamily: ffBody, fontSize: 11, lineHeight: 17 },
-  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  burnBadge: { backgroundColor: "rgba(239,68,68,0.12)", borderWidth: 1, borderColor: "rgba(239,68,68,0.25)", borderRadius: 100, paddingHorizontal: 10, paddingVertical: 4 },
-  burnBadgeText: { fontFamily: ffSemi, fontSize: 11, color: ACCENT_RED },
-  userChip: { marginTop: 12, backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: "rgba(255,255,255,0.06)", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
-  userChipText: { fontFamily: ffBody, fontSize: 11, color: TEXT_MUTED },
-  centerRow: { marginTop: 14, flexDirection: "row", gap: 16, alignItems: "center" },
-  ringWrap: { width: 80, height: 80, alignItems: "center", justifyContent: "center", position: "relative" },
-  ringTrack: { borderColor: "rgba(255,255,255,0.07)", position: "absolute" },
-  ringFillFallback: { borderColor: "#1a3a5c", position: "absolute" },
-  ringCenter: { position: "absolute", alignItems: "center", justifyContent: "center" },
-  ringPct: { fontFamily: ffSemi, fontSize: 14, color: TEXT_PRIMARY },
-  ringLabel: { fontFamily: ffBody, fontSize: 9, color: TEXT_MUTED },
-  centerCopy: { flex: 1 },
-  kcalBig: { fontFamily: ffDisplay, fontSize: 44, color: ACCENT_RED, lineHeight: 44 },
-  kcalLine: { fontFamily: ffSemi, fontSize: 12, color: TEXT_PRIMARY },
-  aiLine: { marginTop: 4, fontFamily: ffBody, fontSize: 11, color: TEXT_MUTED, lineHeight: 16 },
-  statsGrid: { marginTop: 14, flexDirection: "row", gap: 8 },
-  statCell: { flex: 1, backgroundColor: BG_SURFACE, borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.05)", paddingHorizontal: 10, paddingTop: 10, paddingBottom: 8 },
-  statLabel: { fontFamily: ffMedium, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: TEXT_MUTED },
-  statValue: { marginTop: 4, fontFamily: ffDisplay, fontSize: 24, color: TEXT_PRIMARY, lineHeight: 24 },
-  statUnit: { marginTop: 2, fontFamily: ffBody, fontSize: 10, color: TEXT_MUTED },
-  infoRow: { marginTop: 10, paddingVertical: 10, borderTopWidth: 1, borderTopColor: BORDER, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  infoLeft: { fontFamily: ffMedium, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: TEXT_MUTED },
-  infoRight: { fontFamily: ffMedium, fontSize: 11, color: TEXT_PRIMARY },
-  breakdownRow: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.04)", flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  breakLabel: { fontFamily: ffBody, fontSize: 13, color: TEXT_PRIMARY },
-  breakValueMuted: { fontFamily: ffMedium, fontSize: 13, color: TEXT_MUTED },
-  breakValueRed: { fontFamily: ffMedium, fontSize: 13, color: ACCENT_RED },
-  breakValueGreen: { fontFamily: ffMedium, fontSize: 13, color: ACCENT_GREEN },
-  stillRow: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  stillLabel: { fontFamily: ffDisplay, fontSize: 22, letterSpacing: 1, color: TEXT_PRIMARY },
-  stillValue: { fontFamily: ffDisplay, fontSize: 28, color: ACCENT_RED },
-  weighInCard: {
+  safe: { flex: 1, backgroundColor: BG },
+  scroll: { flex: 1, backgroundColor: BG },
+  content: { paddingHorizontal: 16, paddingBottom: 34, paddingTop: 12 },
+  section: { marginBottom: 4 },
+  greetingRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "rgba(34, 211, 238, 0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(34, 211, 238, 0.2)",
-    borderRadius: 12,
-    padding: 14,
     marginBottom: 12,
   },
-  weighInLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  weighInIcon: { fontSize: 22 },
-  weighInTitle: { color: "#E2E8F0", fontSize: 13, fontWeight: "600" },
-  weighInSubtitle: { color: "#64748B", fontSize: 11, marginTop: 2 },
-  weighInBadge: {
-    backgroundColor: "#22D3EE",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+  streakCard: {
+    backgroundColor: BG,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 20,
   },
-  weighInBadgeText: { color: "#000", fontSize: 12, fontWeight: "700" },
+  streakTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  streakBadgeLeft: { flexDirection: "row", alignItems: "center", flex: 1, paddingRight: 12 },
+  streakEmojiTile: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#FFF1EE",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  streakEmoji: { fontSize: 22 },
+  streakBadgeText: { flex: 1 },
+  streakCountLine: { fontSize: 16, fontWeight: "700", color: ORANGE },
+  streakMotivation: { fontSize: 11, color: "#C07050", marginTop: 2 },
+  streakBestCol: { alignItems: "flex-end" },
+  streakBestLabel: { fontSize: 10, color: TEXT_MUTED, marginBottom: 2 },
+  streakBestValue: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY },
+  streakDivider: { height: 1, backgroundColor: "#ECEAE5", marginVertical: 14 },
+  streakWeekRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  streakDayCol: { alignItems: "center", flex: 1 },
+  streakDots: { gap: 3, marginBottom: 6 },
+  streakDot: { width: 8, height: 8, borderRadius: 4 },
+  streakDateTile: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  streakDateNum: { fontSize: 13, fontWeight: "700" },
+  streakDayLabel: { fontSize: 10, color: TEXT_MUTED, marginTop: 4 },
+  streakDayLabelToday: { color: GREEN, fontWeight: "600" },
+  streakLegendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  streakLegendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  streakLegendDot: { width: 8, height: 8, borderRadius: 4 },
+  streakLegendText: { fontSize: 10, color: TEXT_MUTED },
+  streakLegendSep: { fontSize: 10, color: TEXT_MUTED },
+  greetingLeft: { flex: 1, paddingRight: 12 },
+  greetingSmall: { fontSize: 13, color: TEXT_MUTED, marginBottom: 4 },
+  greetingName: { fontSize: 24, fontWeight: "700", color: TEXT_PRIMARY },
+  avatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: { color: CARD, fontSize: 14, fontWeight: "700" },
+  weighInPrompt: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFBF5",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    gap: 10,
+  },
+  weighInEmoji: { fontSize: 20 },
+  weighInPromptText: { flex: 1, fontSize: 13, color: TEXT_PRIMARY, lineHeight: 18 },
+  weighInPromptAction: { fontSize: 13, fontWeight: "700", color: GREEN },
+  ringContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringCenterOverlay: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringCenterLabel: {
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: TEXT_MUTED,
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  ringCenterValue: {
+    fontSize: 36,
+    fontWeight: "800",
+    color: TEXT_PRIMARY,
+    lineHeight: 40,
+  },
+  ringCenterUnit: { fontSize: 12, color: TEXT_MUTED, marginTop: 2 },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 16,
+  },
+  kpiColumn: { flex: 1, gap: 8 },
+  kpiPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: CARD,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: TRACK,
+  },
+  kpiPillLeft: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  kpiEmoji: { fontSize: 16 },
+  kpiValue: { fontSize: 17, fontWeight: "700", color: TEXT_PRIMARY },
+  kpiValueOrange: { color: ORANGE },
+  kpiLabel: { fontSize: 11, color: TEXT_MUTED, textTransform: "lowercase" },
+  tdeeCard: {
+    backgroundColor: GREEN,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  tdeeLeft: { flex: 1, paddingRight: 12 },
+  tdeeTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+  tdeeEmoji: { fontSize: 18 },
+  tdeeTitle: { fontSize: 18, fontWeight: "700", color: CARD },
+  tdeePill: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  tdeePillText: { fontSize: 10, color: CARD, fontWeight: "600" },
+  tdeeDesc: { fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 16 },
+  tdeeRight: { alignItems: "flex-end" },
+  tdeeValue: { fontSize: 32, fontWeight: "800", color: CARD, lineHeight: 36 },
+  tdeeUnit: { fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2 },
+  barCard: {
+    backgroundColor: BG,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: TRACK,
+  },
+  barHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  barTitle: { fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY },
+  barMeta: { fontSize: 12, color: TEXT_MUTED },
+  burnedOrange: { color: ORANGE, fontWeight: "700" },
+  milestonePct: { fontSize: 14, fontWeight: "700", color: GREEN },
+  progressTrack: {
+    width: "100%",
+    height: 8,
+    borderRadius: 100,
+    backgroundColor: TRACK,
+    overflow: "hidden",
+  },
+  progressFill: { height: 8, borderRadius: 100 },
+  goalFooter: { fontSize: 11, color: TEXT_MUTED, marginTop: 10 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -901,24 +1119,4 @@ const styles = StyleSheet.create({
   },
   weighInSaveDisabled: { opacity: 0.6 },
   weighInSaveText: { color: "#000", fontSize: 15, fontWeight: "700" },
-  weightChartCard: {
-    backgroundColor: "#0F1A2A",
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 12,
-  },
-  weightChartHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  weightChartTitle: { color: "#E2E8F0", fontSize: 14, fontWeight: "600" },
-  weightChartSub: { color: "#64748B", fontSize: 11 },
-  weightChartXAxis: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 4,
-  },
-  weightChartDate: { color: "#475569", fontSize: 10 },
 });
