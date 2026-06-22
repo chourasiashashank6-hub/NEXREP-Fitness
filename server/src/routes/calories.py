@@ -1340,6 +1340,19 @@ def _serialize_day(db: Session, user: User, log_date: date) -> dict[str, Any]:
     }
 
 
+def _meal_history_sort_value(item: dict[str, Any]) -> datetime:
+    logged_at = item.get("logged_at")
+    if logged_at:
+        try:
+            return datetime.fromisoformat(str(logged_at))
+        except ValueError:
+            pass
+    try:
+        return datetime.fromisoformat(f"{item.get('date')}T00:00:00")
+    except ValueError:
+        return datetime.min
+
+
 @router.post("/daily-log")
 def ensure_daily_log(
     payload: DailyLogEnsureRequest | None = None,
@@ -1348,6 +1361,107 @@ def ensure_daily_log(
 ):
     log_date = _parse_log_date(payload.date if payload else None)
     return _serialize_day(db, current_user, log_date)
+
+
+@router.get("/daily-log")
+def get_daily_log_history(
+    range_filter: str = Query(default="today", alias="range", pattern="^(today|all)$"),
+    limit: int = Query(default=20, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    search: str | None = Query(default=None, max_length=80),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    today = datetime.utcnow().date()
+    search_term = search.strip() if search and search.strip() else None
+    db_meals_query = (
+        db.query(MealEntry, DailyNutritionLog.log_date)
+        .join(DailyNutritionLog, MealEntry.log_id == DailyNutritionLog.log_id)
+        .filter(MealEntry.user_id == current_user.id)
+    )
+    ai_meals_query = db.query(AIFoodMealEntry).filter(AIFoodMealEntry.user_id == current_user.id)
+    if range_filter != "all":
+        db_meals_query = db_meals_query.filter(DailyNutritionLog.log_date == today)
+        ai_meals_query = ai_meals_query.filter(AIFoodMealEntry.log_date == today)
+    if search_term:
+        db_meals_query = db_meals_query.filter(MealEntry.food_name.ilike(f"%{search_term}%"))
+        ai_meals_query = ai_meals_query.filter(AIFoodMealEntry.food_name.ilike(f"%{search_term}%"))
+
+    total_db = db_meals_query.count()
+    total_ai = ai_meals_query.count()
+    total_count = total_db + total_ai
+    db_sums = db_meals_query.with_entities(
+        func.coalesce(func.sum(MealEntry.total_calories), 0),
+        func.coalesce(func.sum(MealEntry.total_protein_g), 0),
+        func.coalesce(func.sum(MealEntry.total_carbs_g), 0),
+        func.coalesce(func.sum(MealEntry.total_fat_g), 0),
+        func.coalesce(func.sum(MealEntry.total_fiber_g), 0),
+    ).one()
+    ai_sums = ai_meals_query.with_entities(
+        func.coalesce(func.sum(AIFoodMealEntry.calories), 0),
+        func.coalesce(func.sum(AIFoodMealEntry.protein), 0),
+        func.coalesce(func.sum(AIFoodMealEntry.carbs), 0),
+        func.coalesce(func.sum(AIFoodMealEntry.fat), 0),
+        func.coalesce(func.sum(AIFoodMealEntry.fibre), 0),
+    ).one()
+
+    fetch_size = offset + limit
+    db_rows = (
+        db_meals_query
+        .order_by(MealEntry.logged_at.desc(), MealEntry.meal_id.desc())
+        .limit(fetch_size)
+        .all()
+    )
+    ai_rows = (
+        ai_meals_query
+        .order_by(AIFoodMealEntry.created_at.desc(), AIFoodMealEntry.ai_meal_id.desc())
+        .limit(fetch_size)
+        .all()
+    )
+    merged: list[dict[str, Any]] = []
+    for meal, meal_date in db_rows:
+        serialized = _serialize_meal(meal)
+        serialized["date"] = meal_date.isoformat()
+        merged.append(serialized)
+    for meal in ai_rows:
+        serialized = _serialize_ai_meal(meal)
+        serialized["date"] = meal.log_date.isoformat()
+        merged.append(serialized)
+    merged.sort(key=_meal_history_sort_value, reverse=True)
+    items = merged[offset: offset + limit]
+
+    date_keys = sorted({str(item["date"]) for item in items}, reverse=True)
+    day_total_rows = (
+        db.query(DailyNutritionLog)
+        .filter(DailyNutritionLog.user_id == current_user.id, DailyNutritionLog.log_date.in_([date.fromisoformat(d) for d in date_keys] or [today]))
+        .all()
+    )
+    day_totals = {
+        row.log_date.isoformat(): {
+            "total_calories": float(row.total_calories),
+            "total_protein_g": float(row.total_protein_g),
+            "total_carbs_g": float(row.total_carbs_g),
+            "total_fat_g": float(row.total_fat_g),
+            "total_fiber_g": float(row.total_fiber_g),
+        }
+        for row in day_total_rows
+    }
+
+    return {
+        "items": items,
+        "dayTotals": day_totals,
+        "total": total_count,
+        "limit": limit,
+        "offset": offset,
+        "summary": {
+            "totalMealsLogged": total_count,
+            "totalCalories": float(Decimal(str(db_sums[0])) + Decimal(str(ai_sums[0]))),
+            "totalProtein": float(Decimal(str(db_sums[1])) + Decimal(str(ai_sums[1]))),
+            "totalCarbs": float(Decimal(str(db_sums[2])) + Decimal(str(ai_sums[2]))),
+            "totalFat": float(Decimal(str(db_sums[3])) + Decimal(str(ai_sums[3]))),
+            "totalFiber": float(Decimal(str(db_sums[4])) + Decimal(str(ai_sums[4]))),
+        },
+    }
 
 
 @router.get("/daily-log/{log_date}")

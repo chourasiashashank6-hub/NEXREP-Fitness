@@ -32,6 +32,7 @@ import {
 import { fetchOnboardingMe } from "../api/onboarding";
 import { deleteStrengthLift, logStrengthLift, updateStrengthLift } from "../api/strength";
 import { getProfile } from "../api/user";
+import AllTimeHistoryModal from "../components/AllTimeHistoryModal";
 import { AppInput } from "../components/AppInput";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
 import MediaPipeGuidanceView from "../components/MediaPipeGuidanceView";
@@ -363,6 +364,7 @@ export const WorkoutScreen = () => {
   const [pickerSeconds, setPickerSeconds] = useState(0);
   const [history, setHistory] = useState<WorkoutHistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [allTimeHistoryOpen, setAllTimeHistoryOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -1624,16 +1626,27 @@ export const WorkoutScreen = () => {
         </Pressable>
 
         <View style={styles.bgCard}>
-          <Pressable style={styles.historyHeader} onPress={toggleHistory}>
-            <View style={styles.historyHeaderLeft}>
-              <Text style={styles.historyEyebrow}>{t("workoutLog.recent")}</Text>
-              <Text style={styles.historyTitle}>{t("workoutLog.sessionHistory")}</Text>
-            </View>
-            <View style={styles.historyHeaderRight}>
-              <Text style={styles.historyCount}>{t("workoutLog.todayCount", { count: todaySessionCount })}</Text>
-              <Text style={[styles.historyChevron, showHistory ? styles.historyChevronOpen : null]}>▾</Text>
-            </View>
-          </Pressable>
+          <View style={styles.historyHeader}>
+            <Pressable style={styles.historyToggle} onPress={toggleHistory}>
+              <View style={styles.historyHeaderLeft}>
+                <Text style={styles.historyEyebrow}>{t("workoutLog.recent")}</Text>
+                <Text style={styles.historyTitle}>{t("workoutLog.sessionHistory")}</Text>
+              </View>
+              <View style={styles.historyHeaderRight}>
+                <Text style={styles.historyCount}>{t("workoutLog.todayCount", { count: todaySessionCount })}</Text>
+                <Text style={[styles.historyChevron, showHistory ? styles.historyChevronOpen : null]}>▾</Text>
+              </View>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open all time workout history"
+              style={styles.allTimeHistoryBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => setAllTimeHistoryOpen(true)}
+            >
+              <Text style={styles.allTimeHistoryText}>All time ›</Text>
+            </Pressable>
+          </View>
 
           {showHistory ? (
             todayHistory.length === 0 ? (
@@ -1753,6 +1766,8 @@ export const WorkoutScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <AllTimeHistoryModal visible={allTimeHistoryOpen} onClose={() => setAllTimeHistoryOpen(false)} />
 
       <Modal visible={editingId !== null} transparent animationType="fade" onRequestClose={() => setEditingId(null)}>
         <View style={styles.editModalBackdrop}>
@@ -2264,6 +2279,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  historyToggle: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingRight: 12,
+  },
   historyHeaderLeft: { flex: 1 },
   historyEyebrow: { fontSize: 10, fontWeight: "700", color: MUTED, textTransform: "uppercase", marginBottom: 4 },
   historyTitle: { fontSize: 16, fontWeight: "700", color: TEXT },
@@ -2271,6 +2293,8 @@ const styles = StyleSheet.create({
   historyCount: { fontSize: 12, fontWeight: "700", color: GREEN },
   historyChevron: { fontSize: 14, color: GREEN, fontWeight: "700" },
   historyChevronOpen: { transform: [{ rotate: "180deg" }] },
+  allTimeHistoryBtn: { paddingVertical: 6, paddingLeft: 4 },
+  allTimeHistoryText: { fontSize: 13, fontWeight: "500", color: GREEN },
   emptyHistory: { borderWidth: 1, borderColor: BORDER, borderRadius: 12, padding: 18, marginTop: 12, alignItems: "center" },
   emptyHistoryTitle: { fontSize: 16, fontWeight: "700", color: TEXT, marginBottom: 6 },
   emptyHistorySub: { fontSize: 13, lineHeight: 19, textAlign: "center", color: MUTED },

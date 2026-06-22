@@ -48,6 +48,34 @@ export interface CalorieDayPayload {
   }>;
 }
 
+export type CalorieMealHistoryItem = CalorieDayPayload["meals"][number] & {
+  date: string;
+};
+
+export type CalorieMealDayTotal = {
+  total_calories: number;
+  total_protein_g: number;
+  total_carbs_g: number;
+  total_fat_g: number;
+  total_fiber_g: number;
+};
+
+export interface CalorieMealHistoryResponse {
+  items: CalorieMealHistoryItem[];
+  dayTotals: Record<string, CalorieMealDayTotal>;
+  total: number;
+  limit: number;
+  offset: number;
+  summary: {
+    totalMealsLogged: number;
+    totalCalories: number;
+    totalProtein: number;
+    totalCarbs: number;
+    totalFat: number;
+    totalFiber: number;
+  };
+}
+
 export interface FoodSearchItem {
   food_id: number;
   food_name: string;
@@ -178,6 +206,23 @@ export const ensureDailyCalorieLog = async (date?: string) => {
 export const getDailyCalorieLog = async (date: string = todayLocal()) => {
   return withCaloriesRoute(`/daily-log/${encodeURIComponent(date)}`, async (path) => {
     const { data } = await apiClient.get<CalorieDayPayload>(path);
+    return data;
+  });
+};
+
+export const getCalorieMealHistory = async (params: {
+  range?: "today" | "all";
+  limit?: number;
+  offset?: number;
+  search?: string;
+}) => {
+  const query = new URLSearchParams();
+  query.set("range", params.range ?? "all");
+  if (params.limit != null) query.set("limit", String(params.limit));
+  if (params.offset != null) query.set("offset", String(params.offset));
+  if (params.search?.trim()) query.set("search", params.search.trim());
+  return withCaloriesRoute(`/daily-log?${query.toString()}`, async (path) => {
+    const { data } = await apiClient.get<CalorieMealHistoryResponse>(path);
     return data;
   });
 };

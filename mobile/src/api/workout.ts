@@ -58,8 +58,22 @@ export const estimateWorkoutCalories = async (payload: {
   return data;
 };
 
-export const getWorkoutHistory = async (hours = 24): Promise<{ items: WorkoutHistoryItem[] }> => {
-  const { data } = await apiClient.get<{ items: WorkoutHistoryItem[] }>("/workout/history", { params: { hours } });
+export type WorkoutHistoryParams = {
+  hours?: number;
+  range?: "recent" | "all";
+  limit?: number;
+  offset?: number;
+  search?: string;
+};
+
+export const getWorkoutHistory = async (
+  paramsOrHours: number | WorkoutHistoryParams = 24,
+): Promise<{ items: WorkoutHistoryItem[]; total?: number; limit?: number; offset?: number }> => {
+  const params = typeof paramsOrHours === "number" ? { hours: paramsOrHours } : paramsOrHours;
+  const { data } = await apiClient.get<{ items: WorkoutHistoryItem[]; total?: number; limit?: number; offset?: number }>(
+    "/workout/history",
+    { params },
+  );
   return data;
 };
 

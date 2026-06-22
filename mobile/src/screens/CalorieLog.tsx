@@ -37,6 +37,7 @@ import {
 } from "../api/caloriesLog";
 import { loadOnboardingWithFallback } from "../api/onboarding";
 import { resolveApiBaseUrl } from "../api/client";
+import AllTimeMealHistoryModal from "../components/AllTimeMealHistoryModal";
 import { FoodCameraButton } from "../components/FoodCameraButton";
 import { useFoodRecognition } from "../hooks/useFoodRecognition";
 import type { FoodAnalysisResult } from "../services/foodRecognitionService";
@@ -294,6 +295,7 @@ export const CalorieLog = () => {
   const [reloadToken, setReloadToken] = useState(0);
   const [day, setDay] = useState<CalorieDayPayload | null>(null);
   const [mealsExpanded, setMealsExpanded] = useState(false);
+  const [allTimeMealHistoryOpen, setAllTimeMealHistoryOpen] = useState(false);
   const [logDate] = useState(() => todayLocal());
   const [targets, setTargets] = useState<any>(null);
 
@@ -1030,21 +1032,33 @@ export const CalorieLog = () => {
           ))}
         </ScrollView>
 
-        <View style={styles.card}>
-          <Pressable
-            style={styles.mealsCardHeader}
-            onPress={() => setMealsExpanded((prev) => !prev)}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: mealsExpanded }}
-          >
-            <View>
-              <Text style={styles.cardLabel}>{t("calorieLog.todaysMeals")}</Text>
-              <Text style={styles.mealsCollapsedMeta}>
-                {t("calorieLog.loggedMeta", { count: day.meals.length, calories: fmt1(log.total_calories) })}
-              </Text>
-            </View>
-            <Text style={styles.mealsChevron}>{mealsExpanded ? "^" : "v"}</Text>
-          </Pressable>
+        <View style={styles.mealsHistoryCard}>
+          <View style={styles.mealsCardHeader}>
+            <Pressable
+              style={styles.mealsToggle}
+              onPress={() => setMealsExpanded((prev) => !prev)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: mealsExpanded }}
+            >
+              <View style={styles.mealsHeaderLeft}>
+                <Text style={styles.mealsEyebrow}>RECENT</Text>
+                <Text style={styles.mealsHistoryTitle}>{t("calorieLog.mealHistory", { defaultValue: "Meal history" })}</Text>
+              </View>
+              <View style={styles.mealsHeaderRight}>
+                <Text style={styles.mealsCount}>{day.meals.length} today</Text>
+                <Text style={[styles.mealsChevron, mealsExpanded ? styles.mealsChevronOpen : null]}>▾</Text>
+              </View>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open all time meal history"
+              style={styles.allTimeMealsBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => setAllTimeMealHistoryOpen(true)}
+            >
+              <Text style={styles.allTimeMealsText}>All time ›</Text>
+            </Pressable>
+          </View>
           {day.meals.length === 0 ? (
             <Text style={styles.emptyMeals}>{t("calorieLog.emptyMeals")}</Text>
           ) : mealsExpanded ? (
@@ -1093,12 +1107,7 @@ export const CalorieLog = () => {
               </View>
             </>
           ) : (
-            <View style={styles.dayTotalRowCollapsed}>
-              <Text style={styles.dayTotalLabel}>{t("calorieLog.dayTotal")}</Text>
-              <Text style={styles.dayTotalValue}>
-                {fmt1(log.total_calories)} kcal · {fmt1(log.total_protein_g)}p · {fmt1(log.total_carbs_g)}c · {fmt1(log.total_fat_g)}f · {fmt1(log.total_fiber_g || 0)}fi
-              </Text>
-            </View>
+            null
           )}
         </View>
       </ScrollView>
@@ -1128,6 +1137,8 @@ export const CalorieLog = () => {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <AllTimeMealHistoryModal visible={allTimeMealHistoryOpen} onClose={() => setAllTimeMealHistoryOpen(false)} />
 
       <Modal visible={editMealId !== null} transparent animationType="fade" onRequestClose={() => setEditMealId(null)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setEditMealId(null)}>
@@ -1385,14 +1396,40 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
   },
   quickChipText: { color: TEXT, fontSize: 13, fontWeight: "600" },
+  mealsHistoryCard: {
+    backgroundColor: BG,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 14,
+  },
   mealsCardHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
   },
-  mealsCollapsedMeta: { color: MUTED, fontSize: 12, marginTop: 5, fontWeight: "600" },
-  mealsChevron: { color: MUTED, fontSize: 16, fontWeight: "800" },
+  mealsToggle: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingRight: 12,
+  },
+  mealsHeaderLeft: { flex: 1, minWidth: 0 },
+  mealsEyebrow: {
+    color: MUTED,
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  mealsHistoryTitle: { color: TEXT, fontSize: 16, fontWeight: "700" },
+  mealsHeaderRight: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 0 },
+  mealsCount: { color: GREEN, fontSize: 12, fontWeight: "700" },
+  mealsChevron: { color: GREEN, fontSize: 14, fontWeight: "700" },
+  mealsChevronOpen: { transform: [{ rotate: "180deg" }] },
+  allTimeMealsBtn: { paddingVertical: 6, paddingLeft: 4 },
+  allTimeMealsText: { color: GREEN, fontSize: 13, fontWeight: "500" },
   emptyMeals: { color: MUTED, fontSize: 14, textAlign: "center", paddingVertical: 16 },
   mealRow: { flexDirection: "row", alignItems: "flex-start", paddingVertical: 10, gap: 8 },
   mealRowDivider: { borderTopWidth: 1, borderTopColor: BORDER },

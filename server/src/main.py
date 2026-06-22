@@ -2229,16 +2229,24 @@ def update_workout(
 @app.get("/workout/history")
 def workout_history(
     hours: int = Query(default=24, ge=1, le=24 * 30),
+    range_filter: str = Query(default="recent", alias="range", pattern="^(recent|all)$"),
+    limit: int | None = Query(default=None, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    search: str | None = Query(default=None, max_length=80),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    since = datetime.utcnow() - timedelta(hours=hours)
-    items = (
-        db.query(Workout)
-        .filter(Workout.user_id == current_user.id, Workout.date >= since)
-        .order_by(Workout.date.desc())
-        .all()
-    )
+    query = db.query(Workout).filter(Workout.user_id == current_user.id)
+    if range_filter != "all":
+        since = datetime.utcnow() - timedelta(hours=hours)
+        query = query.filter(Workout.date >= since)
+    if search and search.strip():
+        query = query.filter(Workout.exercise_name.ilike(f"%{search.strip()}%"))
+    total = query.count()
+    ordered_query = query.order_by(Workout.date.desc())
+    if limit is not None:
+        ordered_query = ordered_query.offset(offset).limit(limit)
+    items = ordered_query.all()
     lift_by_workout_id = {
         lift.workout_id: lift
         for lift in (
@@ -2273,7 +2281,10 @@ def workout_history(
                 ),
             }
             for i in items
-        ]
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
     }
 
 
