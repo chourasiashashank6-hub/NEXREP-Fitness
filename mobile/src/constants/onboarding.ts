@@ -40,6 +40,7 @@ export const DEFAULT_ONBOARDING_DATA: OnboardingData = {
     difficulty: null,
     focus_muscles: [],
     focus_muscle: null,
+    target_lifts: [],
     target_weight_kg: null,
     target_weight_lb: null,
     target_date: null,
@@ -51,6 +52,7 @@ export const DEFAULT_ONBOARDING_DATA: OnboardingData = {
   },
   dietary: {
     diet_type: "standard",
+    regional_food_styles: [],
     allergies: [],
     meals_per_day: 3,
   },
@@ -65,6 +67,7 @@ export const DEFAULT_ONBOARDING_DATA: OnboardingData = {
       streak_alerts: true,
     },
     region: "IN",
+    preferred_language: null,
   },
 };
 

@@ -1,4 +1,5 @@
 import { apiClient, resolveApiBaseUrl } from "../api/client";
+import i18n from "../i18n";
 import { normalizeImageBase64Payload } from "../utils/foodImagePayload";
 
 export interface FoodAnalysisResult {
@@ -36,13 +37,13 @@ const extractJsonObject = (raw: string): unknown => {
     if (start >= 0 && end > start) {
       return JSON.parse(trimmed.slice(start, end + 1));
     }
-    throw new Error("Malformed JSON response from AI.");
+    throw new Error(i18n.t("services.food.malformedAi"));
   }
 };
 
 const normalizePayload = (value: unknown): FoodAnalysisResult | FoodAnalysisError => {
   if (!value || typeof value !== "object") {
-    return { error: "Malformed JSON response from API." };
+    return { error: i18n.t("services.food.malformedApi") };
   }
   const obj = value as Record<string, unknown>;
   if (typeof obj.error === "string" && obj.error.trim()) {
@@ -53,7 +54,7 @@ const normalizePayload = (value: unknown): FoodAnalysisResult | FoodAnalysisErro
   const confidence = confidenceRaw === "low" || confidenceRaw === "medium" || confidenceRaw === "high" ? confidenceRaw : "medium";
   const foodName = String(obj.foodName ?? "").trim();
   if (!foodName) {
-    return { error: "Could not detect food from this image." };
+    return { error: i18n.t("services.food.detectFailed") };
   }
   const per100 =
     obj.nutritionPer100g && typeof obj.nutritionPer100g === "object"
@@ -118,15 +119,15 @@ export const analyzeFoodImageWithGroq = async ({
     if (responseData == null) {
       const detail =
         (lastError as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        "Could not analyze image right now. Please retry.";
+        i18n.t("services.food.analyzeFailed");
       return { error: String(detail) };
     }
     return normalizePayload(responseData);
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      return { error: "Request timed out. Please try another photo." };
+      return { error: i18n.t("services.food.timeout") };
     }
-    return { error: "Could not analyze image right now. Please retry." };
+    return { error: i18n.t("services.food.analyzeFailed") };
   } finally {
     clearTimeout(timer);
   }

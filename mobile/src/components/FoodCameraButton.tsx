@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Alert, Linking, Modal, PermissionsAndroid, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import { prepareFoodImagePayload } from "../utils/foodImagePayload";
 
 const askToOpenSettings = () => {
-  Alert.alert("Permission needed", "Please allow camera or photo library access in settings to scan food.", [
-    { text: "Cancel", style: "cancel" },
+  Alert.alert(i18n.t("components.foodCamera.permissionNeeded"), i18n.t("components.foodCamera.permissionBody"), [
+    { text: i18n.t("common.cancel"), style: "cancel" },
     {
-      text: "Open Settings",
+      text: i18n.t("components.foodCamera.openSettings"),
       onPress: () => {
         void Linking.openSettings();
       },
@@ -25,9 +27,11 @@ const requestAndroidPermission = async (permission: string): Promise<boolean> =>
 type FoodCameraButtonProps = {
   disabled?: boolean;
   onImageSelected: (payload: { base64: string; mimeType?: string }) => Promise<void> | void;
+  variant?: "icon" | "scanPill";
 };
 
-export const FoodCameraButton = ({ disabled, onImageSelected }: FoodCameraButtonProps) => {
+export const FoodCameraButton = ({ disabled, onImageSelected, variant = "icon" }: FoodCameraButtonProps) => {
+  const { t } = useTranslation();
   const [sheetOpen, setSheetOpen] = useState(false);
   const isWeb = Platform.OS === "web";
   const waitForModalToClose = () => new Promise<void>((resolve) => setTimeout(resolve, 180));
@@ -44,7 +48,7 @@ export const FoodCameraButton = ({ disabled, onImageSelected }: FoodCameraButton
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("Failed to read uploaded file."));
+        reader.onerror = () => reject(new Error(i18n.t("components.foodCamera.uploadedFileError")));
         reader.readAsDataURL(blob);
       });
       const dataCommaIdx = dataUrl.indexOf(",");
@@ -61,7 +65,7 @@ export const FoodCameraButton = ({ disabled, onImageSelected }: FoodCameraButton
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("Failed to read uploaded file."));
+        reader.onerror = () => reject(new Error(i18n.t("components.foodCamera.uploadedFileError")));
         reader.readAsDataURL(file);
       });
       const commaIdx = dataUrl.indexOf(",");
@@ -82,7 +86,7 @@ export const FoodCameraButton = ({ disabled, onImageSelected }: FoodCameraButton
   const emitPreparedImage = async (base64: string, mimeType?: string) => {
     const prepared = await prepareFoodImagePayload(base64, mimeType);
     if (!prepared.base64 || prepared.base64.length < 64) {
-      Alert.alert("Image error", "Could not read image data. Please try again.");
+      Alert.alert(t("components.foodCamera.imageError"), t("components.foodCamera.imageReadError"));
       return;
     }
     await onImageSelected(prepared);
@@ -114,13 +118,13 @@ export const FoodCameraButton = ({ disabled, onImageSelected }: FoodCameraButton
       const asset = result.assets?.[0];
       const resolvedBase64 = await resolveAssetBase64(asset);
       if (!resolvedBase64) {
-        Alert.alert("Image error", "Could not read image data. Please try again.");
+        Alert.alert(t("components.foodCamera.imageError"), t("components.foodCamera.imageReadError"));
         return;
       }
       await emitPreparedImage(resolvedBase64, asset?.mimeType ?? "image/jpeg");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not open camera.";
-      Alert.alert("Camera error", message);
+      const message = error instanceof Error ? error.message : t("components.foodCamera.cameraOpenError");
+      Alert.alert(t("components.foodCamera.cameraError"), message);
     }
   };
 
@@ -155,13 +159,13 @@ export const FoodCameraButton = ({ disabled, onImageSelected }: FoodCameraButton
       const asset = result.assets?.[0];
       const resolvedBase64 = await resolveAssetBase64(asset);
       if (!resolvedBase64) {
-        Alert.alert("Image error", "Could not read image data. Please try again.");
+        Alert.alert(t("components.foodCamera.imageError"), t("components.foodCamera.imageReadError"));
         return;
       }
       await emitPreparedImage(resolvedBase64, asset?.mimeType ?? "image/jpeg");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not open gallery.";
-      Alert.alert("Gallery error", message);
+      const message = error instanceof Error ? error.message : t("components.foodCamera.galleryOpenError");
+      Alert.alert(t("components.foodCamera.galleryError"), message);
     }
   };
 
@@ -181,28 +185,43 @@ export const FoodCameraButton = ({ disabled, onImageSelected }: FoodCameraButton
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Analyze food from photo"
+        accessibilityLabel={t("components.foodCamera.accessibility")}
         onPress={() => !disabled && setSheetOpen(true)}
-        style={({ pressed }) => [styles.iconBtn, disabled && styles.disabled, pressed && !disabled ? styles.pressed : null]}
+        style={({ pressed }) => [
+          variant === "scanPill" ? styles.scanPill : styles.iconBtn,
+          disabled && styles.disabled,
+          pressed && !disabled ? styles.pressed : null,
+        ]}
       >
-        <Ionicons name="camera-outline" size={20} color="#F4F4F5" />
+        <Ionicons name="camera-outline" size={variant === "scanPill" ? 15 : 20} color="#F4F4F5" />
+        {variant === "scanPill" ? <Text style={styles.scanLabel}>{t("components.foodCamera.scan")}</Text> : null}
       </Pressable>
 
       <Modal visible={sheetOpen} transparent animationType="fade" onRequestClose={() => setSheetOpen(false)}>
         <View style={styles.backdrop}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setSheetOpen(false)} />
           <View style={[styles.card, Platform.select({ ios: styles.cardIOS, android: styles.cardAndroid })]}>
-            <Text style={styles.title}>Add food photo</Text>
+            <View style={styles.handle} />
+            <Text style={styles.title}>{t("components.foodCamera.title")}</Text>
+            <Text style={styles.subtitle}>{t("components.foodCamera.subtitle")}</Text>
+            <View style={styles.optionList}>
             {!isWeb ? (
-              <Pressable style={styles.row} onPress={() => void onSelectOption("camera")}>
-                <Text style={styles.rowText}>Take Photo</Text>
+              <Pressable style={[styles.row, styles.primaryRow]} onPress={() => void onSelectOption("camera")}>
+                <View style={styles.primaryIconTile}>
+                  <Ionicons name="camera-outline" size={18} color="#FFFFFF" />
+                </View>
+                <Text style={[styles.rowText, styles.primaryRowText]}>{t("components.foodCamera.takePhoto")}</Text>
               </Pressable>
             ) : null}
-            <Pressable style={styles.row} onPress={() => void onSelectOption("gallery")}>
-              <Text style={styles.rowText}>{isWeb ? "Upload Image" : "Choose from Gallery"}</Text>
+            <Pressable style={[styles.row, styles.secondaryRow]} onPress={() => void onSelectOption("gallery")}>
+              <View style={styles.secondaryIconTile}>
+                <Ionicons name="image-outline" size={18} color="#1A1A18" />
+              </View>
+              <Text style={[styles.rowText, styles.secondaryRowText]}>{t("components.foodCamera.uploadImage")}</Text>
             </Pressable>
+            </View>
             <Pressable style={[styles.row, styles.cancelRow]} onPress={() => setSheetOpen(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t("common.cancel")}</Text>
             </Pressable>
           </View>
         </View>
@@ -222,22 +241,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  scanPill: {
+    backgroundColor: "#0F6E56",
+    borderRadius: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  scanLabel: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "700",
+  },
   pressed: { opacity: 0.82 },
   disabled: { opacity: 0.45 },
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "flex-end",
-    padding: 16,
   },
   card: {
-    backgroundColor: "#0f1620",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 6,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    paddingHorizontal: 20,
+    paddingTop: 22,
+    paddingBottom: 24,
   },
   cardIOS: {
     shadowColor: "#000",
@@ -246,30 +277,82 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
   },
   cardAndroid: { elevation: 6 },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 99,
+    backgroundColor: "#E5E4E0",
+    alignSelf: "center",
+    marginBottom: 18,
+  },
   title: {
-    color: "#F4F4F5",
-    fontSize: 15,
+    color: "#1A1A18",
+    fontSize: 16,
     fontWeight: "700",
-    marginBottom: 8,
-    paddingHorizontal: 6,
+  },
+  subtitle: {
+    color: "#BBBBBB",
+    fontSize: 11,
+    marginTop: 5,
+    marginBottom: 18,
+  },
+  optionList: {
+    gap: 10,
   },
   row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 14,
     paddingVertical: 13,
-    paddingHorizontal: 8,
+    paddingHorizontal: 15,
+  },
+  primaryRow: {
+    backgroundColor: "#E8F5EE",
+    borderWidth: 1,
+    borderColor: "#0F6E56",
+  },
+  secondaryRow: {
+    backgroundColor: "#F7F6F3",
+    borderWidth: 1,
+    borderColor: "#ECEAE5",
+  },
+  primaryIconTile: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#0F6E56",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryIconTile: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#ECEAE5",
+    alignItems: "center",
+    justifyContent: "center",
   },
   rowText: {
-    color: "#F4F4F5",
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
   },
+  primaryRowText: { color: "#0F6E56" },
+  secondaryRowText: { color: "#1A1A18" },
   cancelRow: {
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.1)",
-    marginTop: 2,
+    borderTopColor: "#ECEAE5",
+    marginTop: 18,
+    paddingTop: 14,
+    paddingBottom: 0,
+    justifyContent: "center",
   },
   cancelText: {
-    color: "#F87171",
-    fontSize: 15,
+    color: "#D85A30",
+    fontSize: 13,
     fontWeight: "700",
+    textAlign: "center",
   },
 });

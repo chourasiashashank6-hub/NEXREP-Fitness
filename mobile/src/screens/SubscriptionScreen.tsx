@@ -1,103 +1,155 @@
-import { useCallback, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import * as Haptics from "expo-haptics";
-import { useFonts, BebasNeue_400Regular } from "@expo-google-fonts/bebas-neue";
-import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { StatusBar } from "expo-status-bar";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
-import { CouponInput, runCouponApply } from "../components/CouponInput";
-import { PlanCard } from "../components/PlanCard";
-import { getOriginalPrice, getPrice, PLANS, type PlanId } from "../constants/plans";
+import { getProfile } from "../api/user";
 import type { ProfileStackParamList } from "../navigation/types";
-import type { AppTheme } from "../theme/colors";
-import { useAppTheme } from "../theme";
+import { useAuthStore } from "../store/authStore";
+import { useSubscriptionStore } from "../store/subscriptionStore";
+import { TIER_COLORS, TIER_ICONS } from "../constants/tierColors";
+import type { PlanHistoryEntry, PlanStatus, PlanTier, PaymentRecord } from "../types/subscription";
+import { daysUntil, formatDate } from "../utils/dateFormat";
+import { logicalRow, textAlignEnd, textAlignStart } from "../utils/rtl";
 
-/** Matches bottom-tab active tint & highlights across the app */
-const ACCENT_MINT = "#00e5a0";
-const ACCENT_BLUE = "#00aaff";
-const BG_MAIN = "#080c12";
-const BORDER = "rgba(255,255,255,0.07)";
-const TEXT_MUTED = "rgba(255,255,255,0.35)";
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const BORDER = "#ECEAE5";
+const GOLD = "#FFD700";
+const SCREEN_BG = "#FFFFFF";
 
-const DEFAULT_TERMS_URL = "https://nexrep.app/terms";
-const DEFAULT_PRIVACY_URL = "https://nexrep.app/privacy";
-
-export type SubscriptionScreenProps = {
-  onSelectPlan?: (planId: PlanId, price: number, isYearly: boolean) => void;
-  onPressTerms?: () => void;
-  onPressPrivacy?: () => void;
-  termsUrl?: string;
-  privacyUrl?: string;
+const TIER_MONTHLY: Record<PlanTier, number> = {
+  FREE: 0,
+  PRO: 999,
+  ELITE: 1999,
 };
 
-export function SubscriptionScreen({
-  onSelectPlan,
-  onPressTerms,
-  onPressPrivacy,
-  termsUrl = DEFAULT_TERMS_URL,
-  privacyUrl = DEFAULT_PRIVACY_URL,
-}: SubscriptionScreenProps) {
+type TimelineItem =
+  | { kind: "entry"; entry: PlanHistoryEntry; isCurrent: boolean }
+  | { kind: "collapsed"; count: number; dateIso: string; tier: PlanTier };
+
+function monthYear(d: string) {
+  return new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+function reasonLabel(reason: PlanHistoryEntry["reason"], t: TFunction): string {
+  const map: Record<PlanHistoryEntry["reason"], string> = {
+    initial: t("subscription.reasons.initial"),
+    upgrade: t("subscription.reasons.upgrade"),
+    downgrade: t("subscription.reasons.downgrade"),
+    renewal: t("subscription.reasons.renewal"),
+    cancelled: t("subscription.reasons.cancelled"),
+    expired: t("subscription.reasons.expired"),
+  };
+  return map[reason] ?? reason;
+}
+
+function entryStatusBadge(entry: PlanHistoryEntry, isCurrent: boolean, t: TFunction): { label: string; color: string } {
+  if (isCurrent && entry.reason !== "cancelled") {
+    return { label: t("subscription.status.active"), color: GREEN };
+  }
+  if (entry.reason === "cancelled") {
+    return { label: t("subscription.status.cancelled"), color: ORANGE };
+  }
+  if (entry.reason === "downgrade") {
+    return { label: t("subscription.reasons.downgrade"), color: GOLD };
+  }
+  if (entry.reason === "upgrade") {
+    return { label: t("subscription.reasons.upgrade"), color: GREEN };
+  }
+  return { label: reasonLabel(entry.reason, t), color: MUTED };
+}
+
+function prepareTimeline(history: PlanHistoryEntry[]): TimelineItem[] {
+  const ordered = [...history].reverse();
+  const out: TimelineItem[] = [];
+  let i = 0;
+  while (i < ordered.length) {
+    const entry = ordered[i];
+    if (entry.reason === "cancelled") {
+      const day = entry.startDate.slice(0, 10);
+      let j = i + 1;
+      while (
+        j < ordered.length &&
+        ordered[j].reason === "cancelled" &&
+        ordered[j].startDate.slice(0, 10) === day
+      ) {
+        j += 1;
+      }
+      const count = j - i;
+      if (count > 1) {
+        out.push({ kind: "collapsed", count, dateIso: day, tier: entry.tier });
+        i = j;
+        continue;
+      }
+    }
+    out.push({ kind: "entry", entry, isCurrent: !entry.endDate });
+    i += 1;
+  }
+  return out;
+}
+
+function tierFromDescription(desc: string): PlanTier {
+  if (desc.toUpperCase().includes("ELITE")) return "ELITE";
+  if (desc.toUpperCase().includes("PRO")) return "PRO";
+  return "FREE";
+}
+
+export function SubscriptionScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList, "Subscription">>();
-  const theme = useAppTheme();
-  const { colors, spacing } = theme;
+  const userId = useAuthStore((s) => s.sessionUserId);
+  const subscription = useSubscriptionStore((s) => s.subscription);
+  const payments = useSubscriptionStore((s) => s.payments);
+  const planHistory = useSubscriptionStore((s) => s.planHistory);
 
-  const [fontsLoaded] = useFonts({ BebasNeue_400Regular, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold });
+  const [memberSince, setMemberSince] = useState("");
+  const [paymentsModalVisible, setPaymentsModalVisible] = useState(false);
+  const [timelineModalVisible, setTimelineModalVisible] = useState(false);
+  const [timelineModalDate, setTimelineModalDate] = useState<string | null>(null);
 
-  const [isYearly, setIsYearly] = useState(false);
-  const [couponCode, setCouponCode] = useState("");
-  const [couponApplied, setCouponApplied] = useState(false);
-  const [couponError, setCouponError] = useState("");
-
-  const openTerms = useCallback(async () => {
-    if (onPressTerms) {
-      onPressTerms();
-      return;
-    }
-    await Linking.openURL(termsUrl);
-  }, [onPressTerms, termsUrl]);
-
-  const openPrivacy = useCallback(async () => {
-    if (onPressPrivacy) {
-      onPressPrivacy();
-      return;
-    }
-    await Linking.openURL(privacyUrl);
-  }, [onPressPrivacy, privacyUrl]);
-
-  const handleApplyCoupon = useCallback(() => {
-    const result = runCouponApply(couponCode);
-    if (result.ok) {
-      setCouponApplied(true);
-      setCouponError("");
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } else {
-      setCouponError(result.error);
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    }
-  }, [couponCode]);
-
-  const handleClearCoupon = useCallback(() => {
-    setCouponCode("");
-    setCouponApplied(false);
-    setCouponError("");
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  useEffect(() => {
+    let alive = true;
+    void getProfile()
+      .then((profile) => {
+        if (!alive) return;
+        const createdAt = typeof profile.createdAt === "string" ? profile.createdAt : "";
+        setMemberSince(createdAt ? monthYear(createdAt) : monthYear(new Date().toISOString()));
+      })
+      .catch(() => {
+        if (alive) setMemberSince(monthYear(new Date().toISOString()));
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
+
+  const tier: PlanTier = subscription?.tier ?? "FREE";
+  const tierColors = TIER_COLORS[tier];
+  const status: PlanStatus = subscription?.status ?? "active";
+  const isFree = tier === "FREE";
+  const nextBilling =
+    subscription && !isFree
+      ? formatDate(subscription.currentPeriodEnd)
+      : null;
+  const timelineItems = useMemo(() => (planHistory.length > 1 ? prepareTimeline(planHistory) : []), [planHistory]);
+  const hasTimeline = timelineItems.length > 0;
+  const timelineModalEntries = useMemo(() => {
+    if (!timelineModalDate) return [];
+    return planHistory
+      .filter((e) => e.reason === "cancelled" && e.startDate.slice(0, 10) === timelineModalDate)
+      .reverse();
+  }, [planHistory, timelineModalDate]);
 
   const handleBack = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -107,485 +159,373 @@ export function SubscriptionScreen({
     navigation.navigate("ProfileMain");
   }, [navigation]);
 
-  const handleSelectPlan = useCallback(
-    (planId: PlanId) => {
-      const plan = PLANS.find((p) => p.id === planId);
-      if (!plan) return;
-      const price = getPrice(plan, isYearly, couponApplied);
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onSelectPlan?.(planId, price, isYearly);
-      navigation.navigate("Payment", { planId, displayPrice: price, isYearly });
-    },
-    [couponApplied, isYearly, navigation, onSelectPlan],
-  );
-
-  const proPlan = useMemo(() => PLANS.find((p) => p.id === "pro")!, []);
-  const elitePlan = useMemo(() => PLANS.find((p) => p.id === "elite")!, []);
-
-  const proPrice = getPrice(proPlan, isYearly, couponApplied);
-  const elitePrice = getPrice(elitePlan, isYearly, couponApplied);
-  const proOriginal = couponApplied ? getOriginalPrice(proPlan, isYearly) : null;
-  const eliteOriginal = couponApplied ? getOriginalPrice(elitePlan, isYearly) : null;
-
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.loading, { backgroundColor: BG_MAIN }]}>
-        <ActivityIndicator size="large" color={ACCENT_MINT} />
-      </View>
-    );
-  }
+  const handleManagePlan = useCallback(() => {
+    if (!userId) return;
+    navigation.navigate("ManageSubscription", { userId });
+  }, [navigation, userId]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: BG_MAIN }]} edges={["top", "left", "right"]}>
-      <StatusBar style="light" />
-      <ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: spacing.md,
-          paddingBottom: 36,
-          paddingTop: 8,
-        }}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <StatusBar style="dark" />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Pressable
           onPress={handleBack}
           style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t("subscription.overview.goBack")}
         >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-          <Text style={[styles.backBtnText, { color: colors.text }]}>Back</Text>
+          <Ionicons name="chevron-back" size={22} color={TEXT} />
+          <Text style={styles.backBtnText}>{t("subscription.overview.back")}</Text>
         </Pressable>
 
-        <HeaderSection theme={theme} />
+        <Text style={styles.pageEyebrow}>{t("subscription.overview.eyebrow")}</Text>
+        <Text style={styles.pageTitle}>{t("subscription.overview.title")}</Text>
 
-        <BillingToggle theme={theme} isYearly={isYearly} onToggle={setIsYearly} />
+        <View style={[styles.hero, { backgroundColor: tierColors.cardBg, borderColor: tierColors.cardBorder }]}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroTitleBlock}>
+              <Text style={styles.heroTierIcon}>{TIER_ICONS[tier]}</Text>
+              <Text style={[styles.heroPlanName, { color: tierColors.titleColor }]}>{t("subscription.overview.planName", { tier: isFree ? t("subscription.overview.free") : tier })}</Text>
+              <View style={[styles.statusPill, { backgroundColor: tierColors.badgeBg }]}>
+                <Text style={[styles.statusPillText, { color: tierColors.badgeText }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+                  {status === "active" ? t("subscription.status.active") : status === "trial" ? t("subscription.status.trial") : status === "cancelled" ? t("subscription.status.cancelled") : t("subscription.status.pastDue")}
+                </Text>
+              </View>
+            </View>
+            {nextBilling ? (
+              <View style={styles.heroBillingRight}>
+                <Text style={[styles.heroBillingLabel, { color: tierColors.mutedText }]}>{t("subscription.overview.nextBilling")}</Text>
+                <Text style={[styles.heroBillingDate, { color: tierColors.titleColor }]}>{nextBilling}</Text>
+                <Text style={[styles.heroBillingDays, { color: tierColors.titleColor }]}>{subscription ? t("subscription.overview.daysUntilBilling", { days: daysUntil(subscription.currentPeriodEnd) }) : ""}</Text>
+              </View>
+            ) : null}
+          </View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
-        >
-          <CouponInput
-            value={couponCode}
-            onChangeText={(t) => {
-              setCouponCode(t);
-              if (couponError) setCouponError("");
-            }}
-            applied={couponApplied}
-            error={couponError}
-            onApply={handleApplyCoupon}
-            onClear={handleClearCoupon}
-            theme={theme}
-          />
-        </KeyboardAvoidingView>
+          <View style={styles.heroPriceStrip}>
+            <View>
+              <Text style={styles.heroStatLabel}>{t("subscription.overview.memberSince")}</Text>
+              <Text style={styles.heroStatVal}>{memberSince || "—"}</Text>
+            </View>
+            <Text style={styles.heroPriceText}>
+              {!isFree && subscription ? `₹${subscription.priceINR.toLocaleString("en-IN")}` : "₹0"}
+              <Text style={styles.heroPriceUnit}>{!isFree && subscription?.billingCycle === "yearly" ? t("subscription.overview.yearlyPeriod") : t("subscription.overview.monthlyPeriod")}</Text>
+            </Text>
+          </View>
 
-        <Text style={[styles.sectionLabel, { color: TEXT_MUTED }]}>Choose your plan</Text>
-        <View style={styles.planRow}>
-          <PlanCard
-            plan={proPlan}
-            displayPrice={proPrice}
-            originalPrice={proOriginal}
-            isYearly={isYearly}
-            featured={false}
-            onSelect={() => handleSelectPlan("pro")}
-            theme={theme}
-          />
-          <PlanCard
-            plan={elitePlan}
-            displayPrice={elitePrice}
-            originalPrice={eliteOriginal}
-            isYearly={isYearly}
-            featured={true}
-            onSelect={() => handleSelectPlan("elite")}
-            theme={theme}
-          />
+          {tier === "ELITE" ? <Text style={[styles.topTierNote, { color: tierColors.mutedText }]}>{t("subscription.overview.topTierNote")}</Text> : null}
+
+          <Pressable style={[styles.manageBtn, { backgroundColor: tierColors.buttonBg }]} onPress={handleManagePlan} disabled={!userId}>
+            <Text style={[styles.manageBtnText, { color: tierColors.buttonText }, !userId && styles.manageBtnTextDisabled]}>{t("subscription.overview.manageBilling")}</Text>
+          </Pressable>
         </View>
 
-        <TrustBadges theme={theme} />
-        <ReviewCard theme={theme} />
-        <FooterLinks theme={theme} onTerms={openTerms} onPrivacy={openPrivacy} />
+        <View style={styles.linksCard}>
+          <Pressable style={styles.linkRow} onPress={() => setPaymentsModalVisible(true)}>
+            <View style={styles.linkIconTile}>
+              <Text style={styles.linkEmoji}>🧾</Text>
+            </View>
+            <Text style={styles.linkTitle}>{t("subscription.overview.billingHistory")}</Text>
+            <Text style={styles.linkAction}>{t("subscription.overview.seeAllPayments", { count: payments.length, plural: payments.length === 1 ? "" : "s" })}</Text>
+          </Pressable>
+          <Pressable style={[styles.linkRow, styles.linkRowLast]} onPress={() => setTimelineModalVisible(true)} disabled={!hasTimeline}>
+            <View style={styles.linkIconTile}>
+              <Text style={styles.linkEmoji}>📅</Text>
+            </View>
+            <Text style={styles.linkTitle}>{t("subscription.overview.planTimeline")}</Text>
+            <Text style={[styles.linkAction, !hasTimeline && styles.linkActionDisabled]}>{hasTimeline ? t("subscription.overview.view") : t("subscription.overview.noEvents")}</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.footerNote}>{t("subscription.overview.footerNote")}</Text>
       </ScrollView>
+
+      <BillingSheetModal
+        visible={paymentsModalVisible}
+        title={t("subscription.overview.allPayments")}
+        subtitle={t("subscription.overview.paymentCount", { count: payments.length, plural: payments.length === 1 ? "" : "s" })}
+        onClose={() => setPaymentsModalVisible(false)}
+      >
+        {payments.map((p, i) => (
+          <PaymentRow key={p.id} payment={p} isLast={i === payments.length - 1} />
+        ))}
+      </BillingSheetModal>
+
+      <BillingSheetModal
+        visible={timelineModalVisible}
+        title={t("subscription.overview.planTimeline")}
+        subtitle={t("subscription.overview.planEventCount", { count: planHistory.length, plural: planHistory.length === 1 ? "" : "s" })}
+        onClose={() => {
+          setTimelineModalVisible(false);
+          setTimelineModalDate(null);
+        }}
+      >
+        {timelineItems.map((item, idx) => {
+          if (item.kind === "collapsed") {
+            return (
+              <View
+                key={`collapsed-${item.dateIso}`}
+                style={[styles.timelineRow, idx < timelineItems.length - 1 && styles.rowBorder]}
+              >
+                <View style={styles.timelineRail}>
+                  <View style={[styles.timelineDot, { backgroundColor: MUTED }]} />
+                  {idx < timelineItems.length - 1 ? <View style={styles.timelineLine} /> : null}
+                </View>
+                <View style={styles.timelineBody}>
+                  <View style={styles.expandTitleRow}>
+                    <Text style={styles.timelineTitle}>{t("subscription.overview.collapsedCancelled", { count: item.count })}</Text>
+                    <Pressable onPress={() => setTimelineModalDate(item.dateIso)} hitSlop={8}>
+                      <Text style={styles.expandLink}>{t("subscription.overview.expand")}</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={styles.timelineMeta}>{formatDate(item.dateIso)}</Text>
+                </View>
+                <View style={[styles.entryBadge, { borderColor: MUTED }]}>
+                  <Text style={[styles.entryBadgeText, { color: MUTED }]}>{t("subscription.status.cancelled")}</Text>
+                </View>
+              </View>
+            );
+          }
+          return (
+            <TimelineEntryRow
+              key={`${item.entry.tier}-${item.entry.startDate}`}
+              entry={item.entry}
+              isCurrent={item.isCurrent}
+              showLine={idx < timelineItems.length - 1}
+            />
+          );
+        })}
+      </BillingSheetModal>
+
+      <BillingSheetModal
+        visible={timelineModalDate !== null}
+        title={t("subscription.overview.cancelledEntries")}
+        subtitle={timelineModalDate ? formatDate(timelineModalDate) : undefined}
+        onClose={() => setTimelineModalDate(null)}
+      >
+        {timelineModalEntries.map((entry, i) => (
+          <TimelineEntryRow
+            key={`${entry.startDate}-${i}`}
+            entry={entry}
+            isCurrent={false}
+            showLine={i < timelineModalEntries.length - 1}
+            compact
+          />
+        ))}
+      </BillingSheetModal>
     </SafeAreaView>
   );
 }
 
-function HeaderSection({ theme }: { theme: AppTheme }) {
-  const { colors, radius } = theme;
-
+function BillingSheetModal({
+  visible,
+  title,
+  subtitle,
+  onClose,
+  children,
+}: {
+  visible: boolean;
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
   return (
-    <LinearGradient
-      colors={["#0f1620", "#111D33"]}
-      style={[
-        styles.heroBanner,
-        {
-          borderRadius: radius.xl,
-          borderColor: BORDER,
-        },
-      ]}
-    >
-      <View style={styles.logoRow}>
-        <View style={[styles.logoMark, { backgroundColor: ACCENT_BLUE }]}>
-          <Ionicons name="barbell" size={22} color="#FFFFFF" />
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
+          <View style={styles.modalHeader}>
+            <View style={styles.modalHeaderText}>
+              <Text style={styles.modalTitle}>{title}</Text>
+              {subtitle ? <Text style={styles.modalSubtitle}>{subtitle}</Text> : null}
+            </View>
+            <Pressable style={styles.modalCloseBtn} onPress={onClose} hitSlop={8}>
+              <Ionicons name="close" size={22} color={TEXT} />
+            </Pressable>
+          </View>
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator
+          >
+            <View style={styles.modalListCard}>{children}</View>
+          </ScrollView>
         </View>
-        <Text
-          style={[styles.logoText, { color: colors.text, fontFamily: "BebasNeue_400Regular", letterSpacing: 3 }]}
-        >
-          NEXREP
-        </Text>
       </View>
-      <View style={[styles.badgeRed, { backgroundColor: "rgba(0,229,160,0.14)" }]}>
-        <Text style={styles.badgeRedText}>UNLOCK YOUR POTENTIAL</Text>
-      </View>
-      <Text style={[styles.headline, { color: colors.text }]}>
-        Train Smarter. Go <Text style={{ color: ACCENT_MINT }}>PRO</Text>.
-      </Text>
-      <Text style={[styles.subtext, { color: TEXT_MUTED }]}>
-        {`Join 50,000+ athletes who've already leveled up`}
-      </Text>
-    </LinearGradient>
+    </Modal>
   );
 }
 
-function BillingToggle({
-  theme,
-  isYearly,
-  onToggle,
-}: {
-  theme: AppTheme;
-  isYearly: boolean;
-  onToggle: (v: boolean) => void;
-}) {
-  const { colors, radius } = theme;
+function PlanIcon({ tier, size = 36 }: { tier: PlanTier; size?: number }) {
+  const letter = tier === "FREE" ? "F" : tier === "PRO" ? "P" : "E";
+  const tierColors = TIER_COLORS[tier];
+  return (
+    <View style={[styles.planIcon, { width: size, height: size, borderRadius: size / 2, backgroundColor: tierColors.cardBg }]}>
+      <Text style={[styles.planIconLetter, { color: tierColors.titleColor }]}>{letter}</Text>
+    </View>
+  );
+}
+
+function PaymentRow({ payment, isLast }: { payment: PaymentRecord; isLast: boolean }) {
+  const { t } = useTranslation();
+  const tier = tierFromDescription(payment.description);
+  const statusColor = payment.status === "paid" ? GREEN : payment.status === "failed" ? ORANGE : GOLD;
+  const statusLabel =
+    payment.status === "paid" ? t("subscription.overview.paid") : payment.status === "failed" ? t("subscription.overview.failed") : payment.status;
 
   return (
-    <View
-      style={[
-        styles.billingCard,
-        {
-          backgroundColor: colors.cardAlt,
-          borderColor: BORDER,
-          borderRadius: radius.md,
-        },
-      ]}
-    >
-      <View style={styles.billingTop}>
-        <Text style={[styles.billingLabel, { color: colors.text }]}>Monthly</Text>
-        <Switch
-          value={isYearly}
-          onValueChange={onToggle}
-          trackColor={{ false: colors.tabInactive, true: ACCENT_MINT }}
-          thumbColor="#f4f4f5"
-          ios_backgroundColor={colors.tabInactive}
-        />
-        <Text style={[styles.billingLabel, { color: colors.text }]}>Yearly</Text>
-        {isYearly ? (
-          <>
-            <View style={{ flex: 1, minWidth: 8 }} />
-            <View style={[styles.savePill, { backgroundColor: "rgba(0,229,160,0.14)" }]}>
-              <Text style={[styles.savePillText, { color: ACCENT_MINT }]}>Save 17%</Text>
-            </View>
-          </>
+    <View style={[styles.payRow, !isLast && styles.rowBorder]}>
+      <PlanIcon tier={tier} size={32} />
+      <View style={styles.payMid}>
+        <Text style={styles.payTitle}>{payment.description}</Text>
+        <Text style={styles.payDate}>{formatDate(payment.date)}</Text>
+      </View>
+      <View style={styles.payRight}>
+        <Text style={styles.payAmount}>₹{payment.amount.toLocaleString("en-IN")}</Text>
+        <View style={[styles.paidBadge, { backgroundColor: `${statusColor}18` }]}>
+          <Text style={[styles.paidBadgeText, { color: statusColor }]}>{statusLabel}</Text>
+        </View>
+        {payment.invoiceUrl ? (
+          <Pressable onPress={() => void Linking.openURL(payment.invoiceUrl!)} hitSlop={8}>
+            <Text style={styles.receiptLink}>{t("subscription.overview.receipt")}</Text>
+          </Pressable>
         ) : null}
       </View>
-      <Text style={[styles.priceHint, { color: TEXT_MUTED }]}>
-        {isYearly
-          ? "Pro ₹832/mo · Elite ₹1665/mo (billed yearly)"
-          : "Pro ₹999/mo · Elite ₹1999/mo"}
-      </Text>
     </View>
   );
 }
 
-function TrustBadges({ theme }: { theme: AppTheme }) {
-  const { colors, radius } = theme;
-  const items = [
-    { icon: "shield-checkmark" as const, label: "Secure Payment" },
-    { icon: "calendar-outline" as const, label: "7-Day Trial" },
-    { icon: "people" as const, label: "50K+ Athletes" },
-  ];
-
-  return (
-    <View style={[styles.trustRow, { marginBottom: 18 }]}>
-      {items.map((item) => (
-        <View
-          key={item.label}
-          style={[
-            styles.trustPill,
-            {
-              backgroundColor: colors.card,
-              borderColor: BORDER,
-              borderRadius: radius.md - 2,
-            },
-          ]}
-        >
-          <Ionicons name={item.icon} size={18} color={ACCENT_MINT} />
-          <Text style={[styles.trustLabel, { color: TEXT_MUTED }]} numberOfLines={2}>
-            {item.label}
-          </Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function ReviewCard({ theme }: { theme: AppTheme }) {
-  const { colors, radius } = theme;
-
-  return (
-    <View
-      style={[
-        styles.reviewCard,
-        {
-          backgroundColor: colors.cardAlt,
-          borderColor: BORDER,
-          borderRadius: radius.md,
-        },
-      ]}
-    >
-      <LinearGradient
-        colors={["rgba(0,229,160,0.08)", "transparent"]}
-        style={[styles.reviewGlow, { borderRadius: radius.md }]}
-        pointerEvents="none"
-      />
-      <View style={styles.reviewTop}>
-        <LinearGradient colors={["#1B3A6F", ACCENT_BLUE]} style={styles.avatar}>
-          <Text style={styles.avatarText}>RK</Text>
-        </LinearGradient>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.reviewName, { color: colors.text }]}>Rahul K.</Text>
-          <View style={styles.starsRow}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Ionicons key={i} name="star" size={14} color="#F5A524" />
-            ))}
-          </View>
-        </View>
-      </View>
-      <Text style={[styles.quote, { color: colors.text }]}>
-        &ldquo;NexRep PRO completely changed how I track lifts. The AI rep counter is ridiculously accurate.&rdquo;
-      </Text>
-    </View>
-  );
-}
-
-function FooterLinks({
-  theme,
-  onTerms,
-  onPrivacy,
+function TimelineEntryRow({
+  entry,
+  isCurrent,
+  showLine,
+  compact,
 }: {
-  theme: AppTheme;
-  onTerms: () => void;
-  onPrivacy: () => void;
+  entry: PlanHistoryEntry;
+  isCurrent: boolean;
+  showLine: boolean;
+  compact?: boolean;
 }) {
-  const { colors } = theme;
+  const { t } = useTranslation();
+  const badge = entryStatusBadge(entry, isCurrent, t);
+  const price = TIER_MONTHLY[entry.tier];
 
   return (
-    <View style={styles.footer}>
-      <Text style={[styles.legal, { color: TEXT_MUTED }]}>
-        Subscriptions renew automatically unless cancelled. By continuing you agree to our{" "}
-        <Text onPress={onTerms} style={[styles.link, { color: ACCENT_MINT }]}>
-          Terms
-        </Text>{" "}
-        and{" "}
-        <Text onPress={onPrivacy} style={[styles.link, { color: ACCENT_MINT }]}>
-          Privacy Policy
+    <View style={[styles.timelineRow, compact && styles.timelineRowCompact]}>
+      <View style={styles.timelineRail}>
+        <View
+          style={[
+            styles.timelineDot,
+            isCurrent && { backgroundColor: GREEN, borderColor: GREEN },
+          ]}
+        />
+        {showLine ? <View style={styles.timelineLine} /> : null}
+      </View>
+      <View style={styles.timelineBody}>
+        <Text style={styles.timelineTitle}>
+          {t("subscription.overview.planName", { tier: entry.tier })}{isCurrent ? t("subscription.overview.currentSuffix") : ""}
         </Text>
-        .
-      </Text>
+        <Text style={styles.timelineMeta}>
+          {reasonLabel(entry.reason, t)} · {formatDate(entry.startDate)}
+        </Text>
+      </View>
+      <View style={styles.timelineRight}>
+        <View style={[styles.entryBadge, { borderColor: badge.color }]}>
+            <Text style={[styles.entryBadgeText, { color: badge.color }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+              {badge.label}
+            </Text>
+        </View>
+        {price > 0 ? (
+          <Text style={styles.timelinePrice}>₹{price.toLocaleString("en-IN")}</Text>
+        ) : (
+          <Text style={styles.timelinePrice}>{t("subscription.overview.freePrice")}</Text>
+        )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  loading: { flex: 1, alignItems: "center", justifyContent: "center" },
+  safe: { flex: 1, backgroundColor: SCREEN_BG },
+  scroll: { flex: 1, backgroundColor: SCREEN_BG },
+  content: { padding: 16, paddingBottom: 36, maxWidth: 860, width: "100%", alignSelf: "center" },
   backBtn: {
-    flexDirection: "row",
+    flexDirection: logicalRow,
     alignItems: "center",
     alignSelf: "flex-start",
-    gap: 2,
+    gap: 4,
     marginBottom: 12,
     paddingVertical: 6,
-    paddingRight: 12,
-    paddingLeft: 2,
+    paddingEnd: 8,
   },
-  backBtnPressed: {
-    opacity: 0.65,
-  },
-  backBtnText: {
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 15,
-  },
-  heroBanner: {
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
-  },
-  logoMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoText: {
-    fontFamily: "BebasNeue_400Regular",
-    fontSize: 34,
-    letterSpacing: 3,
-  },
-  badgeRed: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 11,
-    paddingVertical: 5,
-    borderRadius: 999,
-    marginBottom: 14,
-  },
-  badgeRedText: {
-    color: ACCENT_MINT,
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 10,
-    letterSpacing: 1.2,
-  },
-  headline: {
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 23,
-    letterSpacing: 0.4,
-    marginBottom: 8,
-    lineHeight: 30,
-  },
-  subtext: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  billingCard: {
-    borderWidth: 0.5,
-    padding: 14,
-    marginBottom: 18,
-  },
-  billingTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    flexWrap: "wrap",
-  },
-  billingLabel: {
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 13,
-  },
-  savePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-  savePillText: {
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-  priceHint: {
-    fontFamily: "DMSans_400Regular",
-    marginTop: 10,
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  sectionLabel: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 11,
-    letterSpacing: 1,
-    marginBottom: 12,
-    textTransform: "uppercase",
-  },
-  planRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 22,
-    alignItems: "flex-start",
-  },
-  trustRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  trustPill: {
-    flex: 1,
-    alignItems: "center",
-    gap: 6,
-    minWidth: 0,
-    borderWidth: 0.5,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-  },
-  trustLabel: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 10,
-    textAlign: "center",
-    lineHeight: 13,
-  },
-  reviewCard: {
-    borderWidth: 0.5,
-    padding: 16,
-    marginBottom: 18,
-    overflow: "hidden",
-    position: "relative",
-  },
-  reviewGlow: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  reviewTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
-    zIndex: 1,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    color: "#FFFFFF",
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 15,
-    letterSpacing: 0.5,
-  },
-  reviewName: {
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 15,
-  },
-  starsRow: {
-    flexDirection: "row",
-    gap: 2,
-    marginTop: 4,
-  },
-  quote: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 13,
-    lineHeight: 20,
-    fontStyle: "italic",
-    opacity: 0.95,
-    zIndex: 1,
-  },
-  footer: {
-    paddingTop: 6,
-  },
-  legal: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 11,
-    lineHeight: 17,
-    textAlign: "center",
-  },
-  link: {
-    fontFamily: "DMSans_600SemiBold",
-    textDecorationLine: "underline",
-  },
+  backBtnPressed: { opacity: 0.65 },
+  backBtnText: { fontSize: 16, fontWeight: "700", color: TEXT },
+  pageEyebrow: { color: MUTED, fontSize: 11, fontWeight: "900", letterSpacing: 0.8, textAlign: textAlignStart },
+  pageTitle: { color: TEXT, fontSize: 24, fontWeight: "900", marginTop: 4, marginBottom: 14, textAlign: textAlignStart },
+  hero: { borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1.5 },
+  heroTop: { flexDirection: logicalRow, justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
+  heroTitleBlock: { flex: 1, minWidth: 0, flexDirection: logicalRow, alignItems: "center", gap: 8, flexWrap: "wrap" },
+  heroTierIcon: { fontSize: 16 },
+  heroPlanName: { flexShrink: 1, minWidth: 0, fontSize: 15, fontWeight: "900", letterSpacing: 0.2, textAlign: textAlignStart },
+  statusPill: { borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, maxWidth: "100%" },
+  statusPillText: { fontSize: 9, lineHeight: 11, fontWeight: "900", textAlign: "center" },
+  heroBillingRight: { alignItems: textAlignEnd === "right" ? "flex-end" : "flex-start", flexShrink: 1 },
+  heroBillingLabel: { fontSize: 9, textTransform: "uppercase", letterSpacing: 0.5, textAlign: textAlignEnd },
+  heroBillingDate: { fontSize: 11, fontWeight: "900", marginTop: 2 },
+  heroBillingDays: { fontSize: 11, fontWeight: "900", marginTop: 2 },
+  heroPriceStrip: { flexDirection: logicalRow, alignItems: "center", justifyContent: "space-between", gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: WHITE, marginTop: 16 },
+  heroStatVal: { fontSize: 12, fontWeight: "900", color: TEXT, marginTop: 3 },
+  heroStatLabel: { fontSize: 9, color: MUTED, fontWeight: "800" },
+  heroPriceText: { color: TEXT, fontSize: 13, fontWeight: "900" },
+  heroPriceUnit: { color: MUTED, fontSize: 11, fontWeight: "700" },
+  topTierNote: { textAlign: "center", fontSize: 11, marginTop: 10, fontWeight: "800" },
+  manageBtn: { marginTop: 12, borderRadius: 10, paddingVertical: 10, alignItems: "center" },
+  manageBtnText: { fontSize: 11, fontWeight: "900" },
+  manageBtnTextDisabled: { opacity: 0.5 },
+  linksCard: { backgroundColor: BG, borderRadius: 16, padding: 8, marginBottom: 12, borderWidth: 1, borderColor: BORDER },
+  linkRow: { flexDirection: logicalRow, alignItems: "center", gap: 10, padding: 10, borderBottomWidth: 1, borderBottomColor: BORDER },
+  linkRowLast: { borderBottomWidth: 0 },
+  linkIconTile: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: GREEN_LIGHT },
+  linkEmoji: { fontSize: 16 },
+  linkTitle: { flex: 1, minWidth: 0, color: TEXT, fontSize: 13, lineHeight: 17, fontWeight: "900", textAlign: textAlignStart },
+  linkAction: { color: GREEN, fontSize: 12, lineHeight: 15, fontWeight: "900", textAlign: textAlignEnd, flexShrink: 1 },
+  linkActionDisabled: { color: MUTED },
+  footerNote: { color: MUTED, fontSize: 11, lineHeight: 16, textAlign: "center", marginTop: 2 },
+  expandTitleRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 },
+  expandLink: { fontSize: 13, fontWeight: "900", color: GREEN },
+  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", justifyContent: "flex-end" },
+  modalSheet: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "82%", paddingBottom: 24 },
+  modalHandle: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: BORDER, marginTop: 10, marginBottom: 8 },
+  modalHeader: { flexDirection: logicalRow, alignItems: "flex-start", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: BORDER },
+  modalHeaderText: { flex: 1, paddingEnd: 12 },
+  modalTitle: { fontSize: 17, fontWeight: "900", color: TEXT },
+  modalSubtitle: { fontSize: 12, color: MUTED, marginTop: 4 },
+  modalCloseBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: BG },
+  modalScroll: { maxHeight: 480 },
+  modalScrollContent: { padding: 16, paddingTop: 12 },
+  modalListCard: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 12, overflow: "hidden" },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: BORDER },
+  planIcon: { alignItems: "center", justifyContent: "center", marginEnd: 10 },
+  planIconLetter: { fontSize: 14, fontWeight: "900" },
+  payRow: { flexDirection: logicalRow, alignItems: "center", padding: 12 },
+  payMid: { flex: 1, minWidth: 0 },
+  payTitle: { fontSize: 13, color: TEXT, fontWeight: "800", textAlign: textAlignStart },
+  payDate: { fontSize: 11, color: MUTED, marginTop: 2 },
+  payRight: { alignItems: textAlignEnd === "right" ? "flex-end" : "flex-start", gap: 4, flexShrink: 1 },
+  payAmount: { fontSize: 14, fontWeight: "900", color: TEXT },
+  paidBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, maxWidth: 120 },
+  paidBadgeText: { fontSize: 10, lineHeight: 12, fontWeight: "900", textAlign: "center" },
+  receiptLink: { fontSize: 10, color: GREEN, fontWeight: "900" },
+  timelineRow: { flexDirection: logicalRow, padding: 12, alignItems: "flex-start" },
+  timelineRowCompact: { paddingVertical: 10 },
+  timelineRail: { width: 20, alignItems: "center", marginEnd: 10 },
+  timelineDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: MUTED, borderWidth: 1, borderColor: MUTED },
+  timelineLine: { width: 1, flex: 1, minHeight: 20, backgroundColor: BORDER, marginVertical: 4 },
+  timelineBody: { flex: 1, minWidth: 0, paddingEnd: 8 },
+  timelineTitle: { fontSize: 13, fontWeight: "900", color: TEXT, textAlign: textAlignStart },
+  timelineMeta: { fontSize: 11, color: MUTED, marginTop: 2, textAlign: textAlignStart },
+  timelineRight: { alignItems: textAlignEnd === "right" ? "flex-end" : "flex-start", gap: 4, flexShrink: 1, maxWidth: "42%" },
+  entryBadge: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, maxWidth: "100%" },
+  entryBadgeText: { fontSize: 9, lineHeight: 11, fontWeight: "900", textAlign: "center" },
+  timelinePrice: { fontSize: 12, fontWeight: "800", color: TEXT },
 });

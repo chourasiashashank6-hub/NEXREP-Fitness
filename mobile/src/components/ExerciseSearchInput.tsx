@@ -9,11 +9,14 @@ import {
   View,
   type ListRenderItemInfo,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import type { GlobalExercise } from "../constants/GlobalExercisesData";
 import { useGlobalExercises } from "../hooks/useGlobalExercises";
+import i18n from "../i18n";
+import { logicalRow } from "../utils/rtl";
 
 const TEAL = "#22d3ee";
-const SELECT_CHOICE = "Select choice";
+const SELECT_CHOICE = i18n.t("workoutLog.selectChoice");
 
 type ExerciseSearchInputProps = {
   value: string;
@@ -72,6 +75,7 @@ export default function ExerciseSearchInput({
   colors,
   radius,
 }: ExerciseSearchInputProps) {
+  const { t } = useTranslation();
   const { results, search, clear } = useGlobalExercises();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
@@ -237,16 +241,18 @@ export default function ExerciseSearchInput({
           onPress={() => handleSelectCatalog(row.name)}
         >
           <View style={styles.resultTextWrap}>
-            <Text style={[styles.resultTitle, { color: colors.text }]} numberOfLines={1}>
+            <Text style={[styles.resultTitle, { color: colors.text }]} numberOfLines={2}>
               {row.name}
             </Text>
             <Text style={[styles.resultMeta, { color: colors.muted }]} numberOfLines={1}>
-              Your catalog
+              {t("components.yourCatalog")}
             </Text>
           </View>
           {resolveCatalogName(row.name, catalogExerciseNames) ? (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>In catalog</Text>
+              <Text style={styles.badgeText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+                {t("components.inCatalog")}
+              </Text>
             </View>
           ) : null}
         </Pressable>
@@ -263,7 +269,7 @@ export default function ExerciseSearchInput({
         onPress={() => handleSelectGlobal(exercise)}
       >
         <View style={styles.resultTextWrap}>
-          <Text style={[styles.resultTitle, { color: colors.text }]} numberOfLines={1}>
+          <Text style={[styles.resultTitle, { color: colors.text }]} numberOfLines={2}>
             {exercise.name}
           </Text>
           <Text style={[styles.resultMeta, { color: colors.muted }]} numberOfLines={1}>
@@ -272,7 +278,9 @@ export default function ExerciseSearchInput({
         </View>
         {inCatalog ? (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>In catalog</Text>
+            <Text style={styles.badgeText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+              {t("components.inCatalog")}
+            </Text>
           </View>
         ) : null}
       </Pressable>
@@ -298,7 +306,7 @@ export default function ExerciseSearchInput({
 
   return (
     <View style={[styles.selectWrap, chipMode ? styles.selectWrapChip : null]}>
-      {!chipMode ? <Text style={[styles.selectLabel, { color: colors.muted }]}>Exercise</Text> : null}
+      {!chipMode ? <Text style={[styles.selectLabel, { color: colors.muted }]}>{t("components.exercise")}</Text> : null}
       <View
         style={[
           styles.inputRow,
@@ -387,7 +395,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     paddingHorizontal: 14,
     paddingVertical: 4,
-    flexDirection: "row",
+    flexDirection: logicalRow,
     alignItems: "center",
     minHeight: 48,
   },
@@ -444,7 +452,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
+    maxWidth: "34%",
+    flexShrink: 1,
   },
-  badgeText: { color: TEAL, fontSize: 10, fontWeight: "700" },
+  badgeText: { color: TEAL, fontSize: 10, lineHeight: 12, fontWeight: "700", textAlign: "center" },
   emptyHint: { marginTop: 8, fontSize: 12, paddingHorizontal: 4 },
 });

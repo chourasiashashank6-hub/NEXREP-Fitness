@@ -1,4 +1,5 @@
 import { todayLocal } from "../api/caloriesLog";
+import i18n from "../i18n";
 
 export type DayMeta = {
   date: string;
@@ -15,7 +16,15 @@ export type StreakMeta = {
   label: string;
 };
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const DAY_NAME_KEYS = [
+  "streak.days.sun",
+  "streak.days.mon",
+  "streak.days.tue",
+  "streak.days.wed",
+  "streak.days.thu",
+  "streak.days.fri",
+  "streak.days.sat",
+] as const;
 
 export function formatDateKey(date: Date): string {
   const y = date.getFullYear();
@@ -101,18 +110,18 @@ export function computeCombinedStreak(
 
 export function getStreakMeta(streak: number): StreakMeta {
   if (streak <= 0) {
-    return { streak: 0, emoji: "🔥", label: "Start your streak today" };
+    return { streak: 0, emoji: "🔥", label: i18n.t("streak.start") };
   }
   if (streak === 1) {
-    return { streak, emoji: "🔥", label: "Great start — keep it going!" };
+    return { streak, emoji: "🔥", label: i18n.t("streak.greatStart") };
   }
   if (streak < 7) {
-    return { streak, emoji: "🔥", label: "Building momentum" };
+    return { streak, emoji: "🔥", label: i18n.t("streak.momentum") };
   }
   if (streak < 30) {
-    return { streak, emoji: "🔥", label: "You're on fire!" };
+    return { streak, emoji: "🔥", label: i18n.t("streak.onFire") };
   }
-  return { streak, emoji: "🔥", label: "Unstoppable streak!" };
+  return { streak, emoji: "🔥", label: i18n.t("streak.unstoppable") };
 }
 
 /** Seven calendar days oldest → newest; today is the last item. */
@@ -132,7 +141,7 @@ export function getLast7DaysMeta(
     const isToday = date === todayKey;
     out.push({
       date,
-      dayLabel: isToday ? "Today" : DAY_NAMES[d.getDay()],
+      dayLabel: isToday ? i18n.t("streak.days.today") : i18n.t(DAY_NAME_KEYS[d.getDay()]),
       dayNum: d.getDate(),
       foodLogged: foodDates.has(date),
       workoutDone: workoutDates.has(date),

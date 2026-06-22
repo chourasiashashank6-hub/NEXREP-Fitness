@@ -27,6 +27,7 @@ from src.schemas.calories_api import (
 )
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.services.food_image_utils import prepare_food_image_for_vision
+from src.services.language_service import normalize_language_tag
 from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.utils.auth import get_current_user
 
@@ -185,9 +186,16 @@ CALORIE_COACH_SYSTEM_PROMPT = (
     '7. "scoreLabel" — string, one of: "Needs Work", "Getting There", "Solid Day", "Excellent", "Perfect"\n\n'
     '8. "alerts" — array of exactly 4 objects with keys: "type", "icon", "title", "subtitle". '
     'Types must be: "calorie", "hydration", "meal", "nutrition".\n\n'
+    '9. "dietTips" — array of exactly 5 objects personalized from the provided DATA. Each object must have keys:\n'
+    '   - "emoji": string, one relevant emoji only\n'
+    '   - "title": string, concise health or diet tip\n'
+    '   - "body": string, 1 practical sentence tied to today\'s calories, protein, carbs, fat, fibre, water, meals, goal, or activity\n'
+    '   - "tag": string, short label such as "Gut", "Protein", "Digestion", "Timing", or "Fat"\n'
+    '   - "category": string, one of "gut", "protein", "digestion", "timing", "fat"\n'
+    "   Tips must be specific to the user's logged intake and targets, not generic wellness advice.\n\n"
     "Rules:\n"
     "- Suggest only foods from the provided food_dataset_reference with approximate quantities.\n"
-    "- No markdown, no bullets, no headings, no emojis in any string value.\n"
+    '- No markdown, no bullets, no headings. Do not use emojis except in dietTips[].emoji.\n'
     "- All numbers must be realistic integers, not strings.\n"
     "- If remaining_calories <= 0, mealPlan should contain only very light options (salad, herbal tea, etc.) totaling under 200 kcal.\n"
     "- If no meals logged, provide a complete full-day plan across breakfast, lunch, dinner."
@@ -474,6 +482,29 @@ def _normalize_coach_response(parsed: dict[str, Any], day_payload: dict[str, Any
             if not any(x.get("type") == fa["type"] for x in alerts):
                 alerts.append(fa)
 
+    diet_tip_categories = {"gut", "protein", "digestion", "timing", "fat"}
+    diet_tips_raw = parsed.get("dietTips") if isinstance(parsed.get("dietTips"), list) else []
+    diet_tips: list[dict[str, str]] = []
+    for item in diet_tips_raw[:5]:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "").strip()
+        body = str(item.get("body") or "").strip()
+        if not title or not body:
+            continue
+        category = str(item.get("category") or "gut").strip().lower()
+        if category not in diet_tip_categories:
+            category = "gut"
+        diet_tips.append(
+            {
+                "emoji": str(item.get("emoji") or "🌿").strip()[:4] or "🌿",
+                "title": title[:90],
+                "body": body[:220],
+                "tag": str(item.get("tag") or category.capitalize()).strip()[:24],
+                "category": category,
+            }
+        )
+
     def pick_macro(key: str, consumed_v: float, target_v: float) -> dict[str, str]:
         block = mv.get(key) if isinstance(mv.get(key), dict) else {}
         status = str(block.get("status") or _macro_status(consumed_v, target_v))
@@ -504,6 +535,7 @@ def _normalize_coach_response(parsed: dict[str, Any], day_payload: dict[str, Any
         "dailyScore": int(_num(parsed.get("dailyScore")) or daily_score),
         "scoreLabel": str(parsed.get("scoreLabel") or _score_label(daily_score)),
         "alerts": alerts[:4],
+        "dietTips": diet_tips[:5],
     }
 
 
@@ -876,7 +908,7 @@ def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[
                     "generationConfig": {
                         "temperature": 0.3,
                         "responseMimeType": "application/json",
-                        "maxOutputTokens": 1200,
+                        "maxOutputTokens": 1800,
                     },
                 },
                 timeout=30,
@@ -951,7 +983,7 @@ def _groq_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[st
                 payload={
                     "model": model_name,
                     "temperature": 0.3,
-                    "max_tokens": 800,
+                    "max_tokens": 1400,
                     "response_format": {"type": "json_object"},
                     "messages": [
                         {"role": "system", "content": CALORIE_COACH_SYSTEM_PROMPT},
@@ -1214,6 +1246,7 @@ def _serialize_meal(m: MealEntry) -> dict[str, Any]:
         "log_id": m.log_id,
         "meal_type": m.meal_type,
         "source_type": m.source_type or "database",
+        "food_id": m.food_id,
         "food_name": m.food_name,
         "quantity_g": float(m.quantity_g),
         "calories_per_100g": float(m.calories_per_100g),
@@ -1238,6 +1271,7 @@ def _serialize_ai_meal(m: AIFoodMealEntry) -> dict[str, Any]:
         "log_id": None,
         "meal_type": m.meal_type,
         "source_type": "camera_ai",
+        "food_id": None,
         "food_name": m.food_name,
         "quantity_g": qty,
         "calories_per_100g": float((Decimal(str(m.calories or 0)) * Decimal("100")) / Decimal(str(safe_qty))),
@@ -1342,12 +1376,14 @@ def add_meal_entry(payload: MealCreateRequest, current_user: User = Depends(get_
     total_fiber_g = (fi100 / Decimal("100")) * q
 
     source_type = payload.source_type if payload.source_type in {"database", "camera_ai"} else "database"
+    food_id = int(payload.food_id) if source_type == "database" and payload.food_id is not None else None
 
     entry = MealEntry(
         log_id=log.log_id,
         user_id=current_user.id,
         meal_type=payload.meal_type,
         source_type=source_type,
+        food_id=food_id,
         food_name=payload.food_name.strip()[:200],
         quantity_g=q,
         calories_per_100g=c100,
@@ -1460,8 +1496,8 @@ def search_food_catalog(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _ = current_user
-    items = search_foods(db, q, limit)
+    language = normalize_language_tag(current_user.preferred_language)
+    items = search_foods(db, q, limit, language=language)
     return {"items": items}
 
 
@@ -1471,14 +1507,15 @@ def lookup_food_nutrition(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _ = current_user
     if payload.food_id is None and not (payload.food_name or "").strip():
         raise HTTPException(status_code=422, detail="Provide food_id or food_name.")
+    language = normalize_language_tag(current_user.preferred_language)
     found = lookup_food_scaled(
         db,
         food_id=payload.food_id,
         food_name=payload.food_name,
         quantity_g=payload.quantity_g,
+        language=language,
     )
     if not found:
         raise HTTPException(status_code=404, detail="Food not found.")

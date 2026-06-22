@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useAppTheme } from "../../theme";
 
 type Props = {
@@ -10,12 +11,13 @@ type Props = {
 };
 
 export function HydrationBar({ currentMl, targetMl, nextAction, onQuickAdd, loading }: Props) {
+  const { t } = useTranslation();
   const { colors, radius } = useAppTheme();
   const pct = targetMl > 0 ? Math.min(1, currentMl / targetMl) : 0;
 
   return (
     <View style={[styles.wrap, { backgroundColor: colors.cardAlt, borderColor: colors.border, borderRadius: radius.md }]}>
-      <Text style={[styles.header, { color: "#22d3ee" }]}>HYDRATION</Text>
+      <Text style={[styles.header, { color: "#22d3ee" }]}>{t("coach.components.hydration")}</Text>
       <View style={[styles.track, { backgroundColor: colors.border }]}>
         <View style={[styles.fill, { width: `${pct * 100}%` }]} />
       </View>

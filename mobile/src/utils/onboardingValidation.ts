@@ -1,23 +1,25 @@
 import type { OnboardingData } from "../types/onboarding";
+import i18n from "../i18n";
 
 /** Minimum data required before saving targets / calling the API. */
 export function validateOnboardingForSave(data: OnboardingData): string | null {
-  const { personal, goal, activity } = data;
-  if (!personal.name?.trim()) return "Please enter your name on Screen 1.";
-  if (personal.age == null || personal.age <= 0) return "Please enter a valid age on Screen 1.";
-  if (!personal.sex) return "Please select biological sex on Screen 1.";
+  const { personal, goal, activity, dietary } = data;
+  if (!personal.name?.trim()) return i18n.t("onboarding.validation.name");
+  if (personal.age == null || personal.age <= 0) return i18n.t("onboarding.validation.age");
+  if (!personal.sex) return i18n.t("onboarding.validation.sex");
 
   if (personal.unit_system === "metric") {
-    if (!personal.height_cm || personal.height_cm <= 0) return "Please enter height (cm) on Screen 1.";
-    if (!personal.weight_kg || personal.weight_kg <= 0) return "Please enter weight (kg) on Screen 1.";
+    if (!personal.height_cm || personal.height_cm <= 0) return i18n.t("onboarding.validation.heightCm");
+    if (!personal.weight_kg || personal.weight_kg <= 0) return i18n.t("onboarding.validation.weightKg");
   } else {
-    if (!personal.height_in || personal.height_in <= 0) return "Please enter height (in) on Screen 1.";
-    if (!personal.weight_lb || personal.weight_lb <= 0) return "Please enter weight (lb) on Screen 1.";
+    if (!personal.height_in || personal.height_in <= 0) return i18n.t("onboarding.validation.heightIn");
+    if (!personal.weight_lb || personal.weight_lb <= 0) return i18n.t("onboarding.validation.weightLb");
   }
 
-  if (!goal.type) return "Please select a goal on Screen 2.";
-  if (!goal.difficulty) return "Please select difficulty on Screen 2.";
-  if (!activity.level) return "Please select activity level on Screen 3.";
+  if (!goal.type) return i18n.t("onboarding.validation.goal");
+  if (!goal.difficulty) return i18n.t("onboarding.validation.difficulty");
+  if (!activity.level) return i18n.t("onboarding.validation.activity");
+  if (!dietary.regional_food_styles?.length) return i18n.t("onboarding.validation.regionalFood");
 
   return null;
 }

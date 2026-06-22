@@ -1,21 +1,43 @@
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 import { ensureDailyCalorieLog } from "../../api/caloriesLog";
 import { getSummary } from "../../api/dashboard";
 import { AICoachCard } from "../../components/Coach/AICoachCard";
 import { ActionPlanCard } from "../../components/Coach/ActionPlanCard";
 import { ScreenContainer } from "../../components/ScreenContainer";
-import { useAppTheme } from "../../theme";
-import type { NutritionData } from "../../types/coach";
+import type { AICoachResponse, NutritionData } from "../../types/coach";
 import type { CoachStackParamList } from "./CoachHomeScreen";
 
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const AMBER = "#FFB800";
+const AMBER_LIGHT = "#FFF8E8";
+const AMBER_TEXT = "#C08000";
+const PURPLE = "#7B68CC";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
+
 export default function AICalorieCoachScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
-  const { colors, radius } = useAppTheme();
+  const coachCardRef = useRef<{ refresh: () => void } | null>(null);
   const [nutritionData, setNutritionData] = useState<NutritionData | null>(null);
+  const [coachResult, setCoachResult] = useState<AICoachResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [coachRefreshing, setCoachRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -55,41 +77,62 @@ export default function AICalorieCoachScreen() {
   );
 
   return (
-    <ScreenContainer>
+    <ScreenContainer bg={WHITE} contentStyle={styles.screenContent}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={[styles.backBtn, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.md }]}>
-          <Text style={[styles.backTxt, { color: colors.text }]}>←</Text>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={18} color={TEXT} />
         </Pressable>
-        <Text style={[styles.title, { color: colors.text }]}>AI Calorie Coach</Text>
+        <Text style={styles.title}>{t("coach.calorie.title")}</Text>
+        <Pressable
+          style={[styles.refreshPill, coachRefreshing && styles.refreshPillDisabled]}
+          onPress={() => coachCardRef.current?.refresh()}
+          disabled={coachRefreshing}
+        >
+          {coachRefreshing ? <ActivityIndicator size="small" color={GREEN} /> : <Ionicons name="refresh" size={13} color={GREEN} />}
+          <Text style={styles.refreshPillText}>{t("coach.common.refresh")}</Text>
+        </Pressable>
+        <View style={styles.onlineDot} />
       </View>
       <ScrollView showsVerticalScrollIndicator={false}>
         {!nutritionData && !loading ? (
-          <View style={[styles.emptyBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Log your meals first to get AI insights</Text>
-            <Text style={[styles.emptySub, { color: colors.muted }]}>Once nutrition data exists for today, coaching and action tasks will appear.</Text>
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyTitle}>{t("coach.calorie.emptyTitle")}</Text>
+            <Text style={styles.emptySub}>{t("coach.calorie.emptySubtitle")}</Text>
           </View>
         ) : null}
-        <AICoachCard nutritionData={nutritionData} accentColor="#22d3ee" onNutritionRefresh={() => void load()} />
-        <ActionPlanCard nutritionData={nutritionData} accentColor="#a78bfa" />
+        <AICoachCard
+          ref={coachCardRef}
+          nutritionData={nutritionData}
+          accentColor="#22d3ee"
+          onNutritionRefresh={() => void load()}
+          onCoachResult={setCoachResult}
+          onLoadingChange={setCoachRefreshing}
+        />
+        <ActionPlanCard nutritionData={nutritionData} coachResult={coachResult} accentColor="#a78bfa" />
       </ScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  screenContent: { paddingBottom: 28 },
+  header: { flexDirection: "row", alignItems: "center", marginBottom: 14, gap: 8 },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 99,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: BG,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
   },
-  backTxt: { fontSize: 20 },
-  title: { fontSize: 20, fontWeight: "600" },
-  emptyBox: { borderWidth: 1, padding: 16, marginBottom: 12 },
-  emptyTitle: { fontSize: 14, fontWeight: "600" },
-  emptySub: { fontSize: 12, marginTop: 4, lineHeight: 18 },
+  title: { flex: 1, color: TEXT, fontSize: 16, fontWeight: "900" },
+  refreshPill: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: GREEN_LIGHT, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 7 },
+  refreshPillDisabled: { opacity: 0.75 },
+  refreshPillText: { color: GREEN, fontSize: 11, fontWeight: "900" },
+  onlineDot: { width: 8, height: 8, borderRadius: 99, backgroundColor: GREEN },
+  emptyBox: { borderWidth: 1, borderColor: BORDER, backgroundColor: BG, borderRadius: 16, padding: 16, marginBottom: 12 },
+  emptyTitle: { color: TEXT, fontSize: 14, fontWeight: "900" },
+  emptySub: { color: MUTED, fontSize: 12, marginTop: 4, lineHeight: 18 },
 });

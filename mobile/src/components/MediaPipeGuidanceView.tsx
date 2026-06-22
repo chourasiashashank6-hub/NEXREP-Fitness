@@ -2,12 +2,30 @@ import { memo, useEffect, useRef } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
+import i18n from "../i18n";
 
 export type MediaPipeGuidanceViewProps = {
   selectedExerciseName?: string;
   isActive?: boolean;
   onReady?: () => void;
   onError?: (message: string) => void;
+};
+
+const MP_TEXT = {
+  exerciseDetecting: i18n.t("mediaPipe.exerciseDetecting"),
+  postureBlank: i18n.t("mediaPipe.postureBlank"),
+  alignBody: i18n.t("mediaPipe.alignBody"),
+  cardioBanner: i18n.t("mediaPipe.cardioBanner"),
+  postureAwareness: i18n.t("mediaPipe.postureAwareness"),
+  posture: i18n.t("mediaPipe.posture"),
+  centred: i18n.t("mediaPipe.centred"),
+  adjustPosition: i18n.t("mediaPipe.adjustPosition"),
+  exercise: i18n.t("mediaPipe.exercise"),
+  reps: i18n.t("mediaPipe.reps"),
+  phase: i18n.t("mediaPipe.phase"),
+  unknown: i18n.t("mediaPipe.unknown"),
+  rightPosture: i18n.t("mediaPipe.rightPosture"),
+  wrongPosture: i18n.t("mediaPipe.wrongPosture"),
 };
 
 type JointRule = {
@@ -504,11 +522,11 @@ function buildHtmlSource(
     <div id="root">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="overlay"></canvas>
-      <div id="badge">Exercise: Detecting...</div>
-      <div id="posture">Posture: --</div>
+      <div id="badge">${MP_TEXT.exerciseDetecting}</div>
+      <div id="posture">${MP_TEXT.postureBlank}</div>
       <div id="notes"></div>
-      <div id="hint">Align your full body in frame</div>
-      <div id="cardio-banner">Posture awareness mode — no form scoring for this exercise type</div>
+      <div id="hint">${MP_TEXT.alignBody}</div>
+      <div id="cardio-banner">${MP_TEXT.cardioBanner}</div>
     </div>
     <script type="module">
       import{FilesetResolver,PoseLandmarker}from"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
@@ -667,7 +685,7 @@ function buildHtmlSource(
             :firstWrong.label+": straighten ("+Math.round(firstWrong.angle)+"°)";
         }
         const summary=valid.slice(0,2).map(r=>r.label+" "+Math.round(r.angle)+"° "+(r.ok?"✓":"✗")).join(" | ");
-        return{isCorrect,status:isCorrect?"Right posture":"Wrong posture",
+        return{isCorrect,status:isCorrect?${JSON.stringify(MP_TEXT.rightPosture)}:${JSON.stringify(MP_TEXT.wrongPosture)},
           detail:EXERCISE_RULE.label+" · "+summary,correction};
       };
 
@@ -723,30 +741,30 @@ function buildHtmlSource(
             drawFrame(centered);
             drawSkeleton(landmarks,centered);
             drawLandmarks(landmarks,centered);
-            badgeEl.textContent="Posture awareness mode";
-            postureEl.textContent="Posture: "+(centered?"Centred":"Adjust position");
+            badgeEl.textContent=${JSON.stringify(MP_TEXT.postureAwareness)};
+            postureEl.textContent=${JSON.stringify(MP_TEXT.posture)}+": "+(centered?${JSON.stringify(MP_TEXT.centred)}:${JSON.stringify(MP_TEXT.adjustPosition)});
             postureEl.style.background=centered?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
-            hintEl.textContent=centered?"Keep your full body in frame":"Centre your body in the frame";
+            hintEl.textContent=centered?${JSON.stringify(i18n.t("mediaPipe.keepBodyFrame"))}:${JSON.stringify(i18n.t("mediaPipe.centreBody"))};
             hintEl.style.background=centered?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
           }else{
             const primaryAngle=getPrimaryAngle(landmarks);
             const movement=updateMovement(primaryAngle);
             const posture=evaluatePosture(landmarks,primaryAngle,movement.phase);
             const lineIsGood=EXERCISE_RULE?posture.isCorrect&&movement.dynamicOk:centered;
-            const label=EXERCISE_RULE?EXERCISE_RULE.label:"UNKNOWN";
+            const label=EXERCISE_RULE?EXERCISE_RULE.label:${JSON.stringify(MP_TEXT.unknown)};
             drawFrame(lineIsGood);drawSkeleton(landmarks,lineIsGood);drawLandmarks(landmarks,lineIsGood);
-            badgeEl.textContent="Exercise: "+label+" · Reps: "+movement.reps;
-            postureEl.textContent="Posture: "+posture.status+" · Phase: "+movement.phase.toUpperCase()+
+            badgeEl.textContent=${JSON.stringify(MP_TEXT.exercise)}+": "+label+" · "+${JSON.stringify(MP_TEXT.reps)}+": "+movement.reps;
+            postureEl.textContent=${JSON.stringify(MP_TEXT.posture)}+": "+posture.status+" · "+${JSON.stringify(MP_TEXT.phase)}+": "+movement.phase.toUpperCase()+
               (primaryAngle?" · "+Math.round(primaryAngle)+"°":"");
             postureEl.style.background=lineIsGood?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
-            hintEl.textContent=lineIsGood?"Right posture":"Wrong posture: "+(posture.correction||"Adjust posture");
+            hintEl.textContent=lineIsGood?${JSON.stringify(i18n.t("mediaPipe.rightPosture"))}:${JSON.stringify(i18n.t("mediaPipe.wrongPosture"))}+": "+(posture.correction||${JSON.stringify(i18n.t("mediaPipe.adjustPosture"))});
             hintEl.style.background=lineIsGood?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
           }
         }else{
           drawFrame(false);
-          badgeEl.textContent="Exercise: "+(EXERCISE_RULE?EXERCISE_RULE.label:"UNKNOWN");
-          postureEl.textContent="No body detected";
-          hintEl.textContent="No full body detected - step back slightly";
+          badgeEl.textContent=${JSON.stringify(MP_TEXT.exercise)}+": "+(EXERCISE_RULE?EXERCISE_RULE.label:${JSON.stringify(MP_TEXT.unknown)});
+          postureEl.textContent=${JSON.stringify(i18n.t("mediaPipe.noBodyDetected"))};
+          hintEl.textContent=${JSON.stringify(i18n.t("mediaPipe.noFullBody"))};
           hintEl.style.background="rgba(239,68,68,0.35)";
         }
         rafId=requestAnimationFrame(detectLoop);
@@ -862,7 +880,7 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
     exerciseBadge.style.textAlign = "left";
     exerciseBadge.style.background = "rgba(0,0,0,0.65)";
     exerciseBadge.style.zIndex = "12";
-    exerciseBadge.textContent = "Exercise: Detecting...";
+    exerciseBadge.textContent = MP_TEXT.exerciseDetecting;
 
     const posturePanel = document.createElement("div");
     posturePanel.style.position = "absolute";
@@ -877,7 +895,7 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
     posturePanel.style.textAlign = "left";
     posturePanel.style.background = "rgba(0,0,0,0.65)";
     posturePanel.style.zIndex = "12";
-    posturePanel.textContent = "Posture: --";
+    posturePanel.textContent = MP_TEXT.postureBlank;
 
     const notesPanel = document.createElement("div");
     notesPanel.style.position = "absolute";
@@ -1053,7 +1071,7 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
         !leftShoulder || !rightShoulder || !leftElbow || !rightElbow || !leftWrist || !rightWrist ||
         !leftHip || !rightHip || !leftKnee || !rightKnee || !leftAnkle || !rightAnkle
       ) {
-        return "UNKNOWN";
+        return MP_TEXT.unknown;
       }
 
       const leftKneeAngle = calcAngle(leftHip, leftKnee, leftAnkle);
@@ -1098,7 +1116,7 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
       if (!exerciseRule.joints.length) {
         return {
           isCorrect: true,
-          status: "Right posture",
+          status: i18n.t("mediaPipe.rightPosture"),
           detail: `Tracking ${exerciseRule.label}`,
           correction: `No strict posture rule configured for ${exerciseRule.label}`,
         };
@@ -1181,7 +1199,7 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
       if (!valid.length) {
         return {
           isCorrect: false,
-          status: "Wrong posture",
+          status: i18n.t("mediaPipe.wrongPosture"),
           detail: `${exerciseRule.label} joints not visible`,
           correction: "Bring full body into frame so joints are visible",
         };
@@ -1261,9 +1279,9 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
       }
       return {
         isCorrect,
-        status: isCorrect ? "Right posture" : "Wrong posture",
+        status: isCorrect ? i18n.t("mediaPipe.rightPosture") : i18n.t("mediaPipe.wrongPosture"),
         detail: `${exerciseRule.label} · ${summary}`,
-        correction: correction || "Adjust posture based on highlighted joints",
+        correction: correction || i18n.t("mediaPipe.adjustPostureJoints"),
       };
     };
 
@@ -1377,12 +1395,12 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
           drawFrame(centered);
           drawSkeleton(landmarks, centered);
           drawLandmarks(landmarks, centered);
-          exerciseBadge.textContent = "Posture awareness mode";
-          posturePanel.textContent = `Posture: ${centered ? "Centred" : "Adjust position"}`;
+          exerciseBadge.textContent = MP_TEXT.postureAwareness;
+          posturePanel.textContent = `${MP_TEXT.posture}: ${centered ? MP_TEXT.centred : MP_TEXT.adjustPosition}`;
           posturePanel.style.background = centered
             ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
           hint.textContent = centered
-            ? "Keep your full body in frame" : "Centre your body in the frame";
+            ? i18n.t("mediaPipe.keepBodyFrame") : i18n.t("mediaPipe.centreBody");
           hint.style.background = centered
             ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
           if (!host.querySelector("#cardio-banner")) {
@@ -1394,7 +1412,7 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
               textAlign: "center", fontSize: "13px", fontWeight: "600",
             });
             banner.textContent =
-              "Posture awareness mode — no form scoring for this exercise type";
+            MP_TEXT.cardioBanner;
             host.appendChild(banner);
           }
         } else {
@@ -1410,17 +1428,17 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
           drawFrame(lineIsGood);
           drawSkeleton(landmarks, lineIsGood);
           drawLandmarks(landmarks, lineIsGood);
-          exerciseBadge.textContent = `Exercise: ${exerciseRule?.label || exerciseName} · Reps: ${movement.reps}`;
-          posturePanel.textContent = `Posture: ${posture.status} · Phase: ${movement.phase.toUpperCase()}${primaryAngle ? ` · ${Math.round(primaryAngle)}°` : ""}`;
+          exerciseBadge.textContent = `${MP_TEXT.exercise}: ${exerciseRule?.label || exerciseName} · ${MP_TEXT.reps}: ${movement.reps}`;
+          posturePanel.textContent = `${MP_TEXT.posture}: ${posture.status} · ${MP_TEXT.phase}: ${movement.phase.toUpperCase()}${primaryAngle ? ` · ${Math.round(primaryAngle)}°` : ""}`;
           posturePanel.style.background = lineIsGood ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
-          hint.textContent = lineIsGood ? "Right posture" : `Wrong posture: ${posture.correction || "Adjust posture"}`;
+          hint.textContent = lineIsGood ? i18n.t("mediaPipe.rightPosture") : `${i18n.t("mediaPipe.wrongPosture")}: ${posture.correction || i18n.t("mediaPipe.adjustPosture")}`;
           hint.style.background = lineIsGood ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
         }
       } else {
         drawFrame(false);
-        exerciseBadge.textContent = `Exercise: ${exerciseRule?.label || "UNKNOWN"}`;
-        posturePanel.textContent = `Posture: ${exerciseRule?.label || "UNKNOWN"} not detected`;
-        hint.textContent = "No full body detected - step back slightly";
+        exerciseBadge.textContent = `${MP_TEXT.exercise}: ${exerciseRule?.label || MP_TEXT.unknown}`;
+        posturePanel.textContent = `${MP_TEXT.posture}: ${i18n.t("mediaPipe.notDetected", { label: exerciseRule?.label || MP_TEXT.unknown })}`;
+        hint.textContent = i18n.t("mediaPipe.noFullBody");
         hint.style.background = "rgba(239,68,68,0.35)";
       }
       rafId = requestAnimationFrame(loop);

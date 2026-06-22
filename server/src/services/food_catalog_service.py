@@ -182,6 +182,64 @@ def ensure_food_catalog_schema(engine: Engine) -> None:
         conn.execute(text("CREATE INDEX IF NOT EXISTS idx_food_items_category_id ON food_items(category_id)"))
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS idx_food_items_food_name_trgm ON food_items USING gin (food_name gin_trgm_ops)"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS food_item_labels (
+                    id BIGSERIAL PRIMARY KEY,
+                    food_id BIGINT NOT NULL,
+                    language_tag VARCHAR(32) NOT NULL,
+                    label TEXT NOT NULL,
+                    aliases TEXT[] NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_food_item_label_language UNIQUE (food_id, language_tag)
+                )
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_food_item_labels_food_id ON food_item_labels(food_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_food_item_labels_language_tag ON food_item_labels(language_tag)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_food_item_labels_label_lower ON food_item_labels((LOWER(label)))"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS food_category_labels (
+                    id BIGSERIAL PRIMARY KEY,
+                    category_id BIGINT NOT NULL,
+                    language_tag VARCHAR(32) NOT NULL,
+                    label TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_food_category_label_language UNIQUE (category_id, language_tag)
+                )
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_food_category_labels_category_id ON food_category_labels(category_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_food_category_labels_language_tag ON food_category_labels(language_tag)"))
+        conn.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                  IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'fk_food_item_labels_food_id'
+                  ) THEN
+                    ALTER TABLE food_item_labels
+                    ADD CONSTRAINT fk_food_item_labels_food_id
+                    FOREIGN KEY (food_id) REFERENCES food_items(food_id) ON DELETE CASCADE;
+                  END IF;
+
+                  IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'fk_food_category_labels_category_id'
+                  ) THEN
+                    ALTER TABLE food_category_labels
+                    ADD CONSTRAINT fk_food_category_labels_category_id
+                    FOREIGN KEY (category_id) REFERENCES food_categories(category_id) ON DELETE CASCADE;
+                  END IF;
+                END $$;
+                """
+            )
+        )
 
 
 def load_food_catalog_from_sql_if_empty(engine: Engine, sql_path: str | None = None) -> int:
@@ -263,7 +321,7 @@ def load_food_catalog_from_sql_if_empty(engine: Engine, sql_path: str | None = N
     return len(payload)
 
 
-def search_foods(db: Session, query: str, limit: int = 20) -> list[dict[str, Any]]:
+def search_foods(db: Session, query: str, limit: int = 20, language: str = "en") -> list[dict[str, Any]]:
     q = (query or "").strip()
     if not q:
         return []
@@ -271,25 +329,60 @@ def search_foods(db: Session, query: str, limit: int = 20) -> list[dict[str, Any
         db.execute(
             text(
                 """
-                SELECT fi.food_id, fi.food_name, fc.category_name
+                SELECT
+                  fi.food_id,
+                  COALESCE(fil.label, fi.food_name) AS food_name,
+                  fi.food_name AS default_food_name,
+                  COALESCE(fcl.label, fc.category_name) AS category_name,
+                  fc.category_name AS default_category_name
                 FROM food_items fi
                 JOIN food_categories fc ON fc.category_id = fi.category_id
+                LEFT JOIN food_item_labels fil
+                  ON fil.food_id = fi.food_id AND fil.language_tag = :language
+                LEFT JOIN food_category_labels fcl
+                  ON fcl.category_id = fc.category_id AND fcl.language_tag = :language
                 WHERE LOWER(fi.food_name) LIKE LOWER(:pat)
+                   OR LOWER(COALESCE(fil.label, '')) LIKE LOWER(:pat)
+                   OR EXISTS (
+                     SELECT 1
+                     FROM unnest(COALESCE(fil.aliases, ARRAY[]::text[])) AS alias
+                     WHERE LOWER(alias) LIKE LOWER(:pat)
+                   )
                 ORDER BY
-                  CASE WHEN LOWER(fi.food_name) = LOWER(:exact) THEN 0 ELSE 1 END,
-                  fi.food_name ASC
+                  CASE
+                    WHEN LOWER(COALESCE(fil.label, fi.food_name)) = LOWER(:exact) THEN 0
+                    WHEN LOWER(fi.food_name) = LOWER(:exact) THEN 1
+                    ELSE 2
+                  END,
+                  COALESCE(fil.label, fi.food_name) ASC
                 LIMIT :lim
                 """
             ),
-            {"pat": f"%{q}%", "exact": q, "lim": max(1, min(limit, 50))},
+            {"pat": f"%{q}%", "exact": q, "lim": max(1, min(limit, 50)), "language": language},
         )
         .mappings()
         .all()
     )
-    return [{"food_id": int(r["food_id"]), "food_name": r["food_name"], "category": r["category_name"]} for r in rows]
+    return [
+        {
+            "food_id": int(r["food_id"]),
+            "food_name": r["food_name"],
+            "default_food_name": r["default_food_name"],
+            "category": r["category_name"],
+            "default_category": r["default_category_name"],
+        }
+        for r in rows
+    ]
 
 
-def lookup_food_scaled(db: Session, *, food_id: int | None, food_name: str | None, quantity_g: Decimal) -> dict[str, Any] | None:
+def lookup_food_scaled(
+    db: Session,
+    *,
+    food_id: int | None,
+    food_name: str | None,
+    quantity_g: Decimal,
+    language: str = "en",
+) -> dict[str, Any] | None:
     if quantity_g <= 0:
         return None
     if food_id is not None:
@@ -297,14 +390,24 @@ def lookup_food_scaled(db: Session, *, food_id: int | None, food_name: str | Non
             db.execute(
                 text(
                     """
-                    SELECT fi.food_id, fi.food_name, fc.category_name, fi.calories_per_100g, fi.protein_g, fi.carbs_g, fi.fat_g, fi.fiber_g
+                    SELECT
+                      fi.food_id,
+                      COALESCE(fil.label, fi.food_name) AS food_name,
+                      fi.food_name AS default_food_name,
+                      COALESCE(fcl.label, fc.category_name) AS category_name,
+                      fc.category_name AS default_category_name,
+                      fi.calories_per_100g, fi.protein_g, fi.carbs_g, fi.fat_g, fi.fiber_g
                     FROM food_items fi
                     JOIN food_categories fc ON fc.category_id = fi.category_id
+                    LEFT JOIN food_item_labels fil
+                      ON fil.food_id = fi.food_id AND fil.language_tag = :language
+                    LEFT JOIN food_category_labels fcl
+                      ON fcl.category_id = fc.category_id AND fcl.language_tag = :language
                     WHERE fi.food_id = :fid
                     LIMIT 1
                     """
                 ),
-                {"fid": food_id},
+                {"fid": food_id, "language": language},
             )
             .mappings()
             .first()
@@ -314,15 +417,26 @@ def lookup_food_scaled(db: Session, *, food_id: int | None, food_name: str | Non
             db.execute(
                 text(
                     """
-                    SELECT fi.food_id, fi.food_name, fc.category_name, fi.calories_per_100g, fi.protein_g, fi.carbs_g, fi.fat_g, fi.fiber_g
+                    SELECT
+                      fi.food_id,
+                      COALESCE(fil.label, fi.food_name) AS food_name,
+                      fi.food_name AS default_food_name,
+                      COALESCE(fcl.label, fc.category_name) AS category_name,
+                      fc.category_name AS default_category_name,
+                      fi.calories_per_100g, fi.protein_g, fi.carbs_g, fi.fat_g, fi.fiber_g
                     FROM food_items fi
                     JOIN food_categories fc ON fc.category_id = fi.category_id
+                    LEFT JOIN food_item_labels fil
+                      ON fil.food_id = fi.food_id AND fil.language_tag = :language
+                    LEFT JOIN food_category_labels fcl
+                      ON fcl.category_id = fc.category_id AND fcl.language_tag = :language
                     WHERE LOWER(fi.food_name) = LOWER(:name)
+                       OR LOWER(COALESCE(fil.label, '')) = LOWER(:name)
                     ORDER BY fi.food_id ASC
                     LIMIT 1
                     """
                 ),
-                {"name": (food_name or "").strip()},
+                {"name": (food_name or "").strip(), "language": language},
             )
             .mappings()
             .first()
@@ -339,7 +453,9 @@ def lookup_food_scaled(db: Session, *, food_id: int | None, food_name: str | Non
     return {
         "food_id": int(row["food_id"]),
         "food_name": row["food_name"],
+        "default_food_name": row["default_food_name"],
         "category": row["category_name"],
+        "default_category": row["default_category_name"],
         "quantity_g": quantity_g,
         "per_100g": {
             "calories": cal100,

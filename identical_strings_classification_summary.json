@@ -1,0 +1,42 @@
+{
+  "hi": {
+    "legitimate_remaining": 58,
+    "remaining_counts": {
+      "mobile": 57,
+      "server": 1,
+      "quote": 0
+    }
+  },
+  "hinglish": {
+    "legitimate_remaining": 1197,
+    "remaining_counts": {
+      "mobile": 1191,
+      "server": 6,
+      "quote": 0
+    }
+  },
+  "es": {
+    "legitimate_remaining": 43,
+    "remaining_counts": {
+      "mobile": 43,
+      "server": 0,
+      "quote": 0
+    }
+  },
+  "fr": {
+    "legitimate_remaining": 92,
+    "remaining_counts": {
+      "mobile": 91,
+      "server": 1,
+      "quote": 0
+    }
+  },
+  "de": {
+    "legitimate_remaining": 77,
+    "remaining_counts": {
+      "mobile": 77,
+      "server": 0,
+      "quote": 0
+    }
+  }
+}

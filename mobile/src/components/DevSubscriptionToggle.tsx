@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { resolveApiBaseUrl } from "../api/client";
 import { useAuthStore } from "../store/authStore";
 import { useSubscriptionStore } from "../store/subscriptionStore";
@@ -28,6 +29,7 @@ type Props = {
 };
 
 export default function DevSubscriptionToggle({ email = "", userId = "" }: Props) {
+  const { t } = useTranslation();
   const allowed = useMemo(() => devTierEmails(), []);
   const plan_id = useAuthStore((s) => s.plan_id) ?? "free";
   const setPlanId = useAuthStore((s) => s.setPlanId);
@@ -85,16 +87,16 @@ export default function DevSubscriptionToggle({ email = "", userId = "" }: Props
         activeOpacity={0.8}
       >
         <View style={styles.devBadge}>
-          <Text style={styles.devBadgeText}>DEV</Text>
+          <Text style={styles.devBadgeText}>{t("components.dev")}</Text>
         </View>
-        <Text style={styles.headerTitle}>Plan toggle · {plan_id.toUpperCase()}</Text>
+        <Text style={styles.headerTitle}>{t("components.planToggle", { plan: plan_id.toUpperCase() })}</Text>
         <Text style={styles.chevron}>{expanded ? "▲" : "▼"}</Text>
       </TouchableOpacity>
 
       {expanded ? (
         <View style={styles.body}>
           <Text style={styles.currentLabel}>
-            Active plan: <Text style={styles.currentValue}>{plan_id.toUpperCase()}</Text>
+            {t("components.activePlan")} <Text style={styles.currentValue}>{plan_id.toUpperCase()}</Text>
           </Text>
 
           <View style={styles.btnRow}>
@@ -128,7 +130,7 @@ export default function DevSubscriptionToggle({ email = "", userId = "" }: Props
           {loading ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator size="small" color="#1d9e75" />
-              <Text style={styles.loadingText}>Switching…</Text>
+              <Text style={styles.loadingText}>{t("components.switching")}</Text>
             </View>
           ) : null}
 
@@ -138,7 +140,7 @@ export default function DevSubscriptionToggle({ email = "", userId = "" }: Props
             </Text>
           ) : null}
 
-          <Text style={styles.warning}>Dev only — tier testing for allowlisted accounts</Text>
+          <Text style={styles.warning}>{t("components.devWarning")}</Text>
         </View>
       ) : null}
     </View>

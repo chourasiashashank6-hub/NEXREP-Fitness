@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Dimensions, Platform, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { COLORS } from "./adminTheme";
 
 const CHART_HEIGHT = 140;
@@ -100,6 +101,7 @@ export function AdminGrowthChart({
 }: {
   growthData: Array<{ date: string; new_users: number }>;
 }) {
+  const { t } = useTranslation();
   const points = useMemo(
     () => growthData.map((d, i) => ({ x: i, y: d.new_users })),
     [growthData]
@@ -107,12 +109,12 @@ export function AdminGrowthChart({
 
   if (growthData.length === 0) {
     return (
-      <Text style={styles.empty}>No signups yet</Text>
+      <Text style={styles.empty}>{t("admin.charts.noSignups")}</Text>
     );
   }
 
   if (Platform.OS === "web") {
-    return <WebSparkline data={points} color={COLORS.teal} emptyLabel="No signups yet" />;
+    return <WebSparkline data={points} color={COLORS.teal} emptyLabel={t("admin.charts.noSignups")} />;
   }
   return <NativeGrowthChart data={points} />;
 }
@@ -122,6 +124,7 @@ export function AdminRevenueChart({
 }: {
   revenueData: Array<{ month: string; revenue_inr: number }>;
 }) {
+  const { t } = useTranslation();
   const points = useMemo(
     () => revenueData.map((r, i) => ({ x: i, y: r.revenue_inr })),
     [revenueData]
@@ -130,14 +133,14 @@ export function AdminRevenueChart({
   if (revenueData.length === 0) {
     return (
       <View style={styles.emptyWrap}>
-        <Text style={styles.empty}>No revenue data yet</Text>
-        <Text style={styles.emptyHint}>Will populate when Razorpay is active</Text>
+        <Text style={styles.empty}>{t("admin.charts.noRevenue")}</Text>
+        <Text style={styles.emptyHint}>{t("admin.charts.revenueHint")}</Text>
       </View>
     );
   }
 
   if (Platform.OS === "web") {
-    return <WebSparkline data={points} color={COLORS.teal} emptyLabel="No revenue data yet" />;
+    return <WebSparkline data={points} color={COLORS.teal} emptyLabel={t("admin.charts.noRevenue")} />;
   }
   return <NativeRevenueChart data={points} />;
 }
@@ -147,17 +150,18 @@ export function AdminDailyTokensChart({
 }: {
   dailyData: Array<{ date: string; tokens: number }>;
 }) {
+  const { t } = useTranslation();
   const points = useMemo(
     () => dailyData.map((d, i) => ({ x: i, y: d.tokens })),
     [dailyData]
   );
 
   if (dailyData.length === 0) {
-    return <Text style={styles.empty}>No data for this period</Text>;
+    return <Text style={styles.empty}>{t("admin.charts.noPeriodData")}</Text>;
   }
 
   if (Platform.OS === "web") {
-    return <WebSparkline data={points} color={COLORS.purple} emptyLabel="No data for this period" />;
+    return <WebSparkline data={points} color={COLORS.purple} emptyLabel={t("admin.charts.noPeriodData")} />;
   }
   return <NativeTokensChart data={points} />;
 }

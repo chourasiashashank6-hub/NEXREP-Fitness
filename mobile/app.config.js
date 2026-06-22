@@ -29,14 +29,32 @@ module.exports = {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",
       },
-      permissions: ["android.permission.CAMERA"],
+      permissions: [
+        "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+      ],
     },
     web: {
       favicon: "./assets/favicon.png",
     },
-    plugins: ["@react-native-community/datetimepicker", "expo-image-picker"],
+    plugins: [
+      "@react-native-community/datetimepicker",
+      "expo-image-picker",
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/icon.png",
+          color: "#0F6E56",
+          defaultChannel: "logging-nudges",
+        },
+      ],
+    ],
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
+      eas: {
+        projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
+      },
     },
   },
 };

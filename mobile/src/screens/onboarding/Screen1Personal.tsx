@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
@@ -24,9 +25,8 @@ const TRACK = "#E5E4E0";
 const BORDER = "#ECEAE5";
 const SCREEN_BG = "#FFFFFF";
 
-const REQUIRED = "Required";
-
 export default function Screen1Personal({ navigation }: any) {
+  const { t } = useTranslation();
   const { data, updatePersonal } = useOnboardingContext();
   const { saveAndExit, saving } = useOnboardingSaveAndExit();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -55,15 +55,15 @@ export default function Screen1Personal({ navigation }: any) {
 
   const validate = () => {
     const next: Record<string, string> = {};
-    if (!data.personal.name.trim()) next.name = "Full name is required";
-    if (!data.personal.age) next.age = "Age is required";
-    if (!data.personal.sex) next.sex = "Biological sex is required";
+    if (!data.personal.name.trim()) next.name = t("onboarding.screen1.errors.nameRequired");
+    if (!data.personal.age) next.age = t("onboarding.screen1.errors.ageRequired");
+    if (!data.personal.sex) next.sex = t("onboarding.screen1.errors.sexRequired");
     if (data.personal.unit_system === "metric") {
-      if (!data.personal.height_cm) next.height = "Height is required";
-      if (!data.personal.weight_kg) next.weight = "Current weight is required";
+      if (!data.personal.height_cm) next.height = t("onboarding.screen1.errors.heightRequired");
+      if (!data.personal.weight_kg) next.weight = t("onboarding.screen1.errors.weightRequired");
     } else {
-      if (!data.personal.height_in) next.height = "Height is required";
-      if (!data.personal.weight_lb) next.weight = "Current weight is required";
+      if (!data.personal.height_in) next.height = t("onboarding.screen1.errors.heightRequired");
+      if (!data.personal.weight_lb) next.weight = t("onboarding.screen1.errors.weightRequired");
     }
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -76,73 +76,73 @@ export default function Screen1Personal({ navigation }: any) {
   return (
     <OnboardingLayout
       step={1}
-      title="Basic info"
-      subtitle="The minimum you need to calculate BMR. Every field here is required."
+      title={t("onboarding.screen1.title")}
+      subtitle={t("onboarding.screen1.subtitle")}
       hideBack
       onNext={validate}
       onSaveExit={saveAndExit}
       saveLoading={saving}
       saveDisabled={saving}
     >
-      <FieldCard title="Full name" badge={REQUIRED} type="Text input" description="Free text — used only for personalization in coach messages" error={errors.name}>
+      <FieldCard title={t("onboarding.screen1.fullName")} badge={t("common.required")} type={t("onboarding.fieldTypes.textInput")} required description={t("onboarding.screen1.fullNameDescription")} error={errors.name}>
         <TextInput
           value={data.personal.name}
           onChangeText={(v) => updatePersonal({ name: v })}
           autoCapitalize="words"
-          placeholder="Enter full name"
+          placeholder={t("onboarding.screen1.fullNamePlaceholder")}
           placeholderTextColor={MUTED}
           style={[styles.textInput, errors.name ? styles.inputError : null]}
         />
       </FieldCard>
 
-      <FieldCard title="Unit preference" badge={REQUIRED} type="Segmented toggle" description="Metric (kg, cm) or Imperial (lbs, ft/in) — ask this first so height/weight inputs show the right unit">
+      <FieldCard title={t("onboarding.screen1.unitPreference")} badge={t("common.required")} type={t("onboarding.fieldTypes.segmentedToggle")} required description={t("onboarding.screen1.unitPreferenceDescription")}>
         <View style={styles.segmentWrap}>
           <Pressable style={[styles.seg, data.personal.unit_system === "metric" ? styles.segActive : null]} onPress={() => handleUnitSwitch("metric")}>
-            <Text style={[styles.segText, data.personal.unit_system === "metric" ? styles.segTextActive : null]}>Metric (kg, cm)</Text>
+            <Text style={[styles.segText, data.personal.unit_system === "metric" ? styles.segTextActive : null]}>{t("onboarding.screen1.metric")}</Text>
           </Pressable>
           <Pressable style={[styles.seg, data.personal.unit_system === "imperial" ? styles.segActive : null]} onPress={() => handleUnitSwitch("imperial")}>
-            <Text style={[styles.segText, data.personal.unit_system === "imperial" ? styles.segTextActive : null]}>Imperial (lbs, in)</Text>
+            <Text style={[styles.segText, data.personal.unit_system === "imperial" ? styles.segTextActive : null]}>{t("onboarding.screen1.imperial")}</Text>
           </Pressable>
         </View>
       </FieldCard>
 
-      <FieldCard title="Age" badge={REQUIRED} type="Dropdown (Picker)" error={errors.age}>
+      <FieldCard title={t("onboarding.screen1.age")} badge={t("common.required")} type={t("onboarding.fieldTypes.dropdownPicker")} required error={errors.age}>
         <BottomSheetPicker
-          label="Age"
+          label={t("onboarding.screen1.age")}
           value={data.personal.age}
           options={AGE_OPTIONS}
           onChange={(v) => updatePersonal({ age: Number(v) })}
-          placeholder="Select age"
+          placeholder={t("onboarding.screen1.agePlaceholder")}
           error={errors.age}
         />
       </FieldCard>
 
-      <FieldCard title="Biological sex" badge={REQUIRED} type="Dropdown (Picker)" description="Male / Female / Prefer not to say — affects BMR constant (+5 or −161)" error={errors.sex}>
-        <BottomSheetPicker label="Biological sex" value={data.personal.sex} options={SEX_OPTIONS} onChange={(v) => updatePersonal({ sex: v as any })} placeholder="Select" error={errors.sex} />
+      <FieldCard title={t("onboarding.screen1.biologicalSex")} badge={t("common.required")} type={t("onboarding.fieldTypes.dropdownPicker")} required description={t("onboarding.screen1.biologicalSexDescription")} error={errors.sex}>
+        <BottomSheetPicker label={t("onboarding.screen1.biologicalSex")} value={data.personal.sex} options={SEX_OPTIONS} onChange={(v) => updatePersonal({ sex: v as any })} placeholder={t("common.select")} error={errors.sex} />
       </FieldCard>
 
-      <FieldCard title="Height" badge={REQUIRED} type="Dropdown (Picker)" error={errors.height}>
+      <FieldCard title={t("onboarding.screen1.height")} badge={t("common.required")} type={t("onboarding.fieldTypes.dropdownPicker")} required error={errors.height}>
         <BottomSheetPicker
-          label="Height"
+          label={t("onboarding.screen1.height")}
           value={selectedHeight}
           options={heightOptions}
           onChange={(v) =>
             data.personal.unit_system === "metric" ? updatePersonal({ height_cm: Number(v) }) : updatePersonal({ height_in: Number(v) })
           }
-          placeholder="Select height"
+          placeholder={t("onboarding.screen1.heightPlaceholder")}
           error={errors.height}
         />
       </FieldCard>
 
-      <FieldCard title="Current weight" badge={REQUIRED} type="Dropdown (Picker)" error={errors.weight}>
+      <FieldCard title={t("onboarding.screen1.currentWeight")} badge={t("common.required")} type={t("onboarding.fieldTypes.dropdownPicker")} required error={errors.weight}>
         <BottomSheetPicker
-          label="Current weight"
+          label={t("onboarding.screen1.currentWeight")}
           value={selectedWeight}
           options={weightOptions}
           onChange={(v) =>
             data.personal.unit_system === "metric" ? updatePersonal({ weight_kg: Number(v) }) : updatePersonal({ weight_lb: Number(v) })
           }
-          placeholder="Select weight"
+          placeholder={t("onboarding.screen1.weightPlaceholder")}
           error={errors.weight}
         />
       </FieldCard>
@@ -150,12 +150,12 @@ export default function Screen1Personal({ navigation }: any) {
   );
 }
 
-const FieldCard = ({ title, badge, type, description, children, error }: any) => (
+const FieldCard = ({ title, badge, type, description, children, error, required }: any) => (
   <View style={[styles.fieldCard, error ? styles.cardError : null]}>
     <View style={styles.titleRow}>
       <Text style={styles.fieldTitle}>{title}</Text>
-      <View style={[styles.badge, badge === "Required" ? styles.badgeRequired : styles.badgeOptional]}>
-        <Text style={[styles.badgeText, badge === "Required" ? styles.badgeReqText : styles.badgeOptText]}>{badge}</Text>
+      <View style={[styles.badge, required ? styles.badgeRequired : styles.badgeOptional]}>
+        <Text style={[styles.badgeText, required ? styles.badgeReqText : styles.badgeOptText]}>{badge}</Text>
       </View>
     </View>
     {description ? <Text style={styles.desc}>{description}</Text> : null}

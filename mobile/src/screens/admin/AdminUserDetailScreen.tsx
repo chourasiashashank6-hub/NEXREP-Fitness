@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 import {
   adminScreenScroll,
   CardBox,
@@ -24,6 +25,7 @@ import {
 import { COLORS } from "./adminTheme";
 
 export default function AdminUserDetailScreen() {
+  const { t } = useTranslation();
   const route = useRoute<RouteProp<AdminStackParamList, "AdminUserDetail">>();
   const navigation = useNavigation<NativeStackNavigationProp<AdminStackParamList>>();
   const userId = route.params.userId;
@@ -41,7 +43,7 @@ export default function AdminUserDetailScreen() {
       setDetail(d);
       setUserHistory(ai);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load user");
+      setError(e instanceof Error ? e.message : t("admin.userDetail.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -85,15 +87,15 @@ export default function AdminUserDetailScreen() {
 
       {detail?.user ? (
         <>
-          <SectionLabel>Profile</SectionLabel>
+          <SectionLabel>{t("admin.userDetail.profile")}</SectionLabel>
           <CardBox>
             <StatRow
-              label="Plan"
+              label={t("admin.userDetail.plan")}
               value={detail.user.plan_id?.toUpperCase() ?? "FREE"}
               valueColor={COLORS.tealLight}
             />
             <StatRow
-              label="Joined"
+              label={t("admin.userDetail.joined")}
               value={
                 detail.user.created_at
                   ? new Date(detail.user.created_at).toLocaleDateString("en-IN", {
@@ -105,7 +107,7 @@ export default function AdminUserDetailScreen() {
               }
             />
             <StatRow
-              label="Last active"
+              label={t("admin.userDetail.lastActive")}
               value={
                 detail.user.last_active_at
                   ? new Date(detail.user.last_active_at).toLocaleDateString("en-IN", {
@@ -118,49 +120,49 @@ export default function AdminUserDetailScreen() {
               valueColor={detail.user.last_active_at ? COLORS.tealLight : COLORS.textHint}
             />
             <StatRow
-              label="Age · Weight"
-              value={`${detail.user.age ?? "—"} · ${detail.user.weight ?? "—"} kg`}
+              label={t("admin.userDetail.ageWeight")}
+              value={t("admin.userDetail.weightValue", { age: detail.user.age ?? "—", weight: detail.user.weight ?? "—" })}
             />
             <View style={styles.statRowLast}>
-              <StatRow label="Goal" value={detail.user.goal_tag ?? "—"} />
+              <StatRow label={t("admin.userDetail.goal")} value={detail.user.goal_tag ?? "—"} />
             </View>
           </CardBox>
 
-          <SectionLabel>AI usage (all time)</SectionLabel>
+          <SectionLabel>{t("admin.userDetail.aiUsageAllTime")}</SectionLabel>
           <View style={styles.metricRow}>
             <MetricCard
-              label="Total tokens"
+              label={t("admin.userDetail.totalTokens")}
               value={(detail.ai_usage_total?.total_tokens ?? 0).toLocaleString("en-IN")}
               accentColor={COLORS.purple}
             />
             <MetricCard
-              label="Total cost"
+              label={t("admin.userDetail.totalCost")}
               value={`₹${(detail.ai_usage_total?.total_cost_inr ?? 0).toFixed(2)}`}
-              sub={`${userHistory?.history?.length ?? 0} log entries`}
+              sub={t("admin.userDetail.logEntries", { count: userHistory?.history?.length ?? 0 })}
               accentColor={COLORS.amber}
             />
           </View>
 
-          <SectionLabel>Usage by feature (30d)</SectionLabel>
+          <SectionLabel>{t("admin.userDetail.usageByFeature")}</SectionLabel>
           <CardBox>
             {featureEntries.length > 0 ? (
               featureEntries.map(([feature, cost]) => (
                 <FeatureBar
                   key={feature}
-                  name={FEATURE_LABEL_MAP[feature] ?? feature}
+                  name={t(FEATURE_LABEL_MAP[feature] ?? feature, { defaultValue: feature })}
                   value={cost}
                   maxValue={maxCost}
                   color={FEATURE_COLOR_MAP[feature] ?? "#888"}
                 />
               ))
             ) : (
-              <Text style={styles.emptyHint}>No AI usage recorded yet</Text>
+              <Text style={styles.emptyHint}>{t("admin.userDetail.noAiUsage")}</Text>
             )}
           </CardBox>
 
-          <SectionLabel>Subscription history</SectionLabel>
+          <SectionLabel>{t("admin.userDetail.subscriptionHistory")}</SectionLabel>
           {(detail.subscriptions ?? []).length === 0 ? (
-            <Text style={styles.emptyHint}>No subscriptions yet</Text>
+            <Text style={styles.emptyHint}>{t("admin.userDetail.noSubscriptions")}</Text>
           ) : (
             (detail.subscriptions ?? []).map((s: any, i: number) => (
               <View key={i} style={styles.subCard}>

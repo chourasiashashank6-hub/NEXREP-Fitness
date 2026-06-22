@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ProfileStackParamList } from "../navigation/types";
 import { useAuthStore } from "../store/authStore";
@@ -11,6 +12,7 @@ const BG = "#0a0f0d";
 type Props = NativeStackScreenProps<ProfileStackParamList, "PaymentSuccess">;
 
 export function PaymentSuccessScreen({ route, navigation }: Props) {
+  const { t } = useTranslation();
   const { planName, paymentId } = route.params;
   const setPlanId = useAuthStore((s) => s.setPlanId);
 
@@ -20,9 +22,9 @@ export function PaymentSuccessScreen({ route, navigation }: Props) {
         <View style={styles.iconWrap}>
           <Ionicons name="checkmark-circle" size={72} color={ACCENT} />
         </View>
-        <Text style={styles.title}>You&apos;re on {planName}!</Text>
-        <Text style={styles.sub}>Your subscription is active. Enjoy your 7-day trial — billing starts after it ends.</Text>
-        <Text style={styles.ref}>Payment ID: {paymentId}</Text>
+        <Text style={styles.title}>{t("payment.success.title", { planName })}</Text>
+        <Text style={styles.sub}>{t("payment.success.subtitle")}</Text>
+        <Text style={styles.ref}>{t("payment.success.paymentId", { paymentId })}</Text>
         <TouchableOpacity
           style={styles.cta}
           onPress={() => {
@@ -30,7 +32,7 @@ export function PaymentSuccessScreen({ route, navigation }: Props) {
             navigation.popToTop();
           }}
         >
-          <Text style={styles.ctaText}>Start training</Text>
+          <Text style={styles.ctaText}>{t("payment.success.startTraining")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

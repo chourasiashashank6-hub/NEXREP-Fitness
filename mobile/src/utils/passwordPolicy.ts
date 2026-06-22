@@ -1,4 +1,5 @@
 /** Matches Firebase-style password policy (your console: min 8, max 16, mixed case, digit, special). */
+import i18n from "../i18n";
 
 export const PASSWORD_MIN_LEN = 8;
 export const PASSWORD_MAX_LEN = 16;
@@ -31,5 +32,5 @@ export function isPasswordPolicySatisfied(password: string): boolean {
 
 export function getPasswordPolicySummaryError(password: string): string | null {
   if (isPasswordPolicySatisfied(password)) return null;
-  return `Password must be ${PASSWORD_MIN_LEN}–${PASSWORD_MAX_LEN} characters and include uppercase, lowercase, a number, and a special character.`;
+  return i18n.t("auth.errors.passwordPolicy", { min: PASSWORD_MIN_LEN, max: PASSWORD_MAX_LEN });
 }

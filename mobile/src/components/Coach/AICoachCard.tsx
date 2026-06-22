@@ -1,37 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
-  LayoutAnimation,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
-  UIManager,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LinearGradient } from "expo-linear-gradient";
-import { patchCalorieWater } from "../../api/caloriesLog";
+import Svg, { Circle } from "react-native-svg";
+import { useTranslation } from "react-i18next";
+import i18n from "../../i18n";
 import { getCalorieCoachInsight, hasOpenAiKey } from "../../services/aiCoachService";
-import { coachAlertsToPills } from "../../services/coachNormalize";
-import { useAppTheme } from "../../theme";
-import type { AICoachResponse, NutritionData } from "../../types/coach";
-import { AlertPill } from "./AlertPill";
-import { CircularScore } from "./CircularScore";
-import { CoachSectionHeader } from "./CoachSectionHeader";
-import { HydrationBar } from "./HydrationBar";
-import { InsightBubble } from "./InsightBubble";
-import { MacroCard } from "./MacroCard";
-import { MealPlanCard } from "./MealPlanCard";
+import type { AICoachResponse, MacroStatus, NutritionData } from "../../types/coach";
+
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const AMBER = "#FFB800";
+const AMBER_LIGHT = "#FFF8E8";
+const AMBER_TEXT = "#C08000";
+const PURPLE = "#7B68CC";
+const GOLD = "#FFD700";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const TRACK = "#E5E4E0";
+const BORDER = "#ECEAE5";
 
 const CACHE_KEY = "ai_calorie_insight_v2";
-const MEAL_PLAN_ACCENT = "#22D3EE";
-
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 type CachedInsight = {
   result?: AICoachResponse;
@@ -56,17 +56,160 @@ type Props = {
   nutritionData: NutritionData | null;
   accentColor?: string;
   onNutritionRefresh?: () => void;
+  onCoachResult?: (result: AICoachResponse | null) => void;
+  onLoadingChange?: (loading: boolean) => void;
 };
 
-export function AICoachCard({ nutritionData, accentColor = "#22d3ee", onNutritionRefresh }: Props) {
-  const { colors, radius } = useAppTheme();
+export type AICoachCardHandle = {
+  refresh: () => void;
+};
+
+type MacroKey = "protein" | "carbs" | "fat";
+
+const MACRO_FOODS: Record<MacroKey, string[]> = {
+  protein: ["🧀 Paneer 80g", "🥚 2 Eggs", "🍗 Chicken 120g", "🥛 Greek yogurt", "🐟 Tuna 100g"],
+  carbs: ["🍚 Brown rice", "🫓 2 Roti", "🥣 Oats 80g", "🍠 Sweet potato", "🍌 Banana"],
+  fat: ["🥜 Almonds", "🫒 Olive oil", "🥑 Avocado", "🥥 Coconut", "🧈 Peanut butter"],
+};
+
+const MACRO_META: Record<MacroKey, { label: string; color: string; light: string; emoji: string; subtitle: string }> = {
+  protein: { label: i18n.t("coach.calorie.card.protein"), color: BLUE, light: BLUE_LIGHT, emoji: "💪", subtitle: i18n.t("coach.calorie.card.proteinSubtitle") },
+  carbs: { label: i18n.t("coach.calorie.card.carbs"), color: GREEN, light: GREEN_LIGHT, emoji: "⚡", subtitle: i18n.t("coach.calorie.card.carbsSubtitle") },
+  fat: { label: i18n.t("coach.calorie.card.fat"), color: AMBER_TEXT, light: AMBER_LIGHT, emoji: "🥑", subtitle: i18n.t("coach.calorie.card.fatSubtitle") },
+};
+
+function clamp(value: number, min = 0, max = 1) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function statusTone(status: MacroStatus) {
+  if (status === "low") return { bg: ORANGE_LIGHT, color: ORANGE, label: i18n.t("coach.calorie.card.low") };
+  if (status === "high") return { bg: AMBER_LIGHT, color: AMBER_TEXT, label: i18n.t("coach.calorie.card.high") };
+  return { bg: GREEN_LIGHT, color: GREEN, label: i18n.t("coach.calorie.card.onTrack") };
+}
+
+function extractGapText(tip: string, fallback: number) {
+  const match = tip.match(/(\d+(?:\.\d+)?)\s*g/i);
+  if (match?.[0]) return match[0].replace(/\s+/g, "");
+  return `${Math.max(0, Math.round(fallback))}g`;
+}
+
+function MacroRing({ value, target, color }: { value: number; target: number; color: string }) {
+  const size = 64;
+  const radius = 28;
+  const circumference = 175.9;
+  const progress = clamp(target > 0 ? value / target : 0);
+  return (
+    <View style={styles.macroRingWrap}>
+      <Svg width={size} height={size}>
+        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={TRACK} strokeWidth={7} fill="none" />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={7}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${progress * circumference} ${circumference}`}
+          rotation="-90"
+          origin={`${size / 2}, ${size / 2}`}
+        />
+      </Svg>
+      <View style={styles.macroRingCenter}>
+        <Text style={[styles.macroRingText, { color }]}>{Math.round(value)}g</Text>
+      </View>
+    </View>
+  );
+}
+
+function ScoreRing({ value }: { value: number }) {
+  const size = 90;
+  const radius = 38;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.max(0, Math.min(100, Math.round(value)));
+  const offset = circumference - (clamped / 100) * circumference;
+  return (
+    <View style={styles.scoreRingWrap}>
+      <Svg width={size} height={size}>
+        <Circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255,255,255,0.15)" strokeWidth={8} fill="none" />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={GOLD}
+          strokeWidth={8}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${circumference}`}
+          strokeDashoffset={offset}
+          rotation="-90"
+          origin={`${size / 2}, ${size / 2}`}
+        />
+      </Svg>
+      <View style={styles.scoreRingCenter}>
+        <Text style={styles.scoreRingText}>{clamped}</Text>
+      </View>
+    </View>
+  );
+}
+
+function ExpandableInsight({ insight, error, loading }: { insight: string; error?: string | null; loading: boolean }) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
+
+  useEffect(() => {
+    setExpanded(false);
+    setCanExpand(false);
+  }, [insight]);
+
+  if (loading) {
+    return (
+      <View style={styles.insightBubble}>
+        <Text style={styles.insightText}>●  ●  ●</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.insightBubble}>
+        <Text style={[styles.insightText, { color: ORANGE_LIGHT }]}>{error}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.insightBubble}>
+      <Text
+        style={styles.insightText}
+        numberOfLines={expanded ? undefined : 4}
+        onTextLayout={(e) => {
+          if (expanded) return;
+          if (e.nativeEvent.lines.length > 4) setCanExpand(true);
+        }}
+      >
+        {insight}
+      </Text>
+      {canExpand ? (
+        <Pressable onPress={() => setExpanded((next) => !next)} hitSlop={8}>
+          <Text style={styles.insightMore}>{expanded ? t("coach.calorie.card.showLess") : "..."}</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoachCard(
+  { nutritionData, accentColor = PURPLE, onNutritionRefresh, onCoachResult, onLoadingChange },
+  ref,
+) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-  const [waterLoading, setWaterLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AICoachResponse | null>(null);
-  const [timestampText, setTimestampText] = useState("Not analyzed yet");
-  const [isMealPlanExpanded, setIsMealPlanExpanded] = useState(false);
-  const mealPlanChevronRotation = useRef(new Animated.Value(0)).current;
+  const [timestampText, setTimestampText] = useState(t("coach.calorie.card.notAnalyzed"));
   const currentSignature = useMemo(() => buildNutritionSignature(nutritionData), [nutritionData]);
 
   const keyMissing = !hasOpenAiKey();
@@ -75,36 +218,23 @@ export function AICoachCard({ nutritionData, accentColor = "#22d3ee", onNutritio
   const proteinTarget = nutritionData?.proteinTargetG ?? Math.round((nutritionData?.tdee ?? 2000) * 0.3 / 4);
   const carbsTarget = nutritionData?.carbsTargetG ?? Math.round((nutritionData?.tdee ?? 2000) * 0.5 / 4);
   const fatTarget = nutritionData?.fatTargetG ?? Math.round((nutritionData?.tdee ?? 2000) * 0.2 / 9);
-  const remainingCal = Math.round((nutritionData?.tdee ?? 0) - (nutritionData?.caloriesConsumed ?? 0));
-
   const run = async () => {
     if (keyMissing || !nutritionData) return;
     try {
       setLoading(true);
+      onLoadingChange?.(true);
       setError(null);
       const next = await getCalorieCoachInsight(nutritionData);
       setResult(next);
-      setTimestampText("Analyzed just now");
+      onCoachResult?.(next);
+      setTimestampText(t("coach.calorie.card.analyzedJustNow"));
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ result: next, ts: Date.now(), signature: currentSignature }));
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not load insight. Tap refresh to try again.";
+      const msg = e instanceof Error ? e.message : t("coach.calorie.card.loadInsightFailed");
       setError(msg);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleWaterAdd = async (ml: number) => {
-    if (!nutritionData) return;
-    try {
-      setWaterLoading(true);
-      const nextL = (nutritionData.waterMl + ml) / 1000;
-      await patchCalorieWater(nextL);
-      onNutritionRefresh?.();
-    } catch {
-      // ignore — parent may retry load
-    } finally {
-      setWaterLoading(false);
+      onLoadingChange?.(false);
     }
   };
 
@@ -116,7 +246,8 @@ export function AICoachCard({ nutritionData, accentColor = "#22d3ee", onNutritio
         if (!raw || cancelled) {
           if (!cancelled) {
             setResult(null);
-            setTimestampText("Not analyzed yet");
+            onCoachResult?.(null);
+            setTimestampText(t("coach.calorie.card.notAnalyzed"));
           }
           return;
         }
@@ -124,228 +255,238 @@ export function AICoachCard({ nutritionData, accentColor = "#22d3ee", onNutritio
         if (!cached?.result) return;
         if (cancelled) return;
         setResult(cached.result);
+        onCoachResult?.(cached.result);
         setTimestampText(
           cached.signature && cached.signature === currentSignature
-            ? "From previous session"
-            : "Previous insight (tap Refresh to update)",
+            ? t("coach.calorie.card.previousSession")
+            : t("coach.calorie.card.previousInsight"),
         );
         setError(null);
       } catch {
         if (!cancelled) {
           setResult(null);
-          setTimestampText("Not analyzed yet");
+          onCoachResult?.(null);
+          setTimestampText(t("coach.calorie.card.notAnalyzed"));
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [currentSignature]);
+  }, [currentSignature, onCoachResult, t]);
 
-  const alertPills = useMemo(() => {
-    if (result?.alerts?.length) return coachAlertsToPills(result.alerts);
-    return [];
-  }, [result?.alerts]);
-
-  const handleToggleMealPlan = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const next = !isMealPlanExpanded;
-    Animated.timing(mealPlanChevronRotation, {
-      toValue: next ? 1 : 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
-    setIsMealPlanExpanded(next);
-  };
-
-  const mealPlanChevronStyle = {
-    transform: [
-      {
-        rotate: mealPlanChevronRotation.interpolate({
-          inputRange: [0, 1],
-          outputRange: ["0deg", "180deg"],
-        }),
-      },
-    ],
-  };
+  useImperativeHandle(ref, () => ({
+    refresh: () => {
+      void run();
+    },
+  }));
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}>
-      <LinearGradient colors={[accentColor, `${accentColor}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardAccent} />
-      <View style={styles.headerRow}>
-        <View>
-          <Text style={[styles.title, { color: colors.text }]}>AI coach</Text>
-          <Text style={[styles.sub, { color: colors.muted }]}>{timestampText}</Text>
-        </View>
-        <View style={styles.liveWrap}>
-          <View style={styles.liveDot} />
-        </View>
-      </View>
-
+    <View style={styles.card}>
       {keyMissing ? (
-        <View style={[styles.setupBox, { backgroundColor: colors.cardAlt, borderColor: colors.border, borderRadius: radius.md }]}>
-          <Text style={[styles.setupTitle, { color: colors.text }]}>API key missing</Text>
-          <Text style={[styles.setupText, { color: colors.muted }]}>Configure GROQ_API_KEY on the server and restart.</Text>
+        <View style={styles.setupBox}>
+          <Text style={styles.setupTitle}>{t("coach.calorie.card.apiKeyMissing")}</Text>
+          <Text style={styles.setupText}>{t("coach.calorie.card.apiKeyMissingBody")}</Text>
         </View>
       ) : !hasData ? (
-        <View style={[styles.setupBox, { backgroundColor: colors.cardAlt, borderColor: colors.border, borderRadius: radius.md }]}>
-          <Text style={[styles.setupTitle, { color: colors.text }]}>No nutrition data yet</Text>
-          <Text style={[styles.setupText, { color: colors.muted }]}>Log your meals first to get AI insights.</Text>
+        <View style={styles.setupBox}>
+          <Text style={styles.setupTitle}>{t("coach.calorie.card.noNutritionData")}</Text>
+          <Text style={styles.setupText}>{t("coach.calorie.card.noNutritionDataBody")}</Text>
         </View>
       ) : (
         <>
           {loading && !result ? (
             <View style={styles.loadingBox}>
               <ActivityIndicator color={accentColor} />
-              <Text style={[styles.loadingText, { color: colors.muted }]}>Building your nutrition plan...</Text>
+              <Text style={styles.loadingText}>{t("coach.calorie.card.buildingNutritionPlan")}</Text>
             </View>
           ) : null}
 
           {result ? (
             <>
-              <CircularScore
-                score={result.dailyScore}
-                label={result.scoreLabel}
-                subtitle="Based on calories, macros, hydration, and meal timing"
-              />
-
-              <InsightBubble loading={false} insight={result.insight} error={error} expandLinkColor={accentColor} />
-
-              <View style={[styles.bodyImpact, { backgroundColor: "rgba(56,189,248,0.08)", borderColor: "rgba(56,189,248,0.2)", borderRadius: radius.md }]}>
-                <Text style={[styles.bodyImpactTitle, { color: accentColor }]}>How this affects you</Text>
-                <Text style={[styles.bodyImpactText, { color: colors.text }]}>{result.bodyImpact}</Text>
+              <View style={styles.heroCard}>
+                <View style={styles.heroCircleOne} />
+                <View style={styles.heroCircleTwo} />
+                <View style={styles.heroTopRow}>
+                  <ScoreRing value={result.dailyScore} />
+                  <View style={styles.heroTextCol}>
+                    <Text style={styles.scoreLabel}>{result.scoreLabel}</Text>
+                    <Text style={styles.scoreSubtitle}>{t("coach.calorie.card.scoreSubtitle")}</Text>
+                    <View style={styles.heroStatsRow}>
+                      <View style={styles.heroStatTile}>
+                        <Text style={styles.heroStatValue}>{Math.round(nutritionData?.caloriesConsumed ?? 0)}</Text>
+                        <Text style={styles.heroStatLabel}>{t("coach.calorie.card.eaten")}</Text>
+                      </View>
+                      <View style={styles.heroStatTile}>
+                        <Text style={[styles.heroStatValue, styles.remainingValue]}>
+                          {Math.max(0, Math.round((nutritionData?.tdee ?? 0) - (nutritionData?.caloriesConsumed ?? 0)))}
+                        </Text>
+                        <Text style={styles.heroStatLabel}>{t("coach.calorie.card.left")}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                <ExpandableInsight loading={false} insight={result.insight} error={error} />
+                <View style={styles.bodyImpact}>
+                  <Text style={styles.bodyImpactTitle}>{t("coach.calorie.card.bodyImpact")}</Text>
+                  <Text style={styles.bodyImpactText}>{result.bodyImpact}</Text>
+                </View>
               </View>
 
-              <CoachSectionHeader title="MACRO BREAKDOWN" accent={accentColor} />
-              <View style={styles.macroRow}>
-                <MacroCard
-                  name="Protein"
-                  consumed={nutritionData?.proteinG ?? 0}
-                  target={proteinTarget}
-                  status={result.macroVerdict.protein.status}
-                  tip={result.macroVerdict.protein.tip}
-                />
-                <MacroCard
-                  name="Carbs"
-                  consumed={nutritionData?.carbsG ?? 0}
-                  target={carbsTarget}
-                  status={result.macroVerdict.carbs.status}
-                  tip={result.macroVerdict.carbs.tip}
-                />
-                <MacroCard
-                  name="Fat"
-                  consumed={nutritionData?.fatG ?? 0}
-                  target={fatTarget}
-                  status={result.macroVerdict.fat.status}
-                  tip={result.macroVerdict.fat.tip}
-                />
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionLabel}>{t("coach.calorie.card.macroBreakdown")}</Text>
+                <View style={styles.macroRow}>
+                  {([
+                    ["protein", nutritionData?.proteinG ?? 0, proteinTarget],
+                    ["carbs", nutritionData?.carbsG ?? 0, carbsTarget],
+                    ["fat", nutritionData?.fatG ?? 0, fatTarget],
+                  ] as Array<[MacroKey, number, number]>).map(([key, consumed, target]) => {
+                    const meta = MACRO_META[key];
+                    const status = statusTone(result.macroVerdict[key].status);
+                    return (
+                      <View key={key} style={styles.macroColumn}>
+                        <MacroRing value={consumed} target={target} color={meta.color} />
+                        <Text style={styles.macroName}>{meta.label}</Text>
+                        <Text style={styles.macroTarget}>/ {Math.round(target)}g</Text>
+                        <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                          <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
 
-              {result.mealPlan.length > 0 ? (
-                <View style={styles.mealPlanSection}>
-                  <LinearGradient
-                    colors={[accentColor, `${accentColor}66`, "transparent"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.mealPlanAccent}
-                  />
-                  <Pressable
-                    onPress={handleToggleMealPlan}
-                    style={styles.mealPlanHeader}
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: isMealPlanExpanded }}
-                    accessibilityLabel="Your meal plan"
-                  >
-                    <View style={styles.mealPlanHeaderText}>
-                      <Text style={[styles.mealPlanTitle, { color: MEAL_PLAN_ACCENT }]}>YOUR MEAL PLAN</Text>
-                      <Text style={styles.mealPlanSubtitle}>Fill your remaining {Math.max(0, remainingCal)} kcal</Text>
-                    </View>
-                    <Animated.View style={mealPlanChevronStyle}>
-                      <Ionicons name="chevron-down" size={20} color={MEAL_PLAN_ACCENT} />
-                    </Animated.View>
-                  </Pressable>
-                  {isMealPlanExpanded ? (
-                    <View style={styles.mealPlanContent}>
-                      <View style={styles.mealPlanDivider} />
-                      {result.mealPlan.map((m, i) => (
-                        <MealPlanCard key={`${m.meal}-${i}`} {...m} />
-                      ))}
-                    </View>
-                  ) : null}
+              <View style={styles.recommendationSection}>
+                <View style={styles.recommendationHeader}>
+                  <Text style={styles.sectionLabel}>{t("coach.calorie.card.dietRecommendations")}</Text>
+                  <View style={styles.recommendationBadge}>
+                    <Text style={styles.recommendationBadgeText}>{t("coach.calorie.card.basedOnGaps")}</Text>
+                  </View>
                 </View>
-              ) : null}
+                {(["protein", "carbs", "fat"] as MacroKey[]).filter((key) => result.macroVerdict[key].status === "low").length === 0 ? (
+                  <View style={styles.successCard}>
+                    <Text style={styles.successText}>{t("coach.calorie.card.allMacrosOnTrack")}</Text>
+                  </View>
+                ) : (
+                  (["protein", "carbs", "fat"] as MacroKey[])
+                    .filter((key) => result.macroVerdict[key].status === "low")
+                    .map((key) => {
+                      const meta = MACRO_META[key];
+                      const consumed = key === "protein" ? nutritionData?.proteinG ?? 0 : key === "carbs" ? nutritionData?.carbsG ?? 0 : nutritionData?.fatG ?? 0;
+                      const target = key === "protein" ? proteinTarget : key === "carbs" ? carbsTarget : fatTarget;
+                      const gap = extractGapText(result.macroVerdict[key].tip, target - consumed);
+                      return (
+                        <View key={key} style={styles.gapCard}>
+                          <View style={[styles.gapStrip, { backgroundColor: meta.light }]}>
+                            <View style={[styles.gapIconTile, { backgroundColor: meta.color }]}>
+                              <Text style={styles.gapEmoji}>{meta.emoji}</Text>
+                            </View>
+                            <View style={styles.gapTitleWrap}>
+                              <Text style={[styles.gapTitle, { color: meta.color }]}>{t("coach.calorie.card.macroGap", { macro: meta.label })}</Text>
+                              <Text style={[styles.gapSubtitle, { color: meta.color }]}>{meta.subtitle}</Text>
+                            </View>
+                            <View style={[styles.gapBadge, { backgroundColor: meta.color }]}>
+                              <Text style={styles.gapBadgeText}>{gap}</Text>
+                            </View>
+                          </View>
+                          <View style={styles.gapBody}>
+                            <Text style={styles.suggestsLabel}>{t("coach.calorie.card.aiSuggests")}</Text>
+                            <View style={styles.foodChips}>
+                              {MACRO_FOODS[key].map((food) => (
+                                <View key={food} style={styles.foodChip}>
+                                  <Text style={styles.foodChipText}>{food}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          </View>
+                        </View>
+                      );
+                    })
+                )}
+              </View>
 
-              <HydrationBar
-                currentMl={result.hydrationPlan.currentMl}
-                targetMl={result.hydrationPlan.targetMl}
-                nextAction={result.hydrationPlan.nextAction}
-                onQuickAdd={(ml) => void handleWaterAdd(ml)}
-                loading={waterLoading}
-              />
-
-              {alertPills.length > 0 ? (
-                <View style={styles.grid}>
-                  {alertPills.map((a, idx) => (
-                    <View key={`${a.title}-${idx}`} style={styles.gridItem}>
-                      <AlertPill alert={a} />
-                    </View>
-                  ))}
-                </View>
-              ) : null}
+              <View style={styles.timestampRow}>
+                <Text style={styles.timestampText}>{timestampText}</Text>
+              </View>
             </>
           ) : (
-            <InsightBubble loading={loading} insight="" error={error} expandLinkColor={accentColor} placeholder="Tap refresh to generate your premium nutrition plan." />
+            <>
+              <ExpandableInsight loading={loading} insight="" error={error} />
+              <View style={styles.placeholderCard}>
+                <Text style={styles.placeholderText}>{t("coach.calorie.card.placeholder")}</Text>
+              </View>
+            </>
           )}
 
-          <Pressable
-            style={[styles.refreshBtn, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.md }, loading && { opacity: 0.6 }]}
-            disabled={loading}
-            onPress={() => void run()}
-          >
-            <Text style={[styles.refreshText, { color: colors.text }]}>↻ Refresh AI insight</Text>
-          </Pressable>
         </>
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, padding: 16, marginBottom: 12, overflow: "hidden" },
-  cardAccent: { height: 3, width: "100%", borderRadius: 2, marginBottom: 12 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  title: { fontSize: 15, fontWeight: "600" },
-  sub: { fontSize: 12, marginTop: 2 },
-  liveWrap: { paddingHorizontal: 6, paddingVertical: 4 },
-  liveDot: { width: 10, height: 10, borderRadius: 99, backgroundColor: "#639922" },
-  loadingBox: { alignItems: "center", paddingVertical: 24, gap: 10 },
-  loadingText: { fontSize: 12 },
-  bodyImpact: { borderWidth: 1, padding: 12, marginTop: 12 },
-  bodyImpactTitle: { fontSize: 12, fontWeight: "700", marginBottom: 6 },
-  bodyImpactText: { fontSize: 13, lineHeight: 19 },
-  macroRow: { flexDirection: "row", gap: 8 },
-  grid: { flexDirection: "row", flexWrap: "wrap", marginTop: 12, gap: 10 },
-  gridItem: { width: "48%" },
-  refreshBtn: { minHeight: 44, alignItems: "center", justifyContent: "center", borderWidth: 1, marginTop: 12 },
-  refreshText: { fontSize: 13, fontWeight: "600" },
-  setupBox: { borderWidth: 1, padding: 12 },
-  setupTitle: { fontSize: 14, fontWeight: "600" },
-  setupText: { marginTop: 4, fontSize: 12, lineHeight: 18 },
-  mealPlanSection: { marginTop: 16 },
-  mealPlanAccent: { height: 2, borderRadius: 1, marginBottom: 8 },
-  mealPlanHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    gap: 10,
-  },
-  mealPlanHeaderText: { flex: 1 },
-  mealPlanTitle: { fontSize: 11, fontWeight: "800", letterSpacing: 0.9 },
-  mealPlanSubtitle: { fontSize: 12, color: "#9AA8C4", marginTop: 4 },
-  mealPlanContent: { paddingBottom: 4 },
-  mealPlanDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    marginBottom: 10,
-  },
+  card: { marginBottom: 12 },
+  heroCard: { backgroundColor: GREEN, borderRadius: 22, paddingVertical: 20, paddingHorizontal: 18, overflow: "hidden", marginBottom: 12 },
+  heroCircleOne: { position: "absolute", width: 160, height: 160, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.05)", top: -62, right: -42 },
+  heroCircleTwo: { position: "absolute", width: 110, height: 110, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.04)", bottom: -38, left: -26 },
+  heroTopRow: { flexDirection: "row", gap: 16, alignItems: "center" },
+  scoreRingWrap: { width: 90, height: 90 },
+  scoreRingCenter: { position: "absolute", top: 0, left: 0, width: 90, height: 90, alignItems: "center", justifyContent: "center" },
+  scoreRingText: { color: GOLD, fontSize: 28, fontWeight: "900" },
+  heroTextCol: { flex: 1 },
+  scoreLabel: { color: WHITE, fontSize: 18, fontWeight: "900" },
+  scoreSubtitle: { color: "rgba(255,255,255,0.6)", fontSize: 11, marginTop: 3 },
+  heroStatsRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+  heroStatTile: { flex: 1, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 9 },
+  heroStatValue: { color: WHITE, fontSize: 14, fontWeight: "900" },
+  remainingValue: { color: "#A8F0C8" },
+  heroStatLabel: { color: "rgba(255,255,255,0.55)", fontSize: 9, marginTop: 1 },
+  insightBubble: { backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13, marginTop: 14 },
+  insightText: { color: "rgba(255,255,255,0.8)", fontSize: 11, lineHeight: 17 },
+  insightMore: { color: GOLD, fontSize: 11, fontWeight: "800", marginTop: 4 },
+  bodyImpact: { backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 12, borderLeftWidth: 3, borderLeftColor: "rgba(255,255,255,0.4)", padding: 12, marginTop: 10 },
+  bodyImpactTitle: { color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "900", textTransform: "uppercase", marginBottom: 5 },
+  bodyImpactText: { color: "rgba(255,255,255,0.6)", fontSize: 11, lineHeight: 17 },
+  sectionCard: { backgroundColor: BG, borderRadius: 18, padding: 14, marginBottom: 12 },
+  sectionLabel: { color: MUTED, fontSize: 10, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.4 },
+  macroRow: { flexDirection: "row", justifyContent: "space-between", gap: 8, marginTop: 12 },
+  macroColumn: { flex: 1, alignItems: "center" },
+  macroRingWrap: { width: 64, height: 64, alignItems: "center", justifyContent: "center" },
+  macroRingCenter: { position: "absolute", width: 64, height: 64, alignItems: "center", justifyContent: "center" },
+  macroRingText: { fontSize: 12, fontWeight: "900" },
+  macroName: { color: TEXT, fontSize: 11, fontWeight: "900", marginTop: 7 },
+  macroTarget: { color: MUTED, fontSize: 10, marginTop: 2 },
+  statusBadge: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, marginTop: 7 },
+  statusText: { fontSize: 9, fontWeight: "900" },
+  recommendationSection: { marginBottom: 12 },
+  recommendationHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  recommendationBadge: { backgroundColor: GREEN_LIGHT, borderRadius: 99, paddingHorizontal: 9, paddingVertical: 5 },
+  recommendationBadgeText: { color: GREEN, fontSize: 10, fontWeight: "900" },
+  successCard: { backgroundColor: GREEN_LIGHT, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14 },
+  successText: { color: GREEN, fontSize: 12, fontWeight: "900" },
+  gapCard: { backgroundColor: WHITE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, overflow: "hidden", marginBottom: 8 },
+  gapStrip: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 11, paddingHorizontal: 14 },
+  gapIconTile: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  gapEmoji: { fontSize: 17 },
+  gapTitleWrap: { flex: 1 },
+  gapTitle: { fontSize: 12, fontWeight: "900" },
+  gapSubtitle: { fontSize: 10, opacity: 0.7, marginTop: 2 },
+  gapBadge: { borderRadius: 99, paddingHorizontal: 9, paddingVertical: 5 },
+  gapBadgeText: { color: WHITE, fontSize: 10, fontWeight: "900" },
+  gapBody: { paddingVertical: 11, paddingHorizontal: 14 },
+  suggestsLabel: { color: MUTED, fontSize: 10, fontWeight: "900", marginBottom: 8 },
+  foodChips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  foodChip: { backgroundColor: BG, borderRadius: 99, paddingVertical: 5, paddingHorizontal: 11 },
+  foodChipText: { color: TEXT, fontSize: 11, fontWeight: "600" },
+  timestampRow: { alignItems: "center", marginBottom: 4 },
+  timestampText: { color: MUTED, fontSize: 10, fontWeight: "700" },
+  loadingBox: { alignItems: "center", backgroundColor: BG, borderRadius: 18, paddingVertical: 24, gap: 10, marginBottom: 12 },
+  loadingText: { color: MUTED, fontSize: 12 },
+  placeholderCard: { backgroundColor: BG, borderRadius: 16, padding: 14, marginTop: 10 },
+  placeholderText: { color: TEXT, fontSize: 12, lineHeight: 18 },
+  disabledBtn: { opacity: 0.6 },
+  setupBox: { backgroundColor: BG, borderWidth: 1, borderColor: BORDER, borderRadius: 16, padding: 14, marginBottom: 12 },
+  setupTitle: { color: TEXT, fontSize: 14, fontWeight: "900" },
+  setupText: { color: MUTED, marginTop: 4, fontSize: 12, lineHeight: 18 },
 });

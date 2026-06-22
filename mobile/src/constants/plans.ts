@@ -1,3 +1,5 @@
+import i18n from "../i18n";
+
 export type PlanId = "pro" | "elite";
 
 export type PlanFeature = { label: string; included: boolean };
@@ -20,41 +22,41 @@ export const PLANS: Plan[] = [
   {
     id: "pro",
     name: "PRO",
-    desc: "Perfect for dedicated athletes",
+    desc: i18n.t("subscription.plans.pro.desc"),
     monthlyPrice: 999,
     yearlyPrice: 832,
     discountedMonthly: 499,
     discountedYearly: 415,
     featured: false,
     features: [
-      { label: "Unlimited workout logging", included: true },
-      { label: "AI-powered rep counter", included: true },
-      { label: "Progress analytics & charts", included: true },
-      { label: "100+ guided workout plans", included: true },
-      { label: "Nutrition tracker", included: true },
-      { label: "Personal trainer access", included: false },
-      { label: "Custom meal plans", included: false },
-      { label: "Priority support", included: false },
+      { label: i18n.t("subscription.plans.pro.features.workoutLogging"), included: true },
+      { label: i18n.t("subscription.plans.pro.features.repCounter"), included: true },
+      { label: i18n.t("subscription.plans.pro.features.analytics"), included: true },
+      { label: i18n.t("subscription.plans.pro.features.guidedPlans"), included: true },
+      { label: i18n.t("subscription.plans.pro.features.nutritionTracker"), included: true },
+      { label: i18n.t("subscription.plans.pro.features.trainerAccess"), included: false },
+      { label: i18n.t("subscription.plans.pro.features.customMealPlans"), included: false },
+      { label: i18n.t("subscription.plans.pro.features.prioritySupport"), included: false },
     ],
   },
   {
     id: "elite",
     name: "ELITE",
-    desc: "For serious performance gains",
+    desc: i18n.t("subscription.plans.elite.desc"),
     monthlyPrice: 1999,
     yearlyPrice: 1665,
     discountedMonthly: 999,
     discountedYearly: 832,
     featured: true,
     features: [
-      { label: "Everything in Pro", included: true },
-      { label: "Personal trainer access", included: true },
-      { label: "Monthly meal & workout planners", included: true },
-      { label: "Advanced body composition", included: true },
-      { label: "Priority 24/7 support", included: true },
-      { label: "Exclusive live challenges", included: true },
-      { label: "Wearable sync (Fitbit, Apple)", included: true },
-      { label: "Early feature access", included: true },
+      { label: i18n.t("subscription.plans.elite.features.everythingPro"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.trainerAccess"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.monthlyPlanners"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.bodyComposition"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.prioritySupport"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.liveChallenges"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.wearableSync"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.earlyAccess"), included: true },
     ],
   },
 ];
@@ -95,7 +97,7 @@ export function planToCheckout(plan: Plan): CheckoutPlan {
     priceYearly: Math.round(plan.yearlyPrice * 12 * 0.8),
     features: plan.features.filter((f) => f.included).map((f) => f.label),
     desc: plan.desc,
-    headline: plan.id === "pro" ? "Train Smarter." : "Peak Performance.",
+    headline: plan.id === "pro" ? i18n.t("subscription.plans.pro.headline") : i18n.t("subscription.plans.elite.headline"),
   };
 }
 

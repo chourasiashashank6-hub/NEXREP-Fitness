@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { addMeal, getCalories } from "../api/calorie";
 import { getDailyCalorieLog, todayLocal, type CalorieDayPayload } from "../api/caloriesLog";
 import { AppButton } from "../components/AppButton";
@@ -144,6 +145,7 @@ function MacroProgressRow({
 }
 
 export const CalorieScreen = () => {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [name, setName] = useState("");
   const [calories, setCalories] = useState("");
@@ -193,62 +195,62 @@ export const CalorieScreen = () => {
       setFat("");
       load();
     } catch {
-      Alert.alert("Error", "Failed to save meal.");
+      Alert.alert(t("common.error"), t("legacy.calorie.saveMealFailed"));
     }
   };
 
   return (
     <ScreenContainer>
-      <HeroHeader title="Calorie Tracker" subtitle="Stay within your daily nutrition target" />
+      <HeroHeader title={t("legacy.calorie.title")} subtitle={t("legacy.calorie.subtitle")} />
       <AppCard>
         <View style={styles.cardChrome}>
           <View style={styles.cardHeaderRow}>
             <View>
-              <Text style={[styles.cardEyebrow, { color: colors.muted }]}>NUTRITION</Text>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Calories</Text>
+              <Text style={[styles.cardEyebrow, { color: colors.muted }]}>{t("legacy.calorie.nutrition")}</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>{t("legacy.calorie.calories")}</Text>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Open Calorie Log" style={[styles.openPill, { borderColor: colors.border }]}>
-              <Text style={[styles.openPillText, { color: colors.primary }]}>Open log</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("legacy.calorie.openCalorieLog")} style={[styles.openPill, { borderColor: colors.border }]}>
+              <Text style={[styles.openPillText, { color: colors.primary }]}>{t("legacy.calorie.openLog")}</Text>
               <Text style={[styles.cardChev, { color: colors.muted }]}>›</Text>
             </Pressable>
           </View>
-          <Text style={[styles.cardSub, { color: colors.muted }]}>Today · {calorieDay?.date ?? todayLocal()}</Text>
+          <Text style={[styles.cardSub, { color: colors.muted }]}>{t("legacy.calorie.todayDate", { date: calorieDay?.date ?? todayLocal() })}</Text>
 
           {log ? (
             <>
               {log.is_goal_met ? (
                 <View style={[styles.badge, { borderColor: colors.primary, backgroundColor: `${colors.primary}22` }]}>
-                  <Text style={[styles.badgeText, { color: colors.primary }]}>Daily calorie target reached</Text>
+                  <Text style={[styles.badgeText, { color: colors.primary }]}>{t("legacy.calorie.dailyTargetReached")}</Text>
                 </View>
               ) : null}
               <View style={[styles.heroRing, { borderColor: colors.border }]}>
                 <Text style={[styles.heroPct, { color: colors.text }]}>{calPctDisplay >= 100 ? "100+" : `${Math.round(Math.min(999, calPctDisplay))}`}</Text>
-                <Text style={[styles.heroPctUnit, { color: colors.muted }]}>% of goal</Text>
+                <Text style={[styles.heroPctUnit, { color: colors.muted }]}>{t("legacy.calorie.ofGoal")}</Text>
               </View>
               <View style={styles.block}>
                 <View style={styles.blockHead}>
-                  <Text style={[styles.blockLabel, { color: colors.muted }]}>Energy</Text>
+                  <Text style={[styles.blockLabel, { color: colors.muted }]}>{t("legacy.calorie.energy")}</Text>
                   <Text style={[styles.blockValue, { color: colors.text }]}>{fmtInt(intake)} / {fmtInt(targetKcal)} kcal</Text>
                 </View>
                 <AnimatedProgressBar ratio={calRatio} fillColor={colors.primary} trackColor={colors.inputBg} height={14} dangerColor={colors.danger} />
                 <Text style={[styles.barCaption, { color: colors.muted }]}>
-                  {calRatio >= 1 ? "At or above target — fine-tune in Calorie Log." : `${fmtInt(log.calories_remaining)} kcal remaining`}
+                  {calRatio >= 1 ? t("legacy.calorie.atTarget") : t("legacy.calorie.remaining", { kcal: fmtInt(log.calories_remaining) })}
                 </Text>
                 <MilestoneStrip currentPct={calPctDisplay} steps={CAL_MILESTONE_PCTS} dotColor={colors.primary} muted={colors.muted} border={colors.border} />
               </View>
               <View style={styles.block}>
                 <View style={styles.blockHead}>
-                  <Text style={[styles.blockLabel, { color: colors.muted }]}>Hydration</Text>
+                  <Text style={[styles.blockLabel, { color: colors.muted }]}>{t("legacy.calorie.hydration")}</Text>
                   <Text style={[styles.blockValue, { color: colors.text }]}>
                     {fmt1(waterCur)} / {fmt1(waterTgt)} L
-                    {water?.is_target_met ? <Text style={{ color: colors.primary }}> · Met</Text> : null}
+                    {water?.is_target_met ? <Text style={{ color: colors.primary }}>{t("legacy.calorie.met")}</Text> : null}
                   </Text>
                 </View>
                 <AnimatedProgressBar ratio={waterRatio} fillColor={colors.secondary} trackColor={colors.inputBg} height={12} dangerColor={colors.danger} />
                 <MilestoneStrip currentPct={waterPctDisplay} steps={CAL_MILESTONE_PCTS} dotColor={colors.primary} muted={colors.muted} border={colors.border} />
               </View>
               <View style={styles.block}>
-                <Text style={[styles.blockLabel, { color: colors.muted, marginBottom: 10 }]}>Macros</Text>
+                <Text style={[styles.blockLabel, { color: colors.muted, marginBottom: 10 }]}>{t("legacy.calorie.macros")}</Text>
                 <MacroProgressRow
                   label="Protein"
                   current={num(log.total_protein_g)}
@@ -298,12 +300,12 @@ export const CalorieScreen = () => {
               </View>
               <View style={[styles.mealChipRow, { backgroundColor: colors.inputBg }]}>
                 <Text style={[styles.mealChipStrong, { color: colors.text }]}>{mealCount}</Text>
-                <Text style={[styles.mealChipMuted, { color: colors.muted }]}>meals logged today</Text>
+                <Text style={[styles.mealChipMuted, { color: colors.muted }]}>{t("legacy.calorie.mealsLoggedToday")}</Text>
               </View>
               {calorieDay?.macro_split_label ? <Text style={[styles.hint, { color: colors.muted }]}>{calorieDay.macro_split_label}</Text> : null}
             </>
           ) : (
-            <Text style={[styles.emptyCard, { color: colors.muted }]}>Today's calorie log could not be loaded. Use Open log to open Calorie Log and retry.</Text>
+            <Text style={[styles.emptyCard, { color: colors.muted }]}>{t("legacy.calorie.loadFailed")}</Text>
           )}
         </View>
       </AppCard>
@@ -313,22 +315,22 @@ export const CalorieScreen = () => {
         <View style={[styles.progressWrap, { backgroundColor: colors.border }]}>
           <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.secondary }]} />
         </View>
-        <Text style={[styles.goalSub, { color: colors.muted }]}>{progress}% of daily goal</Text>
+        <Text style={[styles.goalSub, { color: colors.muted }]}>{t("legacy.calorie.dailyGoal", { progress })}</Text>
       </AppCard>
 
       <AppCard>
-        <AppInput label="Food Name" value={name} onChangeText={setName} placeholder="Example: Chicken salad" />
-        <AppInput label="Calories" value={calories} onChangeText={setCalories} keyboardType="number-pad" />
-        <AppInput label="Protein (optional)" value={protein} onChangeText={setProtein} keyboardType="number-pad" />
-        <AppInput label="Carbs (optional)" value={carbs} onChangeText={setCarbs} keyboardType="number-pad" />
-        <AppInput label="Fat (optional)" value={fat} onChangeText={setFat} keyboardType="number-pad" />
-        <AppButton label="Add Meal" onPress={submit} />
+        <AppInput label={t("legacy.calorie.foodName")} value={name} onChangeText={setName} placeholder={t("legacy.calorie.foodPlaceholder")} />
+        <AppInput label={t("legacy.calorie.calories")} value={calories} onChangeText={setCalories} keyboardType="number-pad" />
+        <AppInput label={t("legacy.calorie.proteinOptional")} value={protein} onChangeText={setProtein} keyboardType="number-pad" />
+        <AppInput label={t("legacy.calorie.carbsOptional")} value={carbs} onChangeText={setCarbs} keyboardType="number-pad" />
+        <AppInput label={t("legacy.calorie.fatOptional")} value={fat} onChangeText={setFat} keyboardType="number-pad" />
+        <AppButton label={t("legacy.calorie.addMeal")} onPress={submit} />
       </AppCard>
 
       <AppCard>
-        <Text style={[styles.section, { color: colors.text }]}>Recent Meals</Text>
+        <Text style={[styles.section, { color: colors.text }]}>{t("legacy.calorie.recentMeals")}</Text>
         {data.items.length === 0 ? (
-          <Text style={[styles.item, { color: colors.muted }]}>No meals logged yet.</Text>
+          <Text style={[styles.item, { color: colors.muted }]}>{t("legacy.calorie.emptyMeals")}</Text>
         ) : (
           data.items.map((item: any) => (
             <View key={item.id} style={styles.mealRow}>

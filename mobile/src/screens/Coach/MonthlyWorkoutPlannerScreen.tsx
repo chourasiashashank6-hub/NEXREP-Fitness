@@ -15,6 +15,8 @@ import {
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
+import i18n from "../../i18n";
 import {
   fetchWorkoutPlanCurrent,
   fetchWorkoutPlanDay,
@@ -30,12 +32,52 @@ import { ScreenContainer } from "../../components/ScreenContainer";
 import { auth } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 import { formatApiDetail, notifyUser } from "../../utils/notify";
+import {
+  getNotificationPermissionState,
+  requestNotificationPermissions,
+  rescheduleWorkoutPlanNotifications,
+} from "../../services/notificationService";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
-import { useAppTheme } from "../../theme";
 import type { FocusMuscle, WorkoutDayPlan, WorkoutPlanCurrent } from "../../types/planner";
 import { fullDayLabel, getNextMonthResetLabel, isPastPlanDay, monthYearLabel } from "../../utils/localDate";
 
+const PURPLE_MID = '#7B68CC';
+const PURPLE_LIGHT = '#F0EEF9';
+const GREEN = '#0F6E56';
+const GREEN_LIGHT = '#E8F5EE';
+const BLUE = '#4A90D9';
+const BLUE_LIGHT = '#EEF4FB';
+const ORANGE = '#D85A30';
+const ORANGE_LIGHT = '#FFF1EE';
+const AMBER = '#FFB800';
+const AMBER_LIGHT = '#FFF8E8';
+const AMBER_TEXT = '#C08000';
+const GOLD = '#FFD700';
+const BG = '#F7F6F3';
+const WHITE = '#FFFFFF';
+const TEXT = '#1A1A18';
+const MUTED = '#BBBBBB';
+const TRACK = '#E5E4E0';
+const BORDER = '#ECEAE5';
+const SCREEN_BG = '#FFFFFF';
+
+const MUSCLE_TAG: Record<string, { bg: string; text: string }> = {
+  Chest:     { bg: GREEN_LIGHT,  text: GREEN   },
+  Back:      { bg: ORANGE_LIGHT, text: ORANGE  },
+  Shoulders: { bg: GREEN_LIGHT,  text: GREEN   },
+  Triceps:   { bg: BLUE_LIGHT,   text: BLUE    },
+  Biceps:    { bg: BLUE_LIGHT,   text: BLUE    },
+  Legs:      { bg: AMBER_LIGHT,  text: AMBER_TEXT },
+  Core:      { bg: PURPLE_LIGHT, text: PURPLE_MID },
+};
+const defaultMuscleTag = { bg: BG, text: MUTED };
+
 const MUSCLE_PILL_OPTIONS = ["Chest", "Back", "Shoulders", "Legs", "Arms", "Core", "Balanced"] as const;
+
+function musclePillLabel(muscle: string): string {
+  const key = muscle.toLowerCase();
+  return i18n.t(`coach.workoutPlannerScreen.muscles.${key}`, { defaultValue: muscle });
+}
 
 function planFocusMuscles(plan: WorkoutPlanCurrent | null): FocusMuscle[] {
   if (plan?.focus_muscles?.length) return plan.focus_muscles;
@@ -44,9 +86,9 @@ function planFocusMuscles(plan: WorkoutPlanCurrent | null): FocusMuscle[] {
 }
 
 function muscleSelectionHint(muscles: FocusMuscle[]): string {
-  if (muscles.length === 0) return "Balanced — all muscle groups will be trained equally";
-  if (muscles.length === 1) return `Extra volume for ${muscles[0]} in every session`;
-  return `Extra volume for ${muscles.join(", ")} across your plan`;
+  if (muscles.length === 0) return i18n.t("coach.workoutPlannerScreen.balancedHint");
+  if (muscles.length === 1) return i18n.t("coach.workoutPlannerScreen.singleMuscleHint", { muscle: muscles[0] });
+  return i18n.t("coach.workoutPlannerScreen.multiMuscleHint", { muscles: muscles.join(", ") });
 }
 
 const MAX_WORKOUT_REGENS_PER_MONTH = 2;
@@ -65,16 +107,16 @@ function RegenUsageBadge({ remaining, exempt, resetLabel }: RegenBadgeProps) {
 
   const badgeText =
     remaining <= 0
-      ? `Resets ${resetLabel}`
-      : `${remaining <= 1 ? "⚠ " : ""}${remaining} left this month`;
+      ? i18n.t("coach.workoutPlannerScreen.resets", { date: resetLabel })
+      : i18n.t("coach.workoutPlannerScreen.leftThisMonth", { prefix: remaining <= 1 ? "⚠ " : "", count: remaining });
 
-  const badgeColor = remaining <= 0 ? "#888888" : remaining === 1 ? "#FFC107" : "#2ECC9A";
+  const badgeColor = remaining <= 0 ? MUTED : remaining === 1 ? AMBER_TEXT : ORANGE;
   const badgeBg =
     remaining <= 0
-      ? "rgba(136,136,136,0.15)"
+      ? TRACK
       : remaining === 1
-        ? "rgba(255,193,7,0.15)"
-        : "rgba(46,204,154,0.15)";
+        ? AMBER_LIGHT
+        : ORANGE_LIGHT;
 
   return (
     <View style={[styles.regenBadge, { backgroundColor: badgeBg }]}>
@@ -120,9 +162,9 @@ function RegenerateActionButton({
       <View style={styles.regenButtonInner}>
         <View style={styles.regenButtonLeft}>
           {isLoading ? (
-            <ActivityIndicator size="small" color="#2ECC9A" />
+            <ActivityIndicator size="small" color={WHITE} />
           ) : (
-            <Ionicons name="refresh" size={compact ? 16 : 18} color={disabled ? "#64748b" : "#2ECC9A"} />
+            <Ionicons name="refresh" size={compact ? 16 : 18} color={disabled ? MUTED : WHITE} />
           )}
           <Text
             style={[
@@ -130,7 +172,7 @@ function RegenerateActionButton({
               disabled && styles.regenerateWorkoutBtnTextDisabled,
             ]}
           >
-            {isLoading ? loadingLabel : showLimitLabel ? "Regenerate limit reached" : label}
+            {isLoading ? loadingLabel : showLimitLabel ? i18n.t("coach.workoutPlannerScreen.limitReached") : label}
           </Text>
         </View>
         <RegenUsageBadge remaining={remaining} exempt={exempt} resetLabel={resetLabel} />
@@ -152,7 +194,7 @@ function apiErrorMessage(e: unknown, fallback: string): string {
     const msg = formatApiDetail(detail);
     if (msg) return msg;
     if (e.code === "ECONNABORTED") {
-      return "Regeneration is taking longer than expected. Wait a moment and try again.";
+      return i18n.t("coach.workoutPlannerScreen.timeout");
     }
     if (e.message) return e.message;
   }
@@ -202,15 +244,15 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const LOADING_MSGS = [
-  "Building your weekly split",
-  "Balancing push, pull, and legs",
-  "Adding progressive overload",
-  "Polishing exercise cues",
+  i18n.t("coach.workoutPlannerScreen.loadingMessages.weeklySplit"),
+  i18n.t("coach.workoutPlannerScreen.loadingMessages.balancing"),
+  i18n.t("coach.workoutPlannerScreen.loadingMessages.overload"),
+  i18n.t("coach.workoutPlannerScreen.loadingMessages.cues"),
 ];
 
 export default function MonthlyWorkoutPlannerScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
-  const { colors, radius } = useAppTheme();
   const now = new Date();
 
   const [plan, setPlan] = useState<WorkoutPlanCurrent | null>(null);
@@ -332,7 +374,7 @@ export default function MonthlyWorkoutPlannerScreen() {
           exercises: [],
           estimated_duration_min: 0,
           locked: true,
-          message: `This plan unlocks on ${fullDayLabel(plan.month, plan.year, day)}`,
+          message: t("coach.workoutPlannerScreen.unlocksOn", { date: fullDayLabel(plan.month, plan.year, day) }),
         });
         return;
       }
@@ -345,7 +387,7 @@ export default function MonthlyWorkoutPlannerScreen() {
         setDayDetail(null);
       }
     },
-    [canViewFutureDays, plan],
+    [canViewFutureDays, plan, t],
   );
 
   useFocusEffect(
@@ -382,6 +424,16 @@ export default function MonthlyWorkoutPlannerScreen() {
     if (plan) void loadDay(selectedDay);
   }, [plan, selectedDay, loadDay]);
 
+  useEffect(() => {
+    if (!plan) return;
+    void (async () => {
+      const permission = await getNotificationPermissionState().catch(() => null);
+      if (permission?.granted) {
+        await rescheduleWorkoutPlanNotifications(plan).catch(() => undefined);
+      }
+    })();
+  }, [plan]);
+
   const startGenerate = async () => {
     generatingRef.current = true;
     setGenerating(true);
@@ -389,15 +441,18 @@ export default function MonthlyWorkoutPlannerScreen() {
     const seq = ++loadSeqRef.current;
     progressTimer.current = setInterval(() => setGenStep((s) => Math.min(s + 1, 4)), 5000);
     try {
+      await requestNotificationPermissions("workout_schedule").catch(() => undefined);
       const created = await generateWorkoutPlan(selectedMuscles);
       if (seq !== loadSeqRef.current) return;
       if (!created?.plan_id || !created.month_overview?.length) {
-        throw new Error("Server returned an incomplete plan. Please try again.");
+        throw new Error(t("coach.workoutPlannerScreen.alerts.incompletePlan"));
       }
       applyPlan(created);
+      await rescheduleWorkoutPlanNotifications(created).catch(() => undefined);
       const refreshed = await fetchWorkoutPlanCurrent();
       if (seq === loadSeqRef.current && refreshed) {
         applyPlan(refreshed);
+        await rescheduleWorkoutPlanNotifications(refreshed).catch(() => undefined);
       }
     } catch (e: unknown) {
       if (seq === loadSeqRef.current) {
@@ -406,8 +461,8 @@ export default function MonthlyWorkoutPlannerScreen() {
             ? e.response.data.detail
             : e instanceof Error
               ? e.message
-              : "Could not generate workout plan";
-        Alert.alert("Generation failed", msg);
+              : t("coach.workoutPlannerScreen.alerts.couldNotGenerate");
+        Alert.alert(t("coach.workoutPlannerScreen.alerts.generationFailed"), msg);
       }
     } finally {
       if (progressTimer.current) clearInterval(progressTimer.current);
@@ -418,7 +473,10 @@ export default function MonthlyWorkoutPlannerScreen() {
 
   const handleExerciseSwapPress = (day: number, index: number, name: string, muscle: string) => {
     if (!canSwapExercises || exerciseSwapsRemaining <= 0) {
-      notifyUser("Swap limit", exerciseSwapsRemaining <= 0 ? "5/5 swaps used today" : "Future days cannot be edited");
+      notifyUser(
+        t("coach.workoutPlannerScreen.alerts.swapLimit"),
+        exerciseSwapsRemaining <= 0 ? t("coach.workoutPlannerScreen.swapLimitUsed") : t("coach.workoutPlannerScreen.alerts.futureDaysLocked"),
+      );
       return;
     }
     setSwapExerciseTarget({ day, index, name, muscle });
@@ -438,15 +496,15 @@ export default function MonthlyWorkoutPlannerScreen() {
       });
       setDayDetail(updated);
       if (typeof updated.swaps_used_today === "number") setExerciseSwapsUsed(updated.swaps_used_today);
-      notifyUser("Done", "Exercise replaced!");
+      notifyUser(t("coach.workoutPlannerScreen.alerts.done"), t("coach.workoutPlannerScreen.alerts.exerciseReplaced"));
     } catch (e: unknown) {
       const status = (e as { response?: { status?: number } })?.response?.status;
       const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       if (status === 429) {
         setExerciseSwapsUsed(exerciseSwapsLimit);
-        notifyUser("Swap limit", detail || "You've used all your swaps for today.");
+        notifyUser(t("coach.workoutPlannerScreen.alerts.swapLimit"), detail || t("coach.workoutPlannerScreen.alerts.swapsUsed"));
       } else {
-        Alert.alert("Error", "Could not replace exercise. Try again.");
+        Alert.alert(t("coach.workoutPlannerScreen.alerts.error"), t("coach.workoutPlannerScreen.alerts.replaceFailed"));
       }
     } finally {
       setSwappingExerciseIndex(null);
@@ -456,19 +514,19 @@ export default function MonthlyWorkoutPlannerScreen() {
 
   const handleRegenerateWorkout = async () => {
     if (!plan || !dayDetail) {
-      notifyUser("Error", "Workout plan is still loading. Try again in a moment.");
+      notifyUser(t("coach.workoutPlannerScreen.alerts.error"), t("coach.workoutPlannerScreen.alerts.stillLoading"));
       return;
     }
     if (dayDetail.locked) {
-      notifyUser("Not available", dayDetail.message ?? "This day's workout is not unlocked yet.");
+      notifyUser(t("coach.workoutPlannerScreen.alerts.notAvailable"), dayDetail.message ?? t("coach.workoutPlannerScreen.alerts.notUnlocked"));
       return;
     }
     if (isWorkoutRestDay(dayDetail)) return;
 
     if (!plannerLimitsExempt && dayRegensRemaining <= 0) {
       notifyUser(
-        "Regenerate limit reached",
-        `You've used all regenerations for ${monthYearLabel(plan.month, plan.year)}. Resets ${resetMonthLabel}.`,
+        t("coach.workoutPlannerScreen.alerts.regenerateLimitReached"),
+        t("coach.workoutPlannerScreen.alerts.allRegensUsedForMonth", { month: monthYearLabel(plan.month, plan.year), resetDate: resetMonthLabel }),
       );
       return;
     }
@@ -485,11 +543,10 @@ export default function MonthlyWorkoutPlannerScreen() {
       setDayDetail(nextDetail);
       setExerciseListVersion((v) => v + 1);
       syncWorkoutRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-      setPlan((prev) => (prev ? { ...prev, ...updated } : prev));
       const left = updated.day_regens_remaining ?? Math.max(0, dayRegensRemaining - 1);
       notifyUser(
-        "Workout regenerated!",
-        plannerLimitsExempt ? "Test account — unlimited regenerations." : `${left} left this month`,
+        t("coach.workoutPlannerScreen.alerts.workoutRegenerated"),
+        plannerLimitsExempt ? t("coach.workoutPlannerScreen.alerts.testUnlimited") : t("coach.workoutPlannerScreen.leftThisMonth", { prefix: "", count: left }),
       );
     } catch (e: unknown) {
       const status = axios.isAxiosError(e) ? e.response?.status : undefined;
@@ -497,11 +554,11 @@ export default function MonthlyWorkoutPlannerScreen() {
         setDayRegensRemaining(0);
         setDayRegensUsed(dayRegensLimit);
         notifyUser(
-          "Regenerate limit reached",
-          apiErrorMessage(e, `You've used all regenerations for this month. Resets ${resetMonthLabel}.`),
+          t("coach.workoutPlannerScreen.alerts.regenerateLimitReached"),
+          apiErrorMessage(e, t("coach.workoutPlannerScreen.alerts.allRegensUsed", { resetDate: resetMonthLabel })),
         );
       } else {
-        notifyUser("Regeneration failed", apiErrorMessage(e, "Could not regenerate workout. Please try again."));
+        notifyUser(t("coach.workoutPlannerScreen.alerts.regenerationFailed"), apiErrorMessage(e, t("coach.workoutPlannerScreen.alerts.workoutRegenerateFailed")));
       }
     } finally {
       regeneratingWorkoutRef.current = false;
@@ -513,8 +570,8 @@ export default function MonthlyWorkoutPlannerScreen() {
     if (!plan) return;
     if (!plannerLimitsExempt && monthPlanRegensRemaining <= 0) {
       notifyUser(
-        "Month plan limit reached",
-        `You've used all month plan regenerations. Resets ${resetMonthLabel}.`,
+        t("coach.workoutPlannerScreen.alerts.monthPlanLimitReached"),
+        t("coach.workoutPlannerScreen.alerts.allMonthRegensUsed", { resetDate: resetMonthLabel }),
       );
       return;
     }
@@ -524,6 +581,7 @@ export default function MonthlyWorkoutPlannerScreen() {
     try {
       const updated = await regenerateWorkoutMonthPlan(plan.plan_id);
       applyPlan(updated);
+      await rescheduleWorkoutPlanNotifications(updated).catch(() => undefined);
       if (selectedDay) {
         try {
           const d = await fetchWorkoutPlanDay(selectedDay);
@@ -536,8 +594,8 @@ export default function MonthlyWorkoutPlannerScreen() {
       }
       const left = updated.month_plan_regens_remaining ?? Math.max(0, monthPlanRegensRemaining - 1);
       notifyUser(
-        "Month plan regenerated!",
-        plannerLimitsExempt ? "Test account — unlimited regenerations." : `${left} left this month`,
+        t("coach.workoutPlannerScreen.alerts.monthPlanRegenerated"),
+        plannerLimitsExempt ? t("coach.workoutPlannerScreen.alerts.testUnlimited") : t("coach.workoutPlannerScreen.leftThisMonth", { prefix: "", count: left }),
       );
     } catch (e: unknown) {
       const status = axios.isAxiosError(e) ? e.response?.status : undefined;
@@ -545,11 +603,11 @@ export default function MonthlyWorkoutPlannerScreen() {
         setMonthPlanRegensRemaining(0);
         setMonthPlanRegensUsed(monthPlanRegensLimit);
         notifyUser(
-          "Month plan limit reached",
-          apiErrorMessage(e, `Month plan limit reached. Resets ${resetMonthLabel}.`),
+          t("coach.workoutPlannerScreen.alerts.monthPlanLimitReached"),
+          apiErrorMessage(e, t("coach.workoutPlannerScreen.alerts.monthPlanLimitReset", { resetDate: resetMonthLabel })),
         );
       } else {
-        notifyUser("Regeneration failed", apiErrorMessage(e, "Failed to regenerate plan. Please try again."));
+        notifyUser(t("coach.workoutPlannerScreen.alerts.regenerationFailed"), apiErrorMessage(e, t("coach.workoutPlannerScreen.alerts.monthPlanRegenerateFailed")));
       }
     } finally {
       regeneratingMonthPlanRef.current = false;
@@ -589,195 +647,241 @@ export default function MonthlyWorkoutPlannerScreen() {
   const showFocusBadge = activeFocusMuscles.length > 0;
   if (loading) {
     return (
-      <ScreenContainer>
-        <ActivityIndicator color="#22d3ee" style={{ marginTop: 40 }} />
+      <ScreenContainer bg={SCREEN_BG} contentStyle={styles.loadingContent}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={ORANGE} />
+          <Text style={styles.loadingText}>{t("coach.workoutPlannerScreen.loading")}</Text>
+        </View>
       </ScreenContainer>
     );
   }
 
   return (
-    <ScreenContainer>
+    <ScreenContainer bg={SCREEN_BG}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={[styles.backBtn, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.md }]}>
-          <Text style={{ color: colors.text }}>←</Text>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backBtnText}>←</Text>
         </Pressable>
-        <View>
-          <Text style={[styles.title, { color: colors.text }]}>Monthly Workout Planner</Text>
-          <Text style={[styles.sub, { color: colors.muted }]}>{headerTitle}</Text>
+        <View style={styles.headerTitleBlock}>
+          <Text style={styles.title}>{t("coach.workoutPlannerScreen.title")}</Text>
+          <Text style={styles.sub}>{headerTitle}</Text>
         </View>
-      </View>
-
-      {plan && !generating ? (
-        <View style={[styles.focusBadge, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.md }]}>
-          {showFocusBadge ? (
-            <Text style={{ color: "#22d3ee", fontWeight: "700" }}>
-              🎯 Focusing on: {activeFocusMuscles.join(", ")} this month
-            </Text>
-          ) : null}
-          <RegenerateActionButton
-            label="Regenerate Month Plan"
-            loadingLabel="Regenerating plan…"
-            isLoading={isRegeneratingMonthPlan}
-            disabled={!canPressRegenerateMonthPlan}
-            remaining={monthPlanRegensRemaining}
-            exempt={plannerLimitsExempt}
-            resetLabel={resetMonthLabel}
-            compact
-            onPress={() => void handleRegenerateMonthPlan()}
-          />
-        </View>
-      ) : null}
-
-      <View style={{ flex: 1 }}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {!plan && !generating ? (
-          <View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}>
-            <Text style={[styles.panelTitle, { color: colors.text }]}>Generate your workout plan for {headerTitle}</Text>
-            <Text style={[styles.label, { color: colors.muted }]}>Muscle Focus (optional):</Text>
-            <View style={styles.pills}>
-              {MUSCLE_PILL_OPTIONS.map((muscle) => (
-                <Pressable
-                  key={muscle}
-                  style={[styles.musclePill, isMuscleSelected(muscle) && styles.musclePillSelected]}
-                  onPress={() => handleMuscleToggle(muscle)}
-                >
-                  <Text style={[styles.musclePillText, isMuscleSelected(muscle) && styles.musclePillTextSelected]}>{muscle}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Text style={styles.muscleSelectionHint}>{muscleSelectionHint(selectedMuscles)}</Text>
-            <Text style={[styles.bullet, { color: colors.muted }]}>✓ Goal: {preview.goal.replace("_", " ")}</Text>
-            <Text style={[styles.bullet, { color: colors.muted }]}>✓ Level: {preview.difficulty}</Text>
-            <Text style={[styles.bullet, { color: colors.muted }]}>✓ {preview.wpw} training days/week</Text>
-            <Text style={[styles.bullet, { color: colors.muted }]}>✓ Progressive overload across the month</Text>
-            <Pressable style={styles.genBtn} onPress={() => void startGenerate()}>
-              <Text style={styles.genBtnText}>🤖 Generate My Workout Plan</Text>
+        {plan && !generating ? (
+          <View style={styles.headerActionRow}>
+            {showRegenerateWorkout ? (
+              <Pressable
+                onPress={() => void handleRegenerateWorkout()}
+                disabled={isRegeneratingWorkout}
+                style={[styles.headerWorkoutPill, isRegeneratingWorkout && styles.headerMonthPillDisabled]}
+              >
+                {isRegeneratingWorkout ? (
+                  <ActivityIndicator size="small" color={ORANGE} />
+                ) : (
+                  <Ionicons name="refresh" size={13} color={ORANGE} />
+                )}
+                <Text style={styles.headerMonthPillText}>{t("coach.workoutPlannerScreen.day")}</Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              onPress={() => void handleRegenerateMonthPlan()}
+              disabled={isRegeneratingMonthPlan}
+              style={[styles.headerMonthPill, isRegeneratingMonthPlan && styles.headerMonthPillDisabled]}
+            >
+              {isRegeneratingMonthPlan ? (
+                <ActivityIndicator size="small" color={ORANGE} />
+              ) : (
+                <Ionicons name="refresh" size={13} color={ORANGE} />
+              )}
+              <Text style={styles.headerMonthPillText}>{t("coach.workoutPlannerScreen.month")}</Text>
             </Pressable>
           </View>
         ) : null}
+      </View>
 
-        {generating ? (
-          <View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}>
-            <Text style={[styles.panelTitle, { color: colors.text }]}>🏋️ Building your training plan...</Text>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${Math.min(100, (genStep / 4) * 100)}%` }]} />
-            </View>
-            <Text style={{ color: colors.muted, marginTop: 8 }}>Week {Math.min(4, Math.max(1, genStep))} of 4</Text>
-            <Text style={{ color: colors.muted, marginTop: 12 }}>{LOADING_MSGS[genStep % LOADING_MSGS.length]}</Text>
-            <ActivityIndicator color="#22d3ee" style={{ marginTop: 16 }} />
-          </View>
-        ) : null}
-
-        {plan && !generating ? (
-          <>
-            <PlannerMonthCalendar
-              month={plan.month}
-              year={plan.year}
-              days={calendarDays}
-              selectedDay={selectedDay}
-              onSelectDay={setSelectedDay}
-              mode="workout"
-              allowFutureSelection={canViewFutureDays}
-            />
-
-            {dayDetail?.locked ? (
-              <View style={[styles.locked, { borderColor: colors.border, borderRadius: radius.lg }]}>
-                <Text style={{ fontSize: 32 }}>🔒</Text>
-                <Text style={{ color: colors.muted, marginTop: 8 }}>{dayDetail.message}</Text>
+      <View style={styles.screenBody}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {!plan && !generating ? (
+            <View style={styles.panel}>
+              <Text style={styles.panelTitle}>{t("coach.workoutPlannerScreen.generateTitle", { month: headerTitle })}</Text>
+              <Text style={styles.label}>{t("coach.workoutPlannerScreen.muscleFocus")}</Text>
+              <View style={styles.pills}>
+                {MUSCLE_PILL_OPTIONS.map((muscle) => (
+                  <Pressable
+                    key={muscle}
+                    style={[styles.musclePill, isMuscleSelected(muscle) && styles.musclePillSelected]}
+                    onPress={() => handleMuscleToggle(muscle)}
+                  >
+                    <Text style={[styles.musclePillText, isMuscleSelected(muscle) && styles.musclePillTextSelected]}>{musclePillLabel(muscle)}</Text>
+                  </Pressable>
+                ))}
               </View>
-            ) : dayDetail ? (
-              <>
-                <View style={[styles.dayHeader, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}>
-                  <Text style={[styles.dayTitle, { color: colors.text }]}>📅 Day {dayDetail.day} — {fullDayLabel(plan.month, plan.year, dayDetail.day)}</Text>
-                  <Text style={[styles.split, { color: "#22d3ee" }]}>{dayDetail.split_name.toUpperCase()}</Text>
-                  {!isWorkoutRestDay(dayDetail) ? (
-                    <>
-                      <Text style={{ color: colors.muted, marginTop: 6 }}>Focus: {dayDetail.focus_muscles.join(", ")}</Text>
-                      <Text style={{ color: colors.muted }}>Est. Duration: {dayDetail.estimated_duration_min} min</Text>
-                      {activeFocusMuscles.length > 0 &&
-                      dayDetail.focus_muscles.some((m) =>
-                        activeFocusMuscles.some((f) => m.toLowerCase().includes(f.toLowerCase())),
-                      ) ? (
-                        <Text style={{ color: "#fbbf24", marginTop: 6 }}>🎯 Extra {activeFocusMuscles.join(", ")} Volume</Text>
-                      ) : null}
+              <Text style={styles.muscleSelectionHint}>{muscleSelectionHint(selectedMuscles)}</Text>
+              <Text style={styles.bullet}>{t("coach.workoutPlannerScreen.goal", { goal: preview.goal.replace("_", " ") })}</Text>
+              <Text style={styles.bullet}>{t("coach.workoutPlannerScreen.level", { level: preview.difficulty })}</Text>
+              <Text style={styles.bullet}>{t("coach.workoutPlannerScreen.trainingDays", { count: preview.wpw })}</Text>
+              <Text style={styles.bullet}>{t("coach.workoutPlannerScreen.progressiveOverload")}</Text>
+              <Pressable style={styles.genBtn} onPress={() => void startGenerate()}>
+                <Text style={styles.genBtnText}>{t("coach.workoutPlannerScreen.generateButton")}</Text>
+              </Pressable>
+            </View>
+          ) : null}
 
-                      {showRegenerateWorkout ? (
-                        <RegenerateActionButton
-                          label="Regenerate Workout"
-                          loadingLabel="Regenerating workout…"
-                          isLoading={isRegeneratingWorkout}
-                          disabled={!canPressRegenerateWorkout}
-                          remaining={dayRegensRemaining}
-                          exempt={plannerLimitsExempt}
-                          resetLabel={resetMonthLabel}
-                          onPress={() => void handleRegenerateWorkout()}
-                        />
-                      ) : null}
-                    </>
-                  ) : null}
+          {generating ? (
+            <View style={styles.panel}>
+              <Text style={styles.panelTitle}>{t("coach.workoutPlannerScreen.building")}</Text>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${Math.min(100, (genStep / 4) * 100)}%` }]} />
+              </View>
+              <Text style={styles.progressMeta}>{t("coach.workoutPlannerScreen.weekProgress", { week: Math.min(4, Math.max(1, genStep)) })}</Text>
+              <Text style={styles.progressStep}>{LOADING_MSGS[genStep % LOADING_MSGS.length]}</Text>
+              <ActivityIndicator color={ORANGE} style={styles.progressSpinner} />
+            </View>
+          ) : null}
+
+          {plan && !generating ? (
+            <>
+              <PlannerMonthCalendar
+                month={plan.month}
+                year={plan.year}
+                days={calendarDays}
+                selectedDay={selectedDay}
+                onSelectDay={setSelectedDay}
+                mode="workout"
+                allowFutureSelection={canViewFutureDays}
+              />
+
+              {dayDetail?.locked ? (
+                <View style={styles.locked}>
+                  <Ionicons name="lock-closed-outline" size={24} color={MUTED} />
+                  <Text style={styles.lockedText}>{t("coach.workoutPlannerScreen.dayLocked")}</Text>
+                  <Text style={styles.lockedMessage}>{dayDetail.message}</Text>
                 </View>
-
-                {isWorkoutRestDay(dayDetail) ? (
-                  <View style={[styles.restBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}>
-                    <Text style={{ fontSize: 40, textAlign: "center" }}>😴</Text>
-                    <Text style={[styles.restTitle, { color: colors.text }]}>REST DAY</Text>
-                    <Text style={{ color: colors.muted, marginTop: 10, lineHeight: 22 }}>
-                      Your muscles grow during rest. Use today to:{"\n"}• Get 7-8 hours of sleep{"\n"}• Drink 3L of water{"\n"}• Do 10 minutes of light stretching
+              ) : dayDetail ? (
+                <>
+                  <View style={styles.dayHeader}>
+                    <View style={styles.dayHeaderCircleOne} />
+                    <View style={styles.dayHeaderCircleTwo} />
+                    <Text style={styles.dayDateLabel}>
+                      {t("coach.workoutPlannerScreen.dateDay", { date: fullDayLabel(plan.month, plan.year, dayDetail.day).replace(",", " ·"), day: dayDetail.day })}
                     </Text>
-                  </View>
-                ) : (
-                  <View style={[styles.exerciseList, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}>
-                    {canSwapExercises && exerciseSwapsRemaining <= 0 ? (
-                      <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 10 }}>5/5 exercise swaps used today</Text>
-                    ) : null}
-                    {dayDetail.exercises.map((ex, i) => (
-                      <View key={`${exerciseListVersion}-${ex.name}-${i}`} style={styles.exercise}>
-                        {swappingExerciseIndex === i ? (
-                          <View style={styles.swapLoadingRow}>
-                            <ActivityIndicator color="#4ADE80" size="small" />
-                            <Text style={{ color: "#4ADE80", marginLeft: 8 }}>Finding a replacement...</Text>
+                    <Text style={styles.split}>{dayDetail.split_name.toUpperCase()}</Text>
+                    {!isWorkoutRestDay(dayDetail) ? (
+                      <>
+                        <View style={styles.statChipsRow}>
+                          <View style={styles.statChip}>
+                            <Ionicons name="time-outline" size={13} color={WHITE} />
+                            <Text style={styles.statChipText}>{t("coach.workoutPlannerScreen.minutes", { count: dayDetail.estimated_duration_min })}</Text>
                           </View>
-                        ) : (
-                          <>
-                            <View style={styles.exerciseHeaderRow}>
-                              <Text style={[styles.exName, { color: colors.text, flex: 1 }]}>
-                                {i + 1}. {ex.name}
-                              </Text>
-                              {canSwapExercises && exerciseSwapsRemaining > 0 ? (
-                                <Pressable
-                                  style={styles.exerciseSwapButton}
-                                  onPress={() => handleExerciseSwapPress(dayDetail.day, i, ex.name, ex.muscle)}
-                                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
-                                  <Ionicons name="swap-horizontal" size={16} color="#4ADE80" />
-                                </Pressable>
-                              ) : null}
-                            </View>
-                            <Text style={{ color: colors.muted, marginTop: 4 }}>
-                              {ex.sets} × {ex.reps} · {ex.muscle} · Rest: {ex.rest_seconds}s
+                          <View style={styles.statChip}>
+                            <Ionicons name="barbell-outline" size={13} color={WHITE} />
+                            <Text style={styles.statChipText}>{t("coach.workoutPlannerScreen.exerciseCount", { count: dayDetail.exercises.length })}</Text>
+                          </View>
+                          <View style={styles.statChip}>
+                            <Ionicons name="locate-outline" size={13} color={WHITE} />
+                            <Text style={styles.statChipText}>
+                              {dayDetail.split_name.toLowerCase().includes("push")
+                                ? t("coach.workoutPlannerScreen.push")
+                                : dayDetail.split_name.toLowerCase().includes("pull")
+                                  ? t("coach.workoutPlannerScreen.pull")
+                                  : dayDetail.split_name.toLowerCase().includes("leg")
+                                    ? t("coach.workoutPlannerScreen.legs")
+                                    : t("coach.workoutPlannerScreen.workout")}
                             </Text>
-                            <Text style={{ color: "#94a3b8", marginTop: 4 }}>↳ {ex.note}</Text>
-                          </>
-                        )}
-                      </View>
-                    ))}
+                          </View>
+                        </View>
+                        <View style={styles.dayFocusPillsRow}>
+                          {dayDetail.focus_muscles.map((muscle) => (
+                            <View key={muscle} style={styles.dayFocusPill}>
+                              <Text style={styles.dayFocusPillText}>{muscle}</Text>
+                            </View>
+                          ))}
+                        </View>
+                        {activeFocusMuscles.length > 0 &&
+                        dayDetail.focus_muscles.some((m) =>
+                          activeFocusMuscles.some((f) => m.toLowerCase().includes(f.toLowerCase())),
+                        ) ? (
+                          <View style={styles.extraVolumeNote}>
+                            <Text style={styles.extraVolumeText}>{t("coach.workoutPlannerScreen.extraVolume", { muscles: activeFocusMuscles.join(", ") })}</Text>
+                          </View>
+                        ) : null}
+
+                      </>
+                    ) : null}
                   </View>
-                )}
 
-              </>
-            ) : null}
-          </>
-        ) : null}
-      </ScrollView>
-
+                  {isWorkoutRestDay(dayDetail) ? (
+                    <View style={styles.restBox}>
+                      <Text style={styles.restEmoji}>🌙</Text>
+                      <Text style={styles.restTitle}>{t("coach.workoutPlannerScreen.restDay")}</Text>
+                      <View style={styles.recoveryTipsRow}>
+                        <View style={styles.recoveryTip}><Text style={styles.recoveryTipText}>{t("coach.workoutPlannerScreen.sleep")}</Text></View>
+                        <View style={styles.recoveryTip}><Text style={styles.recoveryTipText}>{t("coach.workoutPlannerScreen.water")}</Text></View>
+                        <View style={styles.recoveryTip}><Text style={styles.recoveryTipText}>{t("coach.workoutPlannerScreen.stretch")}</Text></View>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.exerciseList}>
+                      {canSwapExercises && exerciseSwapsUsed >= (dayDetail.swaps_limit ?? exerciseSwapsLimit) ? (
+                        <View style={styles.swapLimitNotice}>
+                          <Text style={styles.swapLimitNoticeText}>{t("coach.workoutPlannerScreen.swapLimitUsed")}</Text>
+                        </View>
+                      ) : null}
+                      {dayDetail.exercises.map((ex, i) => {
+                        const tag = MUSCLE_TAG[ex.muscle] ?? defaultMuscleTag;
+                        return (
+                          <View key={`${exerciseListVersion}-${ex.name}-${i}`} style={styles.exercise}>
+                            {swappingExerciseIndex === i ? (
+                              <View style={styles.swapLoadingRow}>
+                                <ActivityIndicator color={ORANGE} size="small" />
+                                <Text style={styles.swapLoadingText}>{t("coach.workoutPlannerScreen.swapping")}</Text>
+                              </View>
+                            ) : (
+                              <>
+                                <View style={styles.exerciseNumberBadge}>
+                                  <Text style={styles.exerciseNumberText}>{i + 1}</Text>
+                                </View>
+                                <View style={styles.exerciseMiddle}>
+                                  <Text style={styles.exName}>{ex.name}</Text>
+                                  <Text style={styles.exercisePrescription}>
+                                    {t("coach.workoutPlannerScreen.restSeconds", { sets: ex.sets, reps: ex.reps, seconds: ex.rest_seconds })}
+                                  </Text>
+                                  <View style={styles.exerciseMetaRow}>
+                                    <View style={[styles.muscleTag, { backgroundColor: tag.bg }]}>
+                                      <Text style={[styles.muscleTagText, { color: tag.text }]}>{ex.muscle}</Text>
+                                    </View>
+                                    <Text style={styles.exerciseCue} numberOfLines={2}>{ex.note}</Text>
+                                  </View>
+                                </View>
+                                {canSwapExercises && exerciseSwapsRemaining > 0 ? (
+                                  <Pressable
+                                    style={styles.exerciseSwapButton}
+                                    onPress={() => handleExerciseSwapPress(dayDetail.day, i, ex.name, ex.muscle)}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                  >
+                                    <Ionicons name="swap-horizontal" size={15} color={ORANGE} />
+                                  </Pressable>
+                                ) : null}
+                              </>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </>
+              ) : null}
+            </>
+          ) : null}
+        </ScrollView>
       </View>
 
       <SwapBottomSheet
         visible={showExerciseSwapSheet}
-        title={swapExerciseTarget ? `Replace ${swapExerciseTarget.name}?` : "Replace exercise?"}
-        subtitle={swapExerciseTarget ? `Target muscle: ${swapExerciseTarget.muscle}` : undefined}
+        title={swapExerciseTarget ? t("coach.workoutPlannerScreen.replaceTitle", { name: swapExerciseTarget.name }) : t("coach.workoutPlannerScreen.replaceExercise")}
+        subtitle={swapExerciseTarget ? t("coach.workoutPlannerScreen.targetMuscle", { muscle: swapExerciseTarget.muscle }) : undefined}
         reasons={EXERCISE_SWAP_REASONS}
-        confirmLabel="Replace Exercise"
+        confirmLabel={t("coach.workoutPlannerScreen.replaceConfirm")}
+        accentColor={ORANGE}
         onConfirm={(reason) => void handleExerciseSwapConfirm(reason)}
         onCancel={() => {
           setShowExerciseSwapSheet(false);
@@ -789,111 +893,84 @@ export default function MonthlyWorkoutPlannerScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
-  backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderWidth: 1 },
-  title: { fontSize: 20, fontWeight: "800" },
-  sub: { fontSize: 13 },
-  focusBadge: { borderWidth: 1, padding: 10, marginBottom: 10 },
-  panel: { borderWidth: 1, padding: 16, marginBottom: 14 },
-  panelTitle: { fontSize: 17, fontWeight: "700", marginBottom: 12 },
-  label: { fontSize: 13, marginBottom: 8 },
+  loadingContent: { flexGrow: 1 },
+  loadingWrap: { minHeight: 420, alignItems: "center", justifyContent: "center" },
+  loadingText: { color: MUTED, fontSize: 12, fontWeight: "700", marginTop: 10 },
+  screenBody: { flex: 1 },
+  header: { paddingHorizontal: 2, paddingTop: 0, paddingBottom: 10, flexDirection: "row", alignItems: "center", gap: 12 },
+  backBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: BORDER, borderRadius: 10, backgroundColor: BG },
+  backBtnText: { color: TEXT, fontSize: 17, fontWeight: "800" },
+  headerTitleBlock: { flex: 1, minWidth: 0 },
+  title: { color: TEXT, fontSize: 16, fontWeight: "800" },
+  sub: { color: MUTED, fontSize: 11, marginTop: 2 },
+  headerActionRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  headerMonthPill: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: ORANGE_LIGHT, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
+  headerWorkoutPill: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: ORANGE_LIGHT, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
+  headerMonthPillDisabled: { opacity: 0.6 },
+  headerMonthPillText: { color: ORANGE, fontSize: 10, fontWeight: "800" },
+  panel: { backgroundColor: BG, borderRadius: 18, padding: 16, marginBottom: 14 },
+  panelTitle: { color: TEXT, fontSize: 17, fontWeight: "800", marginBottom: 12 },
+  label: { color: MUTED, fontSize: 13, fontWeight: "700", marginBottom: 8 },
   pills: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  pill: { borderWidth: 1, borderColor: "#334155", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 },
-  pillOn: { borderColor: "#22d3ee", backgroundColor: "rgba(34,211,238,0.12)" },
-  pillText: { color: "#9AA8C4", fontSize: 13 },
-  pillTextOn: { color: "#22d3ee", fontWeight: "700" },
-  bullet: { fontSize: 13, marginBottom: 4 },
-  genBtn: { marginTop: 16, backgroundColor: "#22d3ee", borderRadius: 12, paddingVertical: 14, alignItems: "center" },
-  genBtnText: { color: "#0f172a", fontWeight: "800", fontSize: 15 },
-  progressTrack: { height: 8, backgroundColor: "#1e293b", borderRadius: 4, overflow: "hidden", marginTop: 12 },
-  progressFill: { height: 8, backgroundColor: "#22d3ee" },
-  locked: { borderWidth: 1, padding: 32, alignItems: "center", marginVertical: 16 },
-  dayHeader: { borderWidth: 1, padding: 14, marginBottom: 10 },
-  dayTitle: { fontSize: 15, fontWeight: "700" },
-  split: { fontSize: 18, fontWeight: "800", marginTop: 8, letterSpacing: 1 },
-  restBox: { borderWidth: 1, padding: 24, marginBottom: 12 },
-  restTitle: { fontSize: 22, fontWeight: "800", textAlign: "center", marginTop: 8 },
-  exerciseList: { borderWidth: 1, padding: 14, marginBottom: 12 },
-  exercise: { marginBottom: 16 },
-  exerciseHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  exerciseSwapButton: { padding: 6, borderRadius: 8, backgroundColor: "rgba(74, 222, 128, 0.12)" },
-  swapLoadingRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
-  exName: { fontSize: 15, fontWeight: "700" },
-  musclePill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    backgroundColor: "transparent",
-  },
-  musclePillSelected: {
-    borderColor: "#22D3EE",
-    backgroundColor: "rgba(34, 211, 238, 0.15)",
-  },
-  musclePillText: { color: "#94A3B8", fontSize: 13, fontWeight: "500" },
-  musclePillTextSelected: { color: "#22D3EE", fontWeight: "700" },
-  muscleSelectionHint: { color: "#64748B", fontSize: 12, marginTop: 6, marginBottom: 4 },
-  regenerateWorkoutBtn: {
-    marginTop: 14,
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#2ECC9A",
-    backgroundColor: "#1E2D2F",
-    paddingHorizontal: 12,
-    justifyContent: "center",
-  },
-  regenerateMonthPlanBtn: {
-    marginTop: 10,
-    height: 38,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#2ECC9A",
-    backgroundColor: "#1E2D2F",
-    paddingHorizontal: 12,
-    justifyContent: "center",
-  },
-  regenerateWorkoutBtnDisabled: {
-    opacity: 0.45,
-    borderColor: "#475569",
-  },
-  regenButtonInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  regenButtonLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flex: 1,
-    minWidth: 0,
-  },
-  regenerateWorkoutBtnText: {
-    color: "#2ECC9A",
-    fontSize: 14,
-    fontWeight: "600",
-    flexShrink: 1,
-  },
-  regenerateMonthPlanBtnText: {
-    color: "#2ECC9A",
-    fontSize: 13,
-    fontWeight: "600",
-    flexShrink: 1,
-  },
-  regenerateWorkoutBtnTextDisabled: {
-    color: "#64748b",
-  },
-  regenBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    flexShrink: 0,
-  },
-  regenBadgeText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
+  bullet: { color: MUTED, fontSize: 13, marginBottom: 4 },
+  genBtn: { marginTop: 16, backgroundColor: ORANGE, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+  genBtnText: { color: WHITE, fontWeight: "800", fontSize: 14 },
+  progressTrack: { height: 8, backgroundColor: TRACK, borderRadius: 99, overflow: "hidden", marginTop: 12 },
+  progressFill: { height: 8, backgroundColor: ORANGE },
+  progressMeta: { color: MUTED, fontSize: 12, marginTop: 8 },
+  progressStep: { color: MUTED, fontSize: 12, marginTop: 12 },
+  progressSpinner: { marginTop: 16 },
+  locked: { backgroundColor: BG, borderRadius: 18, padding: 32, alignItems: "center", marginVertical: 16 },
+  lockedText: { color: MUTED, fontSize: 13, fontWeight: "800", marginTop: 8 },
+  lockedMessage: { color: MUTED, fontSize: 11, marginTop: 4, textAlign: "center" },
+  dayHeader: { backgroundColor: ORANGE, borderRadius: 22, paddingHorizontal: 18, paddingVertical: 20, marginBottom: 14, overflow: "hidden" },
+  dayHeaderCircleOne: { position: "absolute", width: 130, height: 130, borderRadius: 65, right: -58, top: -44, backgroundColor: "rgba(255,255,255,0.05)" },
+  dayHeaderCircleTwo: { position: "absolute", width: 92, height: 92, borderRadius: 46, left: -34, bottom: -48, backgroundColor: "rgba(255,255,255,0.05)" },
+  dayDateLabel: { color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: "700", marginBottom: 4 },
+  split: { color: WHITE, fontSize: 34, fontWeight: "900", letterSpacing: 0.02, lineHeight: 34, marginBottom: 12 },
+  statChipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  statChip: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  statChipText: { color: WHITE, fontSize: 12, fontWeight: "800" },
+  dayFocusPillsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
+  dayFocusPill: { backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 99, paddingHorizontal: 11, paddingVertical: 4 },
+  dayFocusPillText: { color: WHITE, fontSize: 10, fontWeight: "800" },
+  extraVolumeNote: { backgroundColor: "rgba(255,215,0,0.15)", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
+  extraVolumeText: { color: GOLD, fontSize: 11, fontWeight: "800" },
+  restBox: { backgroundColor: BG, borderRadius: 18, padding: 24, alignItems: "center", marginBottom: 12 },
+  restEmoji: { fontSize: 40, textAlign: "center" },
+  restTitle: { color: TEXT, fontSize: 15, fontWeight: "800", marginTop: 8 },
+  recoveryTipsRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8, marginTop: 14 },
+  recoveryTip: { backgroundColor: ORANGE_LIGHT, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6 },
+  recoveryTipText: { color: ORANGE, fontSize: 11, fontWeight: "800" },
+  exerciseList: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 24 },
+  swapLimitNotice: { backgroundColor: ORANGE_LIGHT, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 8, marginBottom: 12 },
+  swapLimitNoticeText: { color: ORANGE, fontSize: 11, fontWeight: "800" },
+  exercise: { flexDirection: "row", alignItems: "flex-start", gap: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#F0EEF5" },
+  exerciseNumberBadge: { width: 28, height: 28, borderRadius: 99, backgroundColor: ORANGE, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 },
+  exerciseNumberText: { color: WHITE, fontSize: 12, fontWeight: "800" },
+  exerciseMiddle: { flex: 1, minWidth: 0 },
+  exName: { color: TEXT, fontSize: 14, fontWeight: "800", marginBottom: 4 },
+  exercisePrescription: { color: ORANGE, fontSize: 12, fontWeight: "800", marginBottom: 4 },
+  exerciseMetaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
+  muscleTag: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
+  muscleTagText: { fontSize: 10, fontWeight: "800" },
+  exerciseCue: { color: "#AAAAAA", fontSize: 10, fontStyle: "italic", flex: 1, minWidth: 120 },
+  exerciseSwapButton: { width: 26, height: 26, borderRadius: 7, backgroundColor: ORANGE_LIGHT, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  swapLoadingRow: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: BG, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12 },
+  swapLoadingText: { color: MUTED, fontSize: 12, fontWeight: "800" },
+  musclePill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: BORDER, backgroundColor: BG },
+  musclePillSelected: { borderColor: ORANGE, backgroundColor: ORANGE },
+  musclePillText: { color: MUTED, fontSize: 13, fontWeight: "700" },
+  musclePillTextSelected: { color: WHITE, fontWeight: "800" },
+  muscleSelectionHint: { color: MUTED, fontSize: 12, marginTop: 6, marginBottom: 4 },
+  regenerateWorkoutBtn: { backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, alignItems: "center", justifyContent: "center" },
+  regenerateMonthPlanBtn: { backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, alignItems: "center", justifyContent: "center" },
+  regenerateWorkoutBtnDisabled: { opacity: 0.45 },
+  regenButtonInner: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  regenButtonLeft: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, flexShrink: 1, minWidth: 0 },
+  regenerateWorkoutBtnText: { color: WHITE, fontSize: 13, fontWeight: "800", flexShrink: 1 },
+  regenerateMonthPlanBtnText: { color: WHITE, fontSize: 13, fontWeight: "800", flexShrink: 1 },
+  regenerateWorkoutBtnTextDisabled: { color: MUTED },
+  regenBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, flexShrink: 0 },
+  regenBadgeText: { fontSize: 10, fontWeight: "800" },
 });

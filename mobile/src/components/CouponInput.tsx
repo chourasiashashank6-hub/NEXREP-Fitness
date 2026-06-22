@@ -1,4 +1,6 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import type { AppTheme } from "../theme/colors";
 import { VALID_COUPON } from "../constants/plans";
 
@@ -8,10 +10,10 @@ export type CouponApplyResult = { ok: true } | { ok: false; error: string };
 export function runCouponApply(code: string): CouponApplyResult {
   const trimmed = code.trim().toUpperCase();
   if (!trimmed) {
-    return { ok: false, error: "Please enter a coupon code" };
+    return { ok: false, error: i18n.t("components.couponInput.emptyCode") };
   }
   if (trimmed !== VALID_COUPON) {
-    return { ok: false, error: "Invalid code. Hint: Try NEXREP50" };
+    return { ok: false, error: i18n.t("components.couponInput.invalidCode") };
   }
   return { ok: true };
 }
@@ -30,17 +32,18 @@ export type CouponInputProps = {
 const ACCENT_MINT = "#00e5a0";
 
 export function CouponInput({ value, onChangeText, applied, error, onApply, onClear, theme }: CouponInputProps) {
+  const { t } = useTranslation();
   const { colors, radius } = theme;
 
   return (
     <View style={[styles.box, { borderColor: colors.border, borderRadius: radius.md }]}>
-      <Text style={[styles.label, { color: colors.muted }]}>Early User Offer — Apply Coupon</Text>
+      <Text style={[styles.label, { color: colors.muted }]}>{t("components.couponInput.label")}</Text>
       <View style={styles.row}>
         <View style={styles.inputWrap}>
           <TextInput
             value={value}
             onChangeText={onChangeText}
-            placeholder="Enter code"
+            placeholder={t("components.couponInput.placeholder")}
             placeholderTextColor={colors.muted}
             editable={!applied}
             autoCapitalize="characters"
@@ -69,7 +72,7 @@ export function CouponInput({ value, onChangeText, applied, error, onApply, onCl
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Remove coupon code"
+              accessibilityLabel={t("components.couponInput.remove")}
             >
               <Text style={[styles.clearBtnText, { color: colors.text }]}>×</Text>
             </Pressable>
@@ -87,11 +90,11 @@ export function CouponInput({ value, onChangeText, applied, error, onApply, onCl
             },
           ]}
         >
-          <Text style={styles.applyText}>Apply</Text>
+          <Text style={styles.applyText}>{t("components.couponInput.apply")}</Text>
         </Pressable>
       </View>
       {applied ? (
-        <Text style={[styles.successMsg, { color: ACCENT_MINT }]}>Coupon applied — you unlocked early-user pricing.</Text>
+        <Text style={[styles.successMsg, { color: ACCENT_MINT }]}>{t("components.couponInput.success")}</Text>
       ) : error ? (
         <Text style={[styles.errorMsg, { color: colors.errorInline }]}>{error}</Text>
       ) : null}

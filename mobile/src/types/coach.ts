@@ -15,6 +15,8 @@ export interface NutritionData {
   waterTargetMl?: number;
 }
 
+import i18n from "../i18n";
+
 export type MacroStatus = "low" | "on_track" | "high";
 
 export interface MacroVerdictItem {
@@ -45,6 +47,16 @@ export interface CoachAlertItem {
   subtitle: string;
 }
 
+export type DietTipCategory = "gut" | "protein" | "digestion" | "timing" | "fat";
+
+export interface DietTipItem {
+  emoji: string;
+  title: string;
+  body: string;
+  tag: string;
+  category: DietTipCategory;
+}
+
 /** @deprecated use CoachAlertItem — kept for AlertPill compatibility */
 export interface AlertItem {
   type: "warning" | "critical" | "success" | "info";
@@ -66,6 +78,7 @@ export interface AICoachResponse {
   dailyScore: number;
   scoreLabel: string;
   alerts: CoachAlertItem[];
+  dietTips?: DietTipItem[];
   source?: string;
 }
 
@@ -81,48 +94,48 @@ export interface Task {
 export const DEFAULT_TASKS: Task[] = [
   {
     id: "1",
-    name: "Log breakfast and lunch",
-    description: "Mark all meals in the tracker to keep calories accurate.",
+    name: i18n.t("coach.actionPlan.defaults.logBreakfast"),
+    description: i18n.t("coach.actionPlan.defaults.logBreakfastDesc"),
     tag: "log",
     priority: "high",
     done: false,
   },
   {
     id: "2",
-    name: "Drink 3 more glasses of water",
-    description: "One now, one at 3 pm, one before dinner.",
+    name: i18n.t("coach.actionPlan.defaults.drinkWater"),
+    description: i18n.t("coach.actionPlan.defaults.drinkWaterDesc"),
     tag: "water",
     priority: "high",
     done: false,
   },
   {
     id: "3",
-    name: "Add a high-protein snack",
-    description: "Target 30+ g — Greek yogurt, paneer, or protein shake.",
+    name: i18n.t("coach.actionPlan.defaults.proteinSnack"),
+    description: i18n.t("coach.actionPlan.defaults.proteinSnackDesc"),
     tag: "food",
     priority: "high",
     done: false,
   },
   {
     id: "4",
-    name: "Eat a fiber-rich food before 8 pm",
-    description: "Lentils, raw salad, or fruit to close the fiber gap.",
+    name: i18n.t("coach.actionPlan.defaults.fiberFood"),
+    description: i18n.t("coach.actionPlan.defaults.fiberFoodDesc"),
     tag: "food",
     priority: "medium",
     done: false,
   },
   {
     id: "5",
-    name: "Log a 15-min walk",
-    description: "A short walk after dinner counts toward your burn goal.",
+    name: i18n.t("coach.actionPlan.defaults.walk"),
+    description: i18n.t("coach.actionPlan.defaults.walkDesc"),
     tag: "move",
     priority: "medium",
     done: false,
   },
   {
     id: "6",
-    name: "Log dinner before 9 pm",
-    description: "Closing the day log helps AI recalibrate for tomorrow.",
+    name: i18n.t("coach.actionPlan.defaults.logDinner"),
+    description: i18n.t("coach.actionPlan.defaults.logDinnerDesc"),
     tag: "log",
     priority: "low",
     done: false,

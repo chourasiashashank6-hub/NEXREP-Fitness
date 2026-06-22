@@ -11,6 +11,8 @@ import {
   Text,
   View,
 } from "react-native";
+import { useTranslation } from "react-i18next";
+import { logicalRow, textAlignStart } from "../utils/rtl";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -35,7 +37,7 @@ export const OnboardingLayout = ({
   subtitle,
   onBack,
   onNext,
-  nextLabel = "Next",
+  nextLabel,
   hideBack,
   extraFooter,
   nextLoading,
@@ -59,6 +61,7 @@ export const OnboardingLayout = ({
   saveLoading?: boolean;
   saveDisabled?: boolean;
 }>) => {
+  const { t } = useTranslation();
   const handleNext = () => {
     Keyboard.dismiss();
     const result = onNext();
@@ -92,14 +95,20 @@ export const OnboardingLayout = ({
             })}
           </View>
           <View style={styles.kickerRow}>
-            <Text style={styles.kicker}>{`SCREEN ${step} OF 6`}</Text>
+            <Text style={styles.kicker}>{t("onboarding.layout.screenCounter", { step })}</Text>
             {onSaveExit ? (
               <Pressable
                 style={[styles.saveBtn, (saveDisabled || saveLoading) && styles.saveBtnDisabled]}
                 onPress={handleSaveExit}
                 disabled={saveDisabled || saveLoading}
               >
-                {saveLoading ? <ActivityIndicator size="small" color={GREEN} /> : <Text style={styles.saveText}>Save</Text>}
+                {saveLoading ? (
+                  <ActivityIndicator size="small" color={GREEN} />
+                ) : (
+                  <Text style={styles.saveText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
+                    {t("common.save")}
+                  </Text>
+                )}
               </Pressable>
             ) : null}
           </View>
@@ -119,8 +128,16 @@ export const OnboardingLayout = ({
         <View style={styles.footer}>
           {extraFooter}
           <View style={styles.navRow}>
-            {hideBack ? <View style={styles.spacer} /> : <Pressable style={styles.backBtn} onPress={onBack}><Text style={styles.backText}>← Back</Text></Pressable>}
-            <Text style={styles.counter} pointerEvents="none">{`${step} / 6`}</Text>
+            {hideBack ? (
+              <View style={styles.spacer} />
+            ) : (
+              <Pressable style={styles.backBtn} onPress={onBack}>
+                <Text style={styles.backText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
+                  {t("common.back")}
+                </Text>
+              </Pressable>
+            )}
+            <Text style={styles.counter} pointerEvents="none">{t("onboarding.layout.stepCounter", { step })}</Text>
             <Pressable
               style={[styles.nextBtn, (nextDisabled || nextLoading) && styles.nextBtnDisabled]}
               onPress={handleNext}
@@ -132,7 +149,9 @@ export const OnboardingLayout = ({
               {nextLoading ? (
                 <ActivityIndicator color={WHITE} />
               ) : (
-                <Text style={styles.nextText}>{step === 6 ? "Save & exit ✓" : `${nextLabel} →`}</Text>
+                <Text style={styles.nextText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+                  {step === 6 ? t("onboarding.layout.saveAndExit") : t("onboarding.layout.nextArrow", { label: nextLabel ?? t("common.next") })}
+                </Text>
               )}
             </Pressable>
           </View>
@@ -145,21 +164,23 @@ export const OnboardingLayout = ({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SCREEN_BG },
   topPad: { paddingHorizontal: 16, paddingTop: 8 },
-  progressRow: { flexDirection: "row", gap: 3, marginBottom: 14 },
-  kickerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  progressRow: { flexDirection: logicalRow, gap: 3, marginBottom: 14 },
+  kickerRow: { flexDirection: logicalRow, alignItems: "center", justifyContent: "space-between", gap: 10 },
   segment: { flex: 1, height: 4, borderRadius: 99 },
-  kicker: { fontSize: 13, color: MUTED, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: "700" },
+  kicker: { flex: 1, minWidth: 0, fontSize: 13, color: MUTED, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: "700", textAlign: textAlignStart },
   saveBtn: {
     minWidth: 64,
-    height: 32,
+    minHeight: 32,
+    maxWidth: "42%",
     borderRadius: 99,
     paddingHorizontal: 12,
+    paddingVertical: 5,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: GREEN_LIGHT,
   },
   saveBtnDisabled: { opacity: 0.7 },
-  saveText: { color: GREEN, fontWeight: "800", fontSize: 13 },
+  saveText: { color: GREEN, fontWeight: "800", fontSize: 13, textAlign: "center" },
   title: { marginTop: 10, fontSize: 20, fontWeight: "800", color: TEXT, marginBottom: 5 },
   subtitle: { fontSize: 11, color: MUTED, lineHeight: 17, marginBottom: 14 },
   scroll: { flex: 1 },
@@ -172,7 +193,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
     elevation: 12,
   },
-  navRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, zIndex: 21 },
+  navRow: { flexDirection: logicalRow, alignItems: "center", justifyContent: "space-between", gap: 8, zIndex: 21 },
   backBtn: {
     minHeight: 48,
     borderRadius: 12,
@@ -180,11 +201,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "transparent",
     flex: 1,
+    minWidth: 0,
   },
-  backText: { color: MUTED, fontSize: 15, fontWeight: "800" },
-  nextBtn: { minHeight: 48, borderRadius: 12, backgroundColor: GREEN, alignItems: "center", justifyContent: "center", flex: 1 },
+  backText: { color: MUTED, fontSize: 15, fontWeight: "800", textAlign: "center" },
+  nextBtn: { minHeight: 48, borderRadius: 12, backgroundColor: GREEN, alignItems: "center", justifyContent: "center", flex: 1, minWidth: 0, paddingHorizontal: 8 },
   nextBtnDisabled: { opacity: 0.65 },
-  nextText: { color: WHITE, fontSize: 15, fontWeight: "800" },
-  counter: { color: MUTED, fontSize: 14, minWidth: 40, textAlign: "center", fontWeight: "700" },
-  spacer: { flex: 1 },
+  nextText: { color: WHITE, fontSize: 15, fontWeight: "800", textAlign: "center" },
+  counter: { color: MUTED, fontSize: 14, minWidth: 34, flexShrink: 0, textAlign: "center", fontWeight: "700" },
+  spacer: { flex: 1, minWidth: 0 },
 });

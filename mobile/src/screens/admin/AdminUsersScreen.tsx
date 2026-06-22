@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 import {
   adminScreenScroll,
   ErrorText,
@@ -24,6 +25,7 @@ type UserRow = {
 };
 
 export default function AdminUsersScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AdminStackParamList>>();
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export default function AdminUsersScreen() {
         setOffset(nextOffset + res.items.length);
         setItems((prev) => (append ? [...prev, ...res.items] : res.items));
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load users");
+        setError(e instanceof Error ? e.message : t("admin.users.loadFailed"));
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -66,7 +68,7 @@ export default function AdminUsersScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Text style={styles.headerCount}>{total} total</Text>
+        <Text style={styles.headerCount}>{t("admin.common.total", { count: total })}</Text>
       ),
     });
   }, [navigation, total]);
@@ -77,19 +79,24 @@ export default function AdminUsersScreen() {
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Search name or email…"
+          placeholder={t("admin.users.searchPlaceholder")}
           placeholderTextColor={COLORS.textHint}
           style={styles.search}
           onSubmitEditing={() => void loadPage(0, false)}
           returnKeyType="search"
         />
         <View style={styles.chips}>
-          {["All", "Free", "Pro", "Elite"].map((p) => (
+          {[
+            { label: t("admin.common.all"), value: null },
+            { label: t("admin.common.free"), value: "free" },
+            { label: t("admin.common.pro"), value: "pro" },
+            { label: t("admin.common.elite"), value: "elite" },
+          ].map((p) => (
             <FilterChip
-              key={p}
-              label={p}
-              active={planFilter === (p === "All" ? null : p.toLowerCase())}
-              onPress={() => setPlanFilter(p === "All" ? null : p.toLowerCase())}
+              key={p.label}
+              label={p.label}
+              active={planFilter === p.value}
+              onPress={() => setPlanFilter(p.value)}
             />
           ))}
         </View>
@@ -112,13 +119,14 @@ export default function AdminUsersScreen() {
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>{item.name}</Text>
               <Text style={styles.rowMeta}>
-                {item.email} · Active{" "}
-                {item.last_active_at
-                  ? new Date(item.last_active_at).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                    })
-                  : "—"}
+                {item.email} · {t("admin.common.activeDate", {
+                  date: item.last_active_at
+                    ? new Date(item.last_active_at).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                      })
+                    : "—",
+                })}
               </Text>
             </View>
             <PlanBadge plan={item.plan_id ?? "free"} />
@@ -131,7 +139,7 @@ export default function AdminUsersScreen() {
               disabled={loadingMore}
               onPress={() => void loadPage(offset, true)}
             >
-              <Text style={styles.loadMoreText}>{loadingMore ? "Loading…" : "Load more"}</Text>
+              <Text style={styles.loadMoreText}>{loadingMore ? t("admin.users.loading") : t("admin.users.loadMore")}</Text>
             </TouchableOpacity>
           ) : null
         }

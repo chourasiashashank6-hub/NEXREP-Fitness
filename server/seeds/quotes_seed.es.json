@@ -1,0 +1,5037 @@
+[
+  {
+    "quote": "Las últimas tres o cuatro repeticiones son las que hacen crecer el músculo.",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Todo el mundo quiere ser culturista, pero nadie quiere levantar pesas pesadas.",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El músculo y la mente deben volverse uno.",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No hay atajos. Todo son repeticiones, repeticiones, repeticiones.",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Si quieres algo que nunca has tenido, debes estar dispuesto a hacer algo que nunca has hecho.",
+    "author": "Thomas Jefferson",
+    "category": "general"
+  },
+  {
+    "quote": "El único lugar donde el éxito viene antes que el trabajo es en el diccionario.",
+    "author": "Vidal Sassoon",
+    "category": "general"
+  },
+  {
+    "quote": "El dolor es temporal. Rendirse dura para siempre.",
+    "author": "Lance Armstrong",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El tiempo corre. ¿Te estás convirtiendo en la persona que quieres ser?",
+    "author": "Greg Plitt",
+    "category": "general"
+  },
+  {
+    "quote": "Odié cada minuto de entrenamiento, pero dije, no renuncies. Sufre ahora y vive el resto de tu vida como un campeón.",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "La fuerza no proviene de la capacidad física. Proviene de una voluntad indomable.",
+    "author": "Mahatma Gandhi",
+    "category": "strength"
+  },
+  {
+    "quote": "El guerrero exitoso es el hombre promedio, con un enfoque similar al de un láser.",
+    "author": "Bruce Lee",
+    "category": "strength"
+  },
+  {
+    "quote": "Somos lo que hacemos repetidamente. La excelencia entonces no es un acto sino un hábito.",
+    "author": "Aristotle",
+    "category": "general"
+  },
+  {
+    "quote": "El cuerpo logra lo que la mente cree.",
+    "author": "Napoleon Hill",
+    "category": "general"
+  },
+  {
+    "quote": "Lo que duele hoy te hace más fuerte mañana.",
+    "author": "Jay Cutler",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El dolor que sientas hoy será la fuerza que sientas mañana.",
+    "author": "Arnold Schwarzenegger",
+    "category": "strength"
+  },
+  {
+    "quote": "El éxito suele ser la culminación de controlar el fracaso.",
+    "author": "Sylvester Stallone",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo puede soportar casi cualquier cosa. Es tu mente a la que tienes que convencer.",
+    "author": "Andrew Murphy",
+    "category": "general"
+  },
+  {
+    "quote": "El único mal entrenamiento es el que no se produjo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Si algo se interpone entre tú y tu éxito, apártalo. No aceptes un no por respuesta.",
+    "author": "Dwayne Johnson",
+    "category": "general"
+  },
+  {
+    "quote": "El éxito es caminar de fracaso en fracaso sin perder el entusiasmo.",
+    "author": "Winston Churchill",
+    "category": "general"
+  },
+  {
+    "quote": "Cuando quieras tener éxito tanto como quieras respirar, entonces tendrás éxito.",
+    "author": "Eric Thomas",
+    "category": "general"
+  },
+  {
+    "quote": "No cuento mis abdominales. Solo empiezo a contar cuando empieza a doler porque esos son los únicos que cuentan.",
+    "author": "Muhammad Ali",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Todo el progreso se produce fuera de la zona de confort.",
+    "author": "Michael John Bobak",
+    "category": "general"
+  },
+  {
+    "quote": "Si cree que levantar pesas es peligroso, intente ser débil. Ser débil es peligroso.",
+    "author": "Bret Contreras",
+    "category": "strength"
+  },
+  {
+    "quote": "El hierro nunca te miente. Cien libras son cien libras.",
+    "author": "Henry Rollins",
+    "category": "strength"
+  },
+  {
+    "quote": "Para ser el número uno, tienes que entrenar como si fueras el número dos.",
+    "author": "Maurice Greene",
+    "category": "general"
+  },
+  {
+    "quote": "La disciplina es elegir entre lo que quieres ahora y lo que más deseas.",
+    "author": "Abraham Lincoln",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La resistencia que enfrentas en el gimnasio y en la vida es la que construye un carácter fuerte.",
+    "author": "Arnold Schwarzenegger",
+    "category": "strength"
+  },
+  {
+    "quote": "Tu dieta es una cuenta bancaria. Las buenas elecciones de alimentos son buenas inversiones.",
+    "author": "Bethenny Frankel",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "No te levantaste hoy para ser mediocre.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No se trata de tener tiempo. Se trata de ganar tiempo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sangre, sudor y respeto. Los dos primeros los das, el último lo ganas.",
+    "author": "Dwayne Johnson",
+    "category": "general"
+  },
+  {
+    "quote": "No te digo que vaya a ser fácil. Te digo que valdrá la pena.",
+    "author": "Art Williams",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cuando aprendes a rendirte, se vuelve un hábito.",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "Los ganadores hacen lo que temen.",
+    "author": "Franco Columbu",
+    "category": "general"
+  },
+  {
+    "quote": "La única forma de definir tus límites es superándolos.",
+    "author": "Arthur C. Clarke",
+    "category": "strength"
+  },
+  {
+    "quote": "Da un paso más. Ese camino nunca está lleno.",
+    "author": "Wayne Dyer",
+    "category": "general"
+  },
+  {
+    "quote": "Nada funcionará a menos que lo hagas.",
+    "author": "Maya Angelou",
+    "category": "general"
+  },
+  {
+    "quote": "Obsesionado es una palabra que los perezosos usan para describir a los dedicados.",
+    "author": "Grant Cardone",
+    "category": "general"
+  },
+  {
+    "quote": "Tienes que pensarlo antes de poder hacerlo. La mente es lo que lo hace todo posible.",
+    "author": "Kai Greene",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La mayoría de las personas fracasan no por falta de deseo sino por falta de compromiso.",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "No limites tus desafíos. Desafía tus límites.",
+    "author": "Jerry Dunn",
+    "category": "strength"
+  },
+  {
+    "quote": "Cuanto más dura sea la batalla, más dulce será la victoria.",
+    "author": "Les Brown",
+    "category": "general"
+  },
+  {
+    "quote": "Un campeón es alguien que se levanta cuando no puede.",
+    "author": "Jack Dempsey",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena como loco o sigue igual.",
+    "author": "Jillian Michaels",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No hay fuerza sin lucha.",
+    "author": "Oprah Winfrey",
+    "category": "strength"
+  },
+  {
+    "quote": "Hoy haré lo que otros no harán, para que mañana pueda lograr lo que otros no pueden.",
+    "author": "Jerry Rice",
+    "category": "general"
+  },
+  {
+    "quote": "Solo cree en ti mismo. Incluso si no lo haces, finge que sí y en algún momento lo harás.",
+    "author": "Venus Williams",
+    "category": "general"
+  },
+  {
+    "quote": "Algunas personas quieren que suceda, otras desean que suceda, otras hacen que suceda.",
+    "author": "Michael Jordan",
+    "category": "general"
+  },
+  {
+    "quote": "Si no te desafía, no te cambia.",
+    "author": "Fred DeVito",
+    "category": "general"
+  },
+  {
+    "quote": "La única persona en la que estás destinado a convertirte es la persona que decides ser.",
+    "author": "Ralph Waldo Emerson",
+    "category": "general"
+  },
+  {
+    "quote": "Tanto si crees que puedes como si crees que no puedes, tienes razón.",
+    "author": "Henry Ford",
+    "category": "general"
+  },
+  {
+    "quote": "No he fallado. Acabo de encontrar diez mil maneras que no funcionan.",
+    "author": "Thomas Edison",
+    "category": "general"
+  },
+  {
+    "quote": "Las grandes obras no se realizan con fuerza sino con perseverancia.",
+    "author": "Samuel Johnson",
+    "category": "strength"
+  },
+  {
+    "quote": "La diferencia entre intentarlo y triunfar es un poco.",
+    "author": "Marvin Phillips",
+    "category": "general"
+  },
+  {
+    "quote": "Fallas el cien por cien de los tiros que nunca haces.",
+    "author": "Wayne Gretzky",
+    "category": "general"
+  },
+  {
+    "quote": "Cuida tu cuerpo. Es el único lugar donde tienes para vivir.",
+    "author": "Jim Rohn",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "No se puede superar el entrenamiento con una mala dieta.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La báscula no te define. Tu fuerza sí.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cada campeón fue alguna vez un contendiente que se negó a darse por vencido.",
+    "author": "Rocky Balboa",
+    "category": "general"
+  },
+  {
+    "quote": "El único viaje imposible es el que nunca empiezas.",
+    "author": "Tony Robbins",
+    "category": "general"
+  },
+  {
+    "quote": "La fuerza es producto de la lucha.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Ser derrotado es a menudo una condición temporal. Renunciar es lo que lo hace permanente.",
+    "author": "Marilyn vos Savant",
+    "category": "general"
+  },
+  {
+    "quote": "Esfuérzate más que ayer si quieres un mañana diferente.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La acción es la clave fundamental de todo éxito.",
+    "author": "Pablo Picasso",
+    "category": "general"
+  },
+  {
+    "quote": "Sacrificaré lo que sea necesario para ser el mejor.",
+    "author": "Deion Sanders",
+    "category": "general"
+  },
+  {
+    "quote": "¡Peso ligero, cariño!",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Ningún ciudadano tiene derecho a ser aficionado en materia de preparación física.",
+    "author": "Socrates",
+    "category": "general"
+  },
+  {
+    "quote": "La motivación te pone en marcha. El hábito te mantiene avanzando.",
+    "author": "Jim Ryun",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo escucha todo lo que dice tu mente. Mantente positivo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La base de toda felicidad es la buena salud.",
+    "author": "Leigh Hunt",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Sueñas. Tú planificas. Llegas. Habrá obstáculos. Habrá escépticos. Pero con trabajo duro no hay límites.",
+    "author": "Michael Phelps",
+    "category": "general"
+  },
+  {
+    "quote": "Despierta decidido. Vete a la cama satisfecho.",
+    "author": "Dwayne Johnson",
+    "category": "general"
+  },
+  {
+    "quote": "El mejor proyecto en el que trabajarás eres tú.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Llegar último es mejor que no terminar, y no terminar supera a no empezar.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "En el entrenamiento escuchas a tu cuerpo. En competición, le dices a tu cuerpo que se calle.",
+    "author": "Rich Froning",
+    "category": "strength"
+  },
+  {
+    "quote": "El sudor es grasa llorando.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Gatear vale. Caerse vale. Vomitar vale. Rendirse, no.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El gimnasio es mi terapia.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Brazos grandes y cintura pequeña es una señal segura de que un hombre habla en serio.",
+    "author": "Serge Nubret",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Nunca es más fácil. Simplemente te vuelves más fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Los bíceps son como adornos en un árbol de Navidad.",
+    "author": "Ed Coan",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Preferiría ser fuerte y luchar que ser débil y nunca saber en qué podría haberme convertido.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El éxito no es la clave de la felicidad. La felicidad es la clave del éxito.",
+    "author": "Albert Schweitzer",
+    "category": "general"
+  },
+  {
+    "quote": "La única vez que el éxito viene antes que el trabajo es en el diccionario.",
+    "author": "Harvey Specter",
+    "category": "general"
+  },
+  {
+    "quote": "Estás a solo un entrenamiento de estar de buen humor.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Si tienes miedo al fracaso, no mereces el éxito.",
+    "author": "Charles Barkley",
+    "category": "general"
+  },
+  {
+    "quote": "La vida comienza al final de tu zona de confort.",
+    "author": "Neale Donald Walsch",
+    "category": "general"
+  },
+  {
+    "quote": "El muro está ahí por una razón. No está ahí para mantenernos fuera. Está ahí para darnos la oportunidad de demostrar cuánto deseamos algo.",
+    "author": "Randy Pausch",
+    "category": "general"
+  },
+  {
+    "quote": "Gana tu cuerpo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Los abdominales se hacen en la cocina.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Dolorido hoy. Mañana fuerte.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Caer siete veces. Ponte de pie ocho.",
+    "author": "Japanese Proverb",
+    "category": "general"
+  },
+  {
+    "quote": "No cuentes los días. Haz que los días cuenten.",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "Los campeones siguen jugando hasta que lo hacen bien.",
+    "author": "Billie Jean King",
+    "category": "general"
+  },
+  {
+    "quote": "La voluntad de ganar no significa nada sin la voluntad de prepararse.",
+    "author": "Juma Ikangaa",
+    "category": "general"
+  },
+  {
+    "quote": "Ganarás, pero pagarás con sudor, sangre y vómito.",
+    "author": "Pavel Tsatsouline",
+    "category": "strength"
+  },
+  {
+    "quote": "El verdadero entrenamiento comienza cuando quieres parar.",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Hazte más fuerte que tus excusas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Ponte metas altas y no te detengas hasta alcanzarlas.",
+    "author": "Bo Jackson",
+    "category": "general"
+  },
+  {
+    "quote": "No temo al hombre que ha practicado diez mil patadas una vez. Temo al hombre que ha practicado una patada diez mil veces.",
+    "author": "Bruce Lee",
+    "category": "strength"
+  },
+  {
+    "quote": "Puedes tener resultados o excusas. No ambos.",
+    "author": "Arnold Schwarzenegger",
+    "category": "general"
+  },
+  {
+    "quote": "Busca progreso, no perfección.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Es una vergüenza que un hombre envejezca sin ver la belleza y la fuerza de que es capaz su cuerpo.",
+    "author": "Socrates",
+    "category": "strength"
+  },
+  {
+    "quote": "Las cosas buenas les llegan a los que sudan.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Estimular, no aniquilar.",
+    "author": "Lee Haney",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Cuando mi cuerpo grita basta, mi mente grita nunca.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La victoria está reservada para quienes están dispuestos a pagar el precio.",
+    "author": "Sun Tzu",
+    "category": "general"
+  },
+  {
+    "quote": "La fuerza no se trata solo de cuánto puedes levantar. Se trata de cuánto puedes soportar.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Cuanto más sudas en el entrenamiento, menos sangras en el combate.",
+    "author": "Richard Marcinko",
+    "category": "strength"
+  },
+  {
+    "quote": "Sufre el dolor de la disciplina o el dolor del arrepentimiento.",
+    "author": "Jim Rohn",
+    "category": "general"
+  },
+  {
+    "quote": "La mejor época para plantar un árbol fue hace veinte años. El segundo mejor momento es ahora.",
+    "author": "Chinese Proverb",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo no es Amazon Prime. Los resultados no llegan en dos días.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Estoy encendiendo un fuego y cada día que entreno agrego más combustible.",
+    "author": "Mia Hamm",
+    "category": "general"
+  },
+  {
+    "quote": "Una vez que ves resultados, se convierte en una adicción.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No hay gloria en la práctica, pero sin práctica no hay gloria.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Definición de un entrenamiento realmente bueno: cuando odias hacerlo, pero te encanta terminarlo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantener el cuerpo en buena salud es un deber. De lo contrario no seremos capaces de mantener nuestra mente fuerte y clara.",
+    "author": "Buddha",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "No como por gusto. Como por función.",
+    "author": "Jay Cutler",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Si la barra no se dobla, estás fingiendo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El entrenamiento nos da una salida a las energías reprimidas creadas por el estrés.",
+    "author": "Arnold Schwarzenegger",
+    "category": "general"
+  },
+  {
+    "quote": "Puedes sentir dolor mañana o puedes sentir pena mañana. Tú eliges.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La mayor riqueza es la salud.",
+    "author": "Virgil",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Respeta tu cuerpo. Es el único que tienes.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La diferencia entre lo imposible y lo posible reside en la determinación.",
+    "author": "Tommy Lasorda",
+    "category": "general"
+  },
+  {
+    "quote": "Las personas fuertes son más difíciles de matar que las débiles y, en general, más útiles.",
+    "author": "Mark Rippetoe",
+    "category": "strength"
+  },
+  {
+    "quote": "Haz hoy lo que otros no harán y logra mañana lo que otros no pueden.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Hay dos tipos de dolor. El dolor que te duele y el dolor que te cambia.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu salud es tu mayor activo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La aptitud física es el primer requisito de la felicidad.",
+    "author": "Joseph Pilates",
+    "category": "general"
+  },
+  {
+    "quote": "Cree que puedes y estarás a medio camino.",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "La primera y mayor victoria es conquistarte a ti mismo.",
+    "author": "Plato",
+    "category": "general"
+  },
+  {
+    "quote": "Los días difíciles son los mejores porque esos son los días que hacen a los campeones.",
+    "author": "Gabby Douglas",
+    "category": "general"
+  },
+  {
+    "quote": "Regla número uno del culturismo: nunca te saltes el día de piernas.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La mayoría de los campeones se construyen con entrenamientos constantes, no con esfuerzos extraordinarios aislados.",
+    "author": "Dan John",
+    "category": "general"
+  },
+  {
+    "quote": "Los tiempos difíciles no duran, pero las personas duras sí.",
+    "author": "Robert Schuller",
+    "category": "general"
+  },
+  {
+    "quote": "Un entrenamiento de una hora es solo el cuatro por ciento de tu día.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Come limpio. Entrena duro.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Las únicas pesas que importan son las que levantas.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "No lo desees. Trabaja por ello.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La mente es el músculo más importante.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tus piernas no se están rindiendo. Tu cabeza sí.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La venceré. Entrenaré más duro que ella. Comeré más limpio que ella. Dormiré mejor que ella.",
+    "author": "Ronda Rousey",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Muévete por ese músculo.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No pares cuando estés cansado. Para cuando hayas terminado.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé más fuerte que tu excusa más fuerte.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El tamaño importa. Pero también lo hace el condicionamiento.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Si todavía te ves impecable después de entrenar, no entrenaste lo suficiente.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Para disfrutar del brillo de la buena salud, debes hacer ejercicio.",
+    "author": "Gene Tunney",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Sé paciente y fuerte. Algún día este dolor te servirá.",
+    "author": "Ovid",
+    "category": "general"
+  },
+  {
+    "quote": "No paro cuando estoy cansado. Paro cuando termino.",
+    "author": "David Goggins",
+    "category": "general"
+  },
+  {
+    "quote": "Quién eres se define por aquello por lo que estás dispuesto a luchar.",
+    "author": "Mark Manson",
+    "category": "general"
+  },
+  {
+    "quote": "El hierro es el gran referente. Doscientas libras son siempre doscientas libras.",
+    "author": "Henry Rollins",
+    "category": "strength"
+  },
+  {
+    "quote": "Siéntete cómodo estando incómodo.",
+    "author": "Jillian Michaels",
+    "category": "general"
+  },
+  {
+    "quote": "Corro porque si no lo hiciera, estaría lento y me sentiría asqueroso.",
+    "author": "Jessica Alba",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Alguien más ocupado que tú está haciendo ejercicio en este momento.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La fuerza de voluntad no se encuentra. Se crea.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No soy el más fuerte. No soy el más rápido. Pero soy yo quien no parará.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Las ganancias no se regalan. Se ganan.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No hay ascensor hacia el éxito. Tienes que subir las escaleras.",
+    "author": "Zig Ziglar",
+    "category": "general"
+  },
+  {
+    "quote": "El único entrenamiento del que te arrepientes es el que te saltaste.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La confianza proviene de la disciplina y el entrenamiento.",
+    "author": "Robert Kiyosaki",
+    "category": "general"
+  },
+  {
+    "quote": "El dolor es la debilidad que abandona el cuerpo.",
+    "author": "U.S. Marine Corps",
+    "category": "strength"
+  },
+  {
+    "quote": "Lo que hoy parece imposible algún día se convertirá en tu calentamiento.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Dentro de un año, desearás haber empezado hoy.",
+    "author": "Karen Lamb",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Los ganadores entrenan. Los perdedores se quejan.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Nadie nace fuerte. Te lo ganas.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El secreto para salir adelante es empezar.",
+    "author": "Mark Twain",
+    "category": "general"
+  },
+  {
+    "quote": "Las excusas no queman calorías.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Mírate en el espejo. Esa es tu competencia.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El bombeo muscular es la mejor sensación del mundo.",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El fitness no se trata de ser mejor que otra persona. Se trata de ser mejor de lo que solías ser.",
+    "author": "Khloe Kardashian",
+    "category": "general"
+  },
+  {
+    "quote": "La consistencia es lo que transforma el promedio en excelencia.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Si quieres estar en forma, rodéate de gente en forma.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El cuerpo es el sirviente de la mente.",
+    "author": "James Allen",
+    "category": "general"
+  },
+  {
+    "quote": "No dejes que la báscula te defina. Mantente activo, sano y feliz.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Sudar hoy. Brilla mañana.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Un cuerpo fuerte fortalece la mente.",
+    "author": "Thomas Jefferson",
+    "category": "strength"
+  },
+  {
+    "quote": "Siempre parece imposible hasta que se hace.",
+    "author": "Nelson Mandela",
+    "category": "general"
+  },
+  {
+    "quote": "La lucha se gana o se pierde lejos de los testigos.",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "El fracaso no es lo contrario del éxito. Es parte del camino.",
+    "author": "Arianna Huffington",
+    "category": "general"
+  },
+  {
+    "quote": "Tu único límite eres tú.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cada repetición cuenta. Cada serie importa.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Lo que comes en privado se nota en público.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Todavía no he llegado a ese punto, pero estoy más cerca que ayer.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El peso sobre la barra no significa nada. Tu intención lo significa todo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Come. Duerme. Levanta. Repite.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Sé la energía que quieres atraer.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Fuerte es el nuevo ideal.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "No llegaste tan lejos para llegar solo hasta aquí.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El ejercicio es el rey. La nutrición es la reina. Júntalos y tendrás un reino.",
+    "author": "Jack LaLanne",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El compromiso significa permanecer leal a lo que dijiste que ibas a hacer mucho después de que te haya abandonado el estado de ánimo en el que lo dijiste.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Pequeñas mejoras diarias con el tiempo conducen a resultados sorprendentes.",
+    "author": "Robin Sharma",
+    "category": "general"
+  },
+  {
+    "quote": "No hay sustituto para el trabajo duro.",
+    "author": "Thomas Edison",
+    "category": "general"
+  },
+  {
+    "quote": "Estás limitado solo por los muros que tú mismo construyes.",
+    "author": "Andrew Murphy",
+    "category": "general"
+  },
+  {
+    "quote": "Los músculos se desarrollan en el gimnasio. La grasa se pierde en la cocina.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "No disminuyas la meta. Aumenta el esfuerzo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El fitness es como una relación. No puedes hacer trampa y esperar que funcione.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Levántate y ataca el día con entusiasmo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cuando llegas al fracaso, tu entrenamiento acaba de comenzar.",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Duda de mí. Ódiame. Ustedes son los que me ven triunfar.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "¿Quieres resultados? Entonces entrena así.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cuanto más entrenas, más gente queda por debajo de tu nivel.",
+    "author": "Mark Rippetoe",
+    "category": "strength"
+  },
+  {
+    "quote": "Nada sabe tan bien como sentirse en forma.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La única persona que puede decirte que no puedes hacer algo eres tú. Y no tienes que escuchar.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Haz ejercicio. Come bien. Ten paciencia. Tu cuerpo te recompensará.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Descansa cuando estés muerto.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sacrificio es renunciar a algo bueno por algo mejor.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Haz de cada día tu obra maestra.",
+    "author": "John Wooden",
+    "category": "general"
+  },
+  {
+    "quote": "Las limitaciones existen solo si las permites.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los campeones no se hacen en los gimnasios. Los campeones están hechos de algo muy dentro de ellos, un deseo, un sueño, una visión.",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "Número uno: quiérete. Número dos: come sano. Número tres: aprieta los glúteos.",
+    "author": "Richard Simmons",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El hierro afila el hierro.",
+    "author": "Proverbs 27:17",
+    "category": "strength"
+  },
+  {
+    "quote": "Entreno para ser el mejor del mundo en lo que hago, no el mejor en el gimnasio.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El éxito comienza con la autodisciplina.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena duro, da lo mejor de ti y el resto se acomodará.",
+    "author": "Usain Bolt",
+    "category": "general"
+  },
+  {
+    "quote": "Sin dolor no hay ganancia. Cállate y entrena.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Eres mucho más fuerte de lo que crees.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Un paso a la vez. Una repetición a la vez. Un día a la vez.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Un buen entrenamiento es cuando tu camiseta dry fit acaba pareciendo wet fit.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo actual es el único que puede llevarte a tu nuevo cuerpo. Cuídalo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La intensidad construye inmensidad.",
+    "author": "Kevin Levrone",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Vuélvete adicto a superarte.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Quieres que haga algo. Dime que no puedo hacerlo.",
+    "author": "Maya Angelou",
+    "category": "general"
+  },
+  {
+    "quote": "No es la carga lo que te rompe. Es cómo la llevas.",
+    "author": "Lou Holtz",
+    "category": "strength"
+  },
+  {
+    "quote": "Nunca renuncies a un sueño solo por el tiempo que te llevará lograrlo. El tiempo pasará de todos modos.",
+    "author": "Earl Nightingale",
+    "category": "general"
+  },
+  {
+    "quote": "Nadie que alguna vez dio lo mejor de sí se arrepintió.",
+    "author": "George Halas",
+    "category": "general"
+  },
+  {
+    "quote": "El cuerpo no quiere que hagas esto. Mientras corres, te dice que te detengas, pero la mente debe ser fuerte.",
+    "author": "Jacqueline Gareau",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Levantar pesas es un regalo que le das a tu yo futuro.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Estás a una decisión de una vida totalmente diferente.",
+    "author": "Mark Batterson",
+    "category": "general"
+  },
+  {
+    "quote": "Un físico bien formado es un símbolo de estatus. Refleja trabajo duro y dedicación.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El trabajo duro vence al talento cuando el talento no trabaja duro.",
+    "author": "Tim Notke",
+    "category": "general"
+  },
+  {
+    "quote": "Me gustaría ser el primer hombre en el negocio de los gimnasios en tirar mi báscula.",
+    "author": "Vince Gironda",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Lo que te falte de talento puedes compensarlo con ganas, esfuerzo y dando siempre el ciento diez por ciento.",
+    "author": "Don Zimmer",
+    "category": "general"
+  },
+  {
+    "quote": "El poder no es nada sin control.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Tu transformación no va solo de tu cuerpo. Va de en quién te conviertes mentalmente.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Si eres persistente, lo conseguirás. Si eres consistente, lo mantendrás.",
+    "author": "Harvey Mackay",
+    "category": "general"
+  },
+  {
+    "quote": "La fuerza es la base de todas las demás cualidades físicas.",
+    "author": "Mark Rippetoe",
+    "category": "strength"
+  },
+  {
+    "quote": "El hombre que mueve una montaña comienza por llevarse pequeñas piedras.",
+    "author": "Confucius",
+    "category": "general"
+  },
+  {
+    "quote": "Si no dedica tiempo al ejercicio, probablemente tendrá que dedicar tiempo a la enfermedad.",
+    "author": "Robin Sharma",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "No se puede poner límite a nada. Cuanto más sueñas, más lejos llegas.",
+    "author": "Michael Phelps",
+    "category": "general"
+  },
+  {
+    "quote": "Presentarte ya es media batalla.",
+    "author": "Woody Allen",
+    "category": "general"
+  },
+  {
+    "quote": "El progreso lento sigue siendo progreso.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Deja de desear. Empieza a hacerlo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tus músculos no saben cuánto peso hay en la barra. Solo saben lo duro que están trabajando.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La mejor manera de predecir el futuro es crearlo.",
+    "author": "Peter Drucker",
+    "category": "general"
+  },
+  {
+    "quote": "Dale duro ahora. Brilla después.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tengo noventa y nueve problemas, pero voy al gimnasio para ignorarlos todos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena con un propósito, come con intención.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Deja de esperar motivación. Empieza a crear disciplina.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El culturismo es un arte. Tu cuerpo es el lienzo, las pesas son tu pincel y la nutrición es tu pintura.",
+    "author": "Ernie Taylor",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Hoy es la victoria sobre tu yo de ayer.",
+    "author": "Miyamoto Musashi",
+    "category": "general"
+  },
+  {
+    "quote": "Nadie jamás se ha vuelto fuerte haciendo lo que era fácil.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Cada entrenamiento cuenta. Incluso los malos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No conseguirás el trasero que deseas sentándote sobre él.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Habilidad es lo que eres capaz de hacer. La motivación determina lo que haces. La actitud determina qué tan bien lo haces.",
+    "author": "Lou Holtz",
+    "category": "general"
+  },
+  {
+    "quote": "Sé tan bueno que no puedan ignorarte.",
+    "author": "Steve Martin",
+    "category": "general"
+  },
+  {
+    "quote": "La venganza es de débiles. La gente fuerte perdona. La gente inteligente ignora.",
+    "author": "Albert Einstein",
+    "category": "strength"
+  },
+  {
+    "quote": "Come como si te quisieras. Muévete como si te quisieras. Háblate como si te quisieras.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Una repetición más. Una serie más. Un paso más cerca.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Duerme. Come. Entrena. Repite.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tienes que superar tus límites percibidos.",
+    "author": "Drew Brees",
+    "category": "strength"
+  },
+  {
+    "quote": "Los seis mejores médicos: sol, agua, descanso, aire, ejercicio y dieta.",
+    "author": "Wayne Fields",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Estoy trabajando en mí mismo, para mí, por mí mismo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Hazlo para la foto posterior.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La excelencia no es una habilidad. Es una actitud.",
+    "author": "Ralph Marston",
+    "category": "general"
+  },
+  {
+    "quote": "Mata de hambre tus distracciones. Alimenta tu concentración.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Haz algo hoy que tu yo futuro te agradecerá.",
+    "author": "Sean Patrick Flanery",
+    "category": "general"
+  },
+  {
+    "quote": "Lo que hagas hoy puede mejorar todos tus mañanas.",
+    "author": "Ralph Marston",
+    "category": "general"
+  },
+  {
+    "quote": "Si quieres levantar objetos pesados, tienes que comer mucho.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Soy un competidor. Quiero dominar.",
+    "author": "Serena Williams",
+    "category": "strength"
+  },
+  {
+    "quote": "Levántate del sofá. Sudor. Haz algo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La fuerza no proviene de lo que puedes hacer. Proviene de superar las cosas que alguna vez pensaste que no podías.",
+    "author": "Rikki Rogers",
+    "category": "strength"
+  },
+  {
+    "quote": "No siempre estarás motivado. Tienes que aprender a ser disciplinado.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El cuerpo es tu templo. Mantenlo puro y limpio para que el alma pueda habitarlo.",
+    "author": "B.K.S. Iyengar",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El éxito suele llegar a quienes están demasiado ocupados para buscarlo.",
+    "author": "Henry David Thoreau",
+    "category": "general"
+  },
+  {
+    "quote": "Si no te duele, no te estás esforzando lo suficiente.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Cada mañana en África se despierta una gacela. Sabe que debe dejar atrás al león más rápido. Cada mañana se despierta un león. Sabe que debe dejar atrás a la gacela más lenta. No importa si eres un león o una gacela. Cuando salga el sol, será mejor que empieces a correr.",
+    "author": "African Proverb",
+    "category": "general"
+  },
+  {
+    "quote": "Cuanto más sudas en la práctica, menos sangras en la batalla.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Pierde las excusas. Encuentra los resultados.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Una preparación adecuada evita un rendimiento deficiente.",
+    "author": "Charlie Batch",
+    "category": "general"
+  },
+  {
+    "quote": "Lo que hacemos en la vida resuena en la eternidad.",
+    "author": "Maximus",
+    "category": "general"
+  },
+  {
+    "quote": "Puede que aún no haya llegado allí, pero cada paso me acerca más.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Inhala confianza. Exhala duda.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El dolor de hoy es la victoria de mañana.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Flaco no es un cumplido. Fuerte es.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Todo logro comienza con la decisión de intentarlo.",
+    "author": "John F. Kennedy",
+    "category": "general"
+  },
+  {
+    "quote": "No me rendiré. El sufrimiento es parte del trato.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Empieza donde estás. Usa lo que tienes. Haz lo que puedas.",
+    "author": "Arthur Ashe",
+    "category": "general"
+  },
+  {
+    "quote": "No tienes que ir rápido. Solo tienes que avanzar.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Dentro de un año, te alegrará haber empezado hoy.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Levanta. Esfuérzate. Brilla.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La fuerza aparece cuando dejas atrás la debilidad.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Pon excusas o progresa. No puedes hacer ambas cosas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Nadie jamás se ahogó en sudor.",
+    "author": "U.S. Marine Corps",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cuando la vida se vuelve más difícil, hay que hacerse más fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La determinación es la llamada de atención a la voluntad humana.",
+    "author": "Anthony Robbins",
+    "category": "general"
+  },
+  {
+    "quote": "El hierro te enseña que lo más importante en la vida es poder levantarte después de haber sido derribado.",
+    "author": "Henry Rollins",
+    "category": "strength"
+  },
+  {
+    "quote": "Las calorías no son el enemigo. La ignorancia lo es.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Eres más valiente de lo que crees, más fuerte de lo que pareces y más inteligente de lo que crees.",
+    "author": "A.A. Milne",
+    "category": "general"
+  },
+  {
+    "quote": "Tómatelo día a día, comida a comida, entrenamiento a entrenamiento.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Dar algo menos de lo mejor es sacrificar el regalo.",
+    "author": "Steve Prefontaine",
+    "category": "general"
+  },
+  {
+    "quote": "Construye tu cuerpo. Construye tu carácter.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La verdadera fuerza es mantenerte en pie cuando todos esperan que te derrumbes.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Cada entrenamiento es un progreso.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Primero la pasión, todo lo demás encajará.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Un hombre fuerte sabe estar con una mujer fuerte. Un hombre débil dirá que tiene mala actitud.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Come por el cuerpo que deseas, no por el cuerpo que tienes.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Nunca se logró nada grande sin entusiasmo.",
+    "author": "Ralph Waldo Emerson",
+    "category": "general"
+  },
+  {
+    "quote": "Decide. Comprométete. Triunfa.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El dolor es simplemente debilidad que abandona el cuerpo.",
+    "author": "U.S. Marine Corps",
+    "category": "strength"
+  },
+  {
+    "quote": "El fitness es un viaje, no un destino.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La diferencia entre querer y necesitar es la autodisciplina.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Los ganadores nunca se dan por vencidos y los que se dan por vencidos nunca ganan.",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "La grandeza se gana, no se premia.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Olvídate de las consecuencias del fracaso. El fracaso es solo un cambio temporal de dirección.",
+    "author": "Denis Waitley",
+    "category": "general"
+  },
+  {
+    "quote": "En medio de cada dificultad se encuentra la oportunidad.",
+    "author": "Albert Einstein",
+    "category": "general"
+  },
+  {
+    "quote": "No tengas miedo de ser un principiante.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu imaginación es tu vista previa de las próximas atracciones.",
+    "author": "Albert Einstein",
+    "category": "general"
+  },
+  {
+    "quote": "La voluntad de prepararse debe ser mayor que la voluntad de ganar.",
+    "author": "Bobby Knight",
+    "category": "general"
+  },
+  {
+    "quote": "Lo bueno no es suficientemente bueno cuando se espera algo mejor.",
+    "author": "Vin Scully",
+    "category": "general"
+  },
+  {
+    "quote": "Nada que valga la pena es fácil.",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "La mejor sensación que puedes tener en un gimnasio es el bombeo muscular.",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Las cosas grandes suelen tener comienzos pequeños.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "A menos que vomites, te desmayes o mueras, continúa.",
+    "author": "Jillian Michaels",
+    "category": "general"
+  },
+  {
+    "quote": "Nunca es demasiado tarde para convertirte en lo que podrías haber sido.",
+    "author": "George Eliot",
+    "category": "general"
+  },
+  {
+    "quote": "Si fuera fácil, todos lo harían.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los débiles nunca podrán perdonar. El perdón es el atributo de los fuertes.",
+    "author": "Mahatma Gandhi",
+    "category": "strength"
+  },
+  {
+    "quote": "Sigue adelante. Todo lo que necesitas llegará a ti en el momento perfecto.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Las máquinas trabajan tus músculos. Las pesas libres hacen que tus músculos trabajen.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Sé humilde. Mantén el hambre. Y sé siempre quien más trabaja en la sala.",
+    "author": "Dwayne Johnson",
+    "category": "general"
+  },
+  {
+    "quote": "Tu salud es una inversión, no un gasto.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cuando arde es cuando estás construyendo.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Lo único que se interpone entre tú y tu objetivo es la historia que sigues contándote.",
+    "author": "Jordan Belfort",
+    "category": "general"
+  },
+  {
+    "quote": "El crecimiento exige una cesión temporal de la seguridad.",
+    "author": "Gail Sheehy",
+    "category": "general"
+  },
+  {
+    "quote": "Un entrenamiento de una hora es el cuatro por ciento de tu día. Sin excusas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Hazlo tan bien que quienes dudaron sientan celos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Come. Levanta. Duerme. Crece.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Una espalda fuerte es una vida fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El dolor de la disciplina es mucho menor que el dolor del arrepentimiento.",
+    "author": "Sarah Bombell",
+    "category": "general"
+  },
+  {
+    "quote": "El propósito del entrenamiento es tensar la holgura, endurecer el cuerpo y pulir el espíritu.",
+    "author": "Morihei Ueshiba",
+    "category": "general"
+  },
+  {
+    "quote": "Concéntrate en lo lejos que has llegado, no en lo lejos que te queda por llegar.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Las personas fuertes no menosprecian a los demás. Los levantan.",
+    "author": "Michael P. Watson",
+    "category": "strength"
+  },
+  {
+    "quote": "Todo experto alguna vez fue un principiante.",
+    "author": "Helen Hayes",
+    "category": "general"
+  },
+  {
+    "quote": "Siempre me digo a mí mismo, justo antes de una serie difícil: suelta el peso.",
+    "author": "Dorian Yates",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Tienes poder sobre tu mente, no sobre los acontecimientos externos. Date cuenta de esto y encontrarás fuerza.",
+    "author": "Marcus Aurelius",
+    "category": "strength"
+  },
+  {
+    "quote": "Justo cuando creas que no puedes llegar más lejos, ve más lejos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No importa lo lento que vayas, siempre y cuando no te detengas.",
+    "author": "Confucius",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El gimnasio es el gran ecualizador. Todo el mundo empieza desde cero.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu mayor enemigo es la persona que te mira en el espejo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Primero te preguntarán por qué lo estás haciendo. Luego te preguntarán cómo lo hiciste.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Siéntete orgulloso pero nunca satisfecho.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El esfuerzo es entre tú y tú.",
+    "author": "Ray Lewis",
+    "category": "general"
+  },
+  {
+    "quote": "No entreno para sumar días a mi vida. Entreno para darle vida a mis días.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Eres lo que comes. Así que no seas rápido, barato, fácil o falso.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Tu yo futuro te está mirando ahora mismo a través de los recuerdos.",
+    "author": "Aubrey de Grey",
+    "category": "general"
+  },
+  {
+    "quote": "Cállate y haz sentadillas.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Concéntrate. Avanza. Conquista.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Ponerse en forma tiene que ver con la mente sobre la materia. No me importa, así que no importa.",
+    "author": "Adam Hargreaves",
+    "category": "general"
+  },
+  {
+    "quote": "El éxito no se da. Se gana en la pista, en el campo, en el gimnasio, con sangre, sudor y alguna que otra lágrima.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Eres tú contra ti.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El sueño es primo de la muerte. Y estoy completamente despierto.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Respeta las pesas. Te enseñarán lecciones que nunca esperaste.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Levanto porque golpear a la gente está mal visto.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Progreso, no perfección.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Alimenta el músculo. Deja sin combustible a la grasa.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Haz de tu cuerpo el mejor conjunto que tengas.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La barra es una compañera honesta. Nunca adula. Nunca miente.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Entrenar no es algo que hago. Es parte de quién soy.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Enamórate de cuidar tu cuerpo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Los sueños no funcionan a menos que tú lo hagas.",
+    "author": "John C. Maxwell",
+    "category": "general"
+  },
+  {
+    "quote": "Acepta la lucha y deja que te haga más fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Hoy es un nuevo día. Nuevo comienzo. Nuevas posibilidades.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cuando tengas ganas de dejarlo, recuerda por qué empezaste.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El dolor es combustible. El miedo es combustible. Todo es combustible si decides usarlo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El peso muerto desarrolla más carácter que cualquier otro ejercicio.",
+    "author": "Mark Rippetoe",
+    "category": "strength"
+  },
+  {
+    "quote": "Tu mente se rinde mucho antes que tu cuerpo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Yo controlo mi futuro.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Come para nutrirte, no para llenarte.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Destruye lo que te destruye.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena como una bestia. Luce como una belleza.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Las excusas son para quienes no lo desean lo suficiente.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo lleva un diario preciso independientemente de lo que escribas.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Si no construyes tu sueño, alguien más te contratará para que le ayudes a construir el suyo.",
+    "author": "Dhirubhai Ambani",
+    "category": "general"
+  },
+  {
+    "quote": "La fuerza y ​​el crecimiento solo se obtienen mediante el esfuerzo y la lucha continuos.",
+    "author": "Napoleon Hill",
+    "category": "strength"
+  },
+  {
+    "quote": "Sé el tipo de persona que inspira a otros a subir su nivel.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Deja de dudar de ti mismo. Trabaja duro y hazlo realidad.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Las viejas costumbres no abrirán nuevas puertas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No vas a dominar el resto de tu vida en un día. Respira. Domina este día.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La barra no conoce tu edad, tu sexo ni tus problemas. Solo sabe si puedes levantarla.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Los resultados se obtienen con el tiempo, no de la noche a la mañana.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Si algo es lo suficientemente importante, incluso si las probabilidades están en tu contra, debes hacerlo de todos modos.",
+    "author": "Elon Musk",
+    "category": "general"
+  },
+  {
+    "quote": "Hazte dueño de tu mañana. Eleva tu vida.",
+    "author": "Robin Sharma",
+    "category": "general"
+  },
+  {
+    "quote": "La motivación te ayuda a empezar. La dedicación te mantiene avanzando.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mídete por el esfuerzo, no por el resultado.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Hazte más fuerte o aparta el camino.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El fitness no es un pasatiempo estacional. Es un estilo de vida.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Las leyendas no nacen. Se construyen.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El levantamiento más difícil de todos es levantar el trasero del sofá.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La proteína es la reina.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Menos azúcar. Más hierro.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cada comida es una elección. Cada elección es una oportunidad.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La comodidad es enemiga del progreso.",
+    "author": "P.T. Barnum",
+    "category": "general"
+  },
+  {
+    "quote": "No hago esto solo para estar sano. Lo hago para estar marcado.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Tu cuerpo es una máquina. Aliméntalo bien.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El éxito nunca se posee. Se alquila y el alquiler vence todos los días.",
+    "author": "J.J. Watt",
+    "category": "general"
+  },
+  {
+    "quote": "La repetición que no quieres hacer es la que más cuenta.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El sudor es tu grasa llorando.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Me gustaría ver a alguno de ustedes intentar hacer lo que yo hago.",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Sé imparable, no promedio.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El obstáculo es el camino.",
+    "author": "Ryan Holiday",
+    "category": "general"
+  },
+  {
+    "quote": "Conquista desde dentro.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sentadillas. El rey de todos los ejercicios.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Si tienes disciplina, empuje y determinación, nada es imposible.",
+    "author": "Dana Linn Bailey",
+    "category": "general"
+  },
+  {
+    "quote": "Hoy es el día en que tomas el control.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Nunca pienso en perder.",
+    "author": "Florence Griffith Joyner",
+    "category": "general"
+  },
+  {
+    "quote": "No tengas miedo en la búsqueda de aquello que enciende tu alma.",
+    "author": "Jennifer Lee",
+    "category": "general"
+  },
+  {
+    "quote": "Eres más duro de lo que crees.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Cada día es una oportunidad más para hacerte más fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Gana masa. Gana respeto.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La transformación no es dentro de cinco minutos. Es una actividad presente. En este momento puedes hacer una elección diferente.",
+    "author": "Jillian Michaels",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El cuerpo debe ser nutrido, física y espiritualmente.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Deja de esperar el viernes, el verano, que alguien se enamore de ti, de por vida. La felicidad se logra cuando dejas de esperarla.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Levanto cosas y las bajo.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El poder no te es dado. Tienes que tomarlo.",
+    "author": "Beyonce",
+    "category": "strength"
+  },
+  {
+    "quote": "El verdadero entrenamiento comienza cuando quieres parar.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Celebre cada pequeña victoria.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Mente fuerte. Cuerpo fuerte. Vida fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Tu potencial es infinito. Ve y haz aquello para lo que fuiste creado.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Quema calorías, no luz del día.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Levanta pesado. Come limpio. Sé amable.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El milagro no es que terminé. El milagro es que tuve el coraje de empezar.",
+    "author": "John Bingham",
+    "category": "general"
+  },
+  {
+    "quote": "Define tus objetivos. Traza un plan. Luego ve por todo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Afina. Profundiza. Confía en el proceso.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cada sentadilla que haces añade un paso más para volverte imparable.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "No obtendrás los resultados que quieres haciendo lo mismo de siempre.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "¿De qué sirve un cuerpo sin una base sólida?",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Come menos azúcar. Ya eres lo suficientemente dulce.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "No hay nada que no podamos atravesar, superar y vencer.",
+    "author": "Ella Wheeler Wilcox",
+    "category": "general"
+  },
+  {
+    "quote": "Construye un cuerpo que refleje tu alma.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Trabaja duro en silencio. Deja que tu cuerpo haga el ruido.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La vida se reduce o se expande en proporción a tu coraje.",
+    "author": "Anais Nin",
+    "category": "general"
+  },
+  {
+    "quote": "No puedes esperar parecer un millón de dólares si comes del menú de un dólar.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Lucha por tu futuro. Tu yo actual te lo agradecerá.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Levanta con tu corazón. El resto seguirá.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Las mujeres fuertes se levantan unas a otras.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El rack de sentadillas es el altar de la fuerza.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Todo campeón fue alguna vez un contendiente que se negó a darse por vencido.",
+    "author": "Rocky Balboa",
+    "category": "general"
+  },
+  {
+    "quote": "Sé implacable. Nunca te conformes.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La paciencia y la perseverancia son las claves de la transformación.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Muéstrame a tus amigos y te mostraré tu futuro.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cuando empieces a ver tu valor, te resultará más difícil estar cerca de personas que no lo hacen.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Entreno para mí, no para nadie más.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Crece a través de lo que pasas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Ve por ello. Todos los días.",
+    "author": "Jocko Willink",
+    "category": "general"
+  },
+  {
+    "quote": "Calorías que entran. Calorías que salen. Esa es la ley.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Eres más fuerte que ayer. Pruébalo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Si es importante para ti, encontrarás la manera. Si no, encontrarás una excusa.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Vacía tu mente. Sé sin forma, moldeable, como el agua.",
+    "author": "Bruce Lee",
+    "category": "general"
+  },
+  {
+    "quote": "La sentadilla es el rey. El peso muerto es la reina.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Desarrollar un físico de forma natural es lo más honesto que puedes hacer.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Piernas fuertes. Corazón fuerte. Mente fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Perder peso es difícil. Tener sobrepeso es difícil. Elige tu difícil.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Invierte en ti. Es la inversión con mejor retorno.",
+    "author": "Benjamin Franklin",
+    "category": "general"
+  },
+  {
+    "quote": "Repite conmigo: lo valgo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El éxito exige unidad de propósito.",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena tu mente para ver lo bueno en cada situación.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Esfuérzate porque nadie más lo hará por ti.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No eres una gota en el océano. Eres el océano entero en una gota.",
+    "author": "Rumi",
+    "category": "general"
+  },
+  {
+    "quote": "Tu vibra atrae a tu tribu.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Va a ser difícil, pero difícil no significa imposible.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No importa lo lento que vayas: sigues superando a todos los que están en el sofá.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El peso muerto es la verdadera prueba de la fuerza total del cuerpo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El dolor es la sensación de debilidad que abandona el cuerpo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Come como un rey. Entrena como un guerrero.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Hazte más fuerte. Mantente humilde.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La mejor venganza es un éxito masivo.",
+    "author": "Frank Sinatra",
+    "category": "general"
+  },
+  {
+    "quote": "Persistencia. Perfección. Paciencia. Fuerza. Prioriza tu pasión.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Deja de decir mañana. Empieza a decir hoy.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El gimnasio es el terapeuta que no te cobra copago.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La grandeza nunca proviene de las zonas de confort.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Hacer más de lo esperado. Así se construyen los campeones.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El hierro siempre te dirá la verdad de golpe.",
+    "author": "Henry Rollins",
+    "category": "strength"
+  },
+  {
+    "quote": "Come para actuar, no para escapar.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Construye tu imperio una repetición a la vez.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Haz que tu entrenamiento sea lo mejor de tu día.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La buena salud no es algo que podamos comprar. Sin embargo, puede ser una cuenta de ahorros extremadamente valiosa.",
+    "author": "Anne Wilson Schaef",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El entrenamiento de fuerza es una forma de autocuidado.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Llegarás allí. Simplemente no te detengas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cree en ti y en todo lo que eres. Hay algo dentro de ti más grande que cualquier obstáculo.",
+    "author": "Christian D. Larson",
+    "category": "general"
+  },
+  {
+    "quote": "La repetición que desea omitir es la que más importa.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No dejes que un mal día te haga sentir que tienes una mala vida.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Quema la grasa. Alimenta el músculo.",
+    "author": "Tom Venuto",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Sigue adelante. Los momentos más difíciles a menudo conducen a los mejores momentos de tu vida.",
+    "author": "Roy Bennett",
+    "category": "general"
+  },
+  {
+    "quote": "Ponte metas. Aplástalas. Repite.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No necesitas un nuevo día para empezar de nuevo. Solo necesitas una nueva mentalidad.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Conviértete en la persona que atraerá los resultados que buscas.",
+    "author": "Jim Cathcart",
+    "category": "general"
+  },
+  {
+    "quote": "Sé la versión más fuerte de ti mismo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Pelo de gimnasio, cero drama.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Levántate antes de levantar el peso.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Una libra a la vez. Un día a la vez. Llegarás allí.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cuando tus piernas cedan, avanza con el corazón.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los campeones no se hacen cuando comienza el juego. Entonces es cuando se les reconoce.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No se trata de si te derriban. Se trata de si vuelves a levantarte.",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena para el cuerpo que deseas, no para el cuerpo que tienes.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Tienes que querer ser genial.",
+    "author": "Dexter Jackson",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El único ejercicio que debes saltarte es rendirte.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La energía y la perseverancia lo conquistan todo.",
+    "author": "Benjamin Franklin",
+    "category": "general"
+  },
+  {
+    "quote": "Olvídate de las dietas de moda. Come comida de verdad.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cada día que no haces ejercicio es un día en el que te debilitas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cuando el mundo dice que te rindas, la esperanza susurra que lo intentes una vez más.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Empuja. Tira. Haz sentadillas. Haz bisagras. Carga. Eso es todo lo que necesitas.",
+    "author": "Dan John",
+    "category": "strength"
+  },
+  {
+    "quote": "El cuerpo debe ser visto, no tapado.",
+    "author": "Marilyn Monroe",
+    "category": "general"
+  },
+  {
+    "quote": "Piensa en grande. Levanta a lo grande. Hazte grande.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Siempre hay espacio para superarse.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cierra cada día y déjalo atrás. Mañana será un nuevo día.",
+    "author": "Ralph Waldo Emerson",
+    "category": "general"
+  },
+  {
+    "quote": "Trabaja hasta que tus ídolos se conviertan en tus rivales.",
+    "author": "Drake",
+    "category": "general"
+  },
+  {
+    "quote": "Fuerte hoy. Mañana más fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Que comiencen las ganancias.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El único lugar donde el éxito viene antes que el trabajo es en el diccionario.",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "Es más fácil mantenerse en forma que volver a estar en forma.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "No seré superado en trabajo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Nunca dejes que el éxito se te suba a la cabeza. Nunca dejes que el fracaso llegue a tu corazón.",
+    "author": "Drake",
+    "category": "general"
+  },
+  {
+    "quote": "Las decisiones difíciles conducen a una vida fácil. Las decisiones fáciles conducen a una vida difícil.",
+    "author": "Jerzy Gregorek",
+    "category": "general"
+  },
+  {
+    "quote": "Cada mañana tienes dos opciones: seguir durmiendo con tus sueños o despertarte y perseguirlos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La bomba es temporal. Las ganancias son para siempre.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No compito con nadie. Intento ser mejor que la persona que era ayer.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La masa no se construye solo con máquinas. Se construye con hierro y voluntad.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El volumen es el lenguaje del crecimiento muscular.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La sobrecarga progresiva es la ley del juego del hierro.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No puedes crecer si no estás dispuesto a fracasar.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La bomba es una señal de que algo grandioso está sucediendo.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Más discos, más citas con la grandeza.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La hipertrofia es un maratón, no una carrera de velocidad.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Cada serie es un depósito en tu banco de músculos.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Tus brazos no crecerán pensando en curls.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Come en grande, levanta pesas en grande, hazte grande. No hay otra manera.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El espejo no miente. La barra tampoco.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El crecimiento ocurre al borde del malestar.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Si quieres ser grande, tienes que levantar grandes pesas.",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El descanso es cuando los músculos crecen. El entrenamiento es cuando se les desafía.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Los mejores físicos se esculpen, no se tropiezan con ellos.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Haz el trabajo y las ganancias llegarán.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Los movimientos compuestos generan resultados compuestos.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No estás sobreentrenando. Estás comiendo poco.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El tiempo bajo tensión construye físicos probados por el tiempo.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El músculo se gana. Nunca se regala.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Crece o vuelve a casa.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El único complemento que realmente necesitas es el trabajo duro.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Cada plato en la barra es una promesa para ti mismo.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Repetición a repetición. Serie a serie. Día a día. Así se construyen los campeones.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "A las pesas no les importan tus sentimientos. Responden a tu esfuerzo.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Entrena para el tamaño. Entrena para la vida.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Tu físico es tu autobiografía. Escribe un bestseller.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Nadie se hizo grande eligiendo lo fácil.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Más peso. Más repeticiones. Más crecimiento.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Desarrollar un gran físico es la forma definitiva de autoexpresión.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Estás a una comida de volver a la normalidad.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La única mala comida es la que no planeaste.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cada paso adelante es un paso que te aleja de tu antiguo yo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La consistencia vence a la intensidad cuando se trata de perder grasa.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La pérdida de grasa no es una carrera. Es un cambio de estilo de vida.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Tu cintura es el resultado de tu disciplina.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cada caloría cuenta. Haz que cuenten para algo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El mejor cardio es el que realmente haces.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La salud no se trata del peso que se pierde. Se trata de la vida que ganas.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La cocina es donde comienzan las transformaciones.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "No te comas tus emociones. Resuélvelas.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Una libra a la vez. Así se conquistan las montañas.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El agua es la medicina más barata.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La preparación de comidas es cuidado personal.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Tu estómago no es un cubo de basura. Trátalo con respeto.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Un momento en los labios, para siempre en las caderas. Elige sabiamente.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La transformación comienza en el supermercado.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Firme y fuerte siempre gana a flaco y débil.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Come limpio para que tu cuerpo sea una máquina.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Bebe agua como si fuera tu trabajo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Tu cuerpo es un reflejo de tu estilo de vida.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El sudor es fuerza de voluntad líquida.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La grasa no te define. Tu lucha por cambiar, sí.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El camino hacia un cuerpo definido empieza con un solo paso.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Las comidas trampa se ganan, no se dan.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Elimina la basura. Conserva lo que te hace bien.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La disciplina es el puente entre tus metas y tus resultados.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cada comida limpia es un voto por el cuerpo que deseas.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El mejor ejercicio para los abdominales son cinco series de dejar de comer comida chatarra.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El sudor es tu grasa derritiéndose.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Las cargas pesadas construyen un carácter fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La fuerza se gana en silencio y se demuestra en acción.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "A la barra no le importan tus excusas.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Una repetición más. Una libra más. Un paso más hacia adelante.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Agárralo. Rómpela. Repite.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La verdadera fuerza no es solo física. Es algo mental.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El PR que lograste hoy era un sueño hace seis meses.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "No existe una línea de meta en el entrenamiento de fuerza. Solo hitos.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El acero afila el acero.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Levanta hasta que la tierra tiemble.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La gravedad es solo una sugerencia cuando eres lo suficientemente fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El rack es donde las excusas van a morir.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "No te limites a levantar el peso. Domínalo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Sé la fuerza que no se puede detener.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Los números de la barra no mienten.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El suelo no es tu lugar de descanso. Es tu plataforma de lanzamiento.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Cuando estás en tu punto más débil, es cuando necesitas ser más fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Estás a un peso muerto de tener un mejor estado de ánimo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Los fuertes sobreviven. Los más fuertes prosperan.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Un agarre fuerte significa una mente fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "No entrenes para el espejo. Entrena para la plataforma.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Cada PR empieza creyendo que es posible.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Dobla la barra antes de que la barra te doble a ti.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La fortaleza se construye bajo cargas pesadas.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Usa tiza. Bloquea. Despega.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Una barra cargada es el terapeuta más honesto.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Si el peso se siente ligero, añade más. Así creces.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Tu máximo de una repetición no es tu límite. Es tu verdad actual.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Las sentadillas pesadas lo arreglan todo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La fuerza es lo que separa a quienes lo intentan de quienes lo hacen.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Elévate por encima de la tormenta y encontrarás la luz del sol.",
+    "author": "Mario Fernandez",
+    "category": "general"
+  },
+  {
+    "quote": "No estoy aquí para ser promedio. Estoy aquí para ser increíble.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu próximo capítulo será increíble.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé un guerrero, no alguien que se queda preocupado.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El regreso siempre es más fuerte que el tropiezo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Elijo hacer del resto de mi vida lo mejor de mi vida.",
+    "author": "Louise Hay",
+    "category": "general"
+  },
+  {
+    "quote": "Las grandes cosas nunca surgen de las zonas de confort.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No compito con nadie. Corro mi propia carrera.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cree en tu potencial infinito.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cuando tengas ganas de parar, piensa en por qué empezaste.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No eres una víctima. Eres un luchador.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Soy demasiado positivo para tener dudas, demasiado optimista para tener miedo y demasiado decidido para ser derrotado.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Trabaja hasta que tu cuenta bancaria parezca un número de teléfono.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantén la vista en el premio y los pies en la tierra.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé el cambio que deseas ver en el mundo.",
+    "author": "Mahatma Gandhi",
+    "category": "general"
+  },
+  {
+    "quote": "Es un camino largo, pero vale la pena.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantente enfocado y nunca te rindas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Soy la prueba de que el trabajo duro vale la pena.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu valor no disminuye porque otra persona no sepa verlo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Deja de pensarlo tanto. Empieza a superarte.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Aquello en lo que te concentras se expande.",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "La mejor vista llega después de la subida más dura.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé el tipo de persona que quieres conocer.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Está bien empezar poco a poco. La clave es empezar.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Si te cansas, aprende a descansar, a no rendirte.",
+    "author": "Banksy",
+    "category": "general"
+  },
+  {
+    "quote": "No naciste solo para pagar cuentas y morir.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cada maestro fue alguna vez un desastre.",
+    "author": "T. Harv Eker",
+    "category": "general"
+  },
+  {
+    "quote": "Las cosas buenas les llegan a los que se apresuran.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Estoy en constante evolución.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El dolor que sientes hoy es la fuerza que sientes mañana.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No te limites a soñarlo. Trabaja por ello.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Soy quien soy. No se necesita su aprobación.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantén el hambre. Mantén la curiosidad.",
+    "author": "Steve Jobs",
+    "category": "general"
+  },
+  {
+    "quote": "No todas las tormentas vienen a perturbar tu vida. Algunas vienen a despejar tu camino.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El precio de la excelencia es la disciplina. El costo de la mediocridad es la decepción.",
+    "author": "William Arthur Ward",
+    "category": "general"
+  },
+  {
+    "quote": "Cuanto más elogias y celebras tu vida, más hay en la vida para celebrar.",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "Cada santo tiene un pasado y cada pecador tiene un futuro.",
+    "author": "Oscar Wilde",
+    "category": "general"
+  },
+  {
+    "quote": "Atraes lo que eres, no lo que quieres.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé paciente y confía en tu camino.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Yo soy la tormenta.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No confundas mi bondad con debilidad.",
+    "author": "Al Capone",
+    "category": "general"
+  },
+  {
+    "quote": "El trabajo duro resalta el carácter de las personas.",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "Trabajaré hasta que ya no tenga que presentarme.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Crea una vida que se sienta bien por dentro.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El mayor riesgo es no correr ningún riesgo.",
+    "author": "Mark Zuckerberg",
+    "category": "general"
+  },
+  {
+    "quote": "Naciste para ganar, pero para ser un ganador debes planificar y prepararte para ganar.",
+    "author": "Zig Ziglar",
+    "category": "general"
+  },
+  {
+    "quote": "No llegué tan lejos para quedarme solo aquí.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Rodéate de aquellos que te desafían.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Todo profesional fue alguna vez un aficionado. Todo experto alguna vez fue un principiante.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu vida no mejora por casualidad. Mejora con el cambio.",
+    "author": "Jim Rohn",
+    "category": "general"
+  },
+  {
+    "quote": "Mantén la constancia. No sucederá de la noche a la mañana.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Las oportunidades no aparecen solas. Tú las creas.",
+    "author": "Chris Grosser",
+    "category": "general"
+  },
+  {
+    "quote": "Estoy corrigiendo silenciosamente tu forma.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Habla menos. Levanta más.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu única competencia es quién eras ayer.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los campeones se adaptan.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No hay temporada baja cuando hablas en serio.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Nunca te disculpes por tener estándares altos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Quienes se dan por vencidos nunca miran atrás para ver qué tan cerca estuvieron de ganar.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé alguien que cambia el juego. El mundo ya está lleno de jugadores.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Un año de constancia lo cambiará todo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Elige la disciplina por encima de la motivación.",
+    "author": "Jocko Willink",
+    "category": "general"
+  },
+  {
+    "quote": "Demuestra en silencio que se equivocan.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu entrenamiento es tu cita contigo mismo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé tan bueno en lo que haces que la gente no pueda ignorarte.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Aguanta ahora para no pagarlo después.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los campeones no aparecen para conseguir todo lo que quieren. Se presentan para dar todo lo que tienen.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Si el plan A no funciona, quedan veinticinco letras más en el alfabeto.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Levantar por ego lleva a lesiones por ego. Revisa tu técnica.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los días de descanso son días de crecimiento.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mente sobre materia. Si no te importa, no importa.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No se necesita despertador. La pasión me despierta.",
+    "author": "Eric Thomas",
+    "category": "general"
+  },
+  {
+    "quote": "Haz del fitness una prioridad, no una opción secundaria.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El gimnasio no te pregunta por tu día. Solo te pide que te presentes.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Estás a un buen hábito de una vida completamente diferente.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Disciplina es igual a libertad.",
+    "author": "Jocko Willink",
+    "category": "general"
+  },
+  {
+    "quote": "Cuando nada salga bien, levanta.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El que madruga obtiene las ganancias.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No estás cansado. No estás inspirado. Encuentra tu fuego.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La duda mata más sueños que el fracaso.",
+    "author": "Suzy Kassem",
+    "category": "general"
+  },
+  {
+    "quote": "Mantente humilde y hambriento.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La única discapacidad en la vida es una mala actitud.",
+    "author": "Scott Hamilton",
+    "category": "general"
+  },
+  {
+    "quote": "Mantén la cabeza en alto. Dios entrega sus batallas más duras a sus soldados más fuertes.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Eres más fuerte que cualquier excusa.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena como si de verdad fuera importante.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé la mejor versión de ti mismo. Nadie más puede hacerlo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Las metas sin rutina son solo deseos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cada día es una oportunidad para mejorar.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El único fracaso es no intentarlo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Haz que suceda. Sorprende a todos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Quién eres mañana comienza con lo que haces hoy.",
+    "author": "Tim Fargo",
+    "category": "general"
+  },
+  {
+    "quote": "Concéntrate en ser productivo, no en estar ocupado.",
+    "author": "Tim Ferriss",
+    "category": "general"
+  },
+  {
+    "quote": "Construye el cuerpo. Construye la mente. Construye la vida.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Nadie vendrá a salvarte. Sé tu propio héroe.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La dosis diaria de hierro mantiene alejado al médico.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Lo que se interpone en el camino se convierte en el camino.",
+    "author": "Marcus Aurelius",
+    "category": "general"
+  },
+  {
+    "quote": "Sé adicto a tus objetivos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena con pasión. Descansa con propósito.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantén el rumbo. Los desvíos son distracciones.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No obtuve este cuerpo deseándolo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cada amanecer es una invitación a alegrar tu día con una sesión de ejercicio.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El malestar es la moneda del crecimiento.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo es un proyecto. Trátalo como tal.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los campeones se definen por su entrenamiento, no por sus trofeos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Ganar no lo es todo, pero querer ganar sí lo es.",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "No hay tráfico en el kilómetro extra.",
+    "author": "Roger Staubach",
+    "category": "general"
+  },
+  {
+    "quote": "A tus objetivos no les importan tus sentimientos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El dolor es el precio de entrada a una vida que valga la pena vivir.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cada repetición es una conversación entre tú y tu yo futuro.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No hay ningún mal momento para hacer lo correcto.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Persigue el progreso, no la perfección.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Un pequeño progreso cada día se traduce en grandes resultados.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Preséntate. Trabaja. Repite.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los resultados no requieren explicación. Los fracasos no permiten coartadas.",
+    "author": "Napoleon Hill",
+    "category": "general"
+  },
+  {
+    "quote": "Tu músculo más fuerte es tu determinación.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Nunca subestimes el poder de la coherencia.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La magia que buscas está en el trabajo que estás evitando.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No desees que sea más fácil. Desea ser mejor.",
+    "author": "Jim Rohn",
+    "category": "general"
+  },
+  {
+    "quote": "Mereces estar sano y fuerte. Actúa como tal.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La gente común logra resultados extraordinarios cuando se compromete plenamente.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Muéstrame a alguien que haya hecho algo que valga la pena y te mostraré a alguien que ha superado la adversidad.",
+    "author": "Lou Holtz",
+    "category": "general"
+  },
+  {
+    "quote": "La lucha en la que estás hoy está desarrollando la fuerza que necesitas para mañana.",
+    "author": "Robert Tew",
+    "category": "general"
+  },
+  {
+    "quote": "Los resultados hablan más que las palabras.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Nadie se arrepiente de hacer ejercicio.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La mente es el límite. Mientras la mente pueda imaginar que puedes hacer algo, podrás hacerlo.",
+    "author": "Arnold Schwarzenegger",
+    "category": "general"
+  },
+  {
+    "quote": "Mantente fuerte. Tu historia aún no ha terminado.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Haz lo que tengas que hacer hasta que puedas hacer lo que quieres hacer.",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "Convierte tus heridas en sabiduría.",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "Si la oportunidad no llama, construye una puerta.",
+    "author": "Milton Berle",
+    "category": "general"
+  },
+  {
+    "quote": "La persistencia garantiza que los resultados sean inevitables.",
+    "author": "Paramahansa Yogananda",
+    "category": "general"
+  },
+  {
+    "quote": "Es difícil vencer a una persona que nunca se rinde.",
+    "author": "Babe Ruth",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo dirá que no hay razón para continuar. Tu mente debe estar preparada para responderle.",
+    "author": "David Goggins",
+    "category": "general"
+  },
+  {
+    "quote": "Lo que no mata te hace más fuerte.",
+    "author": "Friedrich Nietzsche",
+    "category": "general"
+  },
+  {
+    "quote": "Para alcanzar la grandeza, primero debes creer que eres capaz de alcanzar la grandeza.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El sudor que derramas hoy riega el jardín de tu yo futuro.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Solo aquellos que se arriesgan a ir demasiado lejos pueden descubrir hasta dónde se puede llegar.",
+    "author": "T.S. Eliot",
+    "category": "general"
+  },
+  {
+    "quote": "Disciplina es hacer lo que hay que hacer, incluso si no quieres hacerlo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los resultados llegan a quienes trabajan mientras otros duermen.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cuanto más trabajas, más suerte tienes.",
+    "author": "Gary Player",
+    "category": "general"
+  },
+  {
+    "quote": "No se puede tener un sueño de un millón de dólares con una ética de trabajo con salario mínimo.",
+    "author": "Stephen Hogan",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo fue diseñado para moverse. Honra ese diseño.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La pregunta no es quién me lo va a permitir. Es quién va a detenerme.",
+    "author": "Ayn Rand",
+    "category": "general"
+  },
+  {
+    "quote": "No esperes el momento perfecto. Aprovecha el momento y hazlo perfecto.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los campeones están hechos de algo muy dentro de ellos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Lo único peor que empezar algo y fracasar es no empezar algo.",
+    "author": "Seth Godin",
+    "category": "general"
+  },
+  {
+    "quote": "Puedes descansar. Puedes hacer una pausa. Pero no te rindas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El mejor ejercicio para los abdominales es rechazar la segunda porción.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El azúcar no es una recompensa. Es un castigo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Fuerte es hermoso. Saludable es esencial.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Tu cuerpo lleva un diario, ya sea que escribas en uno o no.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Desayuna como un rey, almuerza como un príncipe, cena como un pobre.",
+    "author": "Adelle Davis",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Que la comida sea tu medicina.",
+    "author": "Hippocrates",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Controla lo que comes. Controla tu vida.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El tenedor es tu herramienta más poderosa.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Pequeños cambios conducen a resultados masivos con el tiempo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La disciplina en la cocina crea libertad ante el espejo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Un exterior saludable comienza desde dentro.",
+    "author": "Robert Urich",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Eres tan fuerte como tu levantamiento más débil.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Banco, sentadilla, peso muerto. La santísima trinidad.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La fuerza no se trata de levantar más. Se trata de nunca darse por vencido.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Levanta con intención. Vive con propósito.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Debajo de la barra es donde se forja el carácter.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Un nuevo PR solo prueba que ayer eras más débil.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Domina el peso antes de que el peso te domine a ti.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El levantamiento de pesas no se trata de fuerza bruta. Se trata de técnica bajo carga.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Los fuertes no necesitan permiso para ser grandes.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La fuerza es silenciosa. La inseguridad es ruidosa.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La única manera de volverse fuerte es pasar por debajo de la barra.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La verdadera fuerza se mide por lo que haces cuando nadie te mira.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Nunca temas al peso. Teme no intentarlo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Un peso muerto fuerte es la base de un cuerpo fuerte.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La fuerza proviene de la voluntad, no del número que está en la barra.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El tamaño es un efecto secundario de la fuerza.",
+    "author": "Mark Rippetoe",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No es necesario ser extremo, solo consistente.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Alimenta el músculo y el músculo crecerá.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Un buen bombeo muscular vale más que cualquier cumplido.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Tus músculos están llorando. Déjalos.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La búsqueda de la masa es la búsqueda de la disciplina.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Entrena cada músculo como si fuera el único que importa.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Hazte grande o vete a casa intentándolo.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La temporada de volumen no tiene interruptor.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Come tu proteína. Haz tus repeticiones. Confía en el proceso.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El crecimiento no ocurre cuando estás cómodo.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Un físico se construye ladrillo a ladrillo, repetición a repetición.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "El día del pecho es el mejor día.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Tu fuerza de voluntad es un músculo. Entrénalo a diario.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Una elección saludable a la vez es todo lo que se necesita.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Tu cuerpo no te debe comodidad. Tú le debes cuidado.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Salta el atajo. Sube las escaleras.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La única dieta que funciona es la que sigues.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El azúcar no es tu amigo. Es tu saboteador.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Tu cintura no es un desperdicio. Esculpelo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Los antojos pasan. El arrepentimiento persiste.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Un vientre plano se consigue veintitrés horas al día fuera del gimnasio.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Contar calorías no es una obsesión. Es conciencia.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Muévete más. Come menos basura. Duerme mejor. Repetir.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Ningún antojo merece sacrificar tus objetivos.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Tu transformación es un viaje que se mide en elecciones, no en kilos.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La fuerza se construye en la oscuridad y se muestra en la luz.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Carga la barra. Despeja la mente. Levanta.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "O te estás volviendo más fuerte o más débil. No hay forma de quedarse quieto.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Respeta el proceso. La fuerza vendrá.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La sala de pesas es el gran ecualizador.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Entrena lo suficientemente duro como para que el peso se vuelva fácil.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La fuerza es una habilidad. Practícala a diario.",
+    "author": "Pavel Tsatsouline",
+    "category": "strength"
+  },
+  {
+    "quote": "No se puede fingir fuerza bajo una barra cargada.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La versión más fuerte de ti te está esperando. Ve a buscarla.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La debilidad es una elección. La fuerza es una decisión.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Cada levantamiento pesado enseña paciencia, determinación y humildad.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La barra no respeta a nadie. Responde al esfuerzo.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Pon a prueba tus límites. Expande tus límites.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "La perfección no es alcanzable, pero si la perseguimos, podemos alcanzar la excelencia.",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "Habla claro sobre lo que te importa.",
+    "author": "Karen Walrond",
+    "category": "general"
+  },
+  {
+    "quote": "Ponte a prueba ante ti mismo, no ante los demás.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No dejaré que el ayer ocupe demasiado del hoy.",
+    "author": "Will Rogers",
+    "category": "general"
+  },
+  {
+    "quote": "Te dieron esta vida porque eres lo suficientemente fuerte para vivirla.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El mundo destroza a todos, y después, algunos son fuertes en los lugares quebrantados.",
+    "author": "Ernest Hemingway",
+    "category": "general"
+  },
+  {
+    "quote": "Lo que hay detrás de nosotros y lo que hay delante de nosotros son asuntos insignificantes en comparación con lo que hay dentro de nosotros.",
+    "author": "Ralph Waldo Emerson",
+    "category": "general"
+  },
+  {
+    "quote": "No hay gloria en la práctica, pero sin práctica no hay gloria.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Ten paciencia contigo mismo. El crecimiento personal es tierno.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La ambición es el camino hacia el éxito. La persistencia es el vehículo en el que llegas.",
+    "author": "Bill Bradley",
+    "category": "general"
+  },
+  {
+    "quote": "Lo bueno es enemigo de lo grande.",
+    "author": "Jim Collins",
+    "category": "general"
+  },
+  {
+    "quote": "Nunca soñé con el éxito. Trabajé para ello.",
+    "author": "Estee Lauder",
+    "category": "general"
+  },
+  {
+    "quote": "Deja de agarrarte a los pasamanos. Suelta. Entrégate. Vive el viaje de tu vida.",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "Obtienes fuerza, coraje y confianza con cada experiencia en la que realmente te detienes a mirar el miedo a la cara.",
+    "author": "Eleanor Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "Los que están lo suficientemente locos como para pensar que pueden cambiar el mundo son los que lo hacen.",
+    "author": "Steve Jobs",
+    "category": "general"
+  },
+  {
+    "quote": "No vine a este mundo derrotado.",
+    "author": "Og Mandino",
+    "category": "general"
+  },
+  {
+    "quote": "Piensa en grande, pero disfruta los pequeños placeres.",
+    "author": "H. Jackson Brown Jr.",
+    "category": "general"
+  },
+  {
+    "quote": "Es difícil fracasar, pero es peor no haber intentado nunca tener éxito.",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "Nos convertimos en lo que pensamos la mayor parte del tiempo.",
+    "author": "Earl Nightingale",
+    "category": "general"
+  },
+  {
+    "quote": "Si puedes soñarlo, puedes hacerlo.",
+    "author": "Walt Disney",
+    "category": "general"
+  },
+  {
+    "quote": "El secreto del cambio es concentrar toda tu energía no en luchar contra lo viejo sino en construir lo nuevo.",
+    "author": "Socrates",
+    "category": "general"
+  },
+  {
+    "quote": "No es necesario ver toda la escalera. Simplemente da el primer paso.",
+    "author": "Martin Luther King Jr.",
+    "category": "general"
+  },
+  {
+    "quote": "Soy deliberado y no tengo miedo de nada.",
+    "author": "Audre Lorde",
+    "category": "general"
+  },
+  {
+    "quote": "Actúa como si lo que haces marcara la diferencia. Lo hace.",
+    "author": "William James",
+    "category": "general"
+  },
+  {
+    "quote": "La energía fluye hacia donde va la atención.",
+    "author": "Tony Robbins",
+    "category": "general"
+  },
+  {
+    "quote": "Lo que logremos interiormente cambiará la realidad exterior.",
+    "author": "Plutarch",
+    "category": "general"
+  },
+  {
+    "quote": "La manera de empezar es dejar de hablar y empezar a hacer.",
+    "author": "Walt Disney",
+    "category": "general"
+  },
+  {
+    "quote": "No dejes que lo que no puedes hacer interfiera con lo que puedes hacer.",
+    "author": "John Wooden",
+    "category": "general"
+  },
+  {
+    "quote": "Nuestra mayor gloria no es no caer nunca, sino levantarnos cada vez que caemos.",
+    "author": "Confucius",
+    "category": "general"
+  },
+  {
+    "quote": "Se te permite ser tanto una obra maestra como un trabajo en progreso simultáneamente.",
+    "author": "Sophia Bush",
+    "category": "general"
+  },
+  {
+    "quote": "Cada strike me acerca al siguiente jonrón.",
+    "author": "Babe Ruth",
+    "category": "general"
+  },
+  {
+    "quote": "Agradezco mi lucha porque sin ella no habría encontrado mi fuerza.",
+    "author": "Alex Elle",
+    "category": "general"
+  },
+  {
+    "quote": "Si la gente duda de hasta dónde puedes llegar, llega tan lejos que ya no puedas oírlos.",
+    "author": "Michele Ruiz",
+    "category": "general"
+  },
+  {
+    "quote": "Generamos miedos mientras nos sentamos. Los superamos mediante la acción.",
+    "author": "Henry Link",
+    "category": "general"
+  },
+  {
+    "quote": "Me despierto cada mañana y pienso: ¿Hasta dónde puedo esforzarme hoy?",
+    "author": "Leah LaBelle",
+    "category": "general"
+  },
+  {
+    "quote": "La forma más eficaz de hacerlo es hacerlo.",
+    "author": "Amelia Earhart",
+    "category": "general"
+  },
+  {
+    "quote": "La vida no se trata de encontrarse a uno mismo. La vida se trata de crearte a ti mismo.",
+    "author": "George Bernard Shaw",
+    "category": "general"
+  },
+  {
+    "quote": "Elijo levantarme.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantente cerca de cualquier cosa que te haga feliz de estar vivo.",
+    "author": "Hafiz",
+    "category": "general"
+  },
+  {
+    "quote": "Olvida tu pasado, perdónate a ti mismo y comienza de nuevo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Todo lo que siempre has deseado está al otro lado del miedo.",
+    "author": "George Addair",
+    "category": "general"
+  },
+  {
+    "quote": "Lo que consume tu mente controla tu vida.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "A mi modo de ver, si quieres el arcoíris, tienes que aguantar la lluvia.",
+    "author": "Dolly Parton",
+    "category": "general"
+  },
+  {
+    "quote": "El único límite para nuestra realización del mañana serán nuestras dudas de hoy.",
+    "author": "Franklin D. Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "Atribuyo mi éxito a esto: nunca di ni tomé ninguna excusa.",
+    "author": "Florence Nightingale",
+    "category": "general"
+  },
+  {
+    "quote": "El coraje no es tener fuerzas para seguir. Es seguir cuando ya no tienes fuerzas.",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "Si te asusta, sería bueno intentarlo.",
+    "author": "Seth Godin",
+    "category": "general"
+  },
+  {
+    "quote": "Trabaja hasta que ya no tengas que presentarte.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No hay nada imposible para quienes lo intentan.",
+    "author": "Alexander the Great",
+    "category": "general"
+  },
+  {
+    "quote": "¿Qué intentarías hacer si supieras que no puedes fracasar?",
+    "author": "Robert Schuller",
+    "category": "general"
+  },
+  {
+    "quote": "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+    "author": "Robert Collier",
+    "category": "general"
+  },
+  {
+    "quote": "Puedo y lo haré. Mírame.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Las dificultades a menudo preparan a la gente corriente para un destino extraordinario.",
+    "author": "C.S. Lewis",
+    "category": "general"
+  },
+  {
+    "quote": "El comienzo es siempre hoy.",
+    "author": "Mary Shelley",
+    "category": "general"
+  },
+  {
+    "quote": "Un río atraviesa una roca no por su fuerza sino por su persistencia.",
+    "author": "James Watkins",
+    "category": "general"
+  },
+  {
+    "quote": "Con autodisciplina, casi todo es posible.",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "Una meta sin un plan es solo un deseo.",
+    "author": "Antoine de Saint-Exupery",
+    "category": "general"
+  },
+  {
+    "quote": "He decidido ser feliz porque es bueno para mi salud.",
+    "author": "Voltaire",
+    "category": "general"
+  },
+  {
+    "quote": "El progreso es progreso por pequeño que sea.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "A nadie le importan tus excusas. Trabaja más duro.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu entrenamiento no esperará a que mejore tu estado de ánimo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El gimnasio te extraña. Vuelve.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Día a día, lo que eliges y lo que haces es en quién te conviertes.",
+    "author": "Heraclitus",
+    "category": "general"
+  },
+  {
+    "quote": "El cuerpo logra lo que la mente prepara.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Suda, sonríe y repite.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La aptitud no es un castigo. Es una recompensa.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Deja de rendirte. Empieza a terminar lo que empiezas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cuanto más duro sea el conflicto, más glorioso será el triunfo.",
+    "author": "Thomas Paine",
+    "category": "general"
+  },
+  {
+    "quote": "El ejercicio debe considerarse como un homenaje al corazón.",
+    "author": "Gene Tunney",
+    "category": "general"
+  },
+  {
+    "quote": "Desarrolla tu autoestima con un entrenamiento a la vez.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Centímetro a centímetro, todo se vuelve manejable.",
+    "author": "Robert Schuller",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena tus debilidades. Compite con tus puntos fuertes.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Un cuerpo en movimiento permanece en movimiento.",
+    "author": "Isaac Newton",
+    "category": "general"
+  },
+  {
+    "quote": "La fuerza está en las diferencias, no en las similitudes.",
+    "author": "Stephen Covey",
+    "category": "general"
+  },
+  {
+    "quote": "Date permiso para ser genial.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mejor un “ups” que un “¿y si...?”.",
+    "author": "Beau Taplin",
+    "category": "general"
+  },
+  {
+    "quote": "El mundo necesita gente fuerte.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La fuerza de voluntad es como un músculo. Cuanto más lo entrenas, más fuerte se vuelve.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Un cuerpo sano es una habitación de huéspedes para el alma.",
+    "author": "Francis Bacon",
+    "category": "general"
+  },
+  {
+    "quote": "Tu yo futuro cuenta contigo ahora mismo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El dolor se desvanece. La gloria dura para siempre.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Ya tienes todo lo que necesitas para comenzar.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Perdurar. Al aguantar, hazte fuerte.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Hoy estoy un paso más cerca de mis objetivos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantente positivo. Ponte en marcha. Haz que suceda.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los grandes cuerpos se forjan en el fuego del trabajo duro.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Olvídate de los resultados. Concéntrate en el proceso.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Te debes a ti mismo ser lo mejor que puedas ser.",
+    "author": "Pete Rose",
+    "category": "general"
+  },
+  {
+    "quote": "Una hora de dolor por toda una vida de orgullo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo es tu posesión más valiosa. Cuídalo.",
+    "author": "Jack LaLanne",
+    "category": "general"
+  },
+  {
+    "quote": "Cuando llueve, busca arcoíris. Cuando esté oscuro, busque estrellas.",
+    "author": "Oscar Wilde",
+    "category": "general"
+  },
+  {
+    "quote": "Recuerda por qué empezaste.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Hoy es un gran día para hacer ejercicio.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "No naciste para pasar desapercibido. Naciste para destacar.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantente firme. Mantén los pies en la tierra. Mantente concentrado.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Haz que cada entrenamiento cuente.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Prefiero trabajar 24/7 que sentirme atrapado de 9 a 5.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sin presión, sin diamantes.",
+    "author": "Thomas Carlyle",
+    "category": "general"
+  },
+  {
+    "quote": "Imposible es solo una gran palabra pronunciada por gente pequeña.",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "Deja que tu fe sea más grande que tus miedos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Soy imparable.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu actitud determina tu dirección.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Puede que no todos los días sean buenos, pero hay algo bueno en cada día.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantente fuerte. Hazles preguntarse cómo sigues sonriendo.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Duda de quien quieras, pero nunca de ti mismo.",
+    "author": "Christine Bovee",
+    "category": "general"
+  },
+  {
+    "quote": "Siempre es demasiado pronto para dejarlo.",
+    "author": "Norman Vincent Peale",
+    "category": "general"
+  },
+  {
+    "quote": "La vida es dura, pero tú también lo eres.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El sudor es la colonia del logro.",
+    "author": "Heywood Hale Broun",
+    "category": "general"
+  },
+  {
+    "quote": "Ten miedo y hazlo de todos modos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu zona de confort acabará con tus sueños.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El mundo se hace a un lado para aquellos que saben hacia dónde van.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La intensidad es el precio de la excelencia.",
+    "author": "Warren Buffett",
+    "category": "general"
+  },
+  {
+    "quote": "Si no cambias nada, nada cambiará.",
+    "author": "Tony Robbins",
+    "category": "general"
+  },
+  {
+    "quote": "Nunca dobles la cabeza. Mantenlo siempre en alto.",
+    "author": "Helen Keller",
+    "category": "general"
+  },
+  {
+    "quote": "Podemos encontrarnos con muchas derrotas, pero no debemos ser derrotados.",
+    "author": "Maya Angelou",
+    "category": "general"
+  },
+  {
+    "quote": "Crea tu propio sol.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu potencial es ilimitado. Ve tras tus sueños.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cada día es día de piernas si huyes de tus problemas.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Entra como si fueras dueño del lugar. Entrena como lo construiste.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantén tus sentadillas profundas y tus estándares altos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo susurra antes de gritar. Escúchalo a tiempo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Hidrata o muere.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El tenedor es más poderoso que la cinta de correr.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Cuando comes limpio, te sientes limpio.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Un déficit de calorías no es hambre. Es estrategia.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Tus abdominales se esconden debajo de tu dieta.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La mejor versión de tu cuerpo es la versión más saludable.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Si el hambre no es el problema, la comida no es la solución.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "No caves tu tumba con tu propio cuchillo y tenedor.",
+    "author": "English Proverb",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Come para vivir. No vivas para comer.",
+    "author": "Benjamin Franklin",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Nunca podrás correr más que una mala dieta.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Piensa en tus comidas como bloques de construcción, no como mantas de consuelo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Disciplina en la mesa significa libertad frente al espejo.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Mantenerte definido es un trabajo de veinticuatro horas.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "El cuerpo de tus sueños está al otro lado de la disciplina.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Estar flaco no es la meta. Estar sano y fuerte, sí.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "La báscula es solo un número. Cómo te sientes es lo que importa.",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "Una barra cargada en tu espalda te enseña a mantenerte erguido.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Estás a un paso de tener un día mejor.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "A la plataforma no le importan tus sentimientos. Responde a tu preparación.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Entrena movimientos, no músculos.",
+    "author": "Gray Cook",
+    "category": "strength"
+  },
+  {
+    "quote": "La paciencia y la barra premian a quienes son constantes.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El acero más resistente se forja con el fuego de la adversidad.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Métete debajo de la barra y demuestra tu valía a diario.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El entrenamiento de fuerza es lo más parecido a una fuente de juventud.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "A tu peso muerto no le importan tus excusas.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "El recorrido de la barra hacia el éxito va recto hacia arriba.",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "Construye la espalda. Construye las bases de tu físico.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "No puedes esculpir lo que no has construido.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La recuperación es donde ocurre la magia.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Tus músculos recuerdan todo. Entrénalos bien.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Come en grande. Entrena a lo grande. Sueña en grande.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La conexión mente-músculo es real. Úsala.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Tu físico es un reflejo de tu dedicación.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "La nutrición es la base. El entrenamiento es la arquitectura.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Las ganancias son silenciosas. Deja que hablen por sí solas.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Siempre estás a un entrenamiento de estar de mejor humor.",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "Elige el dolor de la disciplina antes que el dolor del arrepentimiento. Todos. Los. Días.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tus excusas ya cansan. Prueba algo nuevo: resultados.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Cada revés es una preparación para una remontada.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé alguien que nadie pensó que podrías ser.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo puede hacerlo. Es a tu cerebro a quien tienes que convencer.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Mantente en tu camino. Mantente en tu rutina.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El gimnasio no es un castigo por lo que comiste. Es una celebración de lo que tu cuerpo puede hacer.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Pequeños pasos cada día.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Estás esculpiendo una obra maestra. Sigue cincelando.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La voz en tu cabeza que dice que no puedes hacerlo es una mentirosa.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Recibes lo que pones.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Nunca te disculpes por trabajar duro.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Todo campeón fue alguna vez un principiante.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo te lo agradecerá más tarde.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Los campeones entrenan. Los que fingen se quejan.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "El éxito es un maratón, no una carrera de velocidad.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Esfuérzate más que tus límites.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Sé el héroe de tu propia historia.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Tu cuerpo fue construido para la grandeza.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Deja que los resultados hablen por sí solos.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "Entrena hoy para un mañana mejor.",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "La constancia trae la gloria.",
+    "author": "Unknown",
+    "category": "general"
+  }
+]

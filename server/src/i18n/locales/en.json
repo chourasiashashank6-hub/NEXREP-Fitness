@@ -1,0 +1,31 @@
+{
+  "notifications": {
+    "macroCheckin": {
+      "title": "Macro check-in",
+      "body": "Your {{checkpoint}} check-in is off-track: {{summary}}. Make the next meal count.",
+      "lowCalories": "{{calories}} of {{targetCalories}} kcal",
+      "lowProtein": "{{protein}} of {{targetProtein}}g protein",
+      "highCalories": "{{calories}} kcal already logged"
+    },
+    "missingMeal": {
+      "title": "Log your {{meal}}",
+      "body": "It looks like {{meal}} has not been logged yet. Add it now while it is fresh."
+    },
+    "missingWorkout": {
+      "title": "Workout log missing",
+      "body": "No workout is logged today. Log your session or mark it as a rest day in your plan."
+    },
+    "streakRisk": {
+      "title": "Protect your streak",
+      "body": "You have not logged meals or training today. Add one quick entry before the day ends."
+    },
+    "quoteOfDay": {
+      "title": "Quote of the day",
+      "body": "\"{{quote}}\" - {{author}}"
+    },
+    "weeklyDigest": {
+      "title": "Your NexRep weekly digest",
+      "body": "This week: {{mealsLogged}} nutrition days, {{workoutsLogged}} workouts, {{strengthLifts}} strength lifts logged. Open NexRep to plan the next one."
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useAppTheme } from "../../theme";
 
 export function StreakRow({
@@ -8,12 +9,13 @@ export function StreakRow({
   days: Array<{ day: string; state: "done" | "missed" | "today" }>;
   streak: number;
 }) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   return (
     <View style={styles.wrap}>
       <View>
-        <Text style={[styles.label, { color: colors.muted }]}>Weekly streak</Text>
-        <Text style={[styles.sub, { color: colors.text }]}>{streak} days</Text>
+        <Text style={[styles.label, { color: colors.muted }]}>{t("coach.components.weeklyStreak")}</Text>
+        <Text style={[styles.sub, { color: colors.text }]}>{t("coach.components.streakDays", { count: streak })}</Text>
       </View>
       <View style={styles.daysRow}>
         {days.map((d) => (

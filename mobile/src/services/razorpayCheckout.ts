@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import i18n from "../i18n";
 import type { PlanId } from "../constants/plans";
 import { createRazorpayOrder, verifyRazorpayPayment } from "../api/payments";
 
@@ -38,7 +39,7 @@ declare global {
 function loadRazorpayScript(): Promise<NonNullable<typeof window.Razorpay>> {
   return new Promise((resolve, reject) => {
     if (typeof window === "undefined") {
-      reject(new Error("Razorpay checkout is only available in a browser context"));
+      reject(new Error(i18n.t("payment.checkout.browserOnly")));
       return;
     }
     if (window.Razorpay) {
@@ -50,9 +51,9 @@ function loadRazorpayScript(): Promise<NonNullable<typeof window.Razorpay>> {
     script.async = true;
     script.onload = () => {
       if (window.Razorpay) resolve(window.Razorpay);
-      else reject(new Error("Razorpay failed to load"));
+      else reject(new Error(i18n.t("payment.checkout.loadFailed")));
     };
-    script.onerror = () => reject(new Error("Could not load Razorpay checkout"));
+    script.onerror = () => reject(new Error(i18n.t("payment.checkout.loadCheckoutFailed")));
     document.body.appendChild(script);
   });
 }
@@ -69,7 +70,7 @@ async function openWebCheckout(
       amount: order.amount,
       currency: "INR",
       name: "NexRep",
-      description: `NexRep ${params.planLabel} Plan`,
+      description: i18n.t("payment.checkout.description", { planLabel: params.planLabel }),
       order_id: order.order_id,
       prefill: params.prefill,
       theme: { color: "#2ECC9A" },
@@ -81,14 +82,14 @@ async function openWebCheckout(
         });
       },
       modal: {
-        ondismiss: () => reject(Object.assign(new Error("Payment cancelled"), { code: 2 })),
+        ondismiss: () => reject(Object.assign(new Error(i18n.t("payment.checkout.cancelled")), { code: 2 })),
       },
     });
     rzp.on("payment.failed", (resp: unknown) => {
       const detail =
         resp && typeof resp === "object" && "error" in resp
-          ? String((resp as { error?: { description?: string } }).error?.description ?? "Payment failed")
-          : "Payment failed";
+          ? String((resp as { error?: { description?: string } }).error?.description ?? i18n.t("payment.checkout.paymentFailed"))
+          : i18n.t("payment.checkout.paymentFailed");
       reject(new Error(detail));
     });
     rzp.open();
@@ -104,7 +105,7 @@ export async function runRazorpayCheckout(params: RazorpayCheckoutParams): Promi
   });
 
   if (Platform.OS !== "web") {
-    throw new Error("Use the in-app payment modal on mobile (WebView checkout).");
+    throw new Error(i18n.t("payment.checkout.mobileOnly"));
   }
 
   return openWebCheckout(order, params);
@@ -129,18 +130,21 @@ export function buildRazorpayWebViewHtml(
   params: RazorpayCheckoutParams,
 ): string {
   const prefill = JSON.stringify(params.prefill);
+  const checkoutDescription = JSON.stringify(i18n.t("payment.checkout.description", { planLabel: params.planLabel }));
+  const openingSecureCheckout = i18n.t("payment.checkout.openingSecureCheckout");
+  const paymentFailed = JSON.stringify(i18n.t("payment.checkout.paymentFailed"));
   return `<!DOCTYPE html>
 <html><head><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>body{margin:0;background:#0a0f0d;color:#e8f0eb;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}</style>
-</head><body><p>Opening secure checkout…</p>
+</head><body><p>${openingSecureCheckout}</p>
 <script>
   const options = {
     key: ${JSON.stringify(order.key_id)},
     amount: ${order.amount},
     currency: "INR",
     name: "NexRep",
-    description: ${JSON.stringify(`NexRep ${params.planLabel} Plan`)},
+    description: ${checkoutDescription},
     order_id: ${JSON.stringify(order.order_id)},
     prefill: ${prefill},
     theme: { color: "#2ECC9A" },
@@ -153,7 +157,7 @@ export function buildRazorpayWebViewHtml(
   };
   const rzp = new Razorpay(options);
   rzp.on("payment.failed", function (resp) {
-    window.ReactNativeWebView.postMessage(JSON.stringify({ ok: false, message: (resp.error && resp.error.description) || "Payment failed" }));
+    window.ReactNativeWebView.postMessage(JSON.stringify({ ok: false, message: (resp.error && resp.error.description) || ${paymentFailed} }));
   });
   rzp.open();
 </script></body></html>`;

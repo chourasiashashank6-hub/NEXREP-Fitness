@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from src.core.config import settings
 from src.core.http_client import ExternalHTTPError, post_json
 from src.services.ai_logger import log_gemini_call, log_groq_call
+from src.services.language_service import ai_language_instruction
 from src.models.meal_plan import DailyMealPlanEntry, MonthlyMealPlan
 from src.models.models import User, UserOnboarding
 from src.services.planner_common import (
@@ -173,6 +174,7 @@ A user targeting {target_kcal} kcal is likely bulking or very active — give th
 
 - Region: {region}. Use foods commonly available and affordable in this region.
 - Diet type: {diet_type}. Respect strictly.
+- Regional food styles: {regional_food_styles}. Prefer dishes from these styles when compatible with nutrition targets.
 - Allergies: {allergies}. NEVER include these.
 - Budget level: {budget_level}.
 - Each meal MUST have 2-4 food items (a complete plate), NOT a single item. For example, breakfast should be "Poha (200g) + Chai (150ml) + Banana (1)" not just "Banana (150g)".
@@ -238,9 +240,10 @@ USER PROFILE (use all fields to personalize meals):
 - Goal: {goal} - if muscle_gain, maximize protein in every meal
 - Diet type: {diet_type} - strictly respect this, no exceptions
 - Region: {region} - only use locally available, culturally appropriate foods
+- Regional food styles: {regional_food_styles} - bias dish choices toward these preferences
 - Allergies: {allergies} - NEVER include these ingredients
 - Activity: {activity_level}, Workouts: {workout_types}
-  If workout_types includes weight_training or gym, ensure Post Workout
+  If workout_types includes strength_training, weight_training, or gym, ensure Post Workout
   slot is high protein (>=30g) and moderate carb (40-50g).
 - Meals per day: {meals_per_day} - generate EXACTLY this many meal slots,
   no more, no less.
@@ -264,6 +267,7 @@ The replacement meal MUST:
 - Be appropriate for the meal_type and time of day.
 - Have 2-4 food items (a complete plate).
 - Use foods available in region {region} and respect diet_type {diet_type} and allergies {allergies}.
+- Prefer dishes from regional food styles: {regional_food_styles}.
 - Include realistic estimated_cost_inr and prep_time_min.
 
 The meal object must have keys: meal_type, time, items (array of {{food, quantity_g, calories, protein, carbs, fat}}), total_calories, total_protein, total_carbs, total_fat, prep_time_min, estimated_cost_inr."""
@@ -1030,6 +1034,7 @@ def _build_meal_system_prompt(
         )
 
     allergies = ctx.get("allergies") or []
+    regional_food_styles = ctx.get("regional_food_styles") or []
     meals_per_day = int(ctx["meals_per_day"])
     target_kcal = int(ctx["target_kcal"])
 
@@ -1044,6 +1049,7 @@ def _build_meal_system_prompt(
         calorie_allocation=build_calorie_allocation(target_kcal, meals_per_day),
         region=ctx["region"],
         diet_type=ctx["diet_type"],
+        regional_food_styles=", ".join(regional_food_styles) if regional_food_styles else "No preference / Pan-Indian",
         allergies=", ".join(allergies) if allergies else "none",
         budget_level=ctx["budget_level"],
         goal=ctx.get("goal") or "maintain",
@@ -1059,7 +1065,7 @@ def _build_meal_system_prompt(
             previous_week_dinners=", ".join(previous_week_dinners or []) or "none",
         )
 
-    return prompt
+    return prompt + ai_language_instruction(ctx.get("preferred_language"))
 
 
 def _include_cheat_for_chunk(chunk_index: int) -> bool:
@@ -1553,8 +1559,10 @@ def _build_meal_ctx(db: Session, user: User) -> dict[str, Any]:
         "expected_meal_types": _meal_slots_for_count(meals_per_day),
         "region": str(app_setup.get("region") or "IN"),
         "diet_type": str(dietary.get("diet_type") or "standard"),
+        "regional_food_styles": dietary.get("regional_food_styles") if isinstance(dietary.get("regional_food_styles"), list) else [],
         "allergies": dietary.get("allergies") if isinstance(dietary.get("allergies"), list) else [],
         "budget_level": "budget",
+        "preferred_language": user.preferred_language,
         "user_weight_kg": float(personal.get("weight_kg") or user.weight or 70),
         "goal": str(goal.get("type") or "maintain"),
         "activity_level": str(activity.get("level") or "moderately_active"),
@@ -1770,6 +1778,7 @@ def _generate_chunk_days(
         "expected_meal_types": ctx["expected_meal_types"],
         "region": ctx["region"],
         "diet_type": ctx["diet_type"],
+        "regional_food_styles": ctx["regional_food_styles"],
         "allergies": ctx["allergies"],
         "budget_level": ctx["budget_level"],
         "user_weight_kg": ctx["user_weight_kg"],
@@ -3149,6 +3158,7 @@ def swap_meal(
     dietary = onboarding.get("dietary") if isinstance(onboarding.get("dietary"), dict) else {}
     app_setup = onboarding.get("app_setup") if isinstance(onboarding.get("app_setup"), dict) else {}
     allergies = dietary.get("allergies") if isinstance(dietary.get("allergies"), list) else []
+    regional_food_styles = dietary.get("regional_food_styles") if isinstance(dietary.get("regional_food_styles"), list) else []
 
     other_today = []
     for m in meals:
@@ -3160,8 +3170,9 @@ def swap_meal(
     system_prompt = MEAL_SWAP_SYSTEM_PROMPT.format(
         region=str(app_setup.get("region") or "IN"),
         diet_type=str(dietary.get("diet_type") or "standard"),
+        regional_food_styles=", ".join(regional_food_styles) if regional_food_styles else "No preference / Pan-Indian",
         allergies=", ".join(allergies) if allergies else "none",
-    )
+    ) + ai_language_instruction(user.preferred_language)
     user_msg = {
         "original_meal": original,
         "reason": reason or "want_variety",
@@ -3169,6 +3180,7 @@ def swap_meal(
         "target_protein_for_this_meal": int(original.get("total_protein") or 25),
         "region": str(app_setup.get("region") or "IN"),
         "diet_type": str(dietary.get("diet_type") or "standard"),
+        "regional_food_styles": regional_food_styles,
         "allergies": allergies,
         "budget_level": plan.budget_level,
         "other_meals_today": other_today,

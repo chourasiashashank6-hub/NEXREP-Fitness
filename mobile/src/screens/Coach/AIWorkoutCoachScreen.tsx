@@ -1,40 +1,39 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
+import i18n from "../../i18n";
 import CoachingTips from "../../components/Coach/CoachingTips";
 import { CircularScore } from "../../components/Coach/CircularScore";
 import { InsightBubble } from "../../components/Coach/InsightBubble";
 import MuscleRecoveryMap from "../../components/Coach/MuscleRecoveryMap";
 import ReadinessRow from "../../components/Coach/ReadinessRow";
 import { RecoveryTipCard } from "../../components/Coach/RecoveryTipCard";
-import { TodaysWorkoutPlan } from "../../components/Coach/TodaysWorkoutPlan";
 import WeeklyVolumeLoad from "../../components/Coach/WeeklyVolumeLoad";
 import { WeeklyProgressBar } from "../../components/Coach/WeeklyProgressBar";
+import { fetchOnboardingMe } from "../../api/onboarding";
 import { getWorkoutCoachData, getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { WC_COLORS } from "../../constants/workoutCoach";
 import { buildFallbackCoachingTips, normalizeWorkoutCoachResponse } from "../../services/coachNormalize";
 import { getFallbackInsight, getWorkoutCoachInsight } from "../../services/workoutCoachService";
-import { useAppTheme } from "../../theme";
+import type { OnboardingData } from "../../types/onboarding";
 import type { DynamicCoachingTip, MuscleStatus, WorkoutCoachInsight, WorkoutData } from "../../types/workoutCoach";
 import type { CoachStackParamList } from "./CoachHomeScreen";
+import { getGoalFocusMuscles } from "../../utils/onboardingFocusMuscles";
+import { getMuscleWeeklyTargets, getTargetWeeklySets } from "../../utils/weeklyMuscleTargets";
 
 const CACHE_KEY = "workout_coach_insight";
 const BASE_MUSCLES = ["Chest", "Shoulders", "Triceps", "Back", "Legs", "Biceps"] as const;
-const CARD_ACCENTS = {
-  insight: "#22d3ee",
-  recovery: "#34d399",
-  volume: "#60a5fa",
-  tips: "#a78bfa",
-} as const;
-
 function formatTimestamp(): string {
   const now = new Date();
-  return `Analyzed at ${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+  return i18n.t("coach.workout.analyzedAt", {
+    time: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
+  });
 }
 
 function parseBodyPartFromNotes(notes?: string | null): string | null {
@@ -68,26 +67,30 @@ function relativeLabel(dateIso: string): string {
   const d = new Date(dateIso).getTime();
   const now = Date.now();
   const hours = Math.max(0, Math.round((now - d) / (1000 * 60 * 60)));
-  if (hours < 24) return "Today";
+  if (hours < 24) return i18n.t("coach.common.today");
   const days = Math.round(hours / 24);
-  if (days === 1) return "Yesterday";
-  return `${days} days ago`;
+  if (days === 1) return i18n.t("coach.common.yesterday");
+  return i18n.t("coach.common.daysAgo", { count: days });
 }
 
-function buildWorkoutDataFromHistory(items: WorkoutHistoryItem[]): WorkoutData {
+function buildWorkoutDataFromHistory(items: WorkoutHistoryItem[], onboardingData?: OnboardingData | null): WorkoutData {
+  const focusMuscles = onboardingData?.goal ? getGoalFocusMuscles(onboardingData.goal) : [];
+  const muscleTargets = getMuscleWeeklyTargets(onboardingData?.activity?.workouts_per_week, focusMuscles);
+  const targetWeeklySets = getTargetWeeklySets(onboardingData?.activity?.workouts_per_week, focusMuscles);
+
   if (!items.length) {
     return {
       recentWorkouts: [],
       weeklyVolume: [...BASE_MUSCLES].map((m, idx) => ({
         muscle: m,
         sets: 0,
-        targetSets: 14,
+        targetSets: muscleTargets[m],
         color: ["#4ADE80", "#FBBF24", "#A78BFA", "#60A5FA", "#F87171", "#2DD4BF"][idx % 6],
       })),
-      muscleGroups: [...BASE_MUSCLES].map((m) => ({ name: m, status: "fresh", recoveryPercent: 90, lastTrainedLabel: "Not trained recently" })),
-      lastWorkoutDate: "No workout yet",
+      muscleGroups: [...BASE_MUSCLES].map((m) => ({ name: m, status: "fresh", recoveryPercent: 90, lastTrainedLabel: i18n.t("coach.common.notTrainedRecently") })),
+      lastWorkoutDate: i18n.t("coach.common.noWorkoutYet"),
       totalWeeklySets: 0,
-      targetWeeklySets: 84,
+      targetWeeklySets,
     };
   }
   const sorted = [...items].sort((a, b) => +new Date(b.date) - +new Date(a.date));
@@ -111,7 +114,7 @@ function buildWorkoutDataFromHistory(items: WorkoutHistoryItem[]): WorkoutData {
   const weeklyVolume = [...BASE_MUSCLES].map((m, idx) => ({
     muscle: m,
     sets: byMuscleSets.get(m) || 0,
-    targetSets: 14,
+    targetSets: muscleTargets[m],
     color: ["#4ADE80", "#FBBF24", "#A78BFA", "#60A5FA", "#F87171", "#2DD4BF"][idx % 6],
   }));
   const muscleGroups = [...BASE_MUSCLES].map((m) => {
@@ -119,7 +122,7 @@ function buildWorkoutDataFromHistory(items: WorkoutHistoryItem[]): WorkoutData {
     const hrs = ts ? Math.max(0, (now - ts) / (1000 * 60 * 60)) : 168;
     const recoveryPercent = Math.max(12, Math.min(96, Math.round((Math.min(168, hrs) / 168) * 100)));
     const status: MuscleStatus = recoveryPercent < 28 ? "sore" : recoveryPercent < 52 ? "tired" : recoveryPercent < 76 ? "ready" : "fresh";
-    return { name: m, status, recoveryPercent, lastTrainedLabel: ts ? relativeLabel(new Date(ts).toISOString()) : "Not trained recently" };
+    return { name: m, status, recoveryPercent, lastTrainedLabel: ts ? relativeLabel(new Date(ts).toISOString()) : i18n.t("coach.common.notTrainedRecently") };
   });
   const recentWorkouts = sorted.slice(0, 5).map((w) => ({
     date: relativeLabel(w.date),
@@ -128,55 +131,65 @@ function buildWorkoutDataFromHistory(items: WorkoutHistoryItem[]): WorkoutData {
     durationMin: Number(w.duration || 0),
   }));
   const totalWeeklySets = weeklyVolume.reduce((s, v) => s + v.sets, 0);
-  const targetWeeklySets = weeklyVolume.reduce((s, v) => s + v.targetSets, 0);
   return {
     recentWorkouts,
     weeklyVolume,
     muscleGroups,
-    lastWorkoutDate: sorted[0] ? relativeLabel(sorted[0].date) : "No workout yet",
+    lastWorkoutDate: sorted[0] ? relativeLabel(sorted[0].date) : i18n.t("coach.common.noWorkoutYet"),
     totalWeeklySets,
     targetWeeklySets,
   };
 }
 
 export default function AIWorkoutCoachScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
-  const { colors, radius } = useAppTheme();
   const [data, setData] = useState<WorkoutData | null>(null);
   const [insight, setInsight] = useState<WorkoutCoachInsight | null>(null);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [timestamp, setTimestamp] = useState("Not analyzed yet");
-  const defaultWorkoutData = useMemo(() => buildWorkoutDataFromHistory([]), []);
+  const [timestamp, setTimestamp] = useState(t("coach.workout.notAnalyzed"));
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
+  const loadingDataRef = useRef(false);
+  const cacheHydratedRef = useRef(false);
+  const defaultWorkoutData = useMemo(() => buildWorkoutDataFromHistory([], onboardingData), [onboardingData]);
 
   const loadWorkoutData = useCallback(async () => {
+    if (loadingDataRef.current) return;
+    loadingDataRef.current = true;
     try {
       setDataLoading(true);
       setDataError(null);
-      const workoutData = await getWorkoutCoachData(14);
+      const [workoutData, onboardingRes] = await Promise.all([
+        getWorkoutCoachData(14),
+        fetchOnboardingMe().catch(() => null),
+      ]);
+      setOnboardingData(onboardingRes?.onboarding ?? null);
       setData(workoutData);
     } catch (e1) {
       try {
-        const historyRes = await getWorkoutHistory(24 * 14);
-        const fallbackData = buildWorkoutDataFromHistory(Array.isArray(historyRes?.items) ? historyRes.items : []);
+        const [historyRes, onboardingRes] = await Promise.all([
+          getWorkoutHistory(24 * 14),
+          fetchOnboardingMe().catch(() => null),
+        ]);
+        const nextOnboarding = onboardingRes?.onboarding ?? null;
+        setOnboardingData(nextOnboarding);
+        const fallbackData = buildWorkoutDataFromHistory(Array.isArray(historyRes?.items) ? historyRes.items : [], nextOnboarding);
         setData(fallbackData);
-        setDataError("Using history fallback data");
+        setDataError(t("coach.workout.usingHistoryFallback"));
       } catch (e2) {
-        setData(defaultWorkoutData);
-        const m1 = e1 instanceof Error ? e1.message : "Could not load workout data";
-        const m2 = e2 instanceof Error ? e2.message : "History fallback failed";
-        setDataError(`${m1}. ${m2}. Showing local default view.`);
+        setData(buildWorkoutDataFromHistory([], null));
+        const m1 = e1 instanceof Error ? e1.message : t("coach.workout.couldNotLoadData");
+        const m2 = e2 instanceof Error ? e2.message : t("coach.workout.historyFallbackFailed");
+        setDataError(t("coach.workout.localDefaultView", { first: m1, second: m2 }));
       }
     } finally {
       setDataLoading(false);
+      loadingDataRef.current = false;
     }
-  }, [defaultWorkoutData]);
-
-  useEffect(() => {
-    void loadWorkoutData();
-  }, [loadWorkoutData]);
+  }, [t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -186,37 +199,39 @@ export default function AIWorkoutCoachScreen() {
 
   const fetchInsight = useCallback(async () => {
     if (!data) {
-      setError("Workout data unavailable. Please retry loading data first.");
+      setError(t("coach.workout.dataUnavailable"));
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const next = await getWorkoutCoachInsight(data);
+      const next = await getWorkoutCoachInsight(data, onboardingData);
       setInsight(next);
       setTimestamp(formatTimestamp());
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(next));
     } catch (e) {
-      const fallback = getFallbackInsight(data);
+      const fallback = getFallbackInsight(data, onboardingData);
       setInsight(fallback);
-      setTimestamp("Offline estimate");
-      setError(e instanceof Error ? `${e.message}. Showing fallback insight.` : "Could not reach AI. Showing fallback insight.");
+      setTimestamp(t("coach.workout.offlineEstimate"));
+      setError(e instanceof Error ? t("coach.workout.fallbackInsight", { message: e.message }) : t("coach.workout.couldNotReachAi"));
     } finally {
       setLoading(false);
     }
-  }, [data]);
+  }, [data, onboardingData, t]);
 
   useEffect(() => {
+    if (cacheHydratedRef.current) return;
+    cacheHydratedRef.current = true;
     let cancelled = false;
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(CACHE_KEY);
         if (cancelled || !raw) return;
         const parsed = JSON.parse(raw) as WorkoutCoachInsight;
-        const normalized = normalizeWorkoutCoachResponse(parsed, defaultWorkoutData);
+        const normalized = normalizeWorkoutCoachResponse(parsed, defaultWorkoutData, onboardingData);
         if (normalized.insightText) {
           setInsight(normalized);
-          setTimestamp("From previous session");
+          setTimestamp(t("coach.workout.previousSession"));
         }
       } catch {
         // ignore cache parsing failures
@@ -225,7 +240,7 @@ export default function AIWorkoutCoachScreen() {
     return () => {
       cancelled = true;
     };
-  }, [defaultWorkoutData]);
+  }, [defaultWorkoutData, onboardingData, t]);
 
   const coachingTips = useMemo((): DynamicCoachingTip[] => {
     if (insight?.coachingTips?.length) return insight.coachingTips;
@@ -235,122 +250,106 @@ export default function AIWorkoutCoachScreen() {
   }, [insight, data, defaultWorkoutData]);
 
   return (
-    <ScreenContainer>
+    <ScreenContainer bg={WC_COLORS.SCREEN_BG} contentStyle={styles.screenContent}>
       <View style={styles.topHeader}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={[styles.backBtn, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.md }]}
-        >
-          <Text style={[styles.backTxt, { color: colors.text }]}>←</Text>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={18} color={WC_COLORS.TEXT} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>AI Workout Coach</Text>
+        <Text style={styles.headerTitle}>{t("coach.workout.title")}</Text>
+        <Pressable style={[styles.headerRefresh, (loading || dataLoading) && styles.disabled]} onPress={() => void fetchInsight()} disabled={loading || dataLoading}>
+          {loading || dataLoading ? (
+            <ActivityIndicator size="small" color={WC_COLORS.PURPLE_MID} />
+          ) : (
+            <Ionicons name="refresh" size={13} color={WC_COLORS.PURPLE_MID} />
+          )}
+          <Text style={styles.headerRefreshText}>{t("coach.common.refresh")}</Text>
+        </Pressable>
+        <View style={styles.onlineDot} />
       </View>
       <View>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg },
-          ]}
-        >
-          <LinearGradient colors={[CARD_ACCENTS.insight, `${CARD_ACCENTS.insight}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardAccent} />
-          <View style={styles.cardHeader}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarTxt}>🏋️</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.title, { color: colors.text }]}>Workout AI coach</Text>
-              <Text style={[styles.sub, { color: colors.muted }]}>{timestamp}</Text>
-            </View>
-            <View style={styles.liveWrap}>
-              <View style={styles.liveDot} />
-            </View>
-          </View>
-
+        <View style={styles.heroCard}>
+          <View style={styles.heroCircleOne} />
+          <View style={styles.heroCircleTwo} />
           {loading && !insight ? (
             <View style={styles.loadingBox}>
-              <ActivityIndicator color={WC_COLORS.green} />
-              <Text style={[styles.loadingText, { color: colors.muted }]}>Building your workout plan...</Text>
+              <ActivityIndicator color={WC_COLORS.GOLD} />
+              <Text style={styles.loadingText}>{t("coach.workout.buildingPlan")}</Text>
             </View>
           ) : null}
 
           {insight ? (
             <>
-              <CircularScore
-                score={insight.readinessScore}
-                label={insight.readinessLabel}
-                subtitle={insight.readinessDescription}
-                pulseWhenHigh
-              />
-              <ReadinessRow insight={insight} hideGauge />
+              <View style={styles.heroScoreRow}>
+                <CircularScore
+                  score={insight.readinessScore}
+                  label=""
+                  size={90}
+                  pulseWhenHigh
+                  strokeColor={WC_COLORS.GOLD}
+                  trackColor="rgba(255,255,255,0.15)"
+                  textColor={WC_COLORS.GOLD}
+                />
+                <View style={styles.heroInfo}>
+                  <Text style={styles.heroLabel}>{insight.readinessLabel}</Text>
+                  <Text style={styles.heroSub}>{t("coach.workout.recoveryMode")}</Text>
+                  <View style={styles.heroStatsRow}>
+                    <View style={styles.heroStatTile}>
+                      <Text style={styles.heroStatValue}>{insight.weeklyProgress.completedSets}</Text>
+                      <Text style={styles.heroStatLabel}>{t("coach.workout.setsDone")}</Text>
+                    </View>
+                    <View style={styles.heroStatTile}>
+                      <Text style={[styles.heroStatValue, styles.heroStatGreen]}>{insight.weeklyProgress.percentComplete}%</Text>
+                      <Text style={styles.heroStatLabel}>{t("coach.workout.weekly")}</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
             </>
           ) : null}
 
           <InsightBubble
             loading={loading && !insight}
             insight={insight?.insightText ?? ""}
-            placeholder="Tap refresh to generate workout insight."
-            expandLinkColor={WC_COLORS.green}
+            placeholder={t("coach.workout.insightPlaceholder")}
+            expandLinkColor={WC_COLORS.GOLD}
+            backgroundColor="rgba(255,255,255,0.1)"
+            borderColor="transparent"
+            textColor="rgba(255,255,255,0.8)"
+            placeholderColor="rgba(255,255,255,0.6)"
+            lineHeight={17}
           />
 
+          {insight ? (
+            <View style={styles.readinessWrap}>
+              <ReadinessRow insight={insight} hideGauge />
+            </View>
+          ) : null}
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          {insight?.todaysPlan?.exercises?.length ? (
-            <View style={{ marginTop: 12 }}>
-              <TodaysWorkoutPlan plan={insight.todaysPlan} />
-            </View>
-          ) : null}
-
-          {insight?.weeklyProgress ? (
-            <View style={{ marginTop: 12 }}>
-              <WeeklyProgressBar
-                completed={insight.weeklyProgress.completedSets}
-                target={insight.weeklyProgress.targetSets}
-                percent={insight.weeklyProgress.percentComplete}
-                insight={insight.weeklyProgress.insight}
-              />
-            </View>
-          ) : null}
-
-          <Pressable
-            style={[styles.refreshBtn, { borderColor: colors.border, backgroundColor: colors.cardAlt }, loading && { opacity: 0.6 }]}
-            onPress={() => void fetchInsight()}
-            disabled={loading || dataLoading}
-          >
-            <Text style={[styles.refreshText, { color: colors.text }]}>
-              {dataLoading ? "Loading your workout data..." : loading ? "Analyzing..." : "↻ Refresh analysis"}
-            </Text>
-          </Pressable>
         </View>
 
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg },
-          ]}
-        >
-          <LinearGradient colors={[CARD_ACCENTS.recovery, `${CARD_ACCENTS.recovery}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardAccent} />
+        {insight?.weeklyProgress ? (
+          <View style={styles.sectionGap}>
+            <WeeklyProgressBar
+              completed={insight.weeklyProgress.completedSets}
+              target={insight.weeklyProgress.targetSets}
+              percent={insight.weeklyProgress.percentComplete}
+              insight={insight.weeklyProgress.insight}
+            />
+          </View>
+        ) : null}
+
+        <View style={styles.sectionGap}>
           <MuscleRecoveryMap muscles={data?.muscleGroups ?? []} />
         </View>
 
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg },
-          ]}
-        >
-          <LinearGradient colors={[CARD_ACCENTS.volume, `${CARD_ACCENTS.volume}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardAccent} />
+        <View style={styles.sectionGap}>
           <WeeklyVolumeLoad volumes={data?.weeklyVolume ?? []} />
         </View>
 
         {insight?.recoveryTips?.length ? (
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg },
-            ]}
-          >
-            <LinearGradient colors={[CARD_ACCENTS.tips, `${CARD_ACCENTS.tips}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardAccent} />
-            <Text style={[styles.sectionLabel, { color: WC_COLORS.green }]}>RECOVERY TIPS</Text>
+          <View style={styles.recoverySection}>
+            <Text style={styles.sectionLabel}>{t("coach.workout.recoveryTips")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tipsRow}>
               {insight.recoveryTips.map((item, i) => (
                 <RecoveryTipCard key={`${item.title}-${i}`} {...item} />
@@ -359,13 +358,7 @@ export default function AIWorkoutCoachScreen() {
           </View>
         ) : null}
 
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg },
-          ]}
-        >
-          <LinearGradient colors={[CARD_ACCENTS.tips, `${CARD_ACCENTS.tips}99`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardAccent} />
+        <View style={styles.tipsSection}>
           <CoachingTips tips={coachingTips} loading={loading} />
         </View>
       </View>
@@ -374,75 +367,66 @@ export default function AIWorkoutCoachScreen() {
 }
 
 const styles = StyleSheet.create({
-  topHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  screenContent: { paddingHorizontal: 18, paddingTop: 16 },
+  topHeader: { flexDirection: "row", alignItems: "center", paddingBottom: 10, gap: 8 },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 99,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     borderWidth: 1,
+    borderColor: WC_COLORS.BORDER,
+    backgroundColor: WC_COLORS.BG,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
   },
-  backTxt: { fontSize: 20 },
-  headerTitle: { fontSize: 20, fontWeight: "600" },
-  card: {
-    borderWidth: 1,
-    padding: 16,
+  headerTitle: { flex: 1, color: WC_COLORS.TEXT, fontSize: 16, fontWeight: "800" },
+  headerRefresh: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: WC_COLORS.PURPLE_LIGHT, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 7 },
+  headerRefreshText: { color: WC_COLORS.PURPLE_MID, fontSize: 11, fontWeight: "800" },
+  onlineDot: { width: 8, height: 8, borderRadius: 99, backgroundColor: WC_COLORS.GREEN },
+  heroCard: {
+    position: "relative",
+    backgroundColor: WC_COLORS.PURPLE,
+    borderRadius: 22,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
     marginBottom: 12,
     overflow: "hidden",
   },
-  cardAccent: {
-    height: 3,
-    width: "100%",
-    borderRadius: 2,
-    marginBottom: 12,
-  },
-  cardHeader: {
+  heroCircleOne: { position: "absolute", width: 160, height: 160, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.05)", top: -58, right: -40 },
+  heroCircleTwo: { position: "absolute", width: 112, height: 112, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.04)", bottom: -44, left: -24 },
+  heroScoreRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 12,
+    gap: 16,
+    marginBottom: 16,
   },
-  tipsRow: { paddingRight: 4 },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: WC_COLORS.tealLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarTxt: { fontSize: 16 },
-  title: { fontSize: 15, fontWeight: "700" },
-  sub: { marginTop: 2, fontSize: 12 },
-  liveWrap: {
-    width: 18,
-    alignItems: "flex-end",
-  },
-  liveDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 99,
-    backgroundColor: "#639922",
+  heroInfo: { flex: 1 },
+  heroLabel: { color: WC_COLORS.WHITE, fontSize: 18, fontWeight: "800" },
+  heroSub: { color: "rgba(255,255,255,0.6)", fontSize: 11, marginTop: 3 },
+  heroStatsRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+  heroStatTile: { flex: 1, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 },
+  heroStatValue: { color: WC_COLORS.WHITE, fontSize: 14, fontWeight: "800" },
+  heroStatGreen: { color: "#A8F0C8" },
+  heroStatLabel: { color: "rgba(255,255,255,0.55)", fontSize: 9, marginTop: 1 },
+  readinessWrap: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 13,
+    marginTop: 10,
   },
   error: {
     fontSize: 12,
-    color: "#FCA5A5",
-    marginBottom: 10,
+    color: WC_COLORS.ORANGE_LIGHT,
+    marginTop: 10,
     lineHeight: 18,
   },
-  refreshBtn: {
-    minHeight: 44,
-    borderWidth: 1,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  refreshText: { fontSize: 13, fontWeight: "600" },
-  emptyTitle: { fontSize: 15, fontWeight: "700" },
-  emptySub: { marginTop: 6, fontSize: 12, lineHeight: 18 },
+  sectionGap: { marginBottom: 12 },
+  recoverySection: { marginBottom: 12 },
+  tipsSection: { marginBottom: 12 },
+  tipsRow: { gap: 10, paddingBottom: 4 },
+  disabled: { opacity: 0.6 },
   loadingBox: { alignItems: "center", paddingVertical: 20, gap: 8 },
-  loadingText: { fontSize: 12 },
-  sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 0.8, marginBottom: 10 },
+  loadingText: { color: "rgba(255,255,255,0.7)", fontSize: 12 },
+  sectionLabel: { color: WC_COLORS.MUTED, fontSize: 10, fontWeight: "800", letterSpacing: 0.8, marginBottom: 10, textTransform: "uppercase" },
 });

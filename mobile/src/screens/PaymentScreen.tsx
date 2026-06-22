@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { auth } from "../services/authService";
 import { devActivatePlan } from "../api/payments";
 import {
@@ -26,9 +26,6 @@ import {
   type CheckoutPlan,
 } from "../constants/plans";
 import type { ProfileStackParamList } from "../navigation/types";
-import { useAppTheme } from "../theme";
-import { planTierTheme } from "../theme/planTierTheme";
-import type { PlanTier } from "../types/subscription";
 import {
   buildRazorpayWebViewHtml,
   completePayment,
@@ -39,18 +36,18 @@ import {
 import { getProfile } from "../api/user";
 import axios from "axios";
 
-const theme = {
-  bg: "#0a0f0d",
-  surface: "rgba(255,255,255,0.03)",
-  surfaceBorder: "rgba(255,255,255,0.07)",
-  accent: "#2ECC9A",
-  accentFaint: "rgba(46,204,154,0.1)",
-  accentBorder: "rgba(46,204,154,0.25)",
-  textPrimary: "#e8f0eb",
-  textMuted: "rgba(232,240,235,0.5)",
-  textDim: "rgba(232,240,235,0.25)",
-  error: "#e24b4a",
-};
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const ORANGE = "#D85A30";
+const GOLD = "#FFD700";
+const GOLD_LIGHT = "#FFFBEA";
+const AMBER_TEXT = "#C08000";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
 
 type PaymentMethod = "razorpay" | "gpay" | "upi";
 
@@ -92,12 +89,10 @@ function TrustItem({
 }
 
 export function PaymentScreen({ route, navigation }: Props) {
+  const { t } = useTranslation();
   const { planId, isYearly, displayPrice } = route.params;
-  const { colors: themeColors } = useAppTheme();
   const plan: CheckoutPlan = useMemo(() => planToCheckout(getPlanById(planId)), [planId]);
   const billingCycle = isYearly ? "yearly" : "monthly";
-  const tier: PlanTier = plan.name;
-  const tierTheme = useMemo(() => planTierTheme(tier, themeColors), [tier, themeColors]);
 
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -115,6 +110,8 @@ export function PaymentScreen({ route, navigation }: Props) {
   const gst = Math.round(afterDisc * 0.18);
   const totalDue = afterDisc + gst;
   const yearlySavings = Math.round(plan.priceMonthly * 12 * 0.2);
+  const featurePreview = plan.features.slice(0, 3);
+  const remainingFeatureCount = Math.max(0, plan.features.length - featurePreview.length);
 
   useEffect(() => {
     void (async () => {
@@ -142,7 +139,7 @@ export function PaymentScreen({ route, navigation }: Props) {
       setCouponError("");
     } else {
       setDiscount(0);
-      setCouponError("Invalid promo code");
+      setCouponError(t("payment.checkout.invalidPromo"));
     }
   };
 
@@ -180,12 +177,12 @@ export function PaymentScreen({ route, navigation }: Props) {
     } catch (e: unknown) {
       if (axios.isAxiosError(e) && e.response?.status === 503 && __DEV__) {
         Alert.alert(
-          "Razorpay not configured",
-          "Activate plan in development mode?",
+          t("payment.checkout.razorpayNotConfigured"),
+          t("payment.checkout.activateDev"),
           [
-            { text: "Cancel", style: "cancel" },
+            { text: t("common.cancel"), style: "cancel" },
             {
-              text: "Activate (dev)",
+              text: t("payment.checkout.activateDevAction"),
               onPress: () => {
                 void (async () => {
                   try {
@@ -199,7 +196,7 @@ export function PaymentScreen({ route, navigation }: Props) {
                       paymentId: String(res.payment_id ?? "dev"),
                     });
                   } catch (err) {
-                    Alert.alert("Error", err instanceof Error ? err.message : "Activation failed");
+                    Alert.alert(t("common.error"), err instanceof Error ? err.message : t("payment.checkout.activationFailed"));
                   }
                 })();
               },
@@ -210,7 +207,7 @@ export function PaymentScreen({ route, navigation }: Props) {
       }
       const code = e && typeof e === "object" && "code" in e ? (e as { code?: number }).code : undefined;
       if (code === 2) return;
-      Alert.alert("Payment failed", e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      Alert.alert(t("payment.checkout.paymentFailed"), e instanceof Error ? e.message : t("payment.checkout.genericFailure"));
     } finally {
       setPaying(false);
     }
@@ -229,12 +226,12 @@ export function PaymentScreen({ route, navigation }: Props) {
       setWebViewHtml(null);
       if (!data.ok) {
         if (data.code !== 2) {
-          Alert.alert("Payment failed", data.message ?? "Payment was not completed");
+          Alert.alert(t("payment.checkout.paymentFailed"), data.message ?? t("payment.checkout.notCompleted"));
         }
         return;
       }
       if (!data.razorpay_payment_id || !data.razorpay_order_id || !data.razorpay_signature) {
-        Alert.alert("Payment failed", "Incomplete payment response");
+        Alert.alert(t("payment.checkout.paymentFailed"), t("payment.checkout.incompleteResponse"));
         return;
       }
       void finishPayment({
@@ -242,7 +239,7 @@ export function PaymentScreen({ route, navigation }: Props) {
         razorpay_order_id: data.razorpay_order_id,
         razorpay_signature: data.razorpay_signature,
       }).catch((err) => {
-        Alert.alert("Error", err instanceof Error ? err.message : "Could not verify payment");
+        Alert.alert(t("common.error"), err instanceof Error ? err.message : t("payment.checkout.verifyFailed"));
       });
     } catch {
       setWebViewHtml(null);
@@ -253,91 +250,85 @@ export function PaymentScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityLabel="Go back">
-            <Ionicons name="arrow-back" size={18} color={theme.accent} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityLabel={t("payment.checkout.goBack")}>
+            <Ionicons name="arrow-back" size={18} color={TEXT} />
           </TouchableOpacity>
           <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Checkout</Text>
-            <Text style={styles.headerSub}>NexRep {plan.name}</Text>
+            <Text style={styles.headerTitle}>{t("payment.checkout.title")}</Text>
+            <Text style={styles.headerSub}>{t("payment.checkout.planSubtitle", { planName: plan.name })}</Text>
           </View>
           <View style={styles.secureTag}>
-            <Ionicons name="lock-closed" size={12} color="rgba(46,204,154,0.7)" />
-            <Text style={styles.secureText}>Secure</Text>
+            <Ionicons name="lock-closed" size={12} color={GREEN} />
+            <Text style={styles.secureText}>{t("payment.checkout.secure")}</Text>
           </View>
         </View>
 
-        <View style={[styles.planBanner, { backgroundColor: tierTheme.heroBg, borderColor: tierTheme.heroBorder }]}>
-          <LinearGradient
-            colors={[tierTheme.accentSoft, "transparent"]}
-            start={{ x: 1, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
+        <View style={styles.planBanner}>
           <View style={styles.planRow}>
             <View style={{ flex: 1 }}>
-              <View style={[styles.planBadge, { backgroundColor: tierTheme.accentSoft }]}>
-                <Text style={[styles.planBadgeText, { color: tierTheme.accent }]}>{plan.name} PLAN</Text>
+              <View style={styles.planBadge}>
+                <Text style={styles.planBadgeText}>{t("payment.checkout.planBadge", { planName: plan.name })}</Text>
               </View>
-              <Text style={styles.planHeadline}>{plan.headline}</Text>
-              <Text style={styles.planDesc}>{plan.desc}</Text>
+              <Text style={styles.planDesc} numberOfLines={1}>{plan.desc}</Text>
             </View>
             <View style={styles.priceBlock}>
-              <Text style={[styles.priceAmount, { color: tierTheme.accent }]}>
+              <Text style={styles.priceAmount}>
                 ₹{isYearly ? getPlanById(planId).yearlyPrice : plan.priceMonthly}
               </Text>
-              <Text style={styles.pricePeriod}>{isYearly ? "per month · billed yearly" : "per month"}</Text>
+              <Text style={styles.pricePeriod}>{isYearly ? t("payment.checkout.perMonthYearly") : t("payment.checkout.perMonth")}</Text>
             </View>
           </View>
           {!isYearly ? (
-            <View style={[styles.savingsPill, { borderColor: tierTheme.accent, backgroundColor: tierTheme.accentSoft }]}>
-              <Ionicons name="flash" size={13} color={tierTheme.accent} />
-              <Text style={[styles.savingsText, { color: tierTheme.accent }]}>Switch to yearly and save</Text>
-              <Text style={[styles.savingsAmount, { color: tierTheme.accent }]}>₹{yearlySavings}/yr</Text>
+            <View style={styles.savingsPill}>
+              <Ionicons name="flash" size={13} color={GREEN} />
+              <Text style={styles.savingsText}>{t("payment.checkout.yearlySavings", { amount: yearlySavings })}</Text>
             </View>
           ) : null}
         </View>
 
         <View style={styles.featureCard}>
-          {plan.features.map((feat, i) => (
-            <View key={feat} style={[styles.featRow, i < plan.features.length - 1 && styles.featBorder]}>
-              <View style={[styles.featIconBox, { backgroundColor: tierTheme.accentSoft }]}>
-                <Ionicons name={featureIcon(feat)} size={16} color={tierTheme.accent} />
+          {featurePreview.map((feat, i) => (
+            <View key={feat} style={[styles.featRow, i < featurePreview.length - 1 && styles.featBorder]}>
+              <View style={styles.featIconBox}>
+                <Ionicons name={featureIcon(feat)} size={16} color={GREEN} />
               </View>
               <Text style={styles.featText}>{feat}</Text>
-              <Ionicons name="checkmark-circle" size={14} color={tierTheme.accent} />
+              <Ionicons name="checkmark-circle" size={14} color={GREEN} />
             </View>
           ))}
+          {remainingFeatureCount > 0 ? (
+            <Text style={styles.featureMoreText}>{t("payment.checkout.moreBenefits", { count: remainingFeatureCount })}</Text>
+          ) : null}
         </View>
 
         <View style={styles.couponRow}>
           <TextInput
             style={styles.couponInput}
-            placeholder="Enter promo code"
-            placeholderTextColor={theme.textDim}
+            placeholder={t("payment.checkout.promoPlaceholder")}
+            placeholderTextColor={MUTED}
             value={couponCode}
             onChangeText={setCouponCode}
             autoCapitalize="characters"
           />
           <TouchableOpacity
-            style={[styles.couponBtn, { backgroundColor: tierTheme.btnPrimaryBg, borderColor: tierTheme.btnPrimaryBorder }]}
+            style={styles.couponBtn}
             onPress={handleApplyCoupon}
           >
-            <Text style={[styles.couponBtnText, { color: tierTheme.btnPrimaryText }]}>Apply</Text>
+            <Text style={styles.couponBtnText}>{t("payment.checkout.apply")}</Text>
           </TouchableOpacity>
         </View>
         {couponError ? <Text style={styles.couponError}>{couponError}</Text> : null}
         {discount > 0 ? (
-          <Text style={styles.couponSuccess}>Coupon applied! {Math.round(discount * 100)}% off</Text>
+          <Text style={styles.couponSuccess}>{t("payment.checkout.couponApplied", { percent: Math.round(discount * 100) })}</Text>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Payment method</Text>
+        <Text style={styles.sectionTitle}>{t("payment.checkout.paymentMethod")}</Text>
         <View style={styles.pmGrid}>
           {(
             [
-              { id: "razorpay" as const, label: "Razorpay", icon: "card-outline" as const },
-              { id: "gpay" as const, label: "Google Pay", icon: "logo-google" as const },
-              { id: "upi" as const, label: "UPI", icon: "phone-portrait-outline" as const },
+              { id: "razorpay" as const, label: t("payment.checkout.razorpay"), icon: "card-outline" as const },
+              { id: "gpay" as const, label: t("payment.checkout.googlePay"), icon: "logo-google" as const },
+              { id: "upi" as const, label: t("payment.checkout.upi"), icon: "phone-portrait-outline" as const },
             ] as const
           ).map((pm) => (
             <Pressable
@@ -345,12 +336,11 @@ export function PaymentScreen({ route, navigation }: Props) {
               style={[
                 styles.pmTile,
                 selectedPm === pm.id && styles.pmTileActive,
-                selectedPm === pm.id && { borderColor: tierTheme.accent, backgroundColor: tierTheme.accentSoft },
               ]}
               onPress={() => setSelectedPm(pm.id)}
             >
-              <Ionicons name={pm.icon} size={20} color={selectedPm === pm.id ? tierTheme.accent : theme.textMuted} />
-              <Text style={[styles.pmLabel, selectedPm === pm.id && { color: tierTheme.accent }]}>{pm.label}</Text>
+              <Ionicons name={pm.icon} size={20} color={selectedPm === pm.id ? GREEN : MUTED} />
+              <Text style={[styles.pmLabel, selectedPm === pm.id && styles.pmLabelActive]}>{pm.label}</Text>
             </Pressable>
           ))}
         </View>
@@ -358,66 +348,66 @@ export function PaymentScreen({ route, navigation }: Props) {
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>
-              {plan.name} Plan ({billingCycle})
+              {t("payment.checkout.planSummary", { planName: plan.name, billingCycle })}
             </Text>
             <Text style={styles.summaryValue}>₹{basePrice}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Discount</Text>
+            <Text style={styles.summaryLabel}>{t("payment.checkout.discount")}</Text>
             <Text style={[styles.summaryValue, discountAmt > 0 && styles.discountValue]}>
               {discountAmt > 0 ? `-₹${discountAmt}` : "—"}
             </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>GST (18%)</Text>
+            <Text style={styles.summaryLabel}>{t("payment.checkout.gst")}</Text>
             <Text style={styles.summaryValue}>₹{gst}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
-            <Text style={styles.totalLabel}>Total due today</Text>
-            <Text style={[styles.totalValue, { color: tierTheme.accent }]}>₹{totalDue}</Text>
+            <Text style={styles.totalLabel}>{t("payment.checkout.totalDue")}</Text>
+            <Text style={styles.totalValue}>₹{totalDue}</Text>
           </View>
-          <Text style={styles.finePrint}>* GST included. Billed {billingCycle}. Cancel anytime.</Text>
+          <Text style={styles.finePrint}>{t("payment.checkout.finePrint", { billingCycle })}</Text>
         </View>
 
         <TouchableOpacity
-          style={[styles.ctaBtn, { backgroundColor: tierTheme.btnPrimaryBg }]}
+          style={styles.ctaBtn}
           onPress={() => void handlePay()}
           disabled={paying}
         >
           {paying ? (
-            <ActivityIndicator color={tierTheme.btnPrimaryText} />
+            <ActivityIndicator color={WHITE} />
           ) : (
             <>
-              <Ionicons name="lock-closed" size={18} color={tierTheme.btnPrimaryText} />
-              <Text style={[styles.ctaBtnText, { color: tierTheme.btnPrimaryText }]}>
-                Pay ₹{totalDue} · Start {plan.name}
+              <Ionicons name="lock-closed" size={18} color={WHITE} />
+              <Text style={styles.ctaBtnText}>
+                {t("payment.checkout.payCta", { amount: totalDue, planName: plan.name })}
               </Text>
             </>
           )}
         </TouchableOpacity>
 
         <View style={styles.trustRow}>
-          <TrustItem icon="shield-checkmark-outline" label="Secure checkout" iconColor={tierTheme.accent} />
-          <TrustItem icon="refresh-outline" label="Cancel anytime" iconColor={tierTheme.accent} />
-          <TrustItem icon="time-outline" label="7-day trial" iconColor={tierTheme.accent} />
+          <TrustItem icon="shield-checkmark-outline" label={t("payment.checkout.secureCheckout")} iconColor={GREEN} />
+          <TrustItem icon="refresh-outline" label={t("payment.checkout.cancelAnytime")} iconColor={GREEN} />
+          <TrustItem icon="time-outline" label={t("payment.checkout.trial")} iconColor={GREEN} />
         </View>
-        <Text style={styles.trialNote}>7-day free trial · No charge until trial ends</Text>
+        <Text style={styles.trialNote}>{t("payment.checkout.trialNote")}</Text>
       </ScrollView>
 
       <Modal visible={Boolean(webViewHtml)} animationType="slide" onRequestClose={() => setWebViewHtml(null)}>
         <SafeAreaView style={styles.webModal}>
           <View style={styles.webModalHeader}>
-            <Text style={styles.webModalTitle}>Secure payment</Text>
+            <Text style={styles.webModalTitle}>{t("payment.checkout.securePayment")}</Text>
             <Pressable onPress={() => setWebViewHtml(null)}>
-              <Ionicons name="close" size={24} color={theme.textPrimary} />
+              <Ionicons name="close" size={24} color={TEXT} />
             </Pressable>
           </View>
           {webViewHtml ? (
             <WebView
               source={{ html: webViewHtml }}
               onMessage={(e) => onWebViewMessage(e.nativeEvent.data)}
-              style={{ flex: 1, backgroundColor: theme.bg }}
+              style={{ flex: 1, backgroundColor: SCREEN_BG }}
               javaScriptEnabled
               domStorageEnabled
             />
@@ -429,27 +419,27 @@ export function PaymentScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.bg },
+  safe: { flex: 1, backgroundColor: SCREEN_BG },
   scroll: { padding: 16, paddingBottom: 40 },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 14,
     gap: 10,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 9,
     borderWidth: 1,
-    borderColor: theme.accentBorder,
-    backgroundColor: theme.accentFaint,
+    borderColor: BORDER,
+    backgroundColor: BG,
     alignItems: "center",
     justifyContent: "center",
   },
   headerText: { flex: 1 },
-  headerTitle: { color: theme.textPrimary, fontSize: 20, fontWeight: "700" },
-  headerSub: { color: theme.textMuted, fontSize: 12, marginTop: 2 },
+  headerTitle: { color: TEXT, fontSize: 14, fontWeight: "900" },
+  headerSub: { color: MUTED, fontSize: 10, marginTop: 2, fontWeight: "700" },
   secureTag: {
     flexDirection: "row",
     alignItems: "center",
@@ -457,14 +447,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: theme.accentFaint,
+    backgroundColor: GREEN_LIGHT,
   },
-  secureText: { color: "rgba(46,204,154,0.7)", fontSize: 11, fontWeight: "600" },
+  secureText: { color: GREEN, fontSize: 11, fontWeight: "800" },
   planBanner: {
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.surfaceBorder,
-    backgroundColor: theme.surface,
+    backgroundColor: GREEN_LIGHT,
     padding: 16,
     marginBottom: 14,
     overflow: "hidden",
@@ -472,36 +460,34 @@ const styles = StyleSheet.create({
   planRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   planBadge: {
     alignSelf: "flex-start",
-    backgroundColor: theme.accentFaint,
+    backgroundColor: GREEN,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
     marginBottom: 8,
   },
-  planBadgeText: { color: theme.accent, fontSize: 10, fontWeight: "700", letterSpacing: 0.8 },
-  planHeadline: { color: theme.textPrimary, fontSize: 18, fontWeight: "700" },
-  planDesc: { color: theme.textMuted, fontSize: 12, marginTop: 4 },
+  planBadgeText: { color: WHITE, fontSize: 10, fontWeight: "900", letterSpacing: 0.8 },
+  planHeadline: { color: TEXT, fontSize: 18, fontWeight: "700" },
+  planDesc: { color: TEXT, opacity: 0.62, fontSize: 12, marginTop: 4 },
   priceBlock: { alignItems: "flex-end" },
-  priceAmount: { color: theme.accent, fontSize: 28, fontWeight: "800" },
-  pricePeriod: { color: theme.textMuted, fontSize: 11 },
+  priceAmount: { color: TEXT, fontSize: 15, fontWeight: "900" },
+  pricePeriod: { color: MUTED, fontSize: 10, textAlign: "right" },
   savingsPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     marginTop: 12,
     alignSelf: "flex-start",
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderRadius: 99,
+    paddingVertical: 2,
   },
-  savingsText: { color: theme.textMuted, fontSize: 11 },
-  savingsAmount: { color: theme.accent, fontSize: 11, fontWeight: "700" },
+  savingsText: { color: GREEN, fontSize: 11, fontWeight: "900" },
+  savingsAmount: { color: GREEN, fontSize: 11, fontWeight: "700" },
   featureCard: {
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.surfaceBorder,
-    backgroundColor: theme.surface,
+    borderColor: BORDER,
+    backgroundColor: WHITE,
     marginBottom: 14,
     overflow: "hidden",
   },
@@ -512,44 +498,43 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
-  featBorder: { borderBottomWidth: 1, borderBottomColor: theme.surfaceBorder },
+  featBorder: { borderBottomWidth: 1, borderBottomColor: BORDER },
+  featureMoreText: { color: MUTED, fontSize: 12, paddingHorizontal: 14, paddingBottom: 12, fontWeight: "700" },
   featIconBox: {
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: theme.accentFaint,
+    backgroundColor: GREEN_LIGHT,
     alignItems: "center",
     justifyContent: "center",
   },
-  featText: { flex: 1, color: theme.textPrimary, fontSize: 13 },
+  featText: { flex: 1, color: TEXT, fontSize: 13, fontWeight: "700" },
   couponRow: { flexDirection: "row", gap: 8, marginBottom: 6 },
   couponInput: {
     flex: 1,
     height: 44,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.surfaceBorder,
-    backgroundColor: theme.surface,
+    borderColor: BORDER,
+    backgroundColor: WHITE,
     paddingHorizontal: 12,
-    color: theme.textPrimary,
+    color: TEXT,
     fontSize: 14,
   },
   couponBtn: {
     height: 44,
     paddingHorizontal: 16,
     borderRadius: 10,
-    backgroundColor: theme.accentFaint,
-    borderWidth: 1,
-    borderColor: theme.accentBorder,
+    backgroundColor: GREEN,
     justifyContent: "center",
   },
-  couponBtnText: { color: theme.accent, fontWeight: "700", fontSize: 13 },
-  couponError: { color: theme.error, fontSize: 12, marginBottom: 8 },
-  couponSuccess: { color: theme.accent, fontSize: 12, marginBottom: 12 },
+  couponBtnText: { color: WHITE, fontWeight: "900", fontSize: 13 },
+  couponError: { color: ORANGE, fontSize: 12, marginBottom: 8 },
+  couponSuccess: { color: GREEN, fontSize: 12, marginBottom: 12 },
   sectionTitle: {
-    color: theme.textMuted,
+    color: MUTED,
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "900",
     letterSpacing: 0.8,
     textTransform: "uppercase",
     marginBottom: 8,
@@ -562,54 +547,53 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.surfaceBorder,
-    backgroundColor: "transparent",
+    borderColor: BORDER,
+    backgroundColor: WHITE,
   },
   pmTileActive: {
-    borderColor: theme.accent,
-    backgroundColor: theme.accentFaint,
+    borderColor: GREEN,
+    borderWidth: 1.5,
+    backgroundColor: GREEN_LIGHT,
   },
-  pmLabel: { color: theme.textMuted, fontSize: 11, fontWeight: "600" },
-  pmLabelActive: { color: theme.accent },
+  pmLabel: { color: MUTED, fontSize: 11, fontWeight: "800" },
+  pmLabelActive: { color: GREEN },
   summaryCard: {
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.surfaceBorder,
-    backgroundColor: theme.surface,
+    backgroundColor: BG,
     padding: 14,
     marginBottom: 16,
   },
   summaryRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  summaryLabel: { color: theme.textMuted, fontSize: 13 },
-  summaryValue: { color: theme.textPrimary, fontSize: 13, fontWeight: "600" },
-  discountValue: { color: theme.accent },
-  divider: { height: 1, backgroundColor: theme.surfaceBorder, marginVertical: 8 },
-  totalLabel: { color: theme.textPrimary, fontSize: 15, fontWeight: "700" },
-  totalValue: { color: theme.accent, fontSize: 20, fontWeight: "800" },
-  finePrint: { color: theme.textDim, fontSize: 10, marginTop: 8, lineHeight: 14 },
+  summaryLabel: { color: MUTED, fontSize: 13 },
+  summaryValue: { color: TEXT, fontSize: 13, fontWeight: "800" },
+  discountValue: { color: GREEN },
+  divider: { height: 1, backgroundColor: BORDER, marginVertical: 8 },
+  totalLabel: { color: TEXT, fontSize: 15, fontWeight: "900" },
+  totalValue: { color: GREEN, fontSize: 20, fontWeight: "900" },
+  finePrint: { color: MUTED, fontSize: 10, marginTop: 8, lineHeight: 14 },
   ctaBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: theme.accent,
-    borderRadius: 12,
+    backgroundColor: GREEN,
+    borderRadius: 14,
     paddingVertical: 16,
     marginBottom: 14,
   },
-  ctaBtnText: { color: "#0a0f0d", fontSize: 16, fontWeight: "800" },
+  ctaBtnText: { color: WHITE, fontSize: 16, fontWeight: "900" },
   trustRow: { flexDirection: "row", justifyContent: "space-between", gap: 8, marginBottom: 8 },
-  trustItem: { flex: 1, alignItems: "center", gap: 4 },
-  trustLabel: { color: theme.textMuted, fontSize: 10, textAlign: "center" },
-  trialNote: { color: theme.textDim, fontSize: 11, textAlign: "center" },
-  webModal: { flex: 1, backgroundColor: theme.bg },
+  trustItem: { flex: 1, alignItems: "center", gap: 4, backgroundColor: BG, borderRadius: 12, paddingVertical: 8 },
+  trustLabel: { color: MUTED, fontSize: 9, textAlign: "center", fontWeight: "800" },
+  trialNote: { color: MUTED, fontSize: 11, textAlign: "center" },
+  webModal: { flex: 1, backgroundColor: SCREEN_BG },
   webModalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: theme.surfaceBorder,
+    borderBottomColor: BORDER,
   },
-  webModalTitle: { color: theme.textPrimary, fontSize: 16, fontWeight: "600" },
+  webModalTitle: { color: TEXT, fontSize: 16, fontWeight: "900" },
 });

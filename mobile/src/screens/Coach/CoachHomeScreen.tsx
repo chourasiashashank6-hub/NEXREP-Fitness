@@ -6,9 +6,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 import ProGateModal from "../../components/ProGateModal";
 import { canAccess, getRequiredPlan } from "../../constants/featureTiers";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
@@ -25,11 +27,31 @@ type GateConfig = {
   accentColor: string;
 };
 
+const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
+const GREEN_STRIP = "#E8F5EE";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
+const BLUE = "#4A90D9";
+const BLUE_LIGHT = "#EEF4FB";
+const ORANGE = "#D85A30";
+const ORANGE_LIGHT = "#FFF1EE";
+const GOLD = "#FFD700";
+const AMBER_BG = "#FFF8E8";
+const AMBER_TEXT = "#B87500";
+const BG = "#F7F6F3";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
+const BORDER = "#ECEAE5";
+const SCREEN_BG = "#FFFFFF";
+
 const PLANNER_GATE_BYPASS_EMAILS = new Set(["shashank1@gmail.com"]);
 const PLANNER_GATE_BYPASS_USER_IDS = new Set(["2"]);
 const PLANNER_GATE_BYPASS_FEATURES = new Set(["meal_plan_generation", "workout_plan_generation"]);
 
 export default function CoachHomeScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
   const plan_id = useAuthStore((s) => s.plan_id) ?? "free";
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
@@ -70,425 +92,256 @@ export default function CoachHomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Hero header ────────────────────────────────────── */}
         <View style={styles.hero}>
+          <View style={styles.heroCircle} />
+          <Text style={styles.heroKicker}>{t("coach.home.heroKicker")}</Text>
           <Text style={styles.heroTitle}>
-            Your personal{"\n"}
-            <Text style={styles.heroTitleAccent}>AI coach</Text>
-            {" "}is ready.
+            {t("coach.home.heroTitle")} <Text style={styles.heroTitleAccent}>{t("coach.home.heroTitleAccent")}</Text>
           </Text>
-          <Text style={styles.heroSub}>
-            Real-time guidance on nutrition, workouts, and recovery —
-            all powered by your own data.
-          </Text>
+          <Text style={styles.heroSub}>{t("coach.home.heroSubtitle")}</Text>
           <View style={styles.trustRow}>
             <View style={styles.trustPill}>
-              <Text style={styles.trustPillText}>
-                🏃 <Text style={styles.trustPillBold}>50K+</Text> athletes
-              </Text>
+              <Text style={styles.trustPillText}>{t("coach.home.athletes")}</Text>
             </View>
             <View style={styles.trustPill}>
-              <Text style={styles.trustPillText}>
-                🧠 <Text style={styles.trustPillBold}>4 AI</Text> coaches
-              </Text>
+              <Text style={styles.trustPillText}>{t("coach.home.coachCount")}</Text>
             </View>
             <View style={styles.trustPill}>
-              <Text style={styles.trustPillText}>🔒 Pro plan</Text>
+              <Text style={styles.trustPillText}>{t("coach.home.proPlan")}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.body}>
-          {/* ── SECTION: Nutrition ─────────────────────────────── */}
           <View style={styles.sectionRow}>
-            <Text style={styles.sectionLabel}>NUTRITION</Text>
+            <Text style={styles.sectionLabel}>{t("coach.home.coaches")}</Text>
             <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>Pro feature</Text>
+              <Text style={styles.sectionBadgeText}>{t("coach.home.proFeature")}</Text>
             </View>
           </View>
 
-          {/* ── Card 1: AI Calorie Coach ───────────────────────── */}
           <TouchableOpacity
-            style={[styles.card, styles.cardTeal]}
+            style={styles.coachCard}
             onPress={() =>
               openOrGate(() => navigation.navigate("AICalorieCoach"), {
                 feature: "calorie_coach",
-                name: "AI Calorie Coach",
-                description:
-                  "Get daily AI insights based on what you actually ate. Your coach analyses your food log and tells you exactly what to adjust.",
+                name: t("coach.home.calorieCoach.name"),
+                description: t("coach.home.calorieCoach.gateDescription"),
                 emoji: "🥗",
                 accentColor: "#1d9e75",
               })
             }
             activeOpacity={0.85}
           >
-            <View style={[styles.accentBar, { backgroundColor: "#1d9e75" }]} />
-            <View style={styles.cardTop}>
-              <View style={[styles.iconWrap, styles.iconTeal]}>
-                <Text style={styles.iconEmoji}>🥗</Text>
+            <View style={styles.calorieStrip}>
+              <View style={styles.stripIconGreen}>
+                <Ionicons name="restaurant-outline" size={20} color={WHITE} />
               </View>
-              <View style={styles.badgeRow}>
-                <View style={styles.badgePro}>
-                  <Text style={styles.badgeProText}>PRO</Text>
+              <View style={styles.stripTextBlock}>
+                <View style={styles.titleBadgeRow}>
+                  <Text style={styles.calorieTitle}>{t("coach.home.calorieCoach.name")}</Text>
+                  <View style={styles.proBadgeGreen}>
+                    <Text style={styles.proBadgeText}>{t("coach.home.proBadge")}</Text>
+                  </View>
                 </View>
+                <Text style={styles.calorieSub}>{t("coach.home.calorieCoach.subtitle")}</Text>
               </View>
             </View>
-
-            <Text style={styles.cardTitle}>AI Calorie Coach</Text>
-            <Text style={styles.cardSub}>
-              Get daily AI insights based on what you actually ate —
-              not generic advice. Your coach analyses your food log
-              and tells you exactly what to adjust.
-            </Text>
-
-            <View style={styles.statRow}>
-              <View style={styles.stat}>
-                <Text style={[styles.statVal, { color: "#1d9e75" }]}>Daily</Text>
-                <Text style={styles.statLabel}>Fresh insights</Text>
+            <View style={styles.coachBody}>
+              <View style={styles.statRow}>
+                <StatTile label={t("coach.home.calorieCoach.daily")} sub={t("coach.home.calorieCoach.freshInsights")} color={GREEN} />
+                <StatTile label={t("coach.home.calorieCoach.auto")} sub={t("coach.home.calorieCoach.fromYourLog")} color={GREEN} />
+                <StatTile label={t("coach.home.calorieCoach.smart")} sub={t("coach.home.calorieCoach.personalised")} color={GREEN} last />
               </View>
-              <View style={styles.stat}>
-                <Text style={[styles.statVal, { color: "#1d9e75" }]}>Auto</Text>
-                <Text style={styles.statLabel}>From your log</Text>
+              <View style={styles.bulletList}>
+                <BulletRow text={t("coach.home.calorieCoach.bulletMacro")} color={GREEN} />
+                <BulletRow text={t("coach.home.calorieCoach.bulletSwaps")} color={GREEN} />
+                <BulletRow text={t("coach.home.calorieCoach.bulletProtein")} color={GREEN} />
               </View>
-              <View style={styles.stat}>
-                <Text style={[styles.statVal, { color: "#1d9e75" }]}>AI</Text>
-                <Text style={styles.statLabel}>Personalised</Text>
-              </View>
-            </View>
-
-            <View style={styles.featureList}>
-              {[
-                "Macro gap analysis — protein, carbs, fats",
-                "Personalised food swap suggestions",
-                "Daily calorie surplus / deficit feedback",
-                "Protein gap alerts with fix suggestions",
-              ].map((f, i) => (
-                <View key={i} style={styles.featureRow}>
-                  <View style={[styles.featDot, { backgroundColor: "#1d9e75" }]} />
-                  <Text style={styles.featText}>{f}</Text>
-                </View>
-              ))}
-            </View>
-
-            <View
-              style={[
-                styles.cardBtn,
-                {
-                  backgroundColor: hasFeatureAccess("calorie_coach") ? "#1d9e75" : "#1c2128",
-                },
-              ]}
-            >
-              <Text
+              <View
                 style={[
-                  styles.cardBtnText,
-                  { color: hasFeatureAccess("calorie_coach") ? "#ffffff" : "#6e7681" },
+                  styles.ctaButton,
+                  hasFeatureAccess("calorie_coach") ? styles.ctaUnlockedGreen : styles.ctaLocked,
+                  !hasFeatureAccess("calorie_coach") && styles.ctaLockedOpacity,
                 ]}
               >
-                {hasFeatureAccess("calorie_coach")
-                  ? "Open AI Calorie Coach →"
-                  : "🔒  Unlock — upgrade to Pro"}
-              </Text>
+                <Text style={[styles.ctaText, !hasFeatureAccess("calorie_coach") && styles.ctaTextLocked]}>
+                  {hasFeatureAccess("calorie_coach") ? t("coach.home.calorieCoach.open") : t("coach.home.calorieCoach.lockedOpen")}
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
 
-          {/* ── SECTION: Training ──────────────────────────────── */}
-          <View style={[styles.sectionRow, { marginTop: 20 }]}>
-            <Text style={styles.sectionLabel}>TRAINING</Text>
-            <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>Pro feature</Text>
-            </View>
-          </View>
-
-          {/* ── Card 2: AI Workout Coach ───────────────────────── */}
           <TouchableOpacity
-            style={[styles.card, styles.cardPurple]}
+            style={styles.coachCard}
             onPress={() =>
               openOrGate(() => navigation.navigate("AIWorkoutCoach"), {
                 feature: "workout_coach",
-                name: "AI Workout Coach",
-                description:
-                  "Your personal trainer in your pocket. Analyses sessions and gives recovery, intensity, and progression advice.",
+                name: t("coach.home.workoutCoach.name"),
+                description: t("coach.home.workoutCoach.gateDescription"),
                 emoji: "💪",
                 accentColor: "#7f77dd",
               })
             }
             activeOpacity={0.85}
           >
-            <View style={[styles.accentBar, { backgroundColor: "#7f77dd" }]} />
-            <View style={styles.cardTop}>
-              <View style={[styles.iconWrap, styles.iconPurple]}>
-                <Text style={styles.iconEmoji}>💪</Text>
+            <View style={styles.workoutStrip}>
+              <View style={styles.stripIconPurple}>
+                <Ionicons name="barbell-outline" size={20} color={WHITE} />
               </View>
-              <View style={styles.badgeRow}>
-                <View
-                  style={[
-                    styles.badgePro,
-                    {
-                      backgroundColor: "rgba(127,119,221,0.15)",
-                      borderColor: "rgba(127,119,221,0.35)",
-                    },
-                  ]}
-                >
-                  <Text style={[styles.badgeProText, { color: "#a5a0f0" }]}>PRO</Text>
+              <View style={styles.stripTextBlock}>
+                <View style={styles.titleBadgeRow}>
+                  <Text style={styles.workoutTitle}>{t("coach.home.workoutCoach.name")}</Text>
+                  <View style={styles.proBadgePurple}>
+                    <Text style={styles.proBadgeText}>{t("coach.home.proBadge")}</Text>
+                  </View>
                 </View>
+                <Text style={styles.workoutSub}>{t("coach.home.workoutCoach.subtitle")}</Text>
               </View>
             </View>
-
-            <Text style={styles.cardTitle}>AI Workout Coach</Text>
-            <Text style={styles.cardSub}>
-              Your personal trainer in your pocket. Analyses your logged
-              sessions and gives you recovery, intensity, and progression
-              advice tailored to your training history.
-            </Text>
-
-            <View style={styles.featureList}>
-              {[
-                "Daily workout performance feedback",
-                "Recovery time recommendations",
-                "Progressive overload guidance",
-                "Based on your actual session history",
-              ].map((f, i) => (
-                <View key={i} style={styles.featureRow}>
-                  <View style={[styles.featDot, { backgroundColor: "#7f77dd" }]} />
-                  <Text style={styles.featText}>{f}</Text>
-                </View>
-              ))}
-            </View>
-
-            <View
-              style={[
-                styles.cardBtn,
-                {
-                  backgroundColor: hasFeatureAccess("workout_coach") ? "#7f77dd" : "#1c2128",
-                },
-              ]}
-            >
-              <Text
+            <View style={styles.coachBody}>
+              <View style={styles.bulletList}>
+                <BulletRow text={t("coach.home.workoutCoach.bulletFeedback")} color={PURPLE} />
+                <BulletRow text={t("coach.home.workoutCoach.bulletRecovery")} color={PURPLE} />
+                <BulletRow text={t("coach.home.workoutCoach.bulletOverload")} color={PURPLE} />
+                <BulletRow text={t("coach.home.workoutCoach.bulletHistory")} color={PURPLE} />
+              </View>
+              <View
                 style={[
-                  styles.cardBtnText,
-                  { color: hasFeatureAccess("workout_coach") ? "#ffffff" : "#6e7681" },
+                  styles.ctaButton,
+                  hasFeatureAccess("workout_coach") ? styles.ctaUnlockedPurple : styles.ctaLocked,
+                  !hasFeatureAccess("workout_coach") && styles.ctaLockedOpacity,
                 ]}
               >
-                {hasFeatureAccess("workout_coach")
-                  ? "Open Workout Coach →"
-                  : "🔒  Unlock — upgrade to Pro"}
-              </Text>
+                <Text style={[styles.ctaText, !hasFeatureAccess("workout_coach") && styles.ctaTextLocked]}>
+                  {hasFeatureAccess("workout_coach") ? t("coach.home.workoutCoach.open") : t("coach.home.workoutCoach.lockedOpen")}
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
 
-          {/* ── SECTION: Planners ──────────────────────────────── */}
-          <View style={[styles.sectionRow, { marginTop: 20 }]}>
-            <Text style={styles.sectionLabel}>PLANNERS</Text>
-            <View style={[styles.sectionBadge, styles.sectionBadgeElite]}>
-              <Text style={[styles.sectionBadgeText, styles.sectionBadgeTextElite]}>Elite feature</Text>
+          <View style={styles.sectionRow}>
+            <Text style={styles.sectionLabel}>{t("coach.home.planners")}</Text>
+            <View style={styles.eliteBadge}>
+              <Text style={styles.eliteBadgeText}>{t("coach.home.eliteFeature")}</Text>
             </View>
           </View>
 
-          {/* ── Card 3: Monthly Meal Planner ───────────────────── */}
-          <TouchableOpacity
-            style={[styles.card, styles.cardBlue]}
-            onPress={() =>
-              openOrGate(() => navigation.navigate("MonthlyMealPlanner"), {
-                feature: "meal_plan_generation",
-                name: "Monthly Meal Planner",
-                description:
-                  "A full 31-day personalised meal plan built around your calorie targets, budget, and food preferences.",
-                emoji: "📅",
-                accentColor: "#378add",
-              })
-            }
-            activeOpacity={0.85}
-          >
-            <View style={[styles.accentBar, { backgroundColor: "#378add" }]} />
-            <View style={styles.cardTop}>
-              <View style={[styles.iconWrap, styles.iconBlue]}>
-                <Text style={styles.iconEmoji}>📅</Text>
-              </View>
-              <View style={styles.badgeRow}>
-                <View
-                  style={[
-                    styles.badgePro,
-                    {
-                      backgroundColor: "rgba(55,138,221,0.15)",
-                      borderColor: "rgba(55,138,221,0.35)",
-                    },
-                  ]}
-                >
-                  <Text style={[styles.badgeProText, { color: "#a5a0f0" }]}>ELITE</Text>
-                </View>
-                <View style={styles.badgeNew}>
-                  <Text style={styles.badgeNewText}>NEW</Text>
-                </View>
-              </View>
-            </View>
-
-            <Text style={styles.cardTitle}>Monthly meal planner</Text>
-            <Text style={styles.cardSub}>
-              A full 31-day personalised meal plan built around your
-              calorie targets, budget, and food preferences.
-              Swap any meal instantly with AI.
-            </Text>
-
-            <View style={styles.statRow}>
-              <View style={styles.stat}>
-                <Text style={[styles.statVal, { color: "#378add" }]}>31</Text>
-                <Text style={styles.statLabel}>Days planned</Text>
-              </View>
-              <View style={styles.stat}>
-                <Text style={[styles.statVal, { color: "#378add" }]}>3×</Text>
-                <Text style={styles.statLabel}>Meals/day</Text>
-              </View>
-              <View style={styles.stat}>
-                <Text style={[styles.statVal, { color: "#378add" }]}>5×</Text>
-                <Text style={styles.statLabel}>Daily swaps</Text>
-              </View>
-            </View>
-
-            <View style={styles.featureList}>
-              {[
-                "Budget-aware daily meal suggestions",
-                "Swap any meal with one tap",
-                "Regenerate any full day (3×/month)",
-                "Protein gap suggestions included",
-              ].map((f, i) => (
-                <View key={i} style={styles.featureRow}>
-                  <View style={[styles.featDot, { backgroundColor: "#378add" }]} />
-                  <Text style={styles.featText}>{f}</Text>
-                </View>
-              ))}
-            </View>
-
-            <View
-              style={[
-                styles.cardBtn,
-                {
-                  backgroundColor: hasFeatureAccess("meal_plan_generation") ? "#378add" : "#1c2128",
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.cardBtnText,
-                  { color: hasFeatureAccess("meal_plan_generation") ? "#ffffff" : "#6e7681" },
-                ]}
-              >
-                {hasFeatureAccess("meal_plan_generation")
-                  ? "Open meal planner →"
-                  : "🔒  Unlock — upgrade to Elite"}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* ── Card 4: Monthly Workout Planner ────────────────── */}
-          <TouchableOpacity
-            style={[styles.card, styles.cardPurple]}
-            onPress={() =>
-              openOrGate(() => navigation.navigate("MonthlyWorkoutPlanner"), {
-                feature: "workout_plan_generation",
-                name: "Monthly Workout Planner",
-                description:
-                  "A structured 4-week training plan built around your goal, experience level, and target muscles.",
-                emoji: "🏆",
-                accentColor: "#7f77dd",
-              })
-            }
-            activeOpacity={0.85}
-          >
-            <View style={[styles.accentBar, { backgroundColor: "#7f77dd" }]} />
-            <View style={styles.cardTop}>
-              <View style={[styles.iconWrap, styles.iconPurple]}>
-                <Text style={styles.iconEmoji}>🏆</Text>
-              </View>
-              <View style={styles.badgeRow}>
-                <View
-                  style={[
-                    styles.badgePro,
-                    {
-                      backgroundColor: "rgba(127,119,221,0.15)",
-                      borderColor: "rgba(127,119,221,0.35)",
-                    },
-                  ]}
-                >
-                  <Text style={[styles.badgeProText, { color: "#a5a0f0" }]}>ELITE</Text>
-                </View>
-                <View style={styles.badgeNew}>
-                  <Text style={styles.badgeNewText}>NEW</Text>
-                </View>
-              </View>
-            </View>
-
-            <Text style={styles.cardTitle}>Monthly workout planner</Text>
-            <Text style={styles.cardSub}>
-              A structured 4-week training plan built around your goal,
-              experience level, and target muscles. Swap any exercise
-              and regenerate sessions freely.
-            </Text>
-
-            <View style={styles.statRow}>
-              <View style={styles.stat}>
-                <Text style={[styles.statVal, { color: "#7f77dd" }]}>4wk</Text>
-                <Text style={styles.statLabel}>Full plan</Text>
-              </View>
-              <View style={styles.stat}>
-                <Text style={[styles.statVal, { color: "#7f77dd" }]}>5×</Text>
-                <Text style={styles.statLabel}>Swaps/day</Text>
-              </View>
-              <View style={styles.stat}>
-                <Text style={[styles.statVal, { color: "#7f77dd" }]}>AI</Text>
-                <Text style={styles.statLabel}>Personalised</Text>
-              </View>
-            </View>
-
-            <View style={styles.featureList}>
-              {[
-                "Push / Pull / Legs / Full-body splits",
-                "Swap any exercise with AI alternatives",
-                "Rest days auto-scheduled",
-                "Tracks your focus muscles monthly",
-              ].map((f, i) => (
-                <View key={i} style={styles.featureRow}>
-                  <View style={[styles.featDot, { backgroundColor: "#7f77dd" }]} />
-                  <Text style={styles.featText}>{f}</Text>
-                </View>
-              ))}
-            </View>
-
-            <View
-              style={[
-                styles.cardBtn,
-                {
-                  backgroundColor: hasFeatureAccess("workout_plan_generation") ? "#7f77dd" : "#1c2128",
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.cardBtnText,
-                  { color: hasFeatureAccess("workout_plan_generation") ? "#ffffff" : "#6e7681" },
-                ]}
-              >
-                {hasFeatureAccess("workout_plan_generation")
-                  ? "Open workout planner →"
-                  : "🔒  Unlock — upgrade to Elite"}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* ── Upgrade banner ─────────────────────────────────── */}
-          <View style={styles.upgradeBanner}>
-            <Text style={styles.upgradeIcon}>🔐</Text>
-            <View style={styles.upgradeInfo}>
-              <Text style={styles.upgradeTitle}>Unlock all AI features</Text>
-              <Text style={styles.upgradeSub}>Pro — ₹999/mo · Elite — ₹1,999/mo</Text>
-            </View>
+          <View style={styles.plannerGrid}>
             <TouchableOpacity
-              onPress={openSubscription}
-              style={styles.upgradeBtn}
+              style={styles.plannerTile}
+              onPress={() =>
+                openOrGate(() => navigation.navigate("MonthlyMealPlanner"), {
+                  feature: "meal_plan_generation",
+                  name: t("coach.home.mealPlanner.name"),
+                  description: t("coach.home.mealPlanner.gateDescription"),
+                  emoji: "📅",
+                  accentColor: "#378add",
+                })
+              }
               activeOpacity={0.85}
             >
-              <Text style={styles.upgradeBtnText}>Upgrade</Text>
+              <View style={styles.plannerIconBlue}>
+                <Ionicons name="calendar-outline" size={18} color={BLUE} />
+              </View>
+              <Text style={styles.plannerTitle}>{t("coach.home.mealPlanner.title")}</Text>
+              <Text style={styles.plannerSub}>{t("coach.home.mealPlanner.subtitle")}</Text>
+              <View style={styles.plannerBadges}>
+                <View style={styles.eliteMiniBadge}>
+                  <Text style={styles.eliteMiniBadgeText}>{t("coach.home.eliteBadge")}</Text>
+                </View>
+                <View style={styles.newMiniBadge}>
+                  <Text style={styles.newMiniBadgeText}>{t("coach.home.newBadge")}</Text>
+                </View>
+              </View>
+              <View style={styles.miniStatGrid}>
+                <View style={styles.miniStat}>
+                  <Text style={[styles.miniStatValue, { color: BLUE }]}>31</Text>
+                  <Text style={styles.miniStatLabel}>{t("coach.home.mealPlanner.days")}</Text>
+                </View>
+                <View style={styles.miniStat}>
+                  <Text style={[styles.miniStatValue, { color: BLUE }]}>3x</Text>
+                  <Text style={styles.miniStatLabel}>{t("coach.home.mealPlanner.meals")}</Text>
+                </View>
+              </View>
+              <View
+                style={[
+                  styles.plannerCta,
+                  hasFeatureAccess("meal_plan_generation") ? styles.plannerCtaBlue : styles.plannerCtaLocked,
+                  !hasFeatureAccess("meal_plan_generation") && styles.ctaLockedOpacity,
+                ]}
+              >
+                <Text style={[styles.plannerCtaText, !hasFeatureAccess("meal_plan_generation") && styles.ctaTextLocked]}>
+                  {hasFeatureAccess("meal_plan_generation") ? t("coach.home.openPlanner") : t("coach.home.lockedOpenPlanner")}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.plannerTile}
+              onPress={() =>
+                openOrGate(() => navigation.navigate("MonthlyWorkoutPlanner"), {
+                  feature: "workout_plan_generation",
+                  name: t("coach.home.workoutPlanner.name"),
+                  description: t("coach.home.workoutPlanner.gateDescription"),
+                  emoji: "🏆",
+                  accentColor: "#7f77dd",
+                })
+              }
+              activeOpacity={0.85}
+            >
+              <View style={styles.plannerIconOrange}>
+                <Ionicons name="trophy-outline" size={18} color={ORANGE} />
+              </View>
+              <Text style={styles.plannerTitle}>{t("coach.home.workoutPlanner.title")}</Text>
+              <Text style={styles.plannerSub}>{t("coach.home.workoutPlanner.subtitle")}</Text>
+              <View style={styles.plannerBadges}>
+                <View style={styles.eliteMiniBadge}>
+                  <Text style={styles.eliteMiniBadgeText}>{t("coach.home.eliteBadge")}</Text>
+                </View>
+                <View style={styles.newMiniBadge}>
+                  <Text style={styles.newMiniBadgeText}>{t("coach.home.newBadge")}</Text>
+                </View>
+              </View>
+              <View style={styles.miniStatGrid}>
+                <View style={styles.miniStat}>
+                  <Text style={[styles.miniStatValue, { color: ORANGE }]}>4wk</Text>
+                  <Text style={styles.miniStatLabel}>{t("coach.home.workoutPlanner.plan")}</Text>
+                </View>
+                <View style={styles.miniStat}>
+                  <Text style={[styles.miniStatValue, { color: ORANGE }]}>5x</Text>
+                  <Text style={styles.miniStatLabel}>{t("coach.home.workoutPlanner.swaps")}</Text>
+                </View>
+              </View>
+              <View
+                style={[
+                  styles.plannerCta,
+                  hasFeatureAccess("workout_plan_generation") ? styles.plannerCtaOrange : styles.plannerCtaLocked,
+                  !hasFeatureAccess("workout_plan_generation") && styles.ctaLockedOpacity,
+                ]}
+              >
+                <Text style={[styles.plannerCtaText, !hasFeatureAccess("workout_plan_generation") && styles.ctaTextLocked]}>
+                  {hasFeatureAccess("workout_plan_generation") ? t("coach.home.openPlanner") : t("coach.home.lockedOpenPlanner")}
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
+
+          {!hasFeatureAccess("meal_plan_generation") ? (
+            <View style={styles.upgradeBanner}>
+              <View style={styles.upgradeInfo}>
+                <Text style={styles.upgradeTitle}>{t("coach.home.unlockAll")}</Text>
+                <Text style={styles.upgradeSub}>{t("coach.home.upgradePrice")}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={openSubscription}
+                style={styles.upgradeBtn}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.upgradeBtnText}>{t("coach.home.upgrade")}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -510,276 +363,447 @@ export default function CoachHomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#0d1117",
+    backgroundColor: SCREEN_BG,
   },
   content: {
-    paddingBottom: 40,
+    backgroundColor: SCREEN_BG,
+    paddingBottom: 24,
   },
-
-  // ── Hero ──────────────────────────────────────────────────
   hero: {
-    backgroundColor: "#111827",
-    padding: 24,
+    backgroundColor: GREEN,
+    paddingHorizontal: 22,
     paddingTop: 20,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    paddingBottom: 24,
+    position: "relative",
+    overflow: "hidden",
+  },
+  heroCircle: {
+    position: "absolute",
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    top: -54,
+    right: -48,
+  },
+  heroKicker: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 4,
   },
   heroTitle: {
-    color: "#ffffff",
-    fontSize: 26,
-    fontWeight: "700",
-    lineHeight: 32,
-    marginBottom: 8,
+    color: WHITE,
+    fontSize: 22,
+    fontWeight: "900",
   },
   heroTitleAccent: {
-    color: "#1d9e75",
+    color: "#A8F0C8",
   },
   heroSub: {
-    color: "#8b949e",
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 18,
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 11,
+    fontWeight: "700",
+    marginTop: 6,
   },
   trustRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 7,
     flexWrap: "wrap",
+    marginTop: 12,
   },
   trustPill: {
-    backgroundColor: "#161b22",
-    borderWidth: 0.5,
-    borderColor: "rgba(255,255,255,0.08)",
-    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 99,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 3,
   },
   trustPillText: {
-    color: "#8b949e",
-    fontSize: 11,
+    color: WHITE,
+    fontSize: 10,
+    fontWeight: "800",
   },
-  trustPillBold: {
-    color: "#c9d1d9",
-    fontWeight: "600",
-  },
-
-  // ── Body ──────────────────────────────────────────────────
   body: {
-    padding: 16,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 24,
+    gap: 12,
   },
   sectionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
   },
   sectionLabel: {
-    color: "#6e7681",
-    fontSize: 11,
-    fontWeight: "700",
+    color: MUTED,
+    fontSize: 10,
+    fontWeight: "900",
     letterSpacing: 0.8,
   },
   sectionBadge: {
-    backgroundColor: "rgba(29,158,117,0.1)",
-    borderWidth: 0.5,
-    borderColor: "rgba(29,158,117,0.25)",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   sectionBadgeText: {
-    color: "#3fcf8e",
-    fontSize: 11,
-    fontWeight: "500",
+    color: GREEN,
+    fontSize: 10,
+    fontWeight: "900",
   },
-  sectionBadgeElite: {
-    backgroundColor: "rgba(127,119,221,0.12)",
-    borderColor: "rgba(127,119,221,0.35)",
+  eliteBadge: {
+    backgroundColor: AMBER_BG,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
-  sectionBadgeTextElite: {
-    color: "#a5a0f0",
+  eliteBadgeText: {
+    color: AMBER_TEXT,
+    fontSize: 10,
+    fontWeight: "900",
   },
-
-  // ── Feature card ──────────────────────────────────────────
-  card: {
-    backgroundColor: "#161b22",
-    borderWidth: 0.5,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
+  coachCard: {
+    backgroundColor: WHITE,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: BORDER,
     overflow: "hidden",
   },
-  cardTeal: { borderColor: "rgba(29,158,117,0.3)" },
-  cardBlue: { borderColor: "rgba(55,138,221,0.3)" },
-  cardPurple: { borderColor: "rgba(127,119,221,0.3)" },
-
-  accentBar: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-  },
-
-  cardTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  iconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconTeal: { backgroundColor: "rgba(29,158,117,0.15)" },
-  iconBlue: { backgroundColor: "rgba(55,138,221,0.15)" },
-  iconPurple: { backgroundColor: "rgba(127,119,221,0.15)" },
-  iconEmoji: {
-    fontSize: 22,
-  },
-
-  badgeRow: {
-    flexDirection: "row",
-    gap: 6,
-    alignItems: "center",
-  },
-  badgePro: {
-    backgroundColor: "rgba(29,158,117,0.15)",
-    borderWidth: 0.5,
-    borderColor: "rgba(29,158,117,0.35)",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  badgeProText: {
-    color: "#3fcf8e",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  badgeNew: {
-    backgroundColor: "#1d9e75",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  badgeNewText: {
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-
-  cardTitle: {
-    color: "#e6edf3",
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  cardSub: {
-    color: "#8b949e",
-    fontSize: 12,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-
-  // ── Stats ────────────────────────────────────────────────
-  statRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 14,
-  },
-  stat: {
-    flex: 1,
-    backgroundColor: "#0d1117",
-    borderRadius: 8,
-    padding: 10,
-    alignItems: "center",
-  },
-  statVal: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  statLabel: {
-    color: "#6e7681",
-    fontSize: 10,
-    textAlign: "center",
-  },
-
-  // ── Feature bullet list ───────────────────────────────────
-  featureList: {
-    gap: 6,
-    marginBottom: 14,
-  },
-  featureRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  featDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    flexShrink: 0,
-  },
-  featText: {
-    color: "#c9d1d9",
-    fontSize: 12,
-    lineHeight: 16,
-    flex: 1,
-  },
-
-  // ── CTA button ────────────────────────────────────────────
-  cardBtn: {
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  cardBtnText: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-
-  // ── Upgrade banner ────────────────────────────────────────
-  upgradeBanner: {
-    backgroundColor: "#161b22",
-    borderWidth: 0.5,
-    borderColor: "rgba(29,158,117,0.25)",
-    borderRadius: 14,
-    padding: 16,
+  calorieStrip: {
+    backgroundColor: GREEN_STRIP,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    marginTop: 6,
   },
-  upgradeIcon: {
-    fontSize: 26,
+  workoutStrip: {
+    backgroundColor: PURPLE_LIGHT,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  stripIconGreen: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stripIconPurple: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: PURPLE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stripTextBlock: {
+    flex: 1,
+  },
+  titleBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  calorieTitle: {
+    color: GREEN,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  workoutTitle: {
+    color: PURPLE,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  calorieSub: {
+    color: "#4A8C77",
+    fontSize: 10,
+    marginTop: 3,
+    fontWeight: "700",
+  },
+  workoutSub: {
+    color: "#9B8ECC",
+    fontSize: 10,
+    marginTop: 3,
+    fontWeight: "700",
+  },
+  proBadgeGreen: {
+    backgroundColor: GREEN,
+    borderRadius: 99,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  proBadgePurple: {
+    backgroundColor: PURPLE,
+    borderRadius: 99,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  proBadgeText: {
+    color: WHITE,
+    fontSize: 9,
+    fontWeight: "900",
+  },
+  coachBody: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  statRow: {
+    backgroundColor: BG,
+    borderRadius: 10,
+    flexDirection: "row",
+    marginBottom: 14,
+    overflow: "hidden",
+  },
+  statTile: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    borderRightWidth: 1,
+    borderRightColor: BORDER,
+  },
+  statTileLast: {
+    borderRightWidth: 0,
+  },
+  statTileLabel: {
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  statTileSub: {
+    color: MUTED,
+    fontSize: 9,
+    marginTop: 1,
+    textAlign: "center",
+  },
+  bulletList: {
+    gap: 4,
+    marginBottom: 14,
+  },
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 7,
+    paddingVertical: 3,
+  },
+  bulletStar: {
+    fontSize: 10,
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  bulletText: {
+    color: "#555555",
+    fontSize: 11,
+    lineHeight: 15,
+    flex: 1,
+  },
+  ctaButton: {
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ctaUnlockedGreen: {
+    backgroundColor: GREEN,
+  },
+  ctaUnlockedPurple: {
+    backgroundColor: PURPLE,
+  },
+  ctaLocked: {
+    backgroundColor: BG,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  ctaLockedOpacity: {
+    opacity: 0.7,
+  },
+  ctaText: {
+    color: WHITE,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  ctaTextLocked: {
+    color: MUTED,
+  },
+  plannerGrid: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  plannerTile: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: BG,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  plannerIconBlue: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: BLUE_LIGHT,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  plannerIconOrange: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: ORANGE_LIGHT,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  plannerTitle: {
+    color: TEXT,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  plannerSub: {
+    color: MUTED,
+    fontSize: 10,
+    marginTop: 3,
+    marginBottom: 9,
+    fontWeight: "700",
+  },
+  plannerBadges: {
+    flexDirection: "row",
+    gap: 5,
+    marginBottom: 10,
+    flexWrap: "wrap",
+  },
+  eliteMiniBadge: {
+    backgroundColor: AMBER_BG,
+    borderRadius: 99,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  eliteMiniBadgeText: {
+    color: AMBER_TEXT,
+    fontSize: 9,
+    fontWeight: "900",
+  },
+  newMiniBadge: {
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 99,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  newMiniBadgeText: {
+    color: GREEN,
+    fontSize: 9,
+    fontWeight: "900",
+  },
+  miniStatGrid: {
+    flexDirection: "row",
+    gap: 5,
+    marginBottom: 10,
+  },
+  miniStat: {
+    flex: 1,
+    backgroundColor: WHITE,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 7,
+    alignItems: "center",
+  },
+  miniStatValue: {
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  miniStatLabel: {
+    color: MUTED,
+    fontSize: 9,
+    marginTop: 1,
+  },
+  plannerCta: {
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  plannerCtaBlue: {
+    backgroundColor: BLUE,
+  },
+  plannerCtaOrange: {
+    backgroundColor: ORANGE,
+  },
+  plannerCtaLocked: {
+    backgroundColor: WHITE,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  plannerCtaText: {
+    color: WHITE,
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  upgradeBanner: {
+    backgroundColor: "#1A1A18",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
   upgradeInfo: {
     flex: 1,
   },
   upgradeTitle: {
-    color: "#e6edf3",
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 3,
+    color: WHITE,
+    fontSize: 13,
+    fontWeight: "900",
+    marginBottom: 4,
   },
   upgradeSub: {
-    color: "#8b949e",
-    fontSize: 11,
-  },
-  upgradeBtn: {
-    backgroundColor: "#1d9e75",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  upgradeBtnText: {
-    color: "#ffffff",
-    fontSize: 13,
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 10,
     fontWeight: "700",
   },
+  upgradeBtn: {
+    backgroundColor: GOLD,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  upgradeBtnText: {
+    color: "#1A1A18",
+    fontSize: 12,
+    fontWeight: "900",
+  },
 });
+
+const BulletRow = ({ text, color }: { text: string; color: string }) => (
+  <View style={styles.bulletRow}>
+    <Text style={[styles.bulletStar, { color }]}>✦</Text>
+    <Text style={styles.bulletText}>{text}</Text>
+  </View>
+);
+
+const StatTile = ({
+  label,
+  sub,
+  color,
+  last,
+}: {
+  label: string;
+  sub: string;
+  color: string;
+  last?: boolean;
+}) => (
+  <View style={[styles.statTile, last && styles.statTileLast]}>
+    <Text style={[styles.statTileLabel, { color }]}>{label}</Text>
+    <Text style={styles.statTileSub}>{sub}</Text>
+  </View>
+);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   LayoutAnimation,
@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputProps,
   TouchableOpacity,
   UIManager,
   View,
@@ -17,6 +18,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCameraPermissions } from "expo-camera";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import {
   addWorkout,
   deleteWorkout,
@@ -27,6 +30,7 @@ import {
   type WorkoutHistoryItem,
 } from "../api/workout";
 import { fetchOnboardingMe } from "../api/onboarding";
+import { deleteStrengthLift, logStrengthLift, updateStrengthLift } from "../api/strength";
 import { getProfile } from "../api/user";
 import { AppInput } from "../components/AppInput";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
@@ -36,6 +40,7 @@ import {
   EXERCISE_GUIDANCE,
   type ExerciseGuidance,
 } from "../constants/ExerciseGuidanceData";
+import { useLanguageStore } from "../i18n/languageStore";
 import type { MediaPipeGuidanceViewProps } from "../components/MediaPipeGuidanceView";
 import { useAppTheme } from "../theme";
 import { formatDate } from "../utils/date";
@@ -70,7 +75,7 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const SELECT_CHOICE = "Select choice";
+const SELECT_CHOICE = i18n.t("workoutLog.selectChoice");
 const GUIDANCE_PLACEHOLDERS = new Set(["select choice", "default", "no choice", "none", ""]);
 const NO_CHOICE_VALUES = new Set(["select choice", "default", "no choice", "none", ""]);
 
@@ -127,12 +132,14 @@ type WorkoutPayloadType = "stability" | "hiit" | "compound";
 type DifficultyLabel = "Beginner" | "Intermediate" | "Advanced";
 type WorkoutCatalogItem = {
   id?: number;
+  globalExerciseId?: number | null;
   bodyPart: string;
   type: string;
   goalTag: string;
   difficulty: string;
   metValue?: number;
   exerciseName: string;
+  defaultExerciseName?: string;
   equipment: string;
   recommendation: string;
   sets: string;
@@ -173,8 +180,8 @@ const parseBodyPartFromNotes = (notes?: string | null): string => {
 
 const sessionHistoryLabel = (item: WorkoutHistoryItem): string => {
   const explicit = typeof item.bodyPart === "string" ? item.bodyPart.trim() : "";
-  const body = explicit || parseBodyPartFromNotes(item.notes) || "Body";
-  const name = String(item.exerciseName || "Exercise").trim() || "Exercise";
+  const body = explicit || parseBodyPartFromNotes(item.notes) || i18n.t("workoutLog.body");
+  const name = String(item.exerciseName || i18n.t("workoutLog.exerciseFallback")).trim() || i18n.t("workoutLog.exerciseFallback");
   const kcal = Math.round(Number(item.caloriesBurned) || 0);
   return `${body}  ${name}, ${kcal} kcal`;
 };
@@ -196,10 +203,6 @@ const toDateKey = (value: unknown): string | null => {
   const day = String(parsed.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
-
-function formatWorkoutHeaderDate(now: Date): string {
-  return new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" }).format(now);
-}
 
 function normalizeExerciseName(value?: string): string {
   return (value || "")
@@ -247,7 +250,7 @@ const ChipDropdownField = ({
   options,
   enabled = true,
   onChange,
-  placeholder = "Select choice",
+  placeholder = i18n.t("workoutLog.selectChoice"),
 }: {
   value: string;
   options: string[];
@@ -312,7 +315,25 @@ const ChipDropdownField = ({
   );
 };
 
+const EditModalInput = ({
+  label,
+  labelTone = "default",
+  ...inputProps
+}: TextInputProps & { label: string; labelTone?: "default" | "green" }) => (
+  <View style={styles.editInputWrap}>
+    <Text style={[styles.editInputLabel, labelTone === "green" ? styles.editInputLabelGreen : null]}>{label}</Text>
+    <TextInput
+      {...inputProps}
+      style={[styles.editTextInput, inputProps.style]}
+      placeholderTextColor="#9A9A91"
+      selectionColor={GREEN}
+    />
+  </View>
+);
+
 export const WorkoutScreen = () => {
+  const { t } = useTranslation();
+  const language = useLanguageStore((s) => s.language);
   const { colors, radius } = useAppTheme();
   const [catalog, setCatalog] = useState<WorkoutCatalogItem[]>([]);
   const [bodyPartOptions, setBodyPartOptions] = useState<string[]>([]);
@@ -333,7 +354,10 @@ export const WorkoutScreen = () => {
   const [recommendation, setRecommendation] = useState(SELECT_CHOICE);
   const [performedSets, setPerformedSets] = useState("");
   const [performedRepsPerSet, setPerformedRepsPerSet] = useState("");
+  const [topSetWeightKg, setTopSetWeightKg] = useState("");
+  const [topSetReps, setTopSetReps] = useState("");
   const [timeTaken, setTimeTaken] = useState("");
+  const [isStrengthGoal, setIsStrengthGoal] = useState(false);
   const [durationPickerOpen, setDurationPickerOpen] = useState(false);
   const [pickerMinutes, setPickerMinutes] = useState(0);
   const [pickerSeconds, setPickerSeconds] = useState(0);
@@ -345,6 +369,9 @@ export const WorkoutScreen = () => {
   const [editSets, setEditSets] = useState("");
   const [editReps, setEditReps] = useState("");
   const [editTimeTaken, setEditTimeTaken] = useState("");
+  const [editExerciseName, setEditExerciseName] = useState("");
+  const [editTopSetWeightKg, setEditTopSetWeightKg] = useState("");
+  const [editTopSetReps, setEditTopSetReps] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [mediaPipeReady, setMediaPipeReady] = useState(false);
@@ -352,6 +379,8 @@ export const WorkoutScreen = () => {
   const [estimateKcal, setEstimateKcal] = useState<number | null>(null);
   const [estimateError, setEstimateError] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+  const lastAutoFilledExerciseRef = useRef<string | null>(null);
+  const workoutInputsEditedRef = useRef(false);
 
   const isNoChoice = (value: string) => NO_CHOICE_VALUES.has((value || "").trim().toLowerCase());
   const needsGoalTagInput = isNoChoice(profileGoalTag);
@@ -392,24 +421,57 @@ export const WorkoutScreen = () => {
     const difficultyKey = (
       activeDifficulty !== SELECT_CHOICE ? activeDifficulty : selectedEntry.difficulty
     ).toLowerCase() as "beginner" | "intermediate" | "advanced";
-    return selectedEntry.recommendedWeightKg?.[difficultyKey] || "Not specified";
+  return selectedEntry.recommendedWeightKg?.[difficultyKey] || i18n.t("workoutLog.notSpecified");
   }, [selectedEntry, activeDifficulty]);
 
   useEffect(() => {
-    if (!selectedEntry) return;
+    if (!selectedEntry) {
+      lastAutoFilledExerciseRef.current = null;
+      workoutInputsEditedRef.current = false;
+      return;
+    }
+    const autofillKey = String(selectedEntry.id ?? selectedEntry.exerciseName);
+    if (lastAutoFilledExerciseRef.current === autofillKey) return;
+    if (workoutInputsEditedRef.current) {
+      lastAutoFilledExerciseRef.current = autofillKey;
+      return;
+    }
+    lastAutoFilledExerciseRef.current = autofillKey;
     const firstNumber = (value: string) => {
       const match = String(value || "").match(/\d+/);
       return match ? match[0] : "";
     };
-    if (!performedSets) {
-      const nextSets = firstNumber(selectedEntry.sets);
-      if (nextSets) setPerformedSets(nextSets);
-    }
-    if (!performedRepsPerSet) {
-      const nextReps = firstNumber(selectedEntry.reps);
-      if (nextReps) setPerformedRepsPerSet(nextReps);
-    }
-  }, [selectedEntry, performedSets, performedRepsPerSet]);
+    const nextSets = firstNumber(selectedEntry.sets);
+    const nextReps = firstNumber(selectedEntry.reps);
+    setPerformedSets(nextSets);
+    setPerformedRepsPerSet(nextReps);
+  }, [selectedEntry]);
+
+  const handlePerformedSetsChange = useCallback((value: string) => {
+    workoutInputsEditedRef.current = true;
+    setPerformedSets(value.replace(/\D/g, ""));
+  }, []);
+
+  const handlePerformedRepsChange = useCallback((value: string) => {
+    workoutInputsEditedRef.current = true;
+    setPerformedRepsPerSet(value.replace(/\D/g, ""));
+  }, []);
+
+  const handleTopSetWeightChange = useCallback((value: string) => {
+    const cleaned = value.replace(/[^0-9.]/g, "");
+    const [whole, ...rest] = cleaned.split(".");
+    setTopSetWeightKg(rest.length ? `${whole}.${rest.join("").slice(0, 1)}` : whole);
+  }, []);
+
+  const handleTopSetRepsChange = useCallback((value: string) => {
+    setTopSetReps(value.replace(/\D/g, ""));
+  }, []);
+
+  const handleEditTopSetWeightChange = useCallback((value: string) => {
+    const cleaned = value.replace(/[^0-9.]/g, "");
+    const [whole, ...rest] = cleaned.split(".");
+    setEditTopSetWeightKg(rest.length ? `${whole}.${rest.join("").slice(0, 1)}` : whole);
+  }, []);
 
   useEffect(() => {
     setGuideOpen(false);
@@ -472,11 +534,19 @@ export const WorkoutScreen = () => {
       ]);
       setHistory(historyData.items ?? []);
       const resolvedGoalTag = profileData.goalTag || SELECT_CHOICE;
+      const onboardingGoalType = String(onboardingData?.onboarding?.goal?.type || "").toLowerCase();
       const onboardingDifficulty = normalizeDifficultyLabel(onboardingData?.onboarding?.goal?.difficulty);
       const profileDifficulty = normalizeDifficultyLabel(profileData.difficulty);
       const resolvedDifficulty = onboardingDifficulty || profileDifficulty || SELECT_CHOICE;
+      const nextIsStrengthGoal =
+        onboardingGoalType === "strength" || String(resolvedGoalTag).toLowerCase() === "strength";
       setProfileGoalTag(resolvedGoalTag);
       setProfileDifficulty(resolvedDifficulty);
+      setIsStrengthGoal(nextIsStrengthGoal);
+      if (!nextIsStrengthGoal) {
+        setTopSetWeightKg("");
+        setTopSetReps("");
+      }
       if (!options?.preservePlannerState) {
         setGoalTag(SELECT_CHOICE);
         setDifficulty(SELECT_CHOICE);
@@ -501,21 +571,21 @@ export const WorkoutScreen = () => {
         { preserveExerciseOptions: Boolean(currentExerciseName) },
       );
     } catch (error) {
-      const message = axios.isAxiosError(error) ? error.response?.data?.detail || error.message : "Failed to load workout data.";
-      Alert.alert("Error", String(message));
+      const message = axios.isAxiosError(error) ? error.response?.data?.detail || error.message : t("workoutLog.alerts.loadFailed");
+      Alert.alert(t("workoutLog.alerts.error"), String(message));
     }
   };
 
   useEffect(() => {
     loadInitial();
-  }, []);
+  }, [language]);
 
   useFocusEffect(
     useCallback(() => {
       // Always show planner form when user returns to this tab.
       setShowHistory(false);
       loadInitial({ preservePlannerState: true });
-    }, [needsGoalTagInput, needsDifficultyInput]),
+    }, [needsGoalTagInput, needsDifficultyInput, language]),
   );
 
   const parsedTimeTaken = useMemo(() => {
@@ -558,7 +628,7 @@ export const WorkoutScreen = () => {
     const match = /^(\d{1,3}):(\d{1,2})$/.exec(trimmed);
     if (!match) return "";
     const seconds = Number(match[2]);
-    if (seconds > 59) return "second range is from 0 to 60";
+    if (seconds > 59) return t("workoutLog.timeRangeError");
     return "";
   }, [timeTaken]);
 
@@ -580,6 +650,8 @@ export const WorkoutScreen = () => {
     globalExercise?: GlobalExercise | null,
     catalogId?: number | null,
   ) => {
+    workoutInputsEditedRef.current = false;
+
     if (value === SELECT_CHOICE) {
       setSelectedGlobalExercise(null);
       setExerciseName(SELECT_CHOICE);
@@ -644,8 +716,8 @@ export const WorkoutScreen = () => {
     }
 
     if (globalExercise) {
-      setType(globalExercise.is_compound ? "Compound" : "Isolation");
-      setRecommendation("3-4 sets x 8-12 reps, rest 60s");
+      setType(globalExercise.is_compound ? t("workoutLog.compound") : t("workoutLog.isolation"));
+      setRecommendation(t("workoutLog.defaultRecommendation"));
       return;
     }
 
@@ -666,8 +738,8 @@ export const WorkoutScreen = () => {
     }
     setExerciseName(exercise.name);
     setSelectedGlobalExercise(exercise);
-    setType(exercise.is_compound ? "Compound" : "Isolation");
-    setRecommendation("3-4 sets x 8-12 reps, rest 60s");
+    setType(exercise.is_compound ? t("workoutLog.compound") : t("workoutLog.isolation"));
+    setRecommendation(t("workoutLog.defaultRecommendation"));
   };
 
   const resolveCatalogId = useCallback(
@@ -685,6 +757,7 @@ export const WorkoutScreen = () => {
     if (!Number.isInteger(parsedSets) || parsedSets <= 0 || !Number.isInteger(parsedReps) || parsedReps <= 0) return null;
 
     const resolvedEntry = selectedEntry;
+    const exerciseId = resolvedEntry?.globalExerciseId ?? selectedGlobalExercise?.id ?? null;
     const durMatch = /^(\d{1,3}):(\d{1,2})$/.exec(timeTaken.trim());
     const durationMin = durMatch
       ? Math.max(1, Math.round(Number(durMatch[1]) + Number(durMatch[2]) / 60))
@@ -692,6 +765,7 @@ export const WorkoutScreen = () => {
 
     if (resolvedEntry) {
       return {
+        exercise_id: exerciseId,
         type: workoutTypeFromCatalog(resolvedEntry.type),
         exerciseName,
         sets: parsedSets,
@@ -705,6 +779,7 @@ export const WorkoutScreen = () => {
 
     if (selectedGlobalExercise) {
       return {
+        exercise_id: exerciseId,
         type: workoutTypeFromGlobalCategory(selectedGlobalExercise.category),
         exerciseName,
         sets: parsedSets,
@@ -745,7 +820,7 @@ export const WorkoutScreen = () => {
       return;
     }
     let cancelled = false;
-    const t = setTimeout(() => {
+    const estimateTimer = setTimeout(() => {
       void estimateWorkoutCalories(workoutEstimatePayload)
         .then((res) => {
           if (!cancelled) {
@@ -758,16 +833,16 @@ export const WorkoutScreen = () => {
             setEstimateKcal(null);
             const message = axios.isAxiosError(error)
               ? error.response?.status === 404
-                ? "Live kcal preview is unavailable. Restart backend to load /workout/estimate."
-                : "Could not load live kcal preview right now."
-              : "Could not load live kcal preview right now.";
+                ? t("workoutLog.estimateUnavailable")
+                : t("workoutLog.estimateFailed")
+              : t("workoutLog.estimateFailed");
             setEstimateError(message);
           }
         });
     }, 450);
     return () => {
       cancelled = true;
-      clearTimeout(t);
+      clearTimeout(estimateTimer);
     };
   }, [workoutEstimatePayload]);
 
@@ -784,49 +859,72 @@ export const WorkoutScreen = () => {
 
   const submit = async () => {
     if (needsGoalTagInput && goalTag === SELECT_CHOICE) {
-      Alert.alert("Missing fields", "Please select goal_tag.");
+      Alert.alert(t("workoutLog.alerts.missingFields"), t("workoutLog.alerts.selectGoal"));
       return;
     }
     if (needsDifficultyInput && difficulty === SELECT_CHOICE) {
-      Alert.alert("Missing fields", "Please select difficulty.");
+      Alert.alert(t("workoutLog.alerts.missingFields"), t("workoutLog.alerts.selectDifficulty"));
       return;
     }
     if (bodyPart === SELECT_CHOICE || type === SELECT_CHOICE || exerciseName === SELECT_CHOICE) {
-      Alert.alert("Missing fields", "Please complete body part, exercise, and type.");
+      Alert.alert(t("workoutLog.alerts.missingFields"), t("workoutLog.alerts.completeExercise"));
       return;
     }
     if (!performedSets || !performedRepsPerSet || !timeTaken) {
-      Alert.alert("Missing fields", "Please fill sets performed, reps per set, and time taken.");
+      Alert.alert(t("workoutLog.alerts.missingFields"), t("workoutLog.alerts.completeSets"));
       return;
     }
     const parsedSets = Number(performedSets);
     const parsedReps = Number(performedRepsPerSet);
     if (!Number.isInteger(parsedSets) || parsedSets <= 0) {
-      Alert.alert("Invalid sets", "No. of sets must be a positive integer.");
+      Alert.alert(t("workoutLog.alerts.invalidSets"), t("workoutLog.alerts.setsPositive"));
       return;
     }
     if (!Number.isInteger(parsedReps) || parsedReps <= 0) {
-      Alert.alert("Invalid reps", "No. of reps per set must be a positive integer.");
+      Alert.alert(t("workoutLog.alerts.invalidReps"), t("workoutLog.alerts.repsPositive"));
       return;
     }
     if (!isValidTimeTaken) {
-      Alert.alert("Invalid time format", "Use m:s, mm:ss, or similar. Examples: 5:0, 05:00, 12:30");
+      Alert.alert(t("workoutLog.alerts.invalidTime"), t("workoutLog.alerts.timeFormat"));
+      return;
+    }
+    const hasTopSetWeight = topSetWeightKg.trim().length > 0;
+    const hasTopSetReps = topSetReps.trim().length > 0;
+    if (isStrengthGoal && (hasTopSetWeight || hasTopSetReps) && !(hasTopSetWeight && hasTopSetReps)) {
+      Alert.alert(t("workoutLog.alerts.missingTopSet"), t("workoutLog.alerts.topSetBoth"));
+      return;
+    }
+    const parsedTopSetWeight = hasTopSetWeight ? Number(topSetWeightKg) : null;
+    const parsedTopSetReps = hasTopSetReps ? Number(topSetReps) : null;
+    if (isStrengthGoal && parsedTopSetWeight != null && (!Number.isFinite(parsedTopSetWeight) || parsedTopSetWeight <= 0)) {
+      Alert.alert(t("workoutLog.alerts.invalidTopSet"), t("workoutLog.alerts.topSetWeightPositive"));
+      return;
+    }
+    if (
+      isStrengthGoal &&
+      parsedTopSetReps != null &&
+      (!Number.isInteger(parsedTopSetReps) || parsedTopSetReps <= 0)
+    ) {
+      Alert.alert(t("workoutLog.alerts.invalidTopSet"), t("workoutLog.alerts.topSetRepsPositive"));
       return;
     }
 
     const resolvedEntry = selectedEntry;
+    const exerciseId = resolvedEntry?.globalExerciseId ?? selectedGlobalExercise?.id ?? null;
 
     const globalEntry = !resolvedEntry ? selectedGlobalExercise : null;
     if (!resolvedEntry && !globalEntry) {
-      Alert.alert("Invalid selection", "No matching workout found. Try a different combination.");
+      Alert.alert(t("workoutLog.alerts.invalidSelection"), t("workoutLog.alerts.noWorkoutMatch"));
       return;
     }
 
     try {
+      let savedWorkoutId: number | undefined;
       if (resolvedEntry) {
         const resolvedRecommendation =
           recommendation !== SELECT_CHOICE ? recommendation : resolvedEntry.recommendation;
-        await addWorkout({
+        const savedWorkout = await addWorkout({
+          exercise_id: exerciseId,
           type: workoutTypeFromCatalog(resolvedEntry.type),
           exerciseName,
           sets: parsedSets,
@@ -837,8 +935,10 @@ export const WorkoutScreen = () => {
           timeTaken,
           notes: `body_part=${resolvedEntry.bodyPart}; goal_tag=${activeGoalTag === SELECT_CHOICE ? resolvedEntry.goalTag : activeGoalTag}; difficulty=${activeDifficulty === SELECT_CHOICE ? resolvedEntry.difficulty : activeDifficulty}; equipment=${resolvedEntry.equipment}; recommendation=${resolvedRecommendation}; recommended_weight_kg=${recommendedWeight}; planned_sets=${resolvedEntry.sets}; planned_reps=${resolvedEntry.reps}; planned_duration=${resolvedEntry.duration}`,
         });
+        savedWorkoutId = Number(savedWorkout?.id) || undefined;
       } else if (globalEntry) {
-        await addWorkout({
+        const savedWorkout = await addWorkout({
+          exercise_id: exerciseId,
           type: workoutTypeFromGlobalCategory(globalEntry.category),
           exerciseName,
           sets: parsedSets,
@@ -849,6 +949,23 @@ export const WorkoutScreen = () => {
           timeTaken,
           notes: `body_part=${bodyPart}; global_exercise=1; equipment=${globalEntry.equipment}; category=${globalEntry.category}; difficulty=${globalEntry.difficulty}`,
         });
+        savedWorkoutId = Number(savedWorkout?.id) || undefined;
+      }
+      let strengthLiftWarning = "";
+      if (isStrengthGoal && parsedTopSetWeight != null && parsedTopSetReps != null) {
+        try {
+          await logStrengthLift({
+            exercise_id: exerciseId,
+            exercise_name: exerciseName,
+            weight_kg: parsedTopSetWeight,
+            reps: parsedTopSetReps,
+            workout_id: savedWorkoutId,
+          });
+        } catch (error) {
+          strengthLiftWarning = axios.isAxiosError(error)
+            ? error.response?.data?.detail || error.message
+            : t("workoutLog.alerts.topSetSaveFailed");
+        }
       }
       setGoalTag(SELECT_CHOICE);
       setDifficulty(SELECT_CHOICE);
@@ -859,12 +976,19 @@ export const WorkoutScreen = () => {
       setRecommendation(SELECT_CHOICE);
       setPerformedSets("");
       setPerformedRepsPerSet("");
+      setTopSetWeightKg("");
+      setTopSetReps("");
       setTimeTaken("");
       await loadInitial({ preservePlannerState: true });
-      Alert.alert("Saved", "Workout submitted and calories burned updated.");
+      Alert.alert(
+        t("workoutLog.alerts.saved"),
+        strengthLiftWarning
+          ? t("workoutLog.alerts.savedWithWarning", { warning: strengthLiftWarning })
+          : t("workoutLog.alerts.savedBody"),
+      );
     } catch (error) {
-      const message = axios.isAxiosError(error) ? error.response?.data?.detail || error.message : "Workout could not be saved.";
-      Alert.alert("Error", String(message));
+      const message = axios.isAxiosError(error) ? error.response?.data?.detail || error.message : t("workoutLog.alerts.saveFailed");
+      Alert.alert(t("workoutLog.alerts.error"), String(message));
     }
   };
 
@@ -873,6 +997,9 @@ export const WorkoutScreen = () => {
     setEditSets(String(item.sets ?? ""));
     setEditReps(String(item.reps ?? ""));
     setEditTimeTaken(toTimeTaken(item.duration));
+    setEditExerciseName(String(item.exerciseName || t("workoutLog.workout")));
+    setEditTopSetWeightKg(item.strengthLift ? String(item.strengthLift.weight_kg) : "");
+    setEditTopSetReps(item.strengthLift ? String(item.strengthLift.reps) : "");
   };
 
   const submitEdit = async () => {
@@ -880,21 +1007,47 @@ export const WorkoutScreen = () => {
     const parsedSets = Number(editSets);
     const parsedReps = Number(editReps);
     if (!Number.isInteger(parsedSets) || parsedSets <= 0) {
-      Alert.alert("Invalid sets", "No. of sets must be a positive integer.");
+      Alert.alert(t("workoutLog.alerts.invalidSets"), t("workoutLog.alerts.setsPositive"));
       return;
     }
     if (!Number.isInteger(parsedReps) || parsedReps <= 0) {
-      Alert.alert("Invalid reps", "No. of reps per set must be a positive integer.");
+      Alert.alert(t("workoutLog.alerts.invalidReps"), t("workoutLog.alerts.repsPositive"));
       return;
     }
     const parsedTime = /^(\d{1,3}):(\d{1,2})$/.exec(editTimeTaken.trim());
     if (!parsedTime) {
-      Alert.alert("Invalid time format", "Use m:s, mm:ss, or similar. Examples: 5:0, 05:00, 12:30");
+      Alert.alert(t("workoutLog.alerts.invalidTime"), t("workoutLog.alerts.timeFormat"));
       return;
     }
     const seconds = Number(parsedTime[2]);
     if (seconds > 59) {
-      Alert.alert("Invalid time format", "Seconds must be between 0 and 59.");
+      Alert.alert(t("workoutLog.alerts.invalidTime"), t("workoutLog.alerts.secondsRange"));
+      return;
+    }
+    const editingItem = history.find((item) => item.id === editingId);
+    const shouldShowStrengthEdit = Boolean(editingItem?.strengthLift) || isStrengthGoal;
+    const hasEditTopWeight = editTopSetWeightKg.trim().length > 0;
+    const hasEditTopReps = editTopSetReps.trim().length > 0;
+    if (shouldShowStrengthEdit && (hasEditTopWeight || hasEditTopReps) && !(hasEditTopWeight && hasEditTopReps)) {
+      Alert.alert(t("workoutLog.alerts.missingTopSet"), t("workoutLog.alerts.topSetBoth"));
+      return;
+    }
+    const parsedEditTopWeight = hasEditTopWeight ? Number(editTopSetWeightKg) : null;
+    const parsedEditTopReps = hasEditTopReps ? Number(editTopSetReps) : null;
+    if (
+      shouldShowStrengthEdit &&
+      parsedEditTopWeight != null &&
+      (!Number.isFinite(parsedEditTopWeight) || parsedEditTopWeight <= 0)
+    ) {
+      Alert.alert(t("workoutLog.alerts.invalidTopSet"), t("workoutLog.alerts.topSetWeightPositive"));
+      return;
+    }
+    if (
+      shouldShowStrengthEdit &&
+      parsedEditTopReps != null &&
+      (!Number.isInteger(parsedEditTopReps) || parsedEditTopReps <= 0)
+    ) {
+      Alert.alert(t("workoutLog.alerts.invalidTopSet"), t("workoutLog.alerts.topSetRepsPositive"));
       return;
     }
 
@@ -906,6 +1059,27 @@ export const WorkoutScreen = () => {
         duration: toDurationMinutes(editTimeTaken),
         timeTaken: editTimeTaken,
       });
+      if (shouldShowStrengthEdit) {
+        const existingLiftId = editingItem?.strengthLift?.id;
+        if (parsedEditTopWeight != null && parsedEditTopReps != null) {
+          if (existingLiftId) {
+            await updateStrengthLift(existingLiftId, {
+              weight_kg: parsedEditTopWeight,
+              reps: parsedEditTopReps,
+            });
+          } else {
+            await logStrengthLift({
+              exercise_id: editingItem?.strengthLift?.exercise_id ?? editingItem?.exercise_id ?? null,
+              exercise_name: editingItem?.exerciseName || editExerciseName || t("workoutLog.exerciseFallback"),
+              weight_kg: parsedEditTopWeight,
+              reps: parsedEditTopReps,
+              workout_id: editingId,
+            });
+          }
+        } else if (existingLiftId) {
+          await deleteStrengthLift(existingLiftId);
+        }
+      }
       setHistory((prev) =>
         prev.map((item) =>
           item.id === editingId
@@ -922,10 +1096,10 @@ export const WorkoutScreen = () => {
       setEditingId(null);
       await loadInitial({ preservePlannerState: true }).catch(() => undefined);
       setShowHistory(true);
-      Alert.alert("Updated", "Workout session updated.");
+      Alert.alert(t("workoutLog.alerts.updated"), t("workoutLog.alerts.updatedBody"));
     } catch (error) {
-      const message = axios.isAxiosError(error) ? error.response?.data?.detail || error.message : "Workout could not be updated.";
-      Alert.alert("Error", String(message));
+      const message = axios.isAxiosError(error) ? error.response?.data?.detail || error.message : t("workoutLog.alerts.updateFailed");
+      Alert.alert(t("workoutLog.alerts.error"), String(message));
     } finally {
       setSavingEdit(false);
     }
@@ -938,10 +1112,10 @@ export const WorkoutScreen = () => {
       setHistory((prev) => prev.filter((h) => h.id !== itemId));
       await loadInitial({ preservePlannerState: true });
       setShowHistory(true);
-      Alert.alert("Deleted", "Workout log removed successfully.");
+      Alert.alert(t("workoutLog.alerts.deleted"), t("workoutLog.alerts.deletedBody"));
     } catch (error) {
-      const message = axios.isAxiosError(error) ? error.response?.data?.detail || error.message : "Workout could not be deleted.";
-      Alert.alert("Error", String(message));
+      const message = axios.isAxiosError(error) ? error.response?.data?.detail || error.message : t("workoutLog.alerts.deleteFailed");
+      Alert.alert(t("workoutLog.alerts.error"), String(message));
     } finally {
       setDeletingId(null);
     }
@@ -954,21 +1128,21 @@ export const WorkoutScreen = () => {
       if (!cameraPermission) {
         const permission = await requestCameraPermission();
         if (!permission.granted) {
-          setCameraError("Camera permission denied. Please allow camera access.");
+          setCameraError(t("workoutLog.cameraPermissionDenied"));
           setShowCamera(true);
           return;
         }
       } else if (!cameraPermission.granted) {
         const permission = await requestCameraPermission();
         if (!permission.granted) {
-          setCameraError("Camera permission denied. Please allow camera access.");
+          setCameraError(t("workoutLog.cameraPermissionDenied"));
           setShowCamera(true);
           return;
         }
       }
       setShowCamera(true);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Camera failed to open.";
+      const message = error instanceof Error ? error.message : t("workoutLog.cameraFailed");
       setCameraError(message);
       setShowCamera(true);
     }
@@ -994,8 +1168,8 @@ export const WorkoutScreen = () => {
   const todaySessionCount = todayHistory.length;
   const burnTargetReached = todayCaloriesBurned >= BURN_TARGET;
   const burnProgressPct = Math.min(todayCaloriesBurned / BURN_TARGET, 1);
-  const headerDateLabel = useMemo(() => formatWorkoutHeaderDate(new Date()), []);
-  const exerciseGuidance = useMemo(() => findExerciseGuidance(exerciseName), [exerciseName]);
+  const guidanceExerciseName = selectedEntry?.defaultExerciseName ?? selectedEntry?.exerciseName ?? exerciseName;
+  const exerciseGuidance = useMemo(() => findExerciseGuidance(guidanceExerciseName), [guidanceExerciseName]);
   const showGuideCard = exerciseName !== SELECT_CHOICE && !isNoChoice(exerciseName);
   const movementTypeDisplay =
     selectedEntry?.type ?? (type !== SELECT_CHOICE ? type : "—");
@@ -1003,6 +1177,8 @@ export const WorkoutScreen = () => {
   const weightDisplay = recommendedWeight !== SELECT_CHOICE ? recommendedWeight : "—";
   const displayGoalTag = profileGoalTag !== SELECT_CHOICE ? profileGoalTag : goalTag;
   const displayDifficulty = profileDifficulty !== SELECT_CHOICE ? profileDifficulty : difficulty;
+  const editingItem = editingId != null ? history.find((item) => item.id === editingId) : undefined;
+  const showEditStrengthFields = Boolean(editingItem?.strengthLift) || isStrengthGoal;
 
   const toggleGuide = () => {
     LayoutAnimation.easeInEaseOut();
@@ -1038,13 +1214,12 @@ export const WorkoutScreen = () => {
       >
         <View style={styles.greetingHeader}>
           <View style={styles.greetingLeft}>
-            <Text style={styles.greetingDate}>{headerDateLabel}</Text>
-            <Text style={styles.greetingTitle}>Workout Log 🏋️</Text>
+            <Text style={styles.greetingTitle}>{t("workoutLog.title")}</Text>
           </View>
           {canOpenCamera ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Open camera tracker"
+              accessibilityLabel={t("workoutLog.openCamera")}
               style={styles.headerCameraBtn}
               onPress={() => void openCameraTracker()}
             >
@@ -1057,17 +1232,17 @@ export const WorkoutScreen = () => {
           <View style={styles.milestoneCard}>
             <View style={styles.milestoneTopRow}>
               <View style={styles.milestoneTopLeft}>
-                <Text style={styles.milestoneEyebrow}>SESSION MILESTONE</Text>
+                <Text style={styles.milestoneEyebrow}>{t("workoutLog.sessionMilestone")}</Text>
                 {latestTodayWorkout ? (
                   <>
                     <Text style={styles.milestoneExerciseName} numberOfLines={1}>
                       {bodyPartEmoji(
-                        latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || "Body",
+                        latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || t("workoutLog.body"),
                       )}{" "}
                       {latestTodayWorkout.exerciseName}
                     </Text>
                     <Text style={styles.milestoneLastMeta}>
-                      Last session · {Math.round(Number(latestTodayWorkout.caloriesBurned) || 0)} kcal
+                      {t("workoutLog.lastSession", { kcal: Math.round(Number(latestTodayWorkout.caloriesBurned) || 0) })}
                     </Text>
                   </>
                 ) : null}
@@ -1076,7 +1251,7 @@ export const WorkoutScreen = () => {
                 <Text style={[styles.milestoneCount, todaySessionCount >= 6 ? styles.milestoneCountMet : null]}>
                   {todaySessionCount}
                 </Text>
-                <Text style={styles.milestoneCountDenom}>/ 6 sessions</Text>
+                <Text style={styles.milestoneCountDenom}>{t("workoutLog.sessionsDenom")}</Text>
               </View>
             </View>
 
@@ -1118,15 +1293,15 @@ export const WorkoutScreen = () => {
             </View>
 
             <View style={styles.milestoneFooterRow}>
-              <Text style={styles.milestoneFooterGoal}>Goal: 6 sessions</Text>
+              <Text style={styles.milestoneFooterGoal}>{t("workoutLog.goalSessions")}</Text>
               {todaySessionCount > 6 ? (
                 <Text style={styles.milestoneFooterSuccess}>
-                  🎉 Goal crushed! +{todaySessionCount - 6} bonus
+                  {t("workoutLog.goalCrushed", { count: todaySessionCount - 6 })}
                 </Text>
               ) : todaySessionCount === 6 ? (
-                <Text style={styles.milestoneFooterSuccess}>✓ Goal reached!</Text>
+                <Text style={styles.milestoneFooterSuccess}>{t("workoutLog.goalReached")}</Text>
               ) : (
-                <Text style={styles.milestoneFooterRemaining}>{6 - todaySessionCount} more to go</Text>
+                <Text style={styles.milestoneFooterRemaining}>{t("workoutLog.moreToGo", { count: 6 - todaySessionCount })}</Text>
               )}
             </View>
           </View>
@@ -1136,17 +1311,17 @@ export const WorkoutScreen = () => {
           <View style={styles.kpiPill}>
             <Text style={styles.kpiEmoji}>🔥</Text>
             <Text style={styles.kpiValueOrange}>{todayCaloriesBurned}</Text>
-            <Text style={styles.kpiLabel}>kcal burned</Text>
+            <Text style={styles.kpiLabel}>{t("workoutLog.kcalBurned")}</Text>
           </View>
           <View style={styles.kpiPill}>
             <Text style={styles.kpiEmoji}>✅</Text>
             <Text style={styles.kpiValue}>{todaySessionCount}</Text>
-            <Text style={styles.kpiLabel}>sessions</Text>
+            <Text style={styles.kpiLabel}>{t("workoutLog.sessions")}</Text>
           </View>
           <View style={styles.kpiPill}>
             <Text style={styles.kpiEmoji}>🎯</Text>
             <Text style={styles.kpiValueGreen}>{BURN_TARGET}</Text>
-            <Text style={styles.kpiLabel}>target</Text>
+            <Text style={styles.kpiLabel}>{t("workoutLog.target")}</Text>
           </View>
         </View>
 
@@ -1165,9 +1340,9 @@ export const WorkoutScreen = () => {
 
         <View style={styles.bgCard}>
           <View style={styles.burnHeaderRow}>
-            <Text style={styles.burnTitle}>🔥 Burn progress</Text>
+            <Text style={styles.burnTitle}>{t("workoutLog.burnProgress")}</Text>
             {burnTargetReached ? (
-              <Text style={styles.burnTargetReached}>✓ Target reached!</Text>
+              <Text style={styles.burnTargetReached}>{t("workoutLog.goalReached")}</Text>
             ) : (
               <Text style={styles.burnMeta}>
                 {todayCaloriesBurned} / {BURN_TARGET} kcal
@@ -1185,30 +1360,30 @@ export const WorkoutScreen = () => {
               <View style={styles.lastSessionBody}>
                 <Text style={styles.lastSessionTitle} numberOfLines={2}>
                   {bodyPartEmoji(
-                    latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || "Body",
+                    latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || t("workoutLog.body"),
                   )}{" "}
                   {latestTodayWorkout.exerciseName}
                 </Text>
                 <Text style={styles.lastSessionSub} numberOfLines={1}>
-                  {latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || "Body"} ·{" "}
+                  {latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || t("workoutLog.body")} ·{" "}
                   {Math.round(Number(latestTodayWorkout.caloriesBurned) || 0)} kcal · {latestTodayWorkout.sets ?? 0} ×{" "}
                   {latestTodayWorkout.reps ?? 0}
                 </Text>
               </View>
               <View style={styles.donePill}>
-                <Text style={styles.donePillText}>Done ✓</Text>
+                <Text style={styles.donePillText}>{t("workoutLog.done")}</Text>
               </View>
             </View>
           </View>
         ) : null}
 
-        <Text style={styles.sectionLabel}>Log new workout</Text>
+        <Text style={styles.sectionLabel}>{t("workoutLog.logNewWorkout")}</Text>
 
         {needsGoalTagInput ? (
           <ChipDropdownField
             value={goalTag}
             options={goalTagOptions}
-            placeholder="Goal tag"
+            placeholder={t("workoutLog.goalTag")}
             onChange={async (value) => {
               setGoalTag(value);
               setDifficulty(SELECT_CHOICE);
@@ -1226,7 +1401,7 @@ export const WorkoutScreen = () => {
           <ChipDropdownField
             value={difficulty}
             options={difficultyOptions}
-            placeholder="Difficulty"
+            placeholder={t("workoutLog.difficulty")}
             enabled={!needsGoalTagInput || goalTag !== SELECT_CHOICE}
             onChange={async (value) => {
               setDifficulty(value);
@@ -1243,7 +1418,7 @@ export const WorkoutScreen = () => {
         <ChipDropdownField
           value={bodyPart}
           options={bodyPartOptions}
-          placeholder="Body part"
+          placeholder={t("workoutLog.bodyPart")}
           enabled={(!needsGoalTagInput || goalTag !== SELECT_CHOICE) && (!needsDifficultyInput || difficulty !== SELECT_CHOICE)}
           onChange={async (value) => {
             setBodyPart(value);
@@ -1265,7 +1440,7 @@ export const WorkoutScreen = () => {
           }}
           resolveCatalogId={resolveCatalogId}
           catalogExerciseNames={exerciseOptions}
-          placeholder="Exercise"
+          placeholder={t("workoutLog.exercise")}
           disabled={bodyPart === SELECT_CHOICE}
           chipMode
           chipSelected={exerciseName !== SELECT_CHOICE}
@@ -1288,7 +1463,7 @@ export const WorkoutScreen = () => {
                     {exerciseName}
                   </Text>
                   <Text style={styles.guideHint}>
-                    {guideOpen ? "Tap to collapse guide" : "Tap to see exercise guide"}
+                    {guideOpen ? t("workoutLog.tapCollapseGuide") : t("workoutLog.tapGuide")}
                   </Text>
                 </View>
               </View>
@@ -1305,7 +1480,7 @@ export const WorkoutScreen = () => {
 
                 {exerciseGuidance?.muscles?.length ? (
                   <View style={styles.guideSection}>
-                    <Text style={styles.guideSectionLabelGreen}>🎯 MUSCLES WORKED</Text>
+                    <Text style={styles.guideSectionLabelGreen}>{t("workoutLog.musclesWorked")}</Text>
                     <View style={styles.musclePillRow}>
                       {exerciseGuidance.muscles.map((muscle) => (
                         <View key={`${muscle.name}-${muscle.role}`} style={styles.muscleTag}>
@@ -1318,21 +1493,21 @@ export const WorkoutScreen = () => {
 
                 {exerciseGuidance?.posture ? (
                   <View style={styles.guideBlockGreen}>
-                    <Text style={styles.guideBlockLabelGreen}>🧍 POSTURE</Text>
+                    <Text style={styles.guideBlockLabelGreen}>{t("workoutLog.posture")}</Text>
                     <Text style={styles.guideBlockBody}>{exerciseGuidance.posture}</Text>
                   </View>
                 ) : null}
 
                 {exerciseGuidance?.formCues ? (
                   <View style={styles.guideBlockPurple}>
-                    <Text style={styles.guideBlockLabelPurple}>✋ FORM CUES</Text>
+                    <Text style={styles.guideBlockLabelPurple}>{t("workoutLog.formCues")}</Text>
                     <Text style={styles.guideBlockBody}>{exerciseGuidance.formCues}</Text>
                   </View>
                 ) : null}
 
                 {exerciseGuidance?.cautions ? (
                   <View style={styles.guideBlockOrange}>
-                    <Text style={styles.guideBlockLabelOrange}>⚠️ CAUTIONS</Text>
+                    <Text style={styles.guideBlockLabelOrange}>{t("workoutLog.cautions")}</Text>
                     <Text style={styles.guideBlockBody}>{exerciseGuidance.cautions}</Text>
                   </View>
                 ) : null}
@@ -1346,19 +1521,19 @@ export const WorkoutScreen = () => {
 
                 <View style={styles.guideDetailDivider} />
                 <View style={styles.guideDetailRow}>
-                  <Text style={styles.guideDetailLabel}>Movement</Text>
+                  <Text style={styles.guideDetailLabel}>{t("workoutLog.movement")}</Text>
                   <Text style={styles.guideDetailValue} numberOfLines={2}>
                     {movementTypeDisplay}
                   </Text>
                 </View>
                 <View style={styles.guideDetailRow}>
-                  <Text style={styles.guideDetailLabel}>Recommendation</Text>
+                  <Text style={styles.guideDetailLabel}>{t("workoutLog.recommendation")}</Text>
                   <Text style={styles.guideDetailValue} numberOfLines={3}>
                     {recommendationDisplay}
                   </Text>
                 </View>
                 <View style={styles.guideDetailRow}>
-                  <Text style={styles.guideDetailLabel}>Suggested weight</Text>
+                  <Text style={styles.guideDetailLabel}>{t("workoutLog.suggestedWeight")}</Text>
                   <Text style={styles.guideDetailValueGreen} numberOfLines={2}>
                     {weightDisplay}
                   </Text>
@@ -1369,60 +1544,93 @@ export const WorkoutScreen = () => {
         ) : null}
 
         <View style={styles.srdCard}>
-          <Text style={styles.srdLabel}>Sets · Reps · Duration</Text>
+          <Text style={styles.srdLabel}>{t("workoutLog.setsRepsDuration")}</Text>
           <View style={styles.srdRow}>
             <View style={styles.srdTile}>
-              <Text style={styles.srdTileLabel}>Sets</Text>
+              <Text style={styles.srdTileLabel}>{t("workoutLog.sets")}</Text>
               <TextInput
                 style={styles.srdTileInput}
                 placeholder="4"
                 placeholderTextColor={MUTED}
                 value={performedSets}
-                onChangeText={(value) => setPerformedSets(value.replace(/\D/g, ""))}
+                onChangeText={handlePerformedSetsChange}
                 keyboardType="number-pad"
                 maxLength={3}
               />
             </View>
             <View style={styles.srdTile}>
-              <Text style={styles.srdTileLabel}>Reps</Text>
+              <Text style={styles.srdTileLabel}>{t("workoutLog.repsPerSet")}</Text>
               <TextInput
                 style={styles.srdTileInput}
                 placeholder="12"
                 placeholderTextColor={MUTED}
                 value={performedRepsPerSet}
-                onChangeText={(value) => setPerformedRepsPerSet(value.replace(/\D/g, ""))}
+                onChangeText={handlePerformedRepsChange}
                 keyboardType="number-pad"
                 maxLength={4}
               />
             </View>
             <Pressable style={styles.srdTile} onPress={openDurationPicker}>
-              <Text style={styles.srdTileLabel}>Duration</Text>
+              <Text style={styles.srdTileLabel}>{t("workoutLog.duration")}</Text>
               <Text style={styles.srdTileValue}>{timeTaken || "00:00"}</Text>
             </Pressable>
           </View>
         </View>
 
+        {isStrengthGoal ? (
+          <View style={styles.strengthPrCard}>
+            <Text style={styles.srdLabel}>{t("workoutLog.heaviestSet")}</Text>
+            <Text style={styles.strengthPrCaption}>{t("workoutLog.heaviestSetCaption")}</Text>
+            <View style={styles.srdRow}>
+              <View style={styles.srdTile}>
+                <Text style={styles.srdTileLabel}>{t("workoutLog.topSetWeight")}</Text>
+                <TextInput
+                  style={styles.srdTileInput}
+                  placeholder="80"
+                  placeholderTextColor={MUTED}
+                  value={topSetWeightKg}
+                  onChangeText={handleTopSetWeightChange}
+                  keyboardType="decimal-pad"
+                  maxLength={5}
+                />
+              </View>
+              <View style={styles.srdTile}>
+                <Text style={styles.srdTileLabel}>{t("workoutLog.topSetReps")}</Text>
+                <TextInput
+                  style={styles.srdTileInput}
+                  placeholder="5"
+                  placeholderTextColor={MUTED}
+                  value={topSetReps}
+                  onChangeText={handleTopSetRepsChange}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                />
+              </View>
+            </View>
+          </View>
+        ) : null}
+
         {timeRangeError ? <Text style={styles.inlineError}>{timeRangeError}</Text> : null}
         {estimateKcal != null && workoutEstimatePayload ? (
           <View style={styles.estimatePill}>
-            <Text style={styles.estimatePillText}>~{estimateKcal} kcal estimated</Text>
+            <Text style={styles.estimatePillText}>{t("workoutLog.estimatedKcal", { kcal: estimateKcal })}</Text>
           </View>
         ) : null}
         {estimateError ? <Text style={styles.inlineError}>{estimateError}</Text> : null}
 
         <Pressable style={styles.logBtn} onPress={submit}>
-          <Text style={styles.logBtnTitle}>Log workout 🔥</Text>
-          <Text style={styles.logBtnSub}>Saves to history & updates burn</Text>
+          <Text style={styles.logBtnTitle}>{t("workoutLog.logWorkout")}</Text>
+          <Text style={styles.logBtnSub}>{t("workoutLog.logWorkoutSub")}</Text>
         </Pressable>
 
         <View style={styles.bgCard}>
           <Pressable style={styles.historyHeader} onPress={toggleHistory}>
             <View style={styles.historyHeaderLeft}>
-              <Text style={styles.historyEyebrow}>Recent</Text>
-              <Text style={styles.historyTitle}>Session history</Text>
+              <Text style={styles.historyEyebrow}>{t("workoutLog.recent")}</Text>
+              <Text style={styles.historyTitle}>{t("workoutLog.sessionHistory")}</Text>
             </View>
             <View style={styles.historyHeaderRight}>
-              <Text style={styles.historyCount}>{todaySessionCount} today</Text>
+              <Text style={styles.historyCount}>{t("workoutLog.todayCount", { count: todaySessionCount })}</Text>
               <Text style={[styles.historyChevron, showHistory ? styles.historyChevronOpen : null]}>▾</Text>
             </View>
           </Pressable>
@@ -1430,10 +1638,8 @@ export const WorkoutScreen = () => {
           {showHistory ? (
             todayHistory.length === 0 ? (
               <View style={styles.emptyHistory}>
-                <Text style={styles.emptyHistoryTitle}>No sessions today</Text>
-                <Text style={styles.emptyHistorySub}>
-                  Log a workout above — today&apos;s entries will appear here with type, burn, and date.
-                </Text>
+                <Text style={styles.emptyHistoryTitle}>{t("workoutLog.emptyHistoryTitle")}</Text>
+                <Text style={styles.emptyHistorySub}>{t("workoutLog.emptyHistorySub")}</Text>
               </View>
             ) : (
               todayHistory.map((item, idx) => (
@@ -1443,12 +1649,24 @@ export const WorkoutScreen = () => {
                 >
                   <View style={styles.historyStripe} />
                   <View style={styles.historyBody}>
-                    <Text style={styles.historySessionLine} numberOfLines={2}>
-                      {sessionHistoryLabel(item)}
-                    </Text>
+                    <View style={styles.historyTitleRow}>
+                      <Text style={styles.historySessionLine} numberOfLines={2}>
+                        {sessionHistoryLabel(item)}
+                      </Text>
+                      {item.strengthLift?.is_new_pr ? (
+                        <View style={styles.newPrBadge}>
+                          <Text style={styles.newPrBadgeText}>{t("workoutLog.newPr")}</Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Text style={styles.historySessionMeta} numberOfLines={1}>
                       {String(item.type || "")} · {formatDate(item.date)}
                     </Text>
+                    {item.strengthLift ? (
+                      <Text style={styles.historyStrengthMeta} numberOfLines={1}>
+                        {t("workoutLog.strengthMeta", { weight: item.strengthLift.weight_kg, reps: item.strengthLift.reps, oneRm: item.strengthLift.estimated_1rm_kg })}
+                      </Text>
+                    ) : null}
                   </View>
                   <View style={styles.historyActions}>
                     <Pressable
@@ -1457,7 +1675,7 @@ export const WorkoutScreen = () => {
                       onPress={() => openEditModal(item)}
                       disabled={deletingId === item.id}
                     >
-                      <Text style={styles.editLogText}>Edit</Text>
+                      <Text style={styles.editLogText}>{t("workoutLog.edit")}</Text>
                     </Pressable>
                     <Pressable
                       style={styles.deleteLogBtn}
@@ -1478,11 +1696,11 @@ export const WorkoutScreen = () => {
       <Modal visible={durationPickerOpen} transparent animationType="fade" onRequestClose={() => setDurationPickerOpen(false)}>
         <View style={styles.durationModalBackdrop}>
           <View style={[styles.durationModalCard, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.lg }]}>
-            <Text style={[styles.durationModalTitle, { color: colors.text }]}>Set Duration</Text>
-            <Text style={[styles.durationModalSub, { color: colors.muted }]}>Pick minutes and seconds</Text>
+            <Text style={[styles.durationModalTitle, { color: colors.text }]}>{t("workoutLog.setDuration")}</Text>
+            <Text style={[styles.durationModalSub, { color: colors.muted }]}>{t("workoutLog.durationSub")}</Text>
             <View style={styles.durationPickerRow}>
               <View style={styles.durationCol}>
-                <Text style={[styles.durationUnit, { color: colors.muted }]}>Minutes</Text>
+                <Text style={[styles.durationUnit, { color: colors.muted }]}>{t("workoutLog.minutes")}</Text>
                 <Pressable
                   style={[styles.durationStepBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
                   onPress={() => setPickerMinutes((m) => Math.max(0, m - 1))}
@@ -1501,7 +1719,7 @@ export const WorkoutScreen = () => {
               <Text style={[styles.durationSeparator, { color: colors.text }]}>:</Text>
 
               <View style={styles.durationCol}>
-                <Text style={[styles.durationUnit, { color: colors.muted }]}>Seconds</Text>
+                <Text style={[styles.durationUnit, { color: colors.muted }]}>{t("workoutLog.seconds")}</Text>
                 <Pressable
                   style={[styles.durationStepBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
                   onPress={() => setPickerSeconds((s) => Math.max(0, s - 1))}
@@ -1523,13 +1741,13 @@ export const WorkoutScreen = () => {
                 style={[styles.durationActionBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
                 onPress={() => setDurationPickerOpen(false)}
               >
-                <Text style={[styles.durationActionText, { color: colors.text }]}>Cancel</Text>
+                <Text style={[styles.durationActionText, { color: colors.text }]}>{t("common.cancel")}</Text>
               </Pressable>
               <Pressable
                 style={[styles.durationActionBtn, { borderColor: colors.primary, backgroundColor: colors.primary }]}
                 onPress={applyDurationSelection}
               >
-                <Text style={[styles.durationActionText, { color: colors.background }]}>Set</Text>
+                <Text style={[styles.durationActionText, { color: colors.background }]}>{t("workoutLog.set")}</Text>
               </Pressable>
             </View>
           </View>
@@ -1537,13 +1755,16 @@ export const WorkoutScreen = () => {
       </Modal>
 
       <Modal visible={editingId !== null} transparent animationType="fade" onRequestClose={() => setEditingId(null)}>
-        <View style={styles.durationModalBackdrop}>
-          <View style={[styles.durationModalCard, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.lg }]}>
-            <Text style={[styles.durationModalTitle, { color: colors.text }]}>Edit workout session</Text>
+        <View style={styles.editModalBackdrop}>
+          <View style={styles.editModalCard}>
+            <Text style={styles.editModalTitle}>{t("workoutLog.editSession")}</Text>
+            <Text style={styles.editModalSubtitle} numberOfLines={2}>
+              {editExerciseName || editingItem?.exerciseName || t("workoutLog.workout")}
+            </Text>
             <View style={styles.inputGrid}>
               <View style={styles.inputGridHalf}>
-                <AppInput
-                  label="Sets"
+                <EditModalInput
+                  label={t("workoutLog.sets")}
                   placeholder="4"
                   value={editSets}
                   onChangeText={(value) => setEditSets(value.replace(/\D/g, ""))}
@@ -1552,8 +1773,8 @@ export const WorkoutScreen = () => {
                 />
               </View>
               <View style={styles.inputGridHalf}>
-                <AppInput
-                  label="Reps / set"
+                <EditModalInput
+                  label={t("workoutLog.repsPerSet")}
                   placeholder="12"
                   value={editReps}
                   onChangeText={(value) => setEditReps(value.replace(/\D/g, ""))}
@@ -1563,31 +1784,61 @@ export const WorkoutScreen = () => {
               </View>
             </View>
             <View style={styles.durationWrap}>
-              <AppInput
-                label="Time taken (mm:ss)"
+              <EditModalInput
+                label={t("workoutLog.timeTaken")}
                 placeholder="12:30"
                 value={editTimeTaken}
                 onChangeText={setEditTimeTaken}
               />
             </View>
-            <View style={styles.durationModalActions}>
+            {showEditStrengthFields ? (
+              <View style={styles.editStrengthCard}>
+                <Text style={styles.editStrengthTitle}>{t("workoutLog.heaviestSet")}</Text>
+                <Text style={styles.editStrengthCaption}>{t("workoutLog.heaviestSetCaption")}</Text>
+                <View style={styles.inputGrid}>
+                  <View style={styles.inputGridHalf}>
+                    <EditModalInput
+                      label={t("workoutLog.topSetWeight")}
+                      labelTone="green"
+                      placeholder="80"
+                      value={editTopSetWeightKg}
+                      onChangeText={handleEditTopSetWeightChange}
+                      keyboardType="decimal-pad"
+                      maxLength={5}
+                    />
+                  </View>
+                  <View style={styles.inputGridHalf}>
+                    <EditModalInput
+                      label={t("workoutLog.topSetReps")}
+                      labelTone="green"
+                      placeholder="5"
+                      value={editTopSetReps}
+                      onChangeText={(value) => setEditTopSetReps(value.replace(/\D/g, ""))}
+                      keyboardType="number-pad"
+                      maxLength={3}
+                    />
+                  </View>
+                </View>
+              </View>
+            ) : null}
+            <View style={styles.editModalActions}>
               <TouchableOpacity
                 activeOpacity={0.85}
-                style={[styles.durationActionBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+                style={styles.editCancelBtn}
                 onPress={() => {
                   if (savingEdit) return;
                   setEditingId(null);
                 }}
               >
-                <Text style={[styles.durationActionText, { color: colors.text }]}>Cancel</Text>
+                <Text style={styles.editCancelText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 activeOpacity={0.85}
-                style={[styles.durationActionBtn, { borderColor: colors.primary, backgroundColor: colors.primary }, savingEdit ? { opacity: 0.7 } : null]}
+                style={[styles.editSaveBtn, savingEdit ? { opacity: 0.7 } : null]}
                 onPress={() => void submitEdit()}
                 disabled={savingEdit}
               >
-                <Text style={[styles.durationActionText, { color: colors.background }]}>{savingEdit ? "Saving..." : "Save"}</Text>
+                <Text style={styles.editSaveText}>{savingEdit ? t("common.saving") : t("common.save")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1598,12 +1849,12 @@ export const WorkoutScreen = () => {
         <View style={styles.cameraModalBackdrop}>
           <View style={[styles.cameraModalCard, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.lg }]}>
             <View style={styles.cameraHeaderRow}>
-              <Text style={[styles.cameraTitle, { color: colors.text }]}>Workout camera tracker</Text>
+              <Text style={[styles.cameraTitle, { color: colors.text }]}>{t("workoutLog.cameraTitle")}</Text>
               <Pressable
                 style={[styles.cameraCloseBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
                 onPress={closeCameraTracker}
               >
-                <Text style={[styles.cameraCloseText, { color: colors.text }]}>Close</Text>
+                <Text style={[styles.cameraCloseText, { color: colors.text }]}>{t("profile.close")}</Text>
               </Pressable>
             </View>
             {cameraPermission?.granted ? (
@@ -1613,7 +1864,7 @@ export const WorkoutScreen = () => {
                 />
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Close camera"
+                  accessibilityLabel={t("workoutLog.closeCamera")}
                   style={[styles.cameraFloatingCloseBtn, { borderColor: colors.border, backgroundColor: "rgba(0,0,0,0.6)" }]}
                   onPress={closeCameraTracker}
                 >
@@ -1623,13 +1874,13 @@ export const WorkoutScreen = () => {
             ) : (
               <View style={[styles.cameraPermissionBox, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
                 <Text style={[styles.cameraPermissionText, { color: colors.text }]}>
-                  {cameraError || "Camera permission is required to use workout tracking."}
+                  {cameraError || t("workoutLog.cameraPermission")}
                 </Text>
                 <Pressable
                   style={[styles.cameraAllowBtn, { borderColor: colors.primary, backgroundColor: colors.primary }]}
                   onPress={() => void openCameraTracker()}
                 >
-                  <Text style={[styles.cameraAllowText, { color: colors.background }]}>Allow Camera</Text>
+                  <Text style={[styles.cameraAllowText, { color: colors.background }]}>{t("workoutLog.allowCamera")}</Text>
                 </Pressable>
               </View>
             )}
@@ -1651,8 +1902,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   greetingLeft: { flex: 1, paddingRight: 12 },
-  greetingDate: { fontSize: 13, color: MUTED, marginBottom: 4 },
-  greetingTitle: { fontSize: 22, fontWeight: "700", color: TEXT },
+  greetingTitle: { fontSize: 25, fontWeight: "800", color: TEXT },
   headerCameraBtn: {
     width: 40,
     height: 40,
@@ -1948,6 +2198,18 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
+  strengthPrCard: {
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+  },
+  strengthPrCaption: {
+    fontSize: 12,
+    color: GREEN,
+    marginBottom: 10,
+    lineHeight: 17,
+  },
   srdLabel: {
     fontSize: 10,
     fontWeight: "700",
@@ -2024,8 +2286,18 @@ const styles = StyleSheet.create({
   historyRowLast: { borderBottomWidth: 0 },
   historyStripe: { width: 4, height: 40, borderRadius: 2, marginRight: 12, backgroundColor: GREEN },
   historyBody: { flex: 1, minWidth: 0, justifyContent: "center", paddingRight: 6 },
+  historyTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   historySessionLine: { fontWeight: "700", fontSize: 14, lineHeight: 19, color: TEXT },
   historySessionMeta: { fontSize: 11, fontWeight: "600", marginTop: 4, color: MUTED },
+  historyStrengthMeta: { fontSize: 11, fontWeight: "700", marginTop: 4, color: GREEN },
+  newPrBadge: {
+    backgroundColor: "#FFF4CC",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    flexShrink: 0,
+  },
+  newPrBadgeText: { fontSize: 10, fontWeight: "900", color: "#9A5A00" },
   historyActions: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 8, marginLeft: 6, flexShrink: 0 },
   editLogBtn: {
     minWidth: 52,
@@ -2102,6 +2374,89 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   durationActionText: { fontSize: 14, fontWeight: "800" },
+  editModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(26,26,24,0.32)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  editModalCard: {
+    width: "100%",
+    maxWidth: 390,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 20,
+    backgroundColor: WHITE,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+  editModalTitle: { fontSize: 20, fontWeight: "900", color: TEXT },
+  editModalSubtitle: { fontSize: 13, fontWeight: "700", color: GREEN, marginTop: 4, marginBottom: 16 },
+  editInputWrap: { marginBottom: 12 },
+  editInputLabel: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#62625C",
+    marginBottom: 7,
+  },
+  editInputLabelGreen: { color: GREEN },
+  editTextInput: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 12,
+    backgroundColor: WHITE,
+    color: TEXT,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  editStrengthCard: {
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(15,110,86,0.14)",
+    padding: 12,
+    marginTop: 4,
+  },
+  editStrengthTitle: {
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.6,
+    color: GREEN,
+    textTransform: "uppercase",
+    marginBottom: 5,
+  },
+  editStrengthCaption: { fontSize: 12, color: GREEN, lineHeight: 17, marginBottom: 10 },
+  editModalActions: { flexDirection: "row", gap: 10, marginTop: 16 },
+  editCancelBtn: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    backgroundColor: WHITE,
+  },
+  editSaveBtn: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: GREEN,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    backgroundColor: GREEN,
+  },
+  editCancelText: { fontSize: 14, fontWeight: "900", color: TEXT },
+  editSaveText: { fontSize: 14, fontWeight: "900", color: WHITE },
   cameraModalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.72)",

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from src.db.session import Base
@@ -41,6 +41,7 @@ class MealEntry(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     meal_type = Column(String(32), nullable=False)
     source_type = Column(String(24), nullable=False, default="database")
+    food_id = Column(BigInteger, nullable=True, index=True)
     food_name = Column(String(200), nullable=False)
     quantity_g = Column(Numeric(8, 2), nullable=False)
     calories_per_100g = Column(Numeric(7, 2), nullable=False)

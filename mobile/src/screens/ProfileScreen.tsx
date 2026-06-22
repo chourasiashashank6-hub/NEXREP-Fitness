@@ -18,18 +18,24 @@ import { Ionicons } from "@expo/vector-icons";
 import Svg, { Circle } from "react-native-svg";
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import { apiClient, resolveApiBaseUrl } from "../api/client";
 import { getDailyCalorieLog, todayLocal } from "../api/caloriesLog";
 import { submitFeedback } from "../api/feedback";
 import { fetchOnboardingMe } from "../api/onboarding";
+import { getStrengthProgress, type StrengthProgress } from "../api/strength";
 import { getProfile } from "../api/user";
 import { getWorkoutHistory } from "../api/workout";
+import { BottomSheetPicker } from "../components/BottomSheetPicker";
 import DevSubscriptionToggle from "../components/DevSubscriptionToggle";
-import SubscriptionBillingSection from "../components/SubscriptionBillingSection";
 import { ScreenContainer } from "../components/ScreenContainer";
+import { TIER_COLORS } from "../constants/tierColors";
+import { useLanguageStore } from "../i18n/languageStore";
 import { signOutSession } from "../services/authService";
 import { useAuthStore } from "../store/authStore";
 import { useSubscriptionStore } from "../store/subscriptionStore";
+import type { PlanTier } from "../types/subscription";
+import { logicalRow, textAlignStart } from "../utils/rtl";
 
 type GoalTag = "Fat Loss" | "Muscle Gain" | "Strength";
 
@@ -41,7 +47,6 @@ const goalColors: Record<GoalTag, { primary: string; bg: string; text: string }>
 
 const toGoalTag = (v: unknown): GoalTag => (v === "Muscle Gain" || v === "Strength" ? (v as GoalTag) : "Fat Loss");
 const monthYear = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-const dayLabel = (d: Date = new Date()) => d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
 const getInitials = (first: string, last: string) => `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "U";
 const numFmt = (n: number) => Math.round(n).toLocaleString();
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -138,9 +143,20 @@ type LatestWeightLog = {
 type OnboardingGoalType = "fat_loss" | "muscle_gain" | "strength" | "maintain" | "recomp";
 
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
+const LANGUAGE_OPTIONS = [
+  { value: "en", label: "English" },
+  { value: "hi", label: "Hindi" },
+  { value: "hinglish", label: "Hinglish" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "de", label: "German" },
+];
 
 export const ProfileScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
+  const language = useLanguageStore((s) => s.explicitLanguage || s.language);
+  const setLanguage = useLanguageStore((s) => s.setLanguage);
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -194,6 +210,7 @@ export const ProfileScreen = () => {
   const [goalType, setGoalType] = useState<OnboardingGoalType>("maintain");
   const [goalTag, setGoalTag] = useState<GoalTag>("Fat Loss");
   const [latestWeightLog, setLatestWeightLog] = useState<LatestWeightLog | null>(null);
+  const [strengthProgress, setStrengthProgress] = useState<StrengthProgress | null>(null);
   const [loadingWeight, setLoadingWeight] = useState(true);
   const [showWeighInModal, setShowWeighInModal] = useState(false);
   const [weighInValue, setWeighInValue] = useState("");
@@ -208,15 +225,16 @@ export const ProfileScreen = () => {
   });
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
   const fetchPayments = useSubscriptionStore((s) => s.fetchPayments);
-  const subscriptionTier = useSubscriptionStore((s) => s.subscription?.tier ?? "FREE");
+  const subscriptionTier: PlanTier = useSubscriptionStore((s) => s.subscription?.tier ?? "FREE");
 
   const load = useCallback(async () => {
     try {
-      const [profile, onboardingRes, burnRes, historyRes] = await Promise.all([
+      const [profile, onboardingRes, burnRes, historyRes, strengthProgressRes] = await Promise.all([
         getProfile(),
         fetchOnboardingMe().catch(() => null),
         apiClient.get<{ totalCaloriesBurned: number; sessionCount: number }>("/workout/total-burn").catch(() => ({ data: { totalCaloriesBurned: 0, sessionCount: 0 } })),
         apiClient.get<{ items: Array<{ date: string }> }>("/workout/history", { params: { hours: 24 * 30 } }).catch(() => ({ data: { items: [] } })),
+        getStrengthProgress().catch(() => null),
       ]);
       const dates15 = listPastDates(DAY_WINDOW);
       const [workoutHistory15d, calorieLogs15d] = await Promise.all([
@@ -228,8 +246,11 @@ export const ProfileScreen = () => {
       const [f = "", ...rest] = fullName.split(" ");
       const l = rest.join(" ");
       const ob = onboardingRes?.onboarding;
-      const targetKg = Number(ob?.goal?.target_weight_kg || ob?.goal?.target_weight_lb / 2.20462 || profile.weight || 0);
-      const startKg = Number(ob?.personal?.start_weight_kg || ob?.personal?.weight_kg || profile.weight || 0);
+      const targetWeightLb = ob?.goal?.target_weight_lb;
+      const personalWithLegacyStart = ob?.personal as
+        | ({ weight_kg?: number | null; start_weight_kg?: number | null } | undefined);
+      const targetKg = Number(ob?.goal?.target_weight_kg ?? (targetWeightLb != null ? targetWeightLb / 2.20462 : undefined) ?? profile.weight ?? 0);
+      const startKg = Number(personalWithLegacyStart?.start_weight_kg ?? ob?.personal?.weight_kg ?? profile.weight ?? 0);
       const pace = ob?.goal?.pace === "slow" ? 0.25 : ob?.goal?.pace === "aggressive" ? 0.75 : 0.5;
       const registrationIso = typeof profile.createdAt === "string" && profile.createdAt.length >= 10 ? profile.createdAt.slice(0, 10) : "";
 
@@ -263,6 +284,7 @@ export const ProfileScreen = () => {
           : "maintain";
       setGoalType(mappedGoalType);
       setGoalTag(toGoalTag(profile.goalTag));
+      setStrengthProgress(strengthProgressRes);
       setPaceKgPerWeek(pace);
       setAge(Number(profile.age || 25));
       setMemberSince(monthYear(new Date().toISOString()));
@@ -356,9 +378,9 @@ export const ProfileScreen = () => {
       setCalorieFromDate((prev) => prev || defaultFrom);
       setCalorieToDate((prev) => prev || defaultTo);
     } catch {
-      Alert.alert("Error", "Could not load profile data.");
+      Alert.alert(t("profile.alerts.error"), t("profile.alerts.loadFailed"));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -426,28 +448,28 @@ export const ProfileScreen = () => {
 
   const progressTitle =
     goalType === "fat_loss"
-      ? "Weight loss progress"
+      ? t("profile.progress.weightLoss")
       : goalType === "muscle_gain"
-        ? "Weight gain progress"
+        ? t("profile.progress.weightGain")
         : goalType === "strength"
-          ? "Strength journey"
+          ? t("profile.progress.strength")
           : goalTag === "Fat Loss"
-            ? "Weight loss progress"
+            ? t("profile.progress.weightLoss")
             : goalTag === "Muscle Gain"
-              ? "Weight gain progress"
-              : "Body recomposition progress";
+              ? t("profile.progress.weightGain")
+              : t("profile.progress.bodyRecomp");
 
   const progressCenterLabel =
     progressPct === 0
-      ? "0% achieved"
+      ? t("profile.progress.zero")
       : progressPct >= 100
-        ? "🎉 Goal reached!"
-        : `${progressPct}% · ${kgAchieved} kg ${goalType === "fat_loss" ? "lost" : "gained"}`;
+        ? t("profile.progress.goalReached")
+        : t("profile.progress.progressWithKg", { percent: progressPct, kg: kgAchieved, direction: goalType === "fat_loss" ? t("profile.progress.lost") : t("profile.progress.gained") });
 
   const handleLogWeight = async () => {
     const kg = parseFloat(weighInValue);
     if (!kg || kg <= 0 || kg > 500) {
-      Alert.alert("Invalid", "Please enter a valid weight between 1 and 500 kg");
+      Alert.alert(t("profile.alerts.invalid"), t("profile.alerts.invalidWeight"));
       return;
     }
     if (!token) return;
@@ -468,7 +490,7 @@ export const ProfileScreen = () => {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) throw new Error(t("profile.alerts.saveFailed"));
       const data = await res.json();
 
       setLatestWeightLog({
@@ -480,12 +502,12 @@ export const ProfileScreen = () => {
       setProfileWeightKg(kg);
 
       if (data.change_label) {
-        Alert.alert("Logged!", data.change_label);
+        Alert.alert(t("profile.alerts.logged"), data.change_label);
       }
 
       setShowWeighInModal(false);
     } catch {
-      Alert.alert("Error", "Could not save weight. Try again.");
+      Alert.alert(t("profile.alerts.error"), t("profile.alerts.saveWeightFailed"));
     } finally {
       setIsLoggingWeight(false);
     }
@@ -612,7 +634,7 @@ export const ProfileScreen = () => {
       } else {
         nextFrom = toIsoLocalDate(addDays(parseIsoDate(nextTo), -(MAX_SELECTABLE_RANGE_DAYS - 1)));
       }
-      Alert.alert("Date range adjusted", "Range cannot exceed 30 days.");
+      Alert.alert(t("profile.alerts.rangeAdjusted"), t("profile.alerts.rangeLimit"));
     }
     if (overlay === "exercise") {
       setExerciseFromDate(nextFrom);
@@ -662,11 +684,11 @@ export const ProfileScreen = () => {
     const subject = feedbackSubject.trim();
     const body = feedbackBody.trim();
     if (!subject) {
-      Alert.alert("Validation", "Please enter a feedback subject.");
+      Alert.alert(t("profile.alerts.validation"), t("profile.alerts.subjectRequired"));
       return;
     }
     if (!body) {
-      Alert.alert("Validation", "Please enter your feedback message.");
+      Alert.alert(t("profile.alerts.validation"), t("profile.alerts.bodyRequired"));
       return;
     }
     try {
@@ -678,7 +700,7 @@ export const ProfileScreen = () => {
         error && typeof error === "object" && "response" in error
           ? String((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "")
           : "";
-      Alert.alert("Error", message || "Could not send feedback right now.");
+      Alert.alert(t("profile.alerts.error"), message || t("profile.alerts.feedbackFailed"));
     } finally {
       setSendingFeedback(false);
     }
@@ -689,17 +711,19 @@ export const ProfileScreen = () => {
     planBadgeLabel === "ELITE" ? styles.planBadgeElite : planBadgeLabel === "PRO" ? styles.planBadgePro : styles.planBadgeFree;
   const planBadgeTextStyle =
     planBadgeLabel === "ELITE" ? styles.planBadgeEliteText : planBadgeLabel === "PRO" ? styles.planBadgeProText : styles.planBadgeFreeText;
+  const subscriptionColors = TIER_COLORS[subscriptionTier];
   const avatarRadius = 28;
   const avatarCircumference = 2 * Math.PI * avatarRadius;
   const avatarOffset = avatarCircumference * (1 - Math.max(0, Math.min(100, progressPct)) / 100);
   const dailyAdjustmentLabel = `${dailyCalorieAdjustment > 0 ? "+" : "−"}${Math.abs(Math.round(dailyCalorieAdjustment))} kcal`;
+  const isStrengthGoal = goalType === "strength";
+  const strengthLifts = strengthProgress?.lifts.slice(0, 3) ?? [];
 
   return (
     <ScreenContainer bg={SCREEN_BG} contentStyle={styles.screenContent}>
       <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BG} />
       <View style={styles.inlineHeader}>
-        <Text style={styles.dateLabel}>{dayLabel()}</Text>
-        <Text style={styles.pageTitle}>Profile 👤</Text>
+        <Text style={styles.pageTitle}>{t("profile.title")}</Text>
       </View>
 
       <View style={styles.identityCard}>
@@ -735,7 +759,7 @@ export const ProfileScreen = () => {
               </View>
             </View>
             {userEmail ? <Text style={styles.emailText}>{userEmail}</Text> : null}
-            <Text style={styles.memberMeta}>{`${difficulty} · ${memberSince || "Member"}`}</Text>
+            <Text style={styles.memberMeta}>{`${difficulty} · ${memberSince || t("profile.member")}`}</Text>
           </View>
           <Pressable
             style={styles.heroEditBtn}
@@ -744,84 +768,129 @@ export const ProfileScreen = () => {
               setNeedsOnboarding(true);
             }}
           >
-            <Text style={styles.heroEditText}>Edit ✏️</Text>
+            <Text style={styles.heroEditText}>{t("profile.edit")}</Text>
           </Pressable>
         </View>
 
         <View style={styles.goalPillsRow}>
-          <Tile label="Goal" value={goalTag} emoji="🔥" variant="hero" />
-          <Tile label={dailyCalorieAdjustment < 0 ? "Deficit" : "Surplus"} value={dailyAdjustmentLabel} emoji="⚡" variant="hero" />
-          <Tile label="Pace" value={`${paceKgPerWeek} kg/w`} emoji="📉" variant="hero" />
+          <Tile label={t("profile.goal")} value={goalTag} emoji="🔥" variant="hero" />
+          <Tile label={dailyCalorieAdjustment < 0 ? t("profile.deficit") : t("profile.surplus")} value={dailyAdjustmentLabel} emoji="⚡" variant="hero" />
+          <Tile label={t("profile.pace")} value={t("profile.paceValue", { pace: paceKgPerWeek })} emoji="📉" variant="hero" />
         </View>
       </View>
 
       <View style={styles.card}>
-        <View style={styles.cardHeaderRow}>
-          <Text style={styles.cardTitle}>⚖️ Weight journey</Text>
-          {progressPct >= 100 ? (
-            <View style={styles.goalReachedPill}>
-              <Text style={styles.goalReachedText}>🏁 Goal reached!</Text>
+        {isStrengthGoal ? (
+          <>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardTitle}>{t("profile.strengthJourney")}</Text>
+              {strengthProgress?.has_target_lifts ? (
+                <Text style={styles.progressMuted}>{t("profile.avg", { percent: strengthProgress.overall_percent })}</Text>
+              ) : null}
             </View>
-          ) : (
-            <Text style={styles.progressMuted}>{progressPct}%</Text>
-          )}
-        </View>
-        <View style={styles.weightPathRow}>
-          <View style={styles.weightPoint}>
-            <Text style={styles.weightPointLabel}>Start</Text>
-            <Text style={styles.weightStartValue}>{round1(startWeightKg)}</Text>
-          </View>
-          <View style={styles.weightGradientTrack}>
-            <View style={styles.weightGradientOrange} />
-            <View style={styles.weightGradientGold} />
-            <View style={styles.weightGradientGreen} />
-          </View>
-          <View style={styles.weightPoint}>
-            <Text style={styles.weightPointLabel}>Target</Text>
-            <Text style={styles.weightTargetValue}>{round1(targetWeightKg)}</Text>
-          </View>
-        </View>
-        <View style={styles.weightTilesRow}>
-          <View style={styles.currentWeightTile}>
-            <Text style={styles.tileMuted}>Current</Text>
-            {loadingWeight ? (
-              <ActivityIndicator size="small" color={GREEN} style={styles.weightLoader} />
+            {strengthProgress?.has_target_lifts ? (
+              <View style={styles.strengthRows}>
+                {strengthLifts.map((lift) => (
+                  <View key={lift.exercise_name} style={styles.strengthLiftRow}>
+                    <View style={styles.strengthLiftHeader}>
+                      <Text style={styles.strengthLiftName}>{lift.exercise_name}</Text>
+                      <Text style={[styles.strengthLiftPercent, lift.percent >= 100 ? styles.strengthLiftComplete : null]}>
+                        {lift.percent}%
+                      </Text>
+                    </View>
+                    <View style={styles.strengthProgressTrack}>
+                      <View
+                        style={[
+                          styles.strengthProgressFill,
+                          { width: `${Math.max(0, Math.min(100, lift.percent))}%` },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.strengthLiftMeta}>
+                      {t("profile.targetKg", { current: round1(lift.current_best_1rm_kg), target: round1(lift.target_weight_kg) })}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             ) : (
-              <>
-                <Text style={styles.currentWeightValue}>{round1(displayCurrentWeight)} kg</Text>
-                {latestWeightLog?.log_date ? (
-                  <Text style={[styles.weightFreshness, latestWeightLog.days_since_log === 0 && styles.weightFreshnessToday]}>
-                    {latestWeightLog.days_since_log === 0 ? "✓ Updated today" : `${latestWeightLog.days_since_log}d ago`}
-                  </Text>
-                ) : (
-                  <Text style={styles.weightFreshness}>From profile</Text>
-                )}
-              </>
+              <View style={styles.strengthEmptyBox}>
+                <Text style={styles.strengthEmptyTitle}>{t("profile.strengthEmptyTitle")}</Text>
+                <Text style={styles.strengthEmptyText}>
+                  {t("profile.strengthEmptyBody")}
+                </Text>
+              </View>
             )}
-          </View>
-          <Pressable
-            style={styles.logWeightTile}
-            onPress={() => {
-              setWeighInValue(String(displayCurrentWeight || ""));
-              setShowWeighInModal(true);
-            }}
-          >
-            <Text style={styles.logWeightEmoji}>📅</Text>
-            <Text style={styles.logWeightText}>Log weight</Text>
-            <Text style={styles.logWeightSub}>
-              {latestWeightLog?.has_logs ? `last: ${round1(latestWeightLog.weight_kg)} kg` : "start tracking"}
-            </Text>
-          </Pressable>
-        </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardTitle}>{t("profile.weightJourney")}</Text>
+              {progressPct >= 100 ? (
+                <View style={styles.goalReachedPill}>
+                  <Text style={styles.goalReachedText}>{t("profile.goalReachedPill")}</Text>
+                </View>
+              ) : (
+                <Text style={styles.progressMuted}>{progressPct}%</Text>
+              )}
+            </View>
+            <View style={styles.weightPathRow}>
+              <View style={styles.weightPoint}>
+                <Text style={styles.weightPointLabel}>{t("profile.start")}</Text>
+                <Text style={styles.weightStartValue}>{round1(startWeightKg)}</Text>
+              </View>
+              <View style={styles.weightGradientTrack}>
+                <View style={styles.weightGradientOrange} />
+                <View style={styles.weightGradientGold} />
+                <View style={styles.weightGradientGreen} />
+              </View>
+              <View style={styles.weightPoint}>
+                <Text style={styles.weightPointLabel}>{t("profile.target")}</Text>
+                <Text style={styles.weightTargetValue}>{round1(targetWeightKg)}</Text>
+              </View>
+            </View>
+            <View style={styles.weightTilesRow}>
+              <View style={styles.currentWeightTile}>
+                <Text style={styles.tileMuted}>{t("profile.current")}</Text>
+                {loadingWeight ? (
+                  <ActivityIndicator size="small" color={GREEN} style={styles.weightLoader} />
+                ) : (
+                  <>
+                    <Text style={styles.currentWeightValue}>{round1(displayCurrentWeight)} kg</Text>
+                    {latestWeightLog?.log_date ? (
+                      <Text style={[styles.weightFreshness, latestWeightLog.days_since_log === 0 && styles.weightFreshnessToday]}>
+                        {latestWeightLog.days_since_log === 0 ? t("profile.updatedToday") : t("profile.daysAgo", { count: latestWeightLog.days_since_log })}
+                      </Text>
+                    ) : (
+                      <Text style={styles.weightFreshness}>{t("profile.fromProfile")}</Text>
+                    )}
+                  </>
+                )}
+              </View>
+              <Pressable
+                style={styles.logWeightTile}
+                onPress={() => {
+                  setWeighInValue(String(displayCurrentWeight || ""));
+                  setShowWeighInModal(true);
+                }}
+              >
+                <Text style={styles.logWeightEmoji}>📅</Text>
+                <Text style={styles.logWeightText}>{t("profile.logWeight")}</Text>
+                <Text style={styles.logWeightSub}>
+                  {latestWeightLog?.has_logs ? t("profile.lastWeight", { weight: round1(latestWeightLog.weight_kg) }) : t("profile.startTracking")}
+                </Text>
+              </Pressable>
+            </View>
+          </>
+        )}
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.sectionLabel}>ACTIVITY OVERVIEW</Text>
+        <Text style={styles.sectionLabel}>{t("profile.activityOverview")}</Text>
         <View style={styles.activityStatsRow}>
-          <StatTile value={numFmt(stats.totalWorkoutsDone)} label="Workouts" valueColor={BLUE} icon="🏋️" iconBg={BLUE_LIGHT} />
-          <StatTile value={numFmt(stats.totalKcalBurned)} label="kcal burned" valueColor={ORANGE} icon="🔥" iconBg={ORANGE_LIGHT} />
-          <StatTile value={numFmt(stats.currentDayStreak)} label="Day streak" valueColor={GREEN} icon="⚡" iconBg={GREEN_LIGHT} />
-          <StatTile value={String(stats.avgSessionsPerWeek)} label="Avg/week" valueColor={PURPLE} icon="📊" iconBg={PURPLE_LIGHT} isLast />
+          <StatTile value={numFmt(stats.totalWorkoutsDone)} label={t("profile.workouts")} valueColor={BLUE} icon="🏋️" iconBg={BLUE_LIGHT} />
+          <StatTile value={numFmt(stats.totalKcalBurned)} label={t("profile.kcalBurned")} valueColor={ORANGE} icon="🔥" iconBg={ORANGE_LIGHT} />
+          <StatTile value={numFmt(stats.currentDayStreak)} label={t("profile.dayStreak")} valueColor={GREEN} icon="⚡" iconBg={GREEN_LIGHT} />
+          <StatTile value={String(stats.avgSessionsPerWeek)} label={t("profile.avgPerWeek")} valueColor={PURPLE} icon="📊" iconBg={PURPLE_LIGHT} isLast />
         </View>
       </View>
 
@@ -831,20 +900,44 @@ export const ProfileScreen = () => {
             <Text style={styles.proCtaEmoji}>✨</Text>
           </View>
           <View style={styles.proCtaCopy}>
-            <Text style={styles.proCtaTitle}>NexRep PRO</Text>
-            <Text style={styles.proCtaSub}>Unlock AI tracking & premium coaching</Text>
+            <Text style={styles.proCtaTitle}>{t("profile.proTitle")}</Text>
+            <Text style={styles.proCtaSub}>{t("profile.proSubtitle")}</Text>
           </View>
           <Text style={styles.proCtaArrow}>›</Text>
         </Pressable>
       ) : null}
 
       {userId ? (
-        <SubscriptionBillingSection
-          userId={userId}
-          memberSince={memberSince}
-          onExerciseHistory={() => setShowExerciseHistory(true)}
-          onCalorieHistory={() => setShowCalorieHistory(true)}
-        />
+        <Pressable
+          style={[
+            styles.subscriptionsButton,
+            {
+              backgroundColor: subscriptionColors.cardBg,
+              borderColor: subscriptionColors.cardBorder,
+            },
+          ]}
+          onPress={() => navigation.navigate("Subscription")}
+        >
+          <View style={[styles.subscriptionsIconTile, { backgroundColor: subscriptionColors.badgeBg }]}>
+            <Text style={{ fontSize: 18 }}>⭐</Text>
+          </View>
+          <View style={styles.subscriptionsCopy}>
+            <View style={styles.subscriptionsTitleRow}>
+              <Text style={[styles.subscriptionsTitle, { color: subscriptionColors.titleColor }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.78}>
+                {t("profile.subscriptions")}
+              </Text>
+              <View style={[styles.subscriptionsPlanBadge, { backgroundColor: subscriptionColors.badgeBg }]}>
+                <Text style={[styles.subscriptionsPlanBadgeText, { color: subscriptionColors.badgeText }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
+                  {subscriptionTier}
+                </Text>
+              </View>
+            </View>
+            <Text style={[styles.subscriptionsSubtitle, { color: subscriptionColors.mutedText }]} numberOfLines={3}>
+              {t("profile.subscriptionsSubtitle")}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={subscriptionColors.cardBorder} />
+        </Pressable>
       ) : null}
 
       <View style={styles.footerCard}>
@@ -853,7 +946,7 @@ export const ProfileScreen = () => {
             <View style={styles.footerIconTile}>
               <Text style={styles.footerEmoji}>🔧</Text>
             </View>
-            <Text style={styles.footerLabel}>Go to Admin</Text>
+            <Text style={styles.footerLabel}>{t("profile.goToAdmin")}</Text>
             <Text style={styles.footerChevron}>›</Text>
           </Pressable>
         ) : null}
@@ -867,22 +960,46 @@ export const ProfileScreen = () => {
           <View style={styles.footerIconTile}>
             <Text style={styles.footerEmoji}>💬</Text>
           </View>
-          <Text style={styles.footerLabel}>Feedback</Text>
+          <Text style={styles.footerLabel}>{t("profile.feedback")}</Text>
           <Text style={styles.footerChevron}>›</Text>
         </Pressable>
+        <Pressable style={styles.footerRow} onPress={() => navigation.navigate("NotificationPreferences")}>
+          <View style={styles.footerIconTile}>
+            <Text style={styles.footerEmoji}>🔔</Text>
+          </View>
+          <Text style={styles.footerLabel}>{t("profile.notificationPreferences")}</Text>
+          <Text style={styles.footerChevron}>›</Text>
+        </Pressable>
+        <View style={styles.footerPickerRow}>
+          <View style={styles.footerIconTile}>
+            <Text style={styles.footerEmoji}>🌐</Text>
+          </View>
+          <View style={styles.footerPickerContent}>
+            <Text style={styles.footerLabel}>{t("profile.language")}</Text>
+            <BottomSheetPicker
+              label={t("profile.language")}
+              value={language}
+              options={LANGUAGE_OPTIONS}
+              onChange={(value) => {
+                if (typeof value === "string") void setLanguage(value);
+              }}
+              placeholder={t("profile.languagePlaceholder")}
+            />
+          </View>
+        </View>
         <TouchableOpacity
           onPress={handleVersionTap}
           activeOpacity={1}
           hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
           style={styles.versionWrap}
         >
-          <Text style={styles.versionText}>Version {APP_VERSION}</Text>
+          <Text style={styles.versionText}>{t("profile.version", { version: APP_VERSION })}</Text>
         </TouchableOpacity>
         <Pressable style={[styles.footerRow, styles.footerRowLast]} onPress={() => void signOutSession()}>
           <View style={styles.logoutIconTile}>
             <Text style={styles.footerEmoji}>🚪</Text>
           </View>
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>{t("profile.logout")}</Text>
           <Text style={styles.logoutChevron}>›</Text>
         </Pressable>
       </View>
@@ -892,7 +1009,7 @@ export const ProfileScreen = () => {
       <Modal visible={showWeighInModal} transparent animationType="slide" onRequestClose={() => setShowWeighInModal(false)}>
         <View style={styles.modalBackdropBottom}>
           <View style={styles.weighInModal}>
-            <Text style={styles.weighInModalTitle}>Log Today&apos;s Weight</Text>
+            <Text style={styles.weighInModalTitle}>{t("profile.logWeightTitle")}</Text>
             <Text style={styles.weighInModalSubtitle}>
               {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
             </Text>
@@ -926,12 +1043,12 @@ export const ProfileScreen = () => {
             </View>
 
             {latestWeightLog?.has_logs ? (
-              <Text style={styles.weighInLastRef}>Last logged: {round1(latestWeightLog.weight_kg)}kg</Text>
+              <Text style={styles.weighInLastRef}>{t("profile.lastLogged", { weight: round1(latestWeightLog.weight_kg) })}</Text>
             ) : null}
 
             <View style={styles.weighInActions}>
               <TouchableOpacity style={styles.weighInCancel} onPress={() => setShowWeighInModal(false)}>
-                <Text style={styles.weighInCancelText}>Cancel</Text>
+                <Text style={styles.weighInCancelText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.weighInSave, isLoggingWeight && styles.weighInSaveDisabled]}
@@ -941,7 +1058,7 @@ export const ProfileScreen = () => {
                 {isLoggingWeight ? (
                   <ActivityIndicator size="small" color="#000" />
                 ) : (
-                  <Text style={styles.weighInSaveText}>Save</Text>
+                  <Text style={styles.weighInSaveText}>{t("common.save")}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -957,9 +1074,9 @@ export const ProfileScreen = () => {
                 <View style={[styles.feedbackTickCircle, { backgroundColor: "rgba(85,181,106,0.16)" }]}>
                   <Text style={styles.feedbackTick}>✓</Text>
                 </View>
-                <Text style={[styles.feedbackTitle, { textAlign: "center", marginBottom: 6 }]}>Sent successfully</Text>
+                <Text style={[styles.feedbackTitle, { textAlign: "center", marginBottom: 6 }]}>{t("profile.feedbackSent")}</Text>
                 <Text style={[styles.feedbackSub, { textAlign: "center" }]}>
-                  Your message was delivered to admin@nexrep.in
+                  {t("profile.feedbackSentBody")}
                 </Text>
                 <View style={styles.feedbackActions}>
                   <Pressable
@@ -971,30 +1088,30 @@ export const ProfileScreen = () => {
                       setFeedbackBody("");
                     }}
                   >
-                    <Text style={styles.feedbackCancelText}>Close</Text>
+                    <Text style={styles.feedbackCancelText}>{t("profile.close")}</Text>
                   </Pressable>
                 </View>
               </View>
             ) : (
               <>
-                <Text style={styles.feedbackTitle}>Send Feedback</Text>
-                <Text style={styles.feedbackSub}>This will be sent to admin@nexrep.in</Text>
+                <Text style={styles.feedbackTitle}>{t("profile.sendFeedback")}</Text>
+                <Text style={styles.feedbackSub}>{t("profile.feedbackSub")}</Text>
                 <View style={styles.feedbackField}>
-                  <Text style={styles.editLabel}>Subject</Text>
+                  <Text style={styles.editLabel}>{t("profile.subject")}</Text>
                   <TextInput
                     value={feedbackSubject}
                     onChangeText={setFeedbackSubject}
-                    placeholder="Type subject"
+                    placeholder={t("profile.subjectPlaceholder")}
                     placeholderTextColor={MUTED}
                     style={styles.feedbackInput}
                   />
                 </View>
                 <View style={styles.feedbackField}>
-                  <Text style={styles.editLabel}>Body</Text>
+                  <Text style={styles.editLabel}>{t("profile.body")}</Text>
                   <TextInput
                     value={feedbackBody}
                     onChangeText={setFeedbackBody}
-                    placeholder="Write your feedback..."
+                    placeholder={t("profile.bodyPlaceholder")}
                     placeholderTextColor={MUTED}
                     multiline
                     textAlignVertical="top"
@@ -1007,14 +1124,14 @@ export const ProfileScreen = () => {
                     onPress={() => setFeedbackOpen(false)}
                     disabled={sendingFeedback}
                   >
-                    <Text style={styles.feedbackCancelText}>Cancel</Text>
+                    <Text style={styles.feedbackCancelText}>{t("common.cancel")}</Text>
                   </Pressable>
                   <Pressable
                     style={[styles.feedbackActionBtn, styles.feedbackSendBtn]}
                     onPress={() => void onSubmitFeedback()}
                     disabled={sendingFeedback}
                   >
-                    <Text style={styles.feedbackSendText}>{sendingFeedback ? "Sending..." : "Send"}</Text>
+                    <Text style={styles.feedbackSendText}>{sendingFeedback ? t("profile.sending") : t("profile.send")}</Text>
                   </Pressable>
                 </View>
               </>
@@ -1027,26 +1144,26 @@ export const ProfileScreen = () => {
         <View style={styles.modalBackdropBottom}>
           <View style={styles.historyOverlaySheet}>
             <View style={styles.historyOverlayHeader}>
-              <Text style={styles.historyOverlayTitle}>Exercise History</Text>
+              <Text style={styles.historyOverlayTitle}>{t("profile.exerciseHistory")}</Text>
               <Pressable style={styles.historyOverlayCloseBtn} onPress={() => setShowExerciseHistory(false)}>
-                <Text style={styles.historyOverlayCloseText}>Close</Text>
+                <Text style={styles.historyOverlayCloseText}>{t("profile.close")}</Text>
               </Pressable>
             </View>
-            <Text style={styles.historyOverlaySub}>Select From/To dates (max 30 days)</Text>
+            <Text style={styles.historyOverlaySub}>{t("profile.historySub")}</Text>
             <View style={styles.overlayRangeRow}>
               <Pressable
                 style={styles.overlayDateBtn}
                 onPress={() => openDateSelector("exercise", "from")}
               >
-                <Text style={styles.overlayDateLabel}>From</Text>
-                <Text style={styles.overlayDateValue}>{exerciseFromDate || "Select date"}</Text>
+                <Text style={styles.overlayDateLabel}>{t("profile.from")}</Text>
+                <Text style={styles.overlayDateValue}>{exerciseFromDate || t("profile.selectDate")}</Text>
               </Pressable>
               <Pressable
                 style={styles.overlayDateBtn}
                 onPress={() => openDateSelector("exercise", "to")}
               >
-                <Text style={styles.overlayDateLabel}>To</Text>
-                <Text style={styles.overlayDateValue}>{exerciseToDate || "Select date"}</Text>
+                <Text style={styles.overlayDateLabel}>{t("profile.to")}</Text>
+                <Text style={styles.overlayDateValue}>{exerciseToDate || t("profile.selectDate")}</Text>
               </Pressable>
             </View>
             <ScrollView style={styles.historyOverlayList} contentContainerStyle={styles.historyOverlayListContent}>
@@ -1056,12 +1173,12 @@ export const ProfileScreen = () => {
                     {`${row.date}, ${
                       row.workouts.length > 0
                         ? row.workouts.map((workout) => `${workout.bodyPart} - ${workout.exerciseName}`).join(", ")
-                        : "No exercises logged"
+                        : t("profile.noExercisesLogged")
                     }`}
                   </Text>
                 </View>
               ))}
-              {filteredExerciseHistory.length === 0 ? <Text style={styles.historyEmptyText}>No exercise history in selected range.</Text> : null}
+              {filteredExerciseHistory.length === 0 ? <Text style={styles.historyEmptyText}>{t("profile.emptyExerciseHistory")}</Text> : null}
             </ScrollView>
           </View>
         </View>
@@ -1071,26 +1188,26 @@ export const ProfileScreen = () => {
         <View style={styles.modalBackdropBottom}>
           <View style={styles.historyOverlaySheet}>
             <View style={styles.historyOverlayHeader}>
-              <Text style={styles.historyOverlayTitle}>Calorie History</Text>
+              <Text style={styles.historyOverlayTitle}>{t("profile.calorieHistory")}</Text>
               <Pressable style={styles.historyOverlayCloseBtn} onPress={() => setShowCalorieHistory(false)}>
-                <Text style={styles.historyOverlayCloseText}>Close</Text>
+                <Text style={styles.historyOverlayCloseText}>{t("profile.close")}</Text>
               </Pressable>
             </View>
-            <Text style={styles.historyOverlaySub}>Select From/To dates (max 30 days)</Text>
+            <Text style={styles.historyOverlaySub}>{t("profile.historySub")}</Text>
             <View style={styles.overlayRangeRow}>
               <Pressable
                 style={styles.overlayDateBtn}
                 onPress={() => openDateSelector("calorie", "from")}
               >
-                <Text style={styles.overlayDateLabel}>From</Text>
-                <Text style={styles.overlayDateValue}>{calorieFromDate || "Select date"}</Text>
+                <Text style={styles.overlayDateLabel}>{t("profile.from")}</Text>
+                <Text style={styles.overlayDateValue}>{calorieFromDate || t("profile.selectDate")}</Text>
               </Pressable>
               <Pressable
                 style={styles.overlayDateBtn}
                 onPress={() => openDateSelector("calorie", "to")}
               >
-                <Text style={styles.overlayDateLabel}>To</Text>
-                <Text style={styles.overlayDateValue}>{calorieToDate || "Select date"}</Text>
+                <Text style={styles.overlayDateLabel}>{t("profile.to")}</Text>
+                <Text style={styles.overlayDateValue}>{calorieToDate || t("profile.selectDate")}</Text>
               </Pressable>
             </View>
             <ScrollView style={styles.historyOverlayList} contentContainerStyle={styles.historyOverlayListContent}>
@@ -1098,11 +1215,11 @@ export const ProfileScreen = () => {
                 <View key={`overlay-calorie-${row.date}`} style={styles.historyRowLine}>
                   <Text style={styles.historyDateText}>{row.date}</Text>
                   <Text style={styles.historyValueText}>
-                    Protein: {row.protein}g, Fat: {row.fat}g, Fibre: {row.fiber}g, Water: {row.water}L, Carbs: {row.carbs}g
+                    {t("profile.calorieHistoryLine", { protein: row.protein, fat: row.fat, fiber: row.fiber, water: row.water, carbs: row.carbs })}
                   </Text>
                 </View>
               ))}
-              {filteredCalorieHistory.length === 0 ? <Text style={styles.historyEmptyText}>No calorie history in selected range.</Text> : null}
+              {filteredCalorieHistory.length === 0 ? <Text style={styles.historyEmptyText}>{t("profile.emptyCalorieHistory")}</Text> : null}
             </ScrollView>
           </View>
         </View>
@@ -1112,7 +1229,7 @@ export const ProfileScreen = () => {
         <View style={styles.modalBackdropBottom}>
           <View style={styles.datePickerSheet}>
             <Text style={styles.datePickerTitle}>
-              Select {activeDatePicker?.field === "from" ? "From" : "To"} Date
+              {t("profile.selectDateTitle", { field: activeDatePicker?.field === "from" ? t("profile.from") : t("profile.to") })}
             </Text>
             {Platform.OS === "web" ? (
               <View style={styles.webCalendarWrap}>
@@ -1134,7 +1251,15 @@ export const ProfileScreen = () => {
                   </Pressable>
                 </View>
                 <View style={styles.webWeekHeaderRow}>
-                  {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => (
+                  {[
+                    t("profile.weekdays.mo"),
+                    t("profile.weekdays.tu"),
+                    t("profile.weekdays.we"),
+                    t("profile.weekdays.th"),
+                    t("profile.weekdays.fr"),
+                    t("profile.weekdays.sa"),
+                    t("profile.weekdays.su"),
+                  ].map((d) => (
                     <Text key={d} style={styles.webWeekHeaderCell}>{d}</Text>
                   ))}
                 </View>
@@ -1184,7 +1309,7 @@ export const ProfileScreen = () => {
               />
             )}
             <Pressable style={styles.datePickerDoneBtn} onPress={() => setActiveDatePicker(null)}>
-              <Text style={styles.datePickerDoneText}>Done</Text>
+              <Text style={styles.datePickerDoneText}>{t("profile.done")}</Text>
             </Pressable>
           </View>
         </View>
@@ -1197,8 +1322,7 @@ export const ProfileScreen = () => {
 const styles = StyleSheet.create({
   screenContent: { paddingBottom: 28 },
   inlineHeader: { marginBottom: 14 },
-  dateLabel: { color: MUTED, fontSize: 13, fontWeight: "700", marginBottom: 4 },
-  pageTitle: { color: TEXT, fontSize: 22, fontWeight: "900" },
+  pageTitle: { color: TEXT, fontSize: 25, fontWeight: "800" },
   identityCard: { backgroundColor: GREEN, borderRadius: 20, padding: 20, marginBottom: 14, overflow: "hidden" },
   decorCircleTop: { position: "absolute", width: 150, height: 150, borderRadius: 75, backgroundColor: "rgba(255,255,255,0.05)", top: -68, right: -42 },
   decorCircleBottom: { position: "absolute", width: 112, height: 112, borderRadius: 56, backgroundColor: "rgba(255,255,255,0.05)", bottom: -52, left: -30 },
@@ -1208,13 +1332,13 @@ const styles = StyleSheet.create({
   avatarInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
   avatarText: { color: WHITE, fontSize: 18, fontWeight: "900" },
   identityTextBlock: { flex: 1 },
-  nameBadgeRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  nameBadgeRow: { flexDirection: logicalRow, alignItems: "center", gap: 8, flexWrap: "wrap" },
   nameText: { color: WHITE, fontSize: 18, fontWeight: "900" },
-  planBadge: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4 },
+  planBadge: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4, maxWidth: "100%" },
   planBadgeElite: { backgroundColor: GOLD },
   planBadgePro: { backgroundColor: WHITE },
   planBadgeFree: { backgroundColor: MUTED },
-  planBadgeText: { fontSize: 9, fontWeight: "900" },
+  planBadgeText: { fontSize: 9, fontWeight: "900", textAlign: "center" },
   planBadgeEliteText: { color: TEXT },
   planBadgeProText: { color: GREEN },
   planBadgeFreeText: { color: TEXT },
@@ -1252,6 +1376,24 @@ const styles = StyleSheet.create({
   logWeightEmoji: { fontSize: 20, marginBottom: 4 },
   logWeightText: { color: GREEN, fontSize: 14, fontWeight: "900" },
   logWeightSub: { color: MUTED, fontSize: 11, marginTop: 3, fontWeight: "700" },
+  strengthRows: { gap: 12 },
+  strengthLiftRow: { backgroundColor: WHITE, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: BORDER },
+  strengthLiftHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
+  strengthLiftName: { color: TEXT, fontSize: 14, fontWeight: "900", flex: 1 },
+  strengthLiftPercent: { color: ORANGE, fontSize: 14, fontWeight: "900" },
+  strengthLiftComplete: { color: GREEN },
+  strengthProgressTrack: {
+    height: 6,
+    borderRadius: 99,
+    backgroundColor: TRACK,
+    overflow: "hidden",
+    marginTop: 9,
+  },
+  strengthProgressFill: { height: 6, borderRadius: 99, backgroundColor: GREEN },
+  strengthLiftMeta: { color: MUTED, fontSize: 11, fontWeight: "700", marginTop: 7 },
+  strengthEmptyBox: { backgroundColor: WHITE, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: BORDER },
+  strengthEmptyTitle: { color: TEXT, fontSize: 13, fontWeight: "900", marginBottom: 4 },
+  strengthEmptyText: { color: MUTED, fontSize: 11, lineHeight: 16 },
   sectionLabel: { color: MUTED, fontSize: 11, fontWeight: "900", letterSpacing: 0.8, marginBottom: 12 },
   activityStatsRow: { flexDirection: "row" },
   statTile: { flex: 1, alignItems: "center", paddingHorizontal: 6, borderRightWidth: 1, borderRightColor: BORDER },
@@ -1267,8 +1409,31 @@ const styles = StyleSheet.create({
   proCtaTitle: { color: GREEN, fontSize: 16, fontWeight: "900" },
   proCtaSub: { color: TEXT, opacity: 0.55, fontSize: 12, marginTop: 3, fontWeight: "700" },
   proCtaArrow: { color: GREEN, fontSize: 24, fontWeight: "300" },
+  subscriptionsButton: {
+    borderRadius: 16,
+    padding: 15,
+    flexDirection: logicalRow,
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1.5,
+  },
+  subscriptionsCopy: { flex: 1, minWidth: 0 },
+  subscriptionsIconTile: {
+    width: 40,
+    height: 40,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  subscriptionsTitleRow: { flexDirection: logicalRow, alignItems: "center", gap: 7, flexWrap: "wrap" },
+  subscriptionsTitle: { flexShrink: 1, minWidth: 0, fontSize: 14, lineHeight: 17, fontWeight: "800", textAlign: textAlignStart },
+  subscriptionsPlanBadge: { borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, maxWidth: "100%" },
+  subscriptionsPlanBadgeText: { fontSize: 9, lineHeight: 11, fontWeight: "800", textAlign: "center" },
+  subscriptionsSubtitle: { fontSize: 10, lineHeight: 14, marginTop: 2, textAlign: textAlignStart },
   footerCard: { backgroundColor: BG, borderRadius: 16, padding: 8, gap: 2, marginBottom: 14 },
   footerRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderBottomWidth: 1, borderBottomColor: BORDER },
+  footerPickerRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 10, borderBottomWidth: 1, borderBottomColor: BORDER },
+  footerPickerContent: { flex: 1, gap: 8 },
   footerRowLast: { borderBottomWidth: 0, backgroundColor: ORANGE_LIGHT, borderRadius: 12, marginTop: 2 },
   footerIconTile: { width: 34, height: 34, borderRadius: 10, backgroundColor: BG, borderWidth: 1, borderColor: BORDER, alignItems: "center", justifyContent: "center" },
   logoutIconTile: { width: 34, height: 34, borderRadius: 10, backgroundColor: ORANGE_LIGHT, alignItems: "center", justifyContent: "center" },

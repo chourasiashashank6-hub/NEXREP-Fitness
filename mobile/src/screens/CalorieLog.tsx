@@ -17,6 +17,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import {
   CalorieDayPayload,
   FoodSearchItem,
@@ -59,10 +61,20 @@ const SCREEN_BG = "#FFFFFF";
 const MEAL_ORDER: MealType[] = ["Breakfast", "Lunch", "Dinner", "Snack", "Pre_Workout", "Post_Workout"];
 
 const mealHeading = (t: MealType) =>
-  t === "Pre_Workout" ? "Pre-workout" : t === "Post_Workout" ? "Post-workout" : t;
+  t === "Pre_Workout"
+    ? i18n.t("calorieLog.mealLabels.preWorkout")
+    : t === "Post_Workout"
+      ? i18n.t("calorieLog.mealLabels.postWorkout")
+      : t === "Breakfast"
+        ? i18n.t("calorieLog.mealLabels.breakfast")
+        : t === "Lunch"
+          ? i18n.t("calorieLog.mealLabels.lunch")
+          : t === "Dinner"
+            ? i18n.t("calorieLog.mealLabels.dinner")
+            : t;
 
 const mealRowLabel = (t: MealType) => {
-  if (t === "Snack") return "Snacks";
+  if (t === "Snack") return i18n.t("calorieLog.mealLabels.snacks");
   return mealHeading(t);
 };
 
@@ -98,12 +110,6 @@ const QUICK_FOOD_EMOJI: Record<string, string> = {
   Chapati: "🫓",
   Salmon: "🐟",
   Broccoli: "🥦",
-};
-
-const formatDisplayDate = (iso: string) => {
-  const [y, m, d] = iso.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 };
 
 const parseMacroSplit = (label: string) => {
@@ -250,23 +256,23 @@ function RightPlaceholderInput({
 function formatLoadError(err: unknown): string {
   if (axios.isAxiosError(err)) {
     if (err.code === "ECONNABORTED") {
-      return "Request timed out. Start the API server (port 8000) and try again.";
+      return i18n.t("calorieLog.loadErrors.timeout");
     }
     if (!err.response) {
       const msg = String(err.message || "");
       if (/Failed to fetch|Network Error|ERR_NETWORK|Load failed/i.test(msg)) {
         const base = resolveApiBaseUrl();
-        return `Network error (${msg || "no response"}).\n\nResolved API base: ${base}\n\n1) Start API: cd server && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload\n2) In a browser open ${base}/health — should show {"status":"ok"}\n3) Expo web on Wi‑Fi: default .env uses 127.0.0.1; the app now maps that to your PC’s LAN IP when you open http://192.168.x.x:8081. If it still fails, set EXPO_PUBLIC_API_URL=http://YOUR_PC_IP:8000 and restart Expo.\n4) Android emulator: use http://10.0.2.2:8000 in .env instead of 127.0.0.1.`;
+        return i18n.t("calorieLog.loadErrors.network", { message: msg || i18n.t("calorieLog.loadErrors.noResponse"), base });
       }
-      return "Cannot reach the API. Check EXPO_PUBLIC_API_URL and that the FastAPI server is running.";
+      return i18n.t("calorieLog.loadErrors.cannotReach");
     }
     if (err.response.status === 404) {
       const detail = (err.response.data as { detail?: string })?.detail;
       if (detail === "User not found") {
-        return "Your session is out of date (database was reset or account removed). Log out and sign in again.";
+        return i18n.t("calorieLog.loadErrors.userNotFound");
       }
       const u = String(err.config?.url ?? "");
-      return `Not Found (${u || "unknown URL"}). Restart the API from server/: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload, then tap Retry.`;
+      return i18n.t("calorieLog.loadErrors.notFound", { url: u || i18n.t("calorieLog.loadErrors.unknownUrl") });
     }
     const data = err.response.data as { detail?: unknown };
     const d = data?.detail;
@@ -274,18 +280,20 @@ function formatLoadError(err: unknown): string {
     if (Array.isArray(d) && d[0] && typeof (d[0] as { msg?: string }).msg === "string") {
       return (d[0] as { msg: string }).msg;
     }
-    return err.response.status ? `Server error (${err.response.status})` : err.message;
+    return err.response.status ? i18n.t("calorieLog.loadErrors.serverError", { status: err.response.status }) : err.message;
   }
-  return "Could not load calorie log.";
+  return i18n.t("calorieLog.loadErrors.fallback");
 }
 
 export const CalorieLog = () => {
+  const { t } = useTranslation();
   const token = useAuthStore((s) => s.token);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [day, setDay] = useState<CalorieDayPayload | null>(null);
+  const [mealsExpanded, setMealsExpanded] = useState(false);
   const [logDate] = useState(() => todayLocal());
   const [targets, setTargets] = useState<any>(null);
 
@@ -405,7 +413,7 @@ export const CalorieLog = () => {
       const d = await patchCalorieWater(Math.max(0, liters), logDate);
       setDay(d);
     } catch {
-      Alert.alert("Error", "Could not update water.");
+      Alert.alert(t("calorieLog.alerts.error"), t("calorieLog.alerts.waterFailed"));
     } finally {
       setSaving(false);
     }
@@ -509,8 +517,8 @@ export const CalorieLog = () => {
       setFoodDropdownOpen(false);
       setFoodResults([]);
     } catch (e) {
-      const msg = axios.isAxiosError(e) ? String((e.response?.data as { detail?: string })?.detail || e.message) : "Food not found";
-      Alert.alert("Food lookup", msg);
+      const msg = axios.isAxiosError(e) ? String((e.response?.data as { detail?: string })?.detail || e.message) : t("calorieLog.alerts.foodNotFound");
+      Alert.alert(t("calorieLog.alerts.foodLookup"), msg);
     } finally {
       setFoodSearchLoading(false);
     }
@@ -518,11 +526,11 @@ export const CalorieLog = () => {
 
   const submitMeal = async () => {
     if (!foodName.trim()) {
-      Alert.alert("Missing", "Enter a food name.");
+      Alert.alert(t("calorieLog.alerts.missing"), t("calorieLog.alerts.foodNameRequired"));
       return;
     }
     if (qtyN <= 0) {
-      Alert.alert("Invalid", "Quantity must be greater than 0.");
+      Alert.alert(t("calorieLog.alerts.invalid"), t("calorieLog.alerts.quantityPositive"));
       return;
     }
     try {
@@ -552,6 +560,7 @@ export const CalorieLog = () => {
           log_date: logDate,
           meal_type: mealType,
           source_type: "database",
+          food_id: selectedFoodId,
           food_name: foodName.trim(),
           quantity_g: safeQty,
           calories_per_100g: round2(clamp(sanitizeFinite(cal100N), 0, 99999.99)),
@@ -582,9 +591,9 @@ export const CalorieLog = () => {
       resetFoodRecognition();
     } catch (e) {
       const message = axios.isAxiosError(e)
-        ? String((e.response?.data as { detail?: unknown })?.detail ?? e.message ?? "Could not save meal.")
-        : "Could not save meal.";
-      Alert.alert("Error", message);
+        ? String((e.response?.data as { detail?: unknown })?.detail ?? e.message ?? t("calorieLog.alerts.saveMealFailed"))
+        : t("calorieLog.alerts.saveMealFailed");
+      Alert.alert(t("calorieLog.alerts.error"), message);
     } finally {
       setSaving(false);
     }
@@ -599,7 +608,7 @@ export const CalorieLog = () => {
       globalThis.alert(message);
       return;
     }
-    Alert.alert("Food Scanner", message);
+    Alert.alert(t("calorieLog.alerts.foodScanner"), message);
   };
 
   const parseQuantityFromServing = (serving: string, quantityGrams?: number): string => {
@@ -646,25 +655,25 @@ export const CalorieLog = () => {
   const runFoodRecognition = async (payload: { base64: string; mimeType?: string }) => {
     const result = await analyzeImage(payload);
     if (!result) {
-      showToast(foodRecognitionError || "Could not analyze image. Check internet/API key and try again.");
+      showToast(foodRecognitionError || t("calorieLog.alerts.analysisFailed"));
       return;
     }
     applyAnalysisToForm(result);
-    showToast(`Detected: ${result.foodName}. Please verify the values.`);
+    showToast(t("calorieLog.alerts.detected", { foodName: result.foodName }));
   };
 
   useEffect(() => {
     if (!foodRecognitionError) return;
-    Alert.alert("Food recognition", foodRecognitionError, [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("calorieLog.alerts.foodRecognition"), foodRecognitionError, [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Retry",
+        text: t("calorieLog.retry"),
         onPress: () => {
-          showToast("Tap the camera button to try again.");
+          showToast(t("calorieLog.alerts.retryHint"));
         },
       },
     ]);
-  }, [foodRecognitionError]);
+  }, [foodRecognitionError, t]);
 
   const onDeleteMeal = async (mealId: number, sourceType?: "database" | "camera_ai") => {
     try {
@@ -675,7 +684,7 @@ export const CalorieLog = () => {
       // Re-sync from server to keep meal list + nutrition totals fully authoritative.
       await refresh();
     } catch {
-      Alert.alert("Error", "Could not delete meal.");
+      Alert.alert(t("calorieLog.alerts.error"), t("calorieLog.alerts.deleteFailed"));
     } finally {
       setSaving(false);
     }
@@ -690,7 +699,7 @@ export const CalorieLog = () => {
     if (!editMealId) return;
     const nextQty = parseFloat(editQty);
     if (!Number.isFinite(nextQty) || nextQty <= 0) {
-      Alert.alert("Invalid", "Quantity must be greater than 0.");
+      Alert.alert(t("calorieLog.alerts.invalid"), t("calorieLog.alerts.quantityPositive"));
       return;
     }
     try {
@@ -700,7 +709,7 @@ export const CalorieLog = () => {
       setEditMealId(null);
       setEditQty("");
     } catch {
-      Alert.alert("Error", "Could not update meal quantity.");
+      Alert.alert(t("calorieLog.alerts.error"), t("calorieLog.alerts.updateQtyFailed"));
     } finally {
       setSaving(false);
     }
@@ -711,7 +720,7 @@ export const CalorieLog = () => {
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         <View style={styles.center}>
           <ActivityIndicator color={GREEN} size="large" />
-          <Text style={styles.loadingText}>Loading log…</Text>
+          <Text style={styles.loadingText}>{t("calorieLog.loading")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -721,8 +730,8 @@ export const CalorieLog = () => {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Text style={styles.pageTitle}>Calorie Log 🥗</Text>
-          <Text style={styles.errorText}>{loadError ?? "Something went wrong."}</Text>
+          <Text style={styles.pageTitle}>{t("calorieLog.title")}</Text>
+          <Text style={styles.errorText}>{loadError ?? t("calorieLog.alerts.generic")}</Text>
           <Pressable
             style={styles.retryBtn}
             onPress={() => {
@@ -730,7 +739,7 @@ export const CalorieLog = () => {
               setReloadToken((n) => n + 1);
             }}
           >
-            <Text style={styles.retryBtnText}>Retry</Text>
+            <Text style={styles.retryBtnText}>{t("calorieLog.retry")}</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -756,22 +765,21 @@ export const CalorieLog = () => {
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="on-drag"
       >
-        <Text style={styles.dateLabel}>{formatDisplayDate(logDate)}</Text>
-        <Text style={styles.pageTitle}>Calorie Log 🥗</Text>
+        <Text style={styles.pageTitle}>{t("calorieLog.title")}</Text>
 
         <View style={styles.card}>
           <View style={styles.calorieHeroRow}>
             <View style={styles.calorieHeroLeft}>
-              <Text style={styles.cardLabel}>CALORIES TODAY</Text>
+              <Text style={styles.cardLabel}>{t("calorieLog.caloriesToday")}</Text>
               <View style={styles.calorieValueRow}>
                 <Text style={styles.calorieBig}>{fmt1(log.total_calories)}</Text>
                 <Text style={styles.calorieTarget}> / {fmt1(log.target_calories)} kcal</Text>
               </View>
             </View>
             <View style={styles.calorieHeroRight}>
-              <Text style={styles.remainingLabel}>Remaining</Text>
+              <Text style={styles.remainingLabel}>{t("calorieLog.remaining")}</Text>
               <Text style={[styles.remainingValue, { color: remainingColor }]}>{fmt1(remaining)}</Text>
-              <Text style={styles.remainingUnit}>kcal</Text>
+              <Text style={styles.remainingUnit}>{t("calorieLog.kcal")}</Text>
             </View>
           </View>
           <View style={styles.calorieBarTrack}>
@@ -781,7 +789,7 @@ export const CalorieLog = () => {
 
         <View style={styles.card}>
           <View style={styles.macrosHeader}>
-            <Text style={styles.cardLabel}>MACROS</Text>
+            <Text style={styles.cardLabel}>{t("calorieLog.macros")}</Text>
             <View style={styles.macroPills}>
               <View style={[styles.macroPill, { backgroundColor: BLUE_LIGHT }]}>
                 <Text style={[styles.macroPillText, { color: BLUE }]}>P {macroSplit.p}%</Text>
@@ -794,16 +802,16 @@ export const CalorieLog = () => {
               </View>
             </View>
           </View>
-          <MacroBar emoji="🥩" label="Protein" consumed={log.total_protein_g} target={log.target_protein_g} barColor={BLUE} valueColor={BLUE} anim={animP} />
-          <MacroBar emoji="🌾" label="Carbs" consumed={log.total_carbs_g} target={log.target_carbs_g} barColor={GREEN} valueColor={GREEN} anim={animC} />
-          <MacroBar emoji="🥑" label="Fat" consumed={log.total_fat_g} target={log.target_fat_g} barColor={ORANGE} valueColor={ORANGE} anim={animF} />
-          <MacroBar emoji="💧" label="Water" consumed={waterTotal} target={waterTarget} barColor={BLUE} valueColor={BLUE} anim={animW} unit="L" />
-          <MacroBar emoji="🥦" label="Fibre" consumed={fiberConsumed} target={fiberTarget} barColor={PURPLE} valueColor={PURPLE} anim={animFi} isLast />
+          <MacroBar emoji="🥩" label={t("calorieLog.protein")} consumed={log.total_protein_g} target={log.target_protein_g} barColor={BLUE} valueColor={BLUE} anim={animP} />
+          <MacroBar emoji="🌾" label={t("calorieLog.carbs")} consumed={log.total_carbs_g} target={log.target_carbs_g} barColor={GREEN} valueColor={GREEN} anim={animC} />
+          <MacroBar emoji="🥑" label={t("calorieLog.fat")} consumed={log.total_fat_g} target={log.target_fat_g} barColor={ORANGE} valueColor={ORANGE} anim={animF} />
+          <MacroBar emoji="💧" label={t("calorieLog.water")} consumed={waterTotal} target={waterTarget} barColor={BLUE} valueColor={BLUE} anim={animW} unit="L" />
+          <MacroBar emoji="🥦" label={t("calorieLog.fibre")} consumed={fiberConsumed} target={fiberTarget} barColor={PURPLE} valueColor={PURPLE} anim={animFi} isLast />
         </View>
 
         <View style={styles.card}>
           <View style={styles.waterHeader}>
-            <Text style={styles.waterTitle}>💧 Water intake</Text>
+            <Text style={styles.waterTitle}>{t("calorieLog.waterIntake")}</Text>
             <Text style={styles.waterHeaderValue}>
               {fmt1(waterTotal)}L / {fmt1(waterTarget)}L
             </Text>
@@ -825,7 +833,7 @@ export const CalorieLog = () => {
             })}
           </View>
           <View style={styles.waterControlsRow}>
-            <Text style={styles.waterHint}>Each glass = 250ml</Text>
+            <Text style={styles.waterHint}>{t("calorieLog.glassHint")}</Text>
             <View style={styles.waterBtns}>
               <Pressable style={styles.waterMinusBtn} onPress={() => bumpWater(-0.25)} disabled={saving}>
                 <Text style={styles.waterMinusText}>−</Text>
@@ -848,14 +856,13 @@ export const CalorieLog = () => {
 
         <View style={styles.card}>
           <View style={styles.addFoodHeader}>
-            <Text style={styles.cardLabel}>ADD FOOD</Text>
-            <View style={styles.cameraTile}>
-              <FoodCameraButton disabled={saving || isAnalyzing} onImageSelected={runFoodRecognition} />
-            </View>
+            <Text style={styles.cardLabel}>{t("calorieLog.addFood")}</Text>
+            <FoodCameraButton disabled={saving || isAnalyzing} onImageSelected={runFoodRecognition} variant="scanPill" />
           </View>
+          <Text style={styles.scanCaption}>{t("calorieLog.scanCaption")}</Text>
           <View style={styles.searchWrap}>
             <TextInput
-              placeholder="Search food (type at least 2 letters)"
+              placeholder={t("calorieLog.searchPlaceholder")}
               placeholderTextColor={MUTED}
               value={foodQuery}
               onFocus={() => {
@@ -871,12 +878,12 @@ export const CalorieLog = () => {
               }}
               style={styles.searchInput}
             />
-            {foodSearchLoading ? <Text style={styles.foodSearchHint}>Searching...</Text> : null}
-            {!foodSearchLoading && selectedFoodId ? <Text style={styles.foodSearchHint}>Selected from database</Text> : null}
+            {foodSearchLoading ? <Text style={styles.foodSearchHint}>{t("calorieLog.searching")}</Text> : null}
+            {!foodSearchLoading && selectedFoodId ? <Text style={styles.foodSearchHint}>{t("calorieLog.selectedDatabase")}</Text> : null}
             {foodDropdownOpen ? (
               <View style={styles.foodDropdown}>
                 {foodResults.length === 0 ? (
-                  <Text style={styles.foodEmpty}>No foods found</Text>
+                  <Text style={styles.foodEmpty}>{t("calorieLog.noFoods")}</Text>
                 ) : (
                   <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled style={styles.foodDropdownScroll}>
                     {foodResults.map((item, idx) => (
@@ -904,7 +911,7 @@ export const CalorieLog = () => {
 
           <View style={styles.nutrientGrid}>
             <View style={styles.nutrientTile}>
-              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Qty" : "Qty (g)"}</Text>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? t("calorieLog.qty") : t("calorieLog.qtyG")}</Text>
               <RightPlaceholderInput
                 placeholder=""
                 keyboardType="decimal-pad"
@@ -929,7 +936,7 @@ export const CalorieLog = () => {
               />
             </View>
             <View style={styles.nutrientTile}>
-              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Cal" : "Cal/100g"}</Text>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? t("calorieLog.cal") : t("calorieLog.calPer100")}</Text>
               <RightPlaceholderInput
                 placeholder=""
                 keyboardType="decimal-pad"
@@ -942,7 +949,7 @@ export const CalorieLog = () => {
               />
             </View>
             <View style={styles.nutrientTile}>
-              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Protein" : "Protein/100g"}</Text>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? t("calorieLog.protein") : t("calorieLog.proteinPer100")}</Text>
               <RightPlaceholderInput
                 placeholder=""
                 keyboardType="decimal-pad"
@@ -955,7 +962,7 @@ export const CalorieLog = () => {
               />
             </View>
             <View style={styles.nutrientTile}>
-              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Carbs" : "Carbs/100g"}</Text>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? t("calorieLog.carbs") : t("calorieLog.carbsPer100")}</Text>
               <RightPlaceholderInput
                 placeholder=""
                 keyboardType="decimal-pad"
@@ -968,7 +975,7 @@ export const CalorieLog = () => {
               />
             </View>
             <View style={styles.nutrientTile}>
-              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Fat" : "Fat/100g"}</Text>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? t("calorieLog.fat") : t("calorieLog.fatPer100")}</Text>
               <RightPlaceholderInput
                 placeholder=""
                 keyboardType="decimal-pad"
@@ -981,7 +988,7 @@ export const CalorieLog = () => {
               />
             </View>
             <View style={styles.nutrientTile}>
-              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? "Fibre" : "Fibre/100g"}</Text>
+              <Text style={styles.nutrientLabel}>{inputMode === "camera" ? t("calorieLog.fibre") : t("calorieLog.fibrePer100")}</Text>
               <RightPlaceholderInput
                 placeholder=""
                 keyboardType="decimal-pad"
@@ -996,11 +1003,11 @@ export const CalorieLog = () => {
           </View>
 
           {foodRecognitionError ? <Text style={styles.foodRecognitionError}>{foodRecognitionError}</Text> : null}
-          {aiEstimated ? <Text style={styles.aiCaption}>✨ AI estimated</Text> : null}
+          {aiEstimated ? <Text style={styles.aiCaption}>{t("calorieLog.aiEstimated")}</Text> : null}
 
           <View style={styles.previewTile}>
             <Text style={styles.previewText}>
-              Preview:{" "}
+              {t("calorieLog.preview")}{" "}
               <Text style={styles.previewStrong}>
                 {fmt1(preview.kcal)} kcal · P {fmt1(preview.p)}g · C {fmt1(preview.c)}g · F {fmt1(preview.f)}g · Fi {fmt1(preview.fi)}g
               </Text>
@@ -1008,11 +1015,11 @@ export const CalorieLog = () => {
           </View>
 
           <Pressable style={[styles.addFoodBtn, saving && styles.addFoodBtnDisabled]} onPress={submitMeal} disabled={saving}>
-            <Text style={styles.addFoodBtnText}>Add food ✅</Text>
+            <Text style={styles.addFoodBtnText}>{t("calorieLog.addFoodButton")}</Text>
           </Pressable>
         </View>
 
-        <Text style={styles.quickAddLabel}>⚡ QUICK ADD</Text>
+        <Text style={styles.quickAddLabel}>{t("calorieLog.quickAdd")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickAddRow}>
           {QUICK_FOODS.map((q) => (
             <Pressable key={q.label} style={styles.quickChip} onPress={() => applyChip(q)}>
@@ -1024,10 +1031,23 @@ export const CalorieLog = () => {
         </ScrollView>
 
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>TODAY&apos;S MEALS</Text>
+          <Pressable
+            style={styles.mealsCardHeader}
+            onPress={() => setMealsExpanded((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: mealsExpanded }}
+          >
+            <View>
+              <Text style={styles.cardLabel}>{t("calorieLog.todaysMeals")}</Text>
+              <Text style={styles.mealsCollapsedMeta}>
+                {t("calorieLog.loggedMeta", { count: day.meals.length, calories: fmt1(log.total_calories) })}
+              </Text>
+            </View>
+            <Text style={styles.mealsChevron}>{mealsExpanded ? "^" : "v"}</Text>
+          </Pressable>
           {day.meals.length === 0 ? (
-            <Text style={styles.emptyMeals}>No meals logged yet</Text>
-          ) : (
+            <Text style={styles.emptyMeals}>{t("calorieLog.emptyMeals")}</Text>
+          ) : mealsExpanded ? (
             <>
               {day.meals.map((m, idx) => (
                 <View key={m.meal_id} style={[styles.mealRow, idx > 0 && styles.mealRowDivider]}>
@@ -1039,7 +1059,7 @@ export const CalorieLog = () => {
                       {mealRowLabel(m.meal_type)} · {m.source_type === "camera_ai" ? `${fmt1(m.quantity_g)} Qty` : `${fmt1(m.quantity_g)}g`}
                     </Text>
                     <Text style={styles.mealMacroMeta}>
-                      P {fmt1(m.total_protein_g)} · C {fmt1(m.total_carbs_g)} · F {fmt1(m.total_fat_g)} · Fi {fmt1((m as Record<string, number>).total_fiber_g || 0)} ·{" "}
+                      P {fmt1(m.total_protein_g)} · C {fmt1(m.total_carbs_g)} · F {fmt1(m.total_fat_g)} · Fi {fmt1(m.total_fiber_g || 0)} ·{" "}
                       <Text style={styles.mealKcal}>{fmt1(m.total_calories)} kcal</Text>
                     </Text>
                   </View>
@@ -1051,7 +1071,7 @@ export const CalorieLog = () => {
                         hitSlop={8}
                         disabled={saving}
                       >
-                        <Text style={styles.editPillText}>Edit</Text>
+                        <Text style={styles.editPillText}>{t("calorieLog.edit")}</Text>
                       </Pressable>
                     ) : null}
                     <Pressable
@@ -1066,12 +1086,19 @@ export const CalorieLog = () => {
                 </View>
               ))}
               <View style={styles.dayTotalRow}>
-                <Text style={styles.dayTotalLabel}>Day total</Text>
+                <Text style={styles.dayTotalLabel}>{t("calorieLog.dayTotal")}</Text>
                 <Text style={styles.dayTotalValue}>
-                  {fmt1(log.total_calories)} kcal · {fmt1(log.total_protein_g)}p · {fmt1(log.total_carbs_g)}c · {fmt1(log.total_fat_g)}f · {fmt1((log as Record<string, number>).total_fiber_g || 0)}fi
+                  {fmt1(log.total_calories)} kcal · {fmt1(log.total_protein_g)}p · {fmt1(log.total_carbs_g)}c · {fmt1(log.total_fat_g)}f · {fmt1(log.total_fiber_g || 0)}fi
                 </Text>
               </View>
             </>
+          ) : (
+            <View style={styles.dayTotalRowCollapsed}>
+              <Text style={styles.dayTotalLabel}>{t("calorieLog.dayTotal")}</Text>
+              <Text style={styles.dayTotalValue}>
+                {fmt1(log.total_calories)} kcal · {fmt1(log.total_protein_g)}p · {fmt1(log.total_carbs_g)}c · {fmt1(log.total_fat_g)}f · {fmt1(log.total_fiber_g || 0)}fi
+              </Text>
+            </View>
           )}
         </View>
       </ScrollView>
@@ -1079,7 +1106,7 @@ export const CalorieLog = () => {
       <Modal visible={mealPickerOpen} transparent animationType="fade">
         <Pressable style={styles.modalBackdrop} onPress={() => setMealPickerOpen(false)}>
           <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>Select meal type</Text>
+            <Text style={styles.modalTitle}>{t("calorieLog.selectMealType")}</Text>
             {MEAL_ORDER.map((t) => (
               <Pressable
                 key={t}
@@ -1096,7 +1123,7 @@ export const CalorieLog = () => {
               </Pressable>
             ))}
             <Pressable style={styles.modalCancelBtn} onPress={() => setMealPickerOpen(false)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <Text style={styles.modalCancelText}>{t("common.cancel")}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -1105,9 +1132,9 @@ export const CalorieLog = () => {
       <Modal visible={editMealId !== null} transparent animationType="fade" onRequestClose={() => setEditMealId(null)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setEditMealId(null)}>
           <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>Edit meal quantity</Text>
+            <Text style={styles.modalTitle}>{t("calorieLog.editQuantity")}</Text>
             <TextInput
-              placeholder="Qty (g)"
+              placeholder={t("calorieLog.qtyG")}
               placeholderTextColor={MUTED}
               keyboardType="decimal-pad"
               value={editQty}
@@ -1116,10 +1143,10 @@ export const CalorieLog = () => {
             />
             <View style={styles.editActions}>
               <Pressable style={styles.editCancelBtn} onPress={() => setEditMealId(null)}>
-                <Text style={styles.editCancelText}>Cancel</Text>
+                <Text style={styles.editCancelText}>{t("common.cancel")}</Text>
               </Pressable>
               <Pressable style={[styles.editSaveBtn, saving && styles.btnDisabled]} onPress={submitEditMealQty} disabled={saving}>
-                <Text style={styles.editSaveText}>Save</Text>
+                <Text style={styles.editSaveText}>{t("common.save")}</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -1130,7 +1157,7 @@ export const CalorieLog = () => {
         <View style={styles.analyzingOverlay}>
           <View style={styles.analyzingCard}>
             <ActivityIndicator size="large" color={GREEN} />
-            <Text style={styles.analyzingText}>Analyzing your food…</Text>
+            <Text style={styles.analyzingText}>{t("calorieLog.analyzing")}</Text>
           </View>
         </View>
       </Modal>
@@ -1144,8 +1171,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, paddingBottom: 40, maxWidth: 860, width: "100%", alignSelf: "center" },
   center: { flex: 1, minHeight: 200, alignItems: "center", justifyContent: "center", backgroundColor: SCREEN_BG },
   loadingText: { color: MUTED, marginTop: 12, fontSize: 14 },
-  dateLabel: { color: MUTED, fontSize: 13, marginBottom: 4 },
-  pageTitle: { color: TEXT, fontSize: 22, fontWeight: "800", marginBottom: 16 },
+  pageTitle: { color: TEXT, fontSize: 25, fontWeight: "800", marginBottom: 16 },
   errorText: { color: MUTED, fontSize: 15, lineHeight: 22, marginTop: 12, marginBottom: 20 },
   retryBtn: {
     alignSelf: "flex-start",
@@ -1256,17 +1282,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 4,
   },
-  cameraTile: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: GREEN_LIGHT,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
+  scanCaption: { color: "#4A8C77", fontSize: 10, textAlign: "right", marginBottom: 12 },
   searchWrap: { position: "relative", marginBottom: 10, zIndex: 20 },
   searchInput: {
     backgroundColor: WHITE,
@@ -1367,6 +1385,14 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
   },
   quickChipText: { color: TEXT, fontSize: 13, fontWeight: "600" },
+  mealsCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  mealsCollapsedMeta: { color: MUTED, fontSize: 12, marginTop: 5, fontWeight: "600" },
+  mealsChevron: { color: MUTED, fontSize: 16, fontWeight: "800" },
   emptyMeals: { color: MUTED, fontSize: 14, textAlign: "center", paddingVertical: 16 },
   mealRow: { flexDirection: "row", alignItems: "flex-start", paddingVertical: 10, gap: 8 },
   mealRowDivider: { borderTopWidth: 1, borderTopColor: BORDER },
@@ -1405,6 +1431,16 @@ const styles = StyleSheet.create({
   },
   dayTotalLabel: { color: MUTED, fontSize: 12 },
   dayTotalValue: { color: TEXT, fontWeight: "700", fontSize: 13, flex: 1, textAlign: "right" },
+  dayTotalRowCollapsed: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: BORDER,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 8,
+  },
   rpShell: {
     position: "relative",
     justifyContent: "center",

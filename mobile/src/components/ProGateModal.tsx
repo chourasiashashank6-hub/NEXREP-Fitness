@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   visible: boolean;
@@ -27,8 +28,10 @@ export default function ProGateModal({
   accentColor = "#1d9e75",
   requiredPlan = "pro",
 }: Props) {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const isElite = requiredPlan === "elite";
+  const benefits = t(isElite ? "components.proGate.eliteBenefits" : "components.proGate.proBenefits", { returnObjects: true }) as string[];
 
   const openSubscription = () => {
     onClose();
@@ -61,7 +64,7 @@ export default function ProGateModal({
           </View>
           <View style={styles.lockBadge}>
             <Text style={styles.lockEmoji}>🔒</Text>
-            <Text style={styles.lockText}>{isElite ? "ELITE FEATURE" : "PRO FEATURE"}</Text>
+            <Text style={styles.lockText}>{isElite ? t("components.proGate.eliteFeature") : t("components.proGate.proFeature")}</Text>
           </View>
         </View>
 
@@ -69,23 +72,8 @@ export default function ProGateModal({
         <Text style={styles.description}>{featureDescription}</Text>
 
         <View style={styles.benefitsBox}>
-          <Text style={styles.benefitsTitle}>{isElite ? "What you get with Elite" : "What you get with Pro"}</Text>
-          {(isElite
-            ? [
-                "Monthly meal + workout planners",
-                "Unlimited AI swaps & day regenerations",
-                "Everything in Pro included",
-                "Personal trainer access",
-                "Priority 24/7 support",
-              ]
-            : [
-                "All 4 AI coaching features unlocked",
-                "Food photo calorie scanner",
-                "AI pose guidance + rep counter",
-                "Calorie & workout AI coaches",
-                "5 AI swaps per day",
-              ]
-          ).map((b, i) => (
+          <Text style={styles.benefitsTitle}>{isElite ? t("components.proGate.eliteBenefitsTitle") : t("components.proGate.proBenefitsTitle")}</Text>
+          {benefits.map((b, i) => (
             <View key={i} style={styles.benefitRow}>
               <Text style={[styles.tick, { color: accentColor }]}>✓</Text>
               <Text style={styles.benefitText}>{b}</Text>
@@ -96,12 +84,12 @@ export default function ProGateModal({
         <Text style={styles.priceLine}>
           {isElite ? (
             <>
-              Elite from <Text style={[styles.priceHighlight, { color: accentColor }]}>₹1,999/mo</Text>
+              {t("components.proGate.elitePricePrefix")}<Text style={[styles.priceHighlight, { color: accentColor }]}>{t("components.proGate.elitePrice")}</Text>
             </>
           ) : (
             <>
-              Pro from <Text style={[styles.priceHighlight, { color: accentColor }]}>₹999/mo</Text>
-              {"  ·  "}Elite from <Text style={styles.priceHighlight}>₹1,999/mo</Text>
+              {t("components.proGate.proPricePrefix")}<Text style={[styles.priceHighlight, { color: accentColor }]}>{t("components.proGate.proPrice")}</Text>
+              {"  ·  "}{t("components.proGate.elitePricePrefix")}<Text style={styles.priceHighlight}>{t("components.proGate.elitePrice")}</Text>
             </>
           )}
         </Text>
@@ -111,11 +99,11 @@ export default function ProGateModal({
           onPress={openSubscription}
           activeOpacity={0.85}
         >
-          <Text style={styles.upgradeBtnText}>{isElite ? "Upgrade to Elite →" : "Upgrade to Pro →"}</Text>
+          <Text style={styles.upgradeBtnText}>{isElite ? t("components.proGate.upgradeElite") : t("components.proGate.upgradePro")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>
-          <Text style={styles.cancelText}>Maybe later</Text>
+          <Text style={styles.cancelText}>{t("components.proGate.maybeLater")}</Text>
         </TouchableOpacity>
       </View>
     </Modal>

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 import {
   adminScreenScroll,
   CardBox,
@@ -19,6 +20,7 @@ import { FEATURE_COLOR_MAP, FEATURE_LABEL_MAP, buildFeatureCostEntries } from ".
 import { COLORS } from "./adminTheme";
 
 export default function AdminAiUsageScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AdminStackParamList>>();
   const [period, setPeriod] = useState(30);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function AdminAiUsageScreen() {
       setTopUsers(t);
       setCostAlerts(a);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load AI usage");
+      setError(e instanceof Error ? e.message : t("admin.aiUsage.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -88,7 +90,7 @@ export default function AdminAiUsageScreen() {
               period === d && styles.periodChipActive,
             ]}
           >
-            <Text style={[styles.periodText, period === d && styles.periodTextActive]}>{d}d</Text>
+            <Text style={[styles.periodText, period === d && styles.periodTextActive]}>{t("admin.aiUsage.periodDays", { days: d })}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -100,42 +102,42 @@ export default function AdminAiUsageScreen() {
         <>
           <View style={styles.metricRow}>
             <MetricCard
-              label="Total tokens"
+              label={t("admin.aiUsage.totalTokens")}
               value={(summary.total_tokens ?? 0).toLocaleString("en-IN")}
               accentColor={COLORS.purple}
             />
             <MetricCard
-              label="Total cost"
+              label={t("admin.aiUsage.totalCost")}
               value={`₹${(summary.total_cost_inr ?? 0).toFixed(2)}`}
               accentColor={COLORS.amber}
             />
           </View>
           <View style={[styles.metricRow, { marginBottom: 20 }]}>
-            <MetricCard label="Total calls" value={String(totalCalls)} accentColor={COLORS.teal} />
+            <MetricCard label={t("admin.aiUsage.totalCalls")} value={String(totalCalls)} accentColor={COLORS.teal} />
             <MetricCard
-              label="Fallback calls"
+              label={t("admin.aiUsage.fallbackCalls")}
               value={String(fallbackCalls)}
-              sub={`${summary?.by_feature ? ((fallbackCalls / Math.max(totalCalls, 1)) * 100).toFixed(0) : 0}% rate`}
+              sub={t("admin.common.rate", { percent: summary?.by_feature ? ((fallbackCalls / Math.max(totalCalls, 1)) * 100).toFixed(0) : 0 })}
               accentColor={COLORS.coral}
             />
           </View>
 
-          <SectionLabel>Cost by feature</SectionLabel>
+          <SectionLabel>{t("admin.aiUsage.costByFeature")}</SectionLabel>
           <CardBox>
             <View style={styles.legendRow}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: COLORS.teal }]} />
-                <Text style={styles.legendText}>Groq</Text>
+                <Text style={styles.legendText}>{t("admin.aiUsage.groq")}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: COLORS.blue }]} />
-                <Text style={styles.legendText}>Gemini</Text>
+                <Text style={styles.legendText}>{t("admin.aiUsage.gemini")}</Text>
               </View>
             </View>
             {featureEntries.map(([feature, cost]) => (
               <FeatureBar
                 key={feature}
-                name={FEATURE_LABEL_MAP[feature] ?? feature}
+                name={t(FEATURE_LABEL_MAP[feature] ?? feature, { defaultValue: feature })}
                 value={cost}
                 maxValue={maxCost}
                 color={FEATURE_COLOR_MAP[feature] ?? "#888"}
@@ -143,12 +145,12 @@ export default function AdminAiUsageScreen() {
             ))}
           </CardBox>
 
-          <SectionLabel>Daily tokens</SectionLabel>
+          <SectionLabel>{t("admin.aiUsage.dailyTokens")}</SectionLabel>
           <CardBox>
             <AdminDailyTokensChart dailyData={dailyData} />
           </CardBox>
 
-          <SectionLabel>Top users by cost</SectionLabel>
+          <SectionLabel>{t("admin.aiUsage.topUsers")}</SectionLabel>
           {topUsers.map((u) => (
             <TouchableOpacity
               key={u.user_id}
@@ -160,28 +162,27 @@ export default function AdminAiUsageScreen() {
               <View style={styles.userBody}>
                 <Text style={styles.userEmail}>{u.email}</Text>
                 <Text style={styles.userMeta}>
-                  {u.plan_id} · {(u.total_tokens ?? 0).toLocaleString("en-IN")} tokens · {u.calls} calls
+                  {t("admin.aiUsage.userMeta", { plan: u.plan_id, tokens: (u.total_tokens ?? 0).toLocaleString("en-IN"), calls: u.calls })}
                 </Text>
               </View>
               <Text style={styles.userCost}>₹{(u.cost_inr ?? 0).toFixed(2)}</Text>
             </TouchableOpacity>
           ))}
 
-          <SectionLabel>Cost alerts (7d, &gt;₹500)</SectionLabel>
+          <SectionLabel>{t("admin.aiUsage.costAlerts")}</SectionLabel>
           {costAlerts.length > 0 ? (
             costAlerts.map((a) => (
               <View key={a.user_id} style={styles.alertRow}>
                 <Text style={styles.alertEmail}>{a.email}</Text>
                 <Text style={styles.alertMeta}>
-                  {a.plan_id} · ₹{(a.cost_inr ?? 0).toFixed(2)} · {(a.tokens ?? 0).toLocaleString("en-IN")}{" "}
-                  tokens
+                  {t("admin.aiUsage.alertMeta", { plan: a.plan_id, cost: (a.cost_inr ?? 0).toFixed(2), tokens: (a.tokens ?? 0).toLocaleString("en-IN") })}
                 </Text>
               </View>
             ))
           ) : (
             <View style={styles.alertOk}>
               <Text style={{ color: COLORS.teal, fontSize: 16 }}>✓</Text>
-              <Text style={styles.alertOkText}>No high-usage alerts — all users within budget</Text>
+              <Text style={styles.alertOkText}>{t("admin.aiUsage.noAlerts")}</Text>
             </View>
           )}
         </>

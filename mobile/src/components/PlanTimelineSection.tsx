@@ -1,28 +1,32 @@
 import { StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import type { PlanHistoryEntry } from "../types/subscription";
 import { formatDate } from "../utils/dateFormat";
+import { logicalRow, textAlignStart } from "../utils/rtl";
 
-function reasonLabel(reason: PlanHistoryEntry["reason"]): string {
+function reasonLabel(reason: PlanHistoryEntry["reason"], t: TFunction): string {
   const map: Record<PlanHistoryEntry["reason"], string> = {
-    initial: "Started",
-    upgrade: "Upgraded",
-    downgrade: "Downgraded",
-    renewal: "Renewed",
-    cancelled: "Cancelled",
-    expired: "Expired",
+    initial: t("subscription.reasons.initial"),
+    upgrade: t("subscription.reasons.upgrade"),
+    downgrade: t("subscription.reasons.downgrade"),
+    renewal: t("subscription.reasons.renewal"),
+    cancelled: t("subscription.reasons.cancelled"),
+    expired: t("subscription.reasons.expired"),
   };
   return map[reason] ?? reason;
 }
 
 export default function PlanTimelineSection() {
+  const { t } = useTranslation();
   const planHistory = useSubscriptionStore((s) => s.planHistory);
 
   if (planHistory.length <= 1) return null;
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionLabel}>Plan timeline</Text>
+      <Text style={styles.sectionLabel}>{t("subscription.timeline.title")}</Text>
       {planHistory.map((entry, i) => (
         <View key={`${entry.tier}-${entry.startDate}-${i}`} style={styles.timelineRow}>
           <View style={styles.timelineLeft}>
@@ -31,11 +35,12 @@ export default function PlanTimelineSection() {
           </View>
           <View style={styles.timelineContent}>
             <Text style={styles.timelineTier}>
-              {entry.tier} Plan{!entry.endDate ? "  (current)" : ""}
+              {t("subscription.overview.planName", { tier: entry.tier })}{!entry.endDate ? t("subscription.timeline.currentSuffix") : ""}
             </Text>
             <Text style={styles.timelineDate}>
-              {reasonLabel(entry.reason)} · {formatDate(entry.startDate)}
-              {entry.endDate ? ` → ${formatDate(entry.endDate)}` : ""}
+              {entry.endDate
+                ? t("subscription.timeline.dateRangeWithEnd", { reason: reasonLabel(entry.reason, t), startDate: formatDate(entry.startDate), endDate: formatDate(entry.endDate) })
+                : t("subscription.timeline.dateRange", { reason: reasonLabel(entry.reason, t), startDate: formatDate(entry.startDate) })}
             </Text>
           </View>
         </View>
@@ -54,8 +59,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: "500",
   },
-  timelineRow: { flexDirection: "row", marginBottom: 4 },
-  timelineLeft: { alignItems: "center", width: 24, marginRight: 12 },
+  timelineRow: { flexDirection: logicalRow, marginBottom: 4 },
+  timelineLeft: { alignItems: "center", width: 24, marginEnd: 12 },
   timelineDot: {
     width: 10,
     height: 10,
@@ -66,7 +71,7 @@ const styles = StyleSheet.create({
   },
   timelineDotActive: { backgroundColor: "#2ECC9A", borderColor: "#2ECC9A" },
   timelineLine: { width: 1, flex: 1, minHeight: 24, backgroundColor: "rgba(255,255,255,0.07)", marginVertical: 3 },
-  timelineContent: { flex: 1, paddingBottom: 16 },
-  timelineTier: { fontSize: 13, color: "#e2e8e4", fontWeight: "500" },
-  timelineDate: { fontSize: 12, color: "rgba(226,232,228,0.4)", marginTop: 2 },
+  timelineContent: { flex: 1, minWidth: 0, paddingBottom: 16 },
+  timelineTier: { fontSize: 13, color: "#e2e8e4", fontWeight: "500", textAlign: textAlignStart },
+  timelineDate: { fontSize: 12, color: "rgba(226,232,228,0.4)", marginTop: 2, textAlign: textAlignStart },
 });

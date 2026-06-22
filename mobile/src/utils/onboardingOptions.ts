@@ -1,3 +1,5 @@
+import i18n from "../i18n";
+
 export type PickerOption<T = string | number | null> = {
   value: T;
   label: string;
@@ -6,90 +8,115 @@ export type PickerOption<T = string | number | null> = {
 
 export const AGE_OPTIONS: PickerOption<number>[] = Array.from({ length: 88 }, (_, i) => {
   const n = i + 13;
-  return { value: n, label: `${n} years` };
+  return { value: n, label: i18n.t("onboarding.options.years", { count: n }) };
 });
 
 export const SEX_OPTIONS: PickerOption<string>[] = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-  { value: "other", label: "Prefer not to say" },
+  { value: "male", label: i18n.t("onboarding.options.sex.male") },
+  { value: "female", label: i18n.t("onboarding.options.sex.female") },
+  { value: "other", label: i18n.t("onboarding.options.sex.other") },
 ];
 
 export const GOAL_OPTIONS: PickerOption<string>[] = [
-  { value: "fat_loss", label: "Fat loss", description: "Lose body fat while preserving muscle" },
-  { value: "muscle_gain", label: "Muscle gain", description: "Build muscle in a controlled surplus" },
-  { value: "strength", label: "Strength", description: "Maximize performance and lifts" },
+  { value: "fat_loss", label: i18n.t("onboarding.options.goals.fatLoss"), description: i18n.t("onboarding.options.goals.fatLossDescription") },
+  { value: "muscle_gain", label: i18n.t("onboarding.options.goals.muscleGain"), description: i18n.t("onboarding.options.goals.muscleGainDescription") },
+  { value: "strength", label: i18n.t("onboarding.options.goals.strength"), description: i18n.t("onboarding.options.goals.strengthDescription") },
 ];
 
 export const GOAL_PACE_OPTIONS: PickerOption<string>[] = [
-  { value: "slow", label: "Slow — 0.25 kg/week" },
-  { value: "moderate", label: "Moderate — 0.5 kg/week (recommended)" },
-  { value: "aggressive", label: "Aggressive — 0.75 kg/week" },
+  { value: "slow", label: i18n.t("onboarding.options.pace.slow") },
+  { value: "moderate", label: i18n.t("onboarding.options.pace.moderate") },
+  { value: "aggressive", label: i18n.t("onboarding.options.pace.aggressive") },
 ];
 
 /** @deprecated use FOCUS_MUSCLE_UI_OPTIONS from onboardingFocusMuscles.ts */
 export const FOCUS_MUSCLE_OPTIONS: PickerOption<string | null>[] = [
-  { value: "Chest", label: "Chest" },
-  { value: "Back", label: "Back" },
-  { value: "Shoulders", label: "Shoulders" },
-  { value: "Legs", label: "Legs" },
-  { value: "Arms", label: "Arms" },
-  { value: "Core", label: "Core" },
-  { value: null, label: "Balanced" },
+  { value: "Chest", label: i18n.t("coach.workoutPlannerScreen.muscles.chest") },
+  { value: "Back", label: i18n.t("coach.workoutPlannerScreen.muscles.back") },
+  { value: "Shoulders", label: i18n.t("coach.workoutPlannerScreen.muscles.shoulders") },
+  { value: "Legs", label: i18n.t("coach.workoutPlannerScreen.muscles.legs") },
+  { value: "Arms", label: i18n.t("coach.workoutPlannerScreen.muscles.arms") },
+  { value: "Core", label: i18n.t("coach.workoutPlannerScreen.muscles.core") },
+  { value: null, label: i18n.t("coach.workoutPlannerScreen.muscles.balanced") },
 ];
 
 export const DIFFICULTY_OPTIONS: PickerOption<string>[] = [
-  { value: "beginner", label: "Beginner", description: "Starter-friendly exercise recommendations" },
-  { value: "intermediate", label: "Intermediate", description: "Moderate challenge and progression" },
-  { value: "advanced", label: "Advanced", description: "High-intensity and complex movements" },
+  { value: "beginner", label: i18n.t("onboarding.options.difficulty.beginner"), description: i18n.t("onboarding.options.difficulty.beginnerDescription") },
+  { value: "intermediate", label: i18n.t("onboarding.options.difficulty.intermediate"), description: i18n.t("onboarding.options.difficulty.intermediateDescription") },
+  { value: "advanced", label: i18n.t("onboarding.options.difficulty.advanced"), description: i18n.t("onboarding.options.difficulty.advancedDescription") },
 ];
 
 export const ACTIVITY_OPTIONS: PickerOption<string>[] = [
-  { value: "sedentary", label: "Sedentary", description: "Desk job, little to no exercise" },
-  { value: "lightly_active", label: "Lightly active", description: "1–2 workouts per week" },
-  { value: "moderately_active", label: "Moderately active", description: "3–4 workouts per week" },
-  { value: "very_active", label: "Very active", description: "5–6 hard sessions per week" },
-  { value: "extremely_active", label: "Extremely active", description: "Athlete or physical job" },
+  { value: "sedentary", label: i18n.t("onboarding.options.activity.sedentary"), description: i18n.t("onboarding.options.activity.sedentaryDescription") },
+  { value: "lightly_active", label: i18n.t("onboarding.options.activity.lightlyActive"), description: i18n.t("onboarding.options.activity.lightlyActiveDescription") },
+  { value: "moderately_active", label: i18n.t("onboarding.options.activity.moderatelyActive"), description: i18n.t("onboarding.options.activity.moderatelyActiveDescription") },
+  { value: "very_active", label: i18n.t("onboarding.options.activity.veryActive"), description: i18n.t("onboarding.options.activity.veryActiveDescription") },
+  { value: "extremely_active", label: i18n.t("onboarding.options.activity.extremelyActive"), description: i18n.t("onboarding.options.activity.extremelyActiveDescription") },
 ];
 
-export const WORKOUT_TYPE_OPTIONS = ["Strength training", "Cardio", "HIIT", "Yoga", "Sports", "Walking"];
-export const ALLERGY_OPTIONS = ["Dairy", "Gluten", "Nuts", "Eggs", "Soy", "Shellfish"];
+export const WORKOUT_TYPE_OPTIONS: PickerOption<string>[] = [
+  { value: "strength_training", label: i18n.t("onboarding.options.workoutTypes.strength") },
+  { value: "cardio", label: i18n.t("onboarding.options.workoutTypes.cardio") },
+  { value: "hiit", label: i18n.t("onboarding.options.workoutTypes.hiit") },
+  { value: "yoga", label: i18n.t("onboarding.options.workoutTypes.yoga") },
+  { value: "sports", label: i18n.t("onboarding.options.workoutTypes.sports") },
+  { value: "walking", label: i18n.t("onboarding.options.workoutTypes.walking") },
+];
+export const ALLERGY_OPTIONS: PickerOption<string>[] = [
+  { value: "dairy", label: i18n.t("onboarding.options.allergies.dairy") },
+  { value: "gluten", label: i18n.t("onboarding.options.allergies.gluten") },
+  { value: "nuts", label: i18n.t("onboarding.options.allergies.nuts") },
+  { value: "eggs", label: i18n.t("onboarding.options.allergies.eggs") },
+  { value: "soy", label: i18n.t("onboarding.options.allergies.soy") },
+  { value: "shellfish", label: i18n.t("onboarding.options.allergies.shellfish") },
+];
 
 export const WORKOUTS_PER_WEEK_OPTIONS: PickerOption<number>[] = Array.from({ length: 15 }, (_, i) => ({
   value: i,
-  label: i === 0 ? "0 workouts" : i === 1 ? "1 workout" : `${i} workouts`,
+  label: i === 0 ? i18n.t("onboarding.options.workouts.zero") : i === 1 ? i18n.t("onboarding.options.workouts.one") : i18n.t("onboarding.options.workouts.many", { count: i }),
 }));
 
 export const DIET_TYPE_OPTIONS: PickerOption<string>[] = [
-  { value: "standard", label: "No preference" },
-  { value: "vegetarian", label: "Vegetarian" },
-  { value: "vegan", label: "Vegan" },
-  { value: "keto", label: "Keto" },
-  { value: "high_protein", label: "High-protein" },
-  { value: "intermittent_fasting", label: "Intermittent fasting" },
-  { value: "halal", label: "Halal" },
-  { value: "jain", label: "Jain" },
+  { value: "standard", label: i18n.t("onboarding.options.diet.standard") },
+  { value: "vegetarian", label: i18n.t("onboarding.options.diet.vegetarian") },
+  { value: "vegan", label: i18n.t("onboarding.options.diet.vegan") },
+  { value: "keto", label: i18n.t("onboarding.options.diet.keto") },
+  { value: "high_protein", label: i18n.t("onboarding.options.diet.highProtein") },
+  { value: "intermittent_fasting", label: i18n.t("onboarding.options.diet.intermittentFasting") },
+  { value: "halal", label: i18n.t("onboarding.options.diet.halal") },
+  { value: "jain", label: i18n.t("onboarding.options.diet.jain") },
+];
+
+export const REGIONAL_FOOD_STYLE_OPTIONS: PickerOption<string>[] = [
+  { value: "north_indian", label: i18n.t("onboarding.options.regionalFoods.northIndian") },
+  { value: "south_indian", label: i18n.t("onboarding.options.regionalFoods.southIndian") },
+  { value: "rajasthani", label: i18n.t("onboarding.options.regionalFoods.rajasthani") },
+  { value: "punjabi", label: i18n.t("onboarding.options.regionalFoods.punjabi") },
+  { value: "gujarati", label: i18n.t("onboarding.options.regionalFoods.gujarati") },
+  { value: "bengali", label: i18n.t("onboarding.options.regionalFoods.bengali") },
+  { value: "maharashtrian", label: i18n.t("onboarding.options.regionalFoods.maharashtrian") },
+  { value: "no_preference", label: i18n.t("onboarding.options.regionalFoods.noPreference") },
 ];
 
 export const MEALS_PER_DAY_OPTIONS: PickerOption<number>[] = [1, 2, 3, 4, 5, 6].map((n) => ({
   value: n,
-  label: n === 1 ? "1 meal" : n === 3 ? "3 meals (default)" : `${n} meals`,
+  label: n === 1 ? i18n.t("onboarding.options.meals.one") : n === 3 ? i18n.t("onboarding.options.meals.default") : i18n.t("onboarding.options.meals.many", { count: n }),
 }));
 
 export const BODY_FAT_OPTIONS: PickerOption<number | null>[] = [
-  { value: null, label: "Skip — I don't know" },
+  { value: null, label: i18n.t("onboarding.options.bodyFatSkip") },
   ...Array.from({ length: 68 }, (_, i) => ({ value: i + 3, label: `${i + 3}%` })),
 ];
 
 export const BF_METHOD_OPTIONS: PickerOption<string>[] = [
-  { value: "smart_scale", label: "Smart scale" },
-  { value: "calipers", label: "Calipers" },
-  { value: "dexa_scan", label: "DEXA scan" },
-  { value: "visual_estimate", label: "Visual estimate" },
+  { value: "smart_scale", label: i18n.t("onboarding.options.bodyFatMethods.smartScale") },
+  { value: "calipers", label: i18n.t("onboarding.options.bodyFatMethods.calipers") },
+  { value: "dexa_scan", label: i18n.t("onboarding.options.bodyFatMethods.dexa") },
+  { value: "visual_estimate", label: i18n.t("onboarding.options.bodyFatMethods.visual") },
 ];
 
 export const WATER_GOAL_OPTIONS: PickerOption<number | null>[] = [
-  { value: null, label: "2.5 L (auto-calculated)" },
+  { value: null, label: i18n.t("onboarding.options.waterAuto") },
   { value: 1.0, label: "1.0 L" },
   { value: 1.5, label: "1.5 L" },
   { value: 2.0, label: "2.0 L" },
@@ -102,12 +129,12 @@ export const WATER_GOAL_OPTIONS: PickerOption<number | null>[] = [
 ];
 
 export const REGION_OPTIONS: PickerOption<string>[] = [
-  { value: "IN", label: "India" },
-  { value: "US", label: "United States" },
-  { value: "GB", label: "United Kingdom" },
-  { value: "CA", label: "Canada" },
-  { value: "AU", label: "Australia" },
-  { value: "OTHER", label: "Other" },
+  { value: "IN", label: i18n.t("onboarding.options.regions.india") },
+  { value: "US", label: i18n.t("onboarding.options.regions.us") },
+  { value: "GB", label: i18n.t("onboarding.options.regions.gb") },
+  { value: "CA", label: i18n.t("onboarding.options.regions.canada") },
+  { value: "AU", label: i18n.t("onboarding.options.regions.australia") },
+  { value: "OTHER", label: i18n.t("onboarding.options.regions.other") },
 ];
 
 export const REMINDER_TIME_OPTIONS: PickerOption<string>[] = [];

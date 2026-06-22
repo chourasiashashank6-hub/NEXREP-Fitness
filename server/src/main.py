@@ -1,11 +1,12 @@
 from datetime import date, datetime, timedelta
 import json
 import os
+import re
 from typing import Any
 import smtplib
 from email.message import EmailMessage
 from src.core.http_client import ExternalHTTPError, post_json
-from sqlalchemy import func, text
+from sqlalchemy import func, or_, text
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +14,7 @@ from sqlalchemy.orm import Session
 from src.db.session import Base, SessionLocal, engine, get_db
 from src.models import admin_models  # noqa: F401 — registers admin analytics tables
 from src.core.config import settings, validate_jwt_secret, warn_missing_razorpay_webhook_secret
-from src.models.models import Activity, Meal, User, UserOnboarding, Workout, WorkoutCatalog
+from src.models.models import Activity, GlobalExercise, Meal, MotivationalQuote, NotificationPreference, PushToken, StrengthLift, User, UserOnboarding, Workout, WorkoutCatalog
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
 from src.models.meal_plan import (  # noqa: F401
     DailyMealPlanEntry,
@@ -30,10 +31,15 @@ from src.schemas.schemas import (
     FeedbackRequest,
     FirebaseLoginRequest,
     LoginRequest,
+    LanguagePreferenceRequest,
     MealRequest,
     OnboardingUpsertRequest,
+    NotificationPreferencesRequest,
     ProfileRequest,
+    PushTokenRequest,
     SignupRequest,
+    StrengthLiftRequest,
+    StrengthLiftUpdateRequest,
     SyncPasswordRequest,
     WorkoutRequest,
     WorkoutUpdateRequest,
@@ -45,10 +51,18 @@ from src.services.auth_service import (
     verify_password,
 )
 from src.services.firebase_token import email_from_firebase_id_token
+from src.services.catalog_label_service import seed_catalog_labels
 from src.services.food_catalog_service import ensure_food_catalog_schema, load_food_catalog_from_sql_if_empty
 from src.services.global_exercises_service import load_global_exercises_if_empty
 from src.services.workout_catalog_service import load_workout_catalog_if_empty
 from src.services.score_service import compute_discipline_score
+from src.services.notification_service import (
+    send_push_to_user,
+    start_notification_scheduler,
+    stop_notification_scheduler,
+)
+from src.services.language_service import ai_language_instruction
+from src.services.language_service import normalize_language_tag
 from src.services.subscription_service import (
     activate_subscription,
     cancel_subscription,
@@ -62,6 +76,11 @@ from src.routes.subscriptions import invoices_router, router as subscriptions_ro
 from src.routes.admin import router as admin_router
 from src.services.ai_logger import log_groq_call
 from src.utils.auth import decode_user_id_from_token
+from src.coach_targets import (
+    get_muscle_weekly_targets,
+    get_onboarding_weekly_target_inputs,
+    get_target_weekly_sets,
+)
 
 app = FastAPI(title="Fitness API", version="1.0.0")
 
@@ -186,6 +205,13 @@ def startup():
     load_food_catalog_from_sql_if_empty(engine)
     load_workout_catalog_if_empty(engine)
     load_global_exercises_if_empty(engine)
+    seed_catalog_labels(engine)
+    start_notification_scheduler()
+
+
+@app.on_event("shutdown")
+def shutdown():
+    stop_notification_scheduler()
 
 
 def apply_schema_updates() -> None:
@@ -224,6 +250,26 @@ def apply_schema_updates() -> None:
         conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS fiber_per_100g NUMERIC(6,2) DEFAULT 0"))
         conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS total_fiber_g NUMERIC(6,2) DEFAULT 0"))
         conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS source_type VARCHAR(24) DEFAULT 'database'"))
+        conn.execute(text("ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS food_id BIGINT NULL"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_meal_entries_food_id ON meal_entries(food_id)"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS global_exercise_labels (
+                    id BIGSERIAL PRIMARY KEY,
+                    exercise_id BIGINT NOT NULL REFERENCES global_exercises(id) ON DELETE CASCADE,
+                    language_tag VARCHAR(32) NOT NULL,
+                    label TEXT NOT NULL,
+                    aliases TEXT[] NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_global_exercise_label_language UNIQUE (exercise_id, language_tag)
+                )
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_global_exercise_labels_exercise_id ON global_exercise_labels(exercise_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_global_exercise_labels_language_tag ON global_exercise_labels(language_tag)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_global_exercise_labels_label_lower ON global_exercise_labels((LOWER(label)))"))
         conn.execute(text("ALTER TABLE ai_food_meal_entries ADD COLUMN IF NOT EXISTS log_date DATE"))
         conn.execute(text("UPDATE ai_food_meal_entries SET log_date = COALESCE(log_date, DATE(created_at), CURRENT_DATE)"))
         conn.execute(text("ALTER TABLE ai_food_meal_entries ALTER COLUMN log_date SET NOT NULL"))
@@ -306,6 +352,111 @@ def apply_schema_updates() -> None:
                 """
             )
         )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS strength_lifts (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    workout_id INTEGER NULL REFERENCES workouts(id),
+                    exercise_name VARCHAR(120) NOT NULL,
+                    weight_kg DOUBLE PRECISION NOT NULL,
+                    reps INTEGER NOT NULL,
+                    date TIMESTAMP DEFAULT NOW()
+                )
+                """
+            )
+        )
+        conn.execute(text("ALTER TABLE workouts ADD COLUMN IF NOT EXISTS exercise_id BIGINT NULL"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_workouts_exercise_id ON workouts(exercise_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_strength_lifts_user_id ON strength_lifts(user_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_strength_lifts_workout_id ON strength_lifts(workout_id)"))
+        conn.execute(text("ALTER TABLE strength_lifts ADD COLUMN IF NOT EXISTS exercise_id BIGINT NULL"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_strength_lifts_exercise_id ON strength_lifts(exercise_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_strength_lifts_exercise_name ON strength_lifts(exercise_name)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_strength_lifts_date ON strength_lifts(date)"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS motivational_quotes (
+                    id SERIAL PRIMARY KEY,
+                    quote TEXT NOT NULL,
+                    author VARCHAR(255) NOT NULL,
+                    category VARCHAR(50) NOT NULL CHECK (category IN ('fat_loss', 'muscle_gain', 'strength', 'general')),
+                    notification_context VARCHAR(50) NOT NULL DEFAULT 'general',
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                "ALTER TABLE motivational_quotes ADD COLUMN IF NOT EXISTS notification_context VARCHAR(50) NOT NULL DEFAULT 'general'"
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_quotes_category ON motivational_quotes(category)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_quotes_active ON motivational_quotes(is_active)"))
+        conn.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_motivational_quotes_notification_context ON motivational_quotes(notification_context)")
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS push_tokens (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    expo_push_token VARCHAR(255) NOT NULL,
+                    platform VARCHAR(16) NOT NULL,
+                    device_id VARCHAR(128) NULL,
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW(),
+                    CONSTRAINT uq_push_token_user_token UNIQUE (user_id, expo_push_token)
+                )
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_push_tokens_user_id ON push_tokens(user_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_push_tokens_expo_push_token ON push_tokens(expo_push_token)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_push_tokens_is_active ON push_tokens(is_active)"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS notification_preferences (
+                    user_id INTEGER PRIMARY KEY REFERENCES users(id),
+                    preferences_json JSONB NOT NULL,
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS notification_log (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    category VARCHAR(64) NOT NULL,
+                    title VARCHAR(160) NOT NULL,
+                    body TEXT NOT NULL,
+                    event_key VARCHAR(160) NULL,
+                    status VARCHAR(32) NOT NULL DEFAULT 'queued',
+                    expo_ticket_id VARCHAR(160) NULL,
+                    payload_json JSONB NULL,
+                    error_message TEXT NULL,
+                    sent_at TIMESTAMP NULL,
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notification_log_user_id ON notification_log(user_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notification_log_category ON notification_log(category)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notification_log_event_key ON notification_log(event_key)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notification_log_status ON notification_log(status)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notification_log_sent_at ON notification_log(sent_at)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notification_log_created_at ON notification_log(created_at)"))
 
 
 def estimate_workout_calories(payload: WorkoutRequest) -> int:
@@ -479,11 +630,7 @@ def _estimate_saved_workout_calories(
     db: Session,
     override_time_taken: str | None = None,
 ) -> int:
-    catalog_row = (
-        db.query(WorkoutCatalog)
-        .filter(func.lower(WorkoutCatalog.exercise_name) == (workout.exercise_name or "").strip().lower())
-        .first()
-    )
+    catalog_row = _catalog_row_for_workout(db, workout)
     derived_difficulty = (
         catalog_row.difficulty
         if catalog_row and catalog_row.difficulty
@@ -497,6 +644,7 @@ def _estimate_saved_workout_calories(
     effective_time_taken = override_time_taken or (f"{int(workout.duration)}:00" if workout.duration else None)
     return estimate_workout_calories_via_met(
         WorkoutRequest(
+            exercise_id=workout.exercise_id,
             type=workout.type,
             exerciseName=workout.exercise_name,
             sets=workout.sets,
@@ -531,13 +679,23 @@ def _muscles_from_body_part(body_part: str | None) -> list[str]:
     return [m for i, m in enumerate(out) if m not in out[:i]]
 
 
-def _infer_muscles_from_workout(workout: Workout, db: Session) -> list[str]:
-    # 1) Most reliable source: workout catalog body_part for the exact exercise.
-    catalog_row = (
+def _catalog_row_for_workout(db: Session, workout: Workout) -> WorkoutCatalog | None:
+    if workout.exercise_id is not None:
+        global_row = db.query(GlobalExercise).filter(GlobalExercise.id == workout.exercise_id).first()
+        if global_row and global_row.catalog_id is not None:
+            catalog_row = db.query(WorkoutCatalog).filter(WorkoutCatalog.id == global_row.catalog_id).first()
+            if catalog_row:
+                return catalog_row
+    return (
         db.query(WorkoutCatalog)
         .filter(func.lower(WorkoutCatalog.exercise_name) == (workout.exercise_name or "").strip().lower())
         .first()
     )
+
+
+def _infer_muscles_from_workout(workout: Workout, db: Session) -> list[str]:
+    # 1) Most reliable source: workout catalog body_part for the exact exercise.
+    catalog_row = _catalog_row_for_workout(db, workout)
     mapped = _muscles_from_body_part(catalog_row.body_part if catalog_row else None)
     if mapped:
         return mapped
@@ -562,6 +720,14 @@ def _relative_label(dt: datetime | None) -> str:
     if days == 1:
         return "Yesterday"
     return f"{days} days ago"
+
+
+def _weekly_target_context(db: Session, user_id: int) -> tuple[dict[str, int], int]:
+    row = db.query(UserOnboarding).filter(UserOnboarding.user_id == user_id).first()
+    onboarding = row.onboarding_json if row and isinstance(row.onboarding_json, dict) else None
+    workouts_per_week, focus_muscles = get_onboarding_weekly_target_inputs(onboarding)
+    muscle_targets = get_muscle_weekly_targets(workouts_per_week, focus_muscles)
+    return muscle_targets, get_target_weekly_sets(workouts_per_week, focus_muscles)
 
 
 WORKOUT_COACH_SYSTEM_PROMPT = (
@@ -821,7 +987,7 @@ def _default_workout_exercises(focus: list[str]) -> list[dict[str, Any]]:
     return catalog["Chest"]
 
 
-def _normalize_workout_coach_response(parsed: dict, payload: dict) -> dict:
+def _normalize_workout_coach_response(parsed: dict, payload: dict, target_weekly_sets_default: int = 84) -> dict:
     groups = payload.get("muscleGroups") if isinstance(payload.get("muscleGroups"), list) else []
     sore = [g.get("name") for g in groups if isinstance(g, dict) and g.get("status") == "sore" and g.get("name")]
     fresh = [g.get("name") for g in groups if isinstance(g, dict) and g.get("status") == "fresh" and g.get("name")]
@@ -836,9 +1002,9 @@ def _normalize_workout_coach_response(parsed: dict, payload: dict) -> dict:
     score = max(0, min(100, score))
 
     completed = int(payload.get("totalWeeklySets") or 0)
-    target = int(payload.get("targetWeeklySets") or 84)
+    target = int(payload.get("targetWeeklySets") or target_weekly_sets_default or 84)
     if target <= 0:
-        target = 84
+        target = int(target_weekly_sets_default or 84)
     pct = int(parsed.get("weeklyProgress", {}).get("percentComplete") if isinstance(parsed.get("weeklyProgress"), dict) else 0)
     if pct <= 0:
         pct = round((completed / target) * 100) if target else 0
@@ -936,13 +1102,18 @@ def _normalize_workout_coach_response(parsed: dict, payload: dict) -> dict:
     }
 
 
-def _fallback_workout_coach(payload: dict) -> dict:
-    out = _normalize_workout_coach_response({}, payload)
+def _fallback_workout_coach(payload: dict, target_weekly_sets_default: int = 84) -> dict:
+    out = _normalize_workout_coach_response({}, payload, target_weekly_sets_default=target_weekly_sets_default)
     out["source"] = "fallback"
     return out
 
 
-def _groq_workout_coach(payload: dict, user_id: int | None = None) -> dict:
+def _groq_workout_coach(
+    payload: dict,
+    user_id: int | None = None,
+    target_weekly_sets_default: int = 84,
+    preferred_language: str | None = None,
+) -> dict:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing on server")
 
@@ -962,7 +1133,7 @@ def _groq_workout_coach(payload: dict, user_id: int | None = None) -> dict:
                 "max_tokens": 1200,
                 "response_format": {"type": "json_object"},
                 "messages": [
-                    {"role": "system", "content": WORKOUT_COACH_SYSTEM_PROMPT},
+                    {"role": "system", "content": WORKOUT_COACH_SYSTEM_PROMPT + ai_language_instruction(preferred_language)},
                     {"role": "user", "content": json.dumps(payload)},
                 ],
             },
@@ -988,7 +1159,7 @@ def _groq_workout_coach(payload: dict, user_id: int | None = None) -> dict:
     parsed = json.loads(clean)
     if not isinstance(parsed, dict):
         raise RuntimeError("Groq returned invalid workout JSON")
-    out = _normalize_workout_coach_response(parsed, payload)
+    out = _normalize_workout_coach_response(parsed, payload, target_weekly_sets_default=target_weekly_sets_default)
     out["source"] = "groq"
     return out
 
@@ -998,6 +1169,269 @@ def build_recommendation(row: WorkoutCatalog) -> str:
     reps = row.reps_recommended or "-"
     rest = row.rest_time_sec if row.rest_time_sec is not None else "-"
     return f"{sets} sets x {reps} reps, rest {rest}s"
+
+
+def _clean_exercise_name(value: Any) -> str:
+    return " ".join(str(value or "").strip().split())
+
+
+def _normalize_exercise_key(value: Any) -> str:
+    return _clean_exercise_name(value).lower()
+
+
+_STRENGTH_EXERCISE_PREFIX_WORDS = {
+    "barbell",
+    "dumbbell",
+    "kettlebell",
+    "machine",
+    "smith",
+    "cable",
+    "weighted",
+}
+
+
+def _strength_match_key(value: Any) -> str:
+    cleaned = re.sub(r"[^a-z0-9]+", " ", _normalize_exercise_key(value))
+    tokens = [token for token in cleaned.split() if token not in _STRENGTH_EXERCISE_PREFIX_WORDS]
+    return " ".join(tokens)
+
+
+def _coerce_int_id(value: Any) -> int | None:
+    try:
+        if value is None or value == "":
+            return None
+        parsed = int(value)
+        return parsed if parsed > 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _strength_exercises_match(left: Any, right: Any, left_id: Any = None, right_id: Any = None) -> bool:
+    left_exercise_id = _coerce_int_id(left_id)
+    right_exercise_id = _coerce_int_id(right_id)
+    if left_exercise_id is not None and right_exercise_id is not None:
+        return left_exercise_id == right_exercise_id
+    a = _strength_match_key(left)
+    b = _strength_match_key(right)
+    if not a or not b:
+        return False
+    return a == b or a in b or b in a
+
+
+def _resolve_global_exercise_id(db: Session, *, exercise_id: Any = None, exercise_name: str | None = None) -> int | None:
+    requested_id = _coerce_int_id(exercise_id)
+    if requested_id is not None:
+        exists = db.query(GlobalExercise.id).filter(GlobalExercise.id == requested_id).first()
+        if exists:
+            return requested_id
+
+    name = _clean_exercise_name(exercise_name)
+    if not name:
+        return None
+    matches = (
+        db.query(GlobalExercise.id)
+        .filter(func.lower(GlobalExercise.name) == name.lower())
+        .limit(2)
+        .all()
+    )
+    if len(matches) == 1:
+        return int(matches[0][0])
+    return None
+
+
+def _target_lifts_from_goal(goal: dict) -> list[dict[str, Any]]:
+    raw_target_lifts = goal.get("target_lifts") if isinstance(goal.get("target_lifts"), list) else []
+    target_lifts: list[dict[str, Any]] = []
+    for item in raw_target_lifts[:3]:
+        if not isinstance(item, dict):
+            continue
+        exercise_name = _clean_exercise_name(item.get("exercise_name"))
+        exercise_id = _coerce_int_id(item.get("exercise_id"))
+        try:
+            target_weight_kg = float(item.get("target_weight_kg"))
+        except (TypeError, ValueError):
+            continue
+        if exercise_name and target_weight_kg > 0:
+            target_lifts.append({"exercise_id": exercise_id, "exercise_name": exercise_name, "target_weight_kg": round(target_weight_kg, 1)})
+    return target_lifts
+
+
+def _canonical_strength_exercise(db: Session, user_id: int, exercise_name: str, exercise_id: int | None) -> dict[str, Any]:
+    row = db.query(UserOnboarding).filter(UserOnboarding.user_id == user_id).first()
+    onboarding = row.onboarding_json if row and isinstance(row.onboarding_json, dict) else {}
+    goal = onboarding.get("goal") if isinstance(onboarding.get("goal"), dict) else {}
+    for target in _target_lifts_from_goal(goal):
+        if _strength_exercises_match(exercise_name, target["exercise_name"], exercise_id, target.get("exercise_id")):
+            return {"exercise_id": target.get("exercise_id") or exercise_id, "exercise_name": target["exercise_name"]}
+    return {"exercise_id": exercise_id, "exercise_name": exercise_name}
+
+
+def _estimated_one_rep_max(weight_kg: float, reps: int) -> float:
+    return round(float(weight_kg) * (1 + int(reps) / 30), 1)
+
+
+def _normalize_target_lifts(onboarding: dict, db: Session | None = None) -> None:
+    goal = onboarding.get("goal") if isinstance(onboarding.get("goal"), dict) else {}
+    if not isinstance(goal, dict):
+        return
+
+    if goal.get("type") != "strength":
+        goal.pop("target_lifts", None)
+        onboarding["goal"] = goal
+        return
+
+    cleaned: list[dict[str, Any]] = []
+    raw_lifts = goal.get("target_lifts") if isinstance(goal.get("target_lifts"), list) else []
+    seen: set[str] = set()
+    for item in raw_lifts:
+        if not isinstance(item, dict):
+            continue
+        exercise_name = _clean_exercise_name(item.get("exercise_name"))
+        exercise_id = _coerce_int_id(item.get("exercise_id"))
+        if exercise_id is None and db is not None:
+            exercise_id = _resolve_global_exercise_id(db, exercise_name=exercise_name)
+        key = _normalize_exercise_key(exercise_name)
+        dedupe_key = f"id:{exercise_id}" if exercise_id is not None else key
+        if not exercise_name or dedupe_key in seen:
+            continue
+        try:
+            target_weight_kg = round(float(item.get("target_weight_kg")), 1)
+        except (TypeError, ValueError):
+            continue
+        if target_weight_kg <= 0 or target_weight_kg > 500:
+            continue
+        cleaned.append({"exercise_id": exercise_id, "exercise_name": exercise_name[:120], "target_weight_kg": target_weight_kg})
+        seen.add(dedupe_key)
+        if len(cleaned) >= 3:
+            break
+    goal["target_lifts"] = cleaned
+    onboarding["goal"] = goal
+
+
+def _canonicalize_choice_list(values: Any, aliases: dict[str, str]) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    canonical: list[str] = []
+    for value in values:
+        key = str(value or "").strip()
+        if not key:
+            continue
+        normalized = re.sub(r"[^a-z0-9]+", "_", key.lower()).strip("_")
+        resolved = aliases.get(normalized, normalized)
+        if resolved and resolved not in canonical:
+            canonical.append(resolved)
+    return canonical
+
+
+def _normalize_onboarding_canonical_choices(onboarding: dict) -> None:
+    activity = onboarding.get("activity") if isinstance(onboarding.get("activity"), dict) else {}
+    dietary = onboarding.get("dietary") if isinstance(onboarding.get("dietary"), dict) else {}
+
+    workout_aliases = {
+        "strength": "strength_training",
+        "strength_training": "strength_training",
+        "weight_training": "strength_training",
+        "gym": "strength_training",
+        "cardio": "cardio",
+        "hiit": "hiit",
+        "yoga": "yoga",
+        "sports": "sports",
+        "walking": "walking",
+    }
+    allergy_aliases = {
+        "dairy": "dairy",
+        "gluten": "gluten",
+        "nuts": "nuts",
+        "eggs": "eggs",
+        "soy": "soy",
+        "shellfish": "shellfish",
+    }
+    regional_aliases = {
+        "north_indian": "north_indian",
+        "south_indian": "south_indian",
+        "rajasthani": "rajasthani",
+        "punjabi": "punjabi",
+        "gujarati": "gujarati",
+        "bengali": "bengali",
+        "maharashtrian": "maharashtrian",
+        "no_preference": "no_preference",
+        "no_preference_pan_indian": "no_preference",
+        "pan_indian": "no_preference",
+    }
+    if isinstance(activity, dict):
+        activity["workout_types"] = _canonicalize_choice_list(activity.get("workout_types"), workout_aliases)
+        onboarding["activity"] = activity
+    if isinstance(dietary, dict):
+        dietary["allergies"] = _canonicalize_choice_list(dietary.get("allergies"), allergy_aliases)
+        regional_food_styles = _canonicalize_choice_list(dietary.get("regional_food_styles"), regional_aliases)
+        if "no_preference" in regional_food_styles:
+            regional_food_styles = ["no_preference"]
+        dietary["regional_food_styles"] = regional_food_styles
+        onboarding["dietary"] = dietary
+
+
+def _strength_weeks_left(goal: dict) -> int | None:
+    target_date = goal.get("target_date")
+    if not target_date:
+        return None
+    try:
+        target_day = date.fromisoformat(str(target_date)[:10])
+    except ValueError:
+        return None
+    return max(0, (target_day - date.today()).days // 7)
+
+
+def _serialize_strength_lift_for_history(lift: StrengthLift | None, db: Session, user_id: int) -> dict[str, Any] | None:
+    if not lift:
+        return None
+    estimated_1rm = _estimated_one_rep_max(lift.weight_kg, lift.reps)
+    previous_lifts = (
+        db.query(StrengthLift)
+        .filter(
+            StrengthLift.user_id == user_id,
+            StrengthLift.id != lift.id,
+        )
+        .all()
+    )
+    other_best = max(
+        (
+            _estimated_one_rep_max(row.weight_kg, row.reps)
+            for row in previous_lifts
+            if _strength_exercises_match(row.exercise_name, lift.exercise_name, row.exercise_id, lift.exercise_id)
+        ),
+        default=0,
+    )
+    return {
+        "id": lift.id,
+        "exercise_id": lift.exercise_id,
+        "exercise_name": lift.exercise_name,
+        "weight_kg": lift.weight_kg,
+        "reps": lift.reps,
+        "estimated_1rm_kg": estimated_1rm,
+        "is_new_pr": estimated_1rm > other_best,
+        "date": lift.date.isoformat() if lift.date else None,
+    }
+
+
+def _notify_strength_pr_if_needed(lift: StrengthLift, serialized: dict[str, Any], db: Session, user_id: int) -> None:
+    if not serialized.get("is_new_pr"):
+        return
+    estimated_1rm = serialized.get("estimated_1rm_kg")
+    send_push_to_user(
+        db,
+        user_id=user_id,
+        category="workout",
+        title="New strength PR",
+        body=f"{lift.exercise_name}: estimated 1RM is now {estimated_1rm} kg. Strong work.",
+        event_key=f"strength-pr:{user_id}:{lift.id}:{estimated_1rm}",
+        data={
+            "kind": "strength_pr",
+            "lift_id": lift.id,
+            "exercise_id": lift.exercise_id,
+            "exercise_name": lift.exercise_name,
+            "estimated_1rm_kg": estimated_1rm,
+        },
+    )
 
 
 def apply_onboarding_personal_to_user(user: User, onboarding: dict) -> None:
@@ -1074,6 +1508,11 @@ def apply_onboarding_personal_to_user(user: User, onboarding: dict) -> None:
         user.difficulty = "Intermediate"
     elif goal_pace == "slow" or activity_level in {"sedentary", "lightly_active"}:
         user.difficulty = "Beginner"
+
+    app_setup = onboarding.get("app_setup") if isinstance(onboarding.get("app_setup"), dict) else {}
+    preferred_language = app_setup.get("preferred_language") or app_setup.get("preferredLanguage")
+    if isinstance(preferred_language, str) and preferred_language.strip():
+        user.preferred_language = normalize_language_tag(preferred_language)
 
 
 @app.post("/signup")
@@ -1163,6 +1602,161 @@ def get_my_onboarding(current_user: User = Depends(get_current_user), db: Sessio
     return {"onboarding": row.onboarding_json, "targets": row.targets_json}
 
 
+@app.get("/api/quotes/random")
+def get_random_motivational_quote(
+    category: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    valid_categories = {"fat_loss", "muscle_gain", "strength"}
+    normalized_category = category.strip().lower() if isinstance(category, str) and category.strip() else None
+    if normalized_category and normalized_category not in valid_categories:
+        raise HTTPException(status_code=422, detail="category must be one of: fat_loss, muscle_gain, strength")
+
+    query = db.query(MotivationalQuote).filter(MotivationalQuote.is_active.is_(True))
+    if normalized_category:
+        query = query.filter(MotivationalQuote.category.in_([normalized_category, "general"]))
+
+    quote = query.order_by(func.random()).first()
+    if not quote:
+        raise HTTPException(status_code=404, detail="No active quotes found")
+    return {
+        "id": quote.id,
+        "quote": quote.quote,
+        "author": quote.author,
+        "category": quote.category,
+        "notification_context": quote.notification_context,
+    }
+
+
+DEFAULT_NOTIFICATION_PREFERENCES = {
+    "master_enabled": True,
+    "categories": {
+        "workout": True,
+        "meals": True,
+        "macro_checkins": True,
+        "logging_nudges": True,
+        "motivational_quotes": True,
+    },
+    "quiet_hours": {
+        "enabled": False,
+        "start": "22:00",
+        "end": "07:00",
+    },
+    "offsets": {
+        "pre_workout_minutes": 20,
+        "dress_change_minutes": 18,
+        "meditation_minutes": 10,
+    },
+}
+
+
+def _normalize_notification_preferences(raw: dict | None) -> dict:
+    raw = raw if isinstance(raw, dict) else {}
+    categories = raw.get("categories") if isinstance(raw.get("categories"), dict) else {}
+    quiet_hours = raw.get("quiet_hours") if isinstance(raw.get("quiet_hours"), dict) else {}
+    offsets = raw.get("offsets") if isinstance(raw.get("offsets"), dict) else {}
+
+    def bool_value(value: Any, fallback: bool) -> bool:
+        return fallback if value is None else bool(value)
+
+    def time_value(value: Any, fallback: str) -> str:
+        text_value = str(value or "").strip()
+        return text_value if re.match(r"^\d{1,2}:\d{2}$", text_value) else fallback
+
+    def int_value(value: Any, fallback: int, min_value: int, max_value: int) -> int:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            parsed = fallback
+        return max(min_value, min(max_value, parsed))
+
+    return {
+        "master_enabled": bool_value(raw.get("master_enabled"), DEFAULT_NOTIFICATION_PREFERENCES["master_enabled"]),
+        "categories": {
+            "workout": bool_value(categories.get("workout"), True),
+            "meals": bool_value(categories.get("meals"), True),
+            "macro_checkins": bool_value(categories.get("macro_checkins"), True),
+            "logging_nudges": bool_value(categories.get("logging_nudges"), True),
+            "motivational_quotes": bool_value(categories.get("motivational_quotes"), True),
+        },
+        "quiet_hours": {
+            "enabled": bool_value(quiet_hours.get("enabled"), False),
+            "start": time_value(quiet_hours.get("start"), "22:00"),
+            "end": time_value(quiet_hours.get("end"), "07:00"),
+        },
+        "offsets": {
+            "pre_workout_minutes": int_value(offsets.get("pre_workout_minutes"), 20, 1, 120),
+            "dress_change_minutes": int_value(offsets.get("dress_change_minutes"), 18, 1, 120),
+            "meditation_minutes": int_value(offsets.get("meditation_minutes"), 10, 1, 120),
+        },
+    }
+
+
+@app.post("/api/notifications/push-token")
+def register_push_token(
+    payload: PushTokenRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    token = payload.expo_push_token.strip()
+    platform = payload.platform.strip().lower()
+    if not token.startswith("ExponentPushToken[") and not token.startswith("ExpoPushToken["):
+        raise HTTPException(status_code=422, detail="Invalid Expo push token")
+    if platform not in {"ios", "android", "web"}:
+        raise HTTPException(status_code=422, detail="platform must be ios, android, or web")
+
+    row = (
+        db.query(PushToken)
+        .filter(PushToken.user_id == current_user.id, PushToken.expo_push_token == token)
+        .first()
+    )
+    if row:
+        row.platform = platform
+        row.device_id = payload.device_id
+        row.is_active = True
+        row.updated_at = datetime.utcnow()
+    else:
+        row = PushToken(
+            user_id=current_user.id,
+            expo_push_token=token,
+            platform=platform,
+            device_id=payload.device_id,
+            is_active=True,
+        )
+        db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {"id": row.id, "registered": True}
+
+
+@app.get("/api/notifications/preferences")
+def get_notification_preferences(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = db.query(NotificationPreference).filter(NotificationPreference.user_id == current_user.id).first()
+    prefs = _normalize_notification_preferences(row.preferences_json if row else None)
+    return {"preferences": prefs}
+
+
+@app.put("/api/notifications/preferences")
+def put_notification_preferences(
+    payload: NotificationPreferencesRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    prefs = _normalize_notification_preferences(payload.preferences)
+    row = db.query(NotificationPreference).filter(NotificationPreference.user_id == current_user.id).first()
+    if row:
+        row.preferences_json = prefs
+        row.updated_at = datetime.utcnow()
+    else:
+        row = NotificationPreference(user_id=current_user.id, preferences_json=prefs)
+        db.add(row)
+    db.commit()
+    return {"preferences": prefs}
+
+
 @app.put("/onboarding/me")
 def put_my_onboarding(
     payload: OnboardingUpsertRequest,
@@ -1171,6 +1765,8 @@ def put_my_onboarding(
 ):
     if not isinstance(payload.onboarding, dict) or not isinstance(payload.targets, dict):
         raise HTTPException(status_code=422, detail="Invalid payload")
+    _normalize_onboarding_canonical_choices(payload.onboarding)
+    _normalize_target_lifts(payload.onboarding, db)
     apply_onboarding_personal_to_user(current_user, payload.onboarding)
     row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
     if row:
@@ -1187,6 +1783,170 @@ def put_my_onboarding(
     db.commit()
     db.refresh(row)
     return {"onboarding": row.onboarding_json, "targets": row.targets_json}
+
+
+@app.post("/api/strength/lift")
+def log_strength_lift(
+    payload: StrengthLiftRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    exercise_name = _clean_exercise_name(payload.exercise_name)
+    if not exercise_name:
+        raise HTTPException(status_code=422, detail="exercise_name is required")
+    if payload.weight_kg <= 0 or payload.weight_kg > 500:
+        raise HTTPException(status_code=422, detail="weight_kg must be between 0 and 500")
+    if payload.reps <= 0 or payload.reps > 100:
+        raise HTTPException(status_code=422, detail="reps must be between 1 and 100")
+
+    workout_id = payload.workout_id
+    linked_workout: Workout | None = None
+    if workout_id is not None:
+        linked_workout = (
+            db.query(Workout)
+            .filter(Workout.id == workout_id, Workout.user_id == current_user.id)
+            .first()
+        )
+        if not linked_workout:
+            raise HTTPException(status_code=404, detail="Linked workout not found")
+
+    requested_exercise_id = payload.exercise_id if payload.exercise_id is not None else (linked_workout.exercise_id if linked_workout else None)
+    resolved_exercise_id = _resolve_global_exercise_id(db, exercise_id=requested_exercise_id, exercise_name=exercise_name)
+    canonical_exercise = _canonical_strength_exercise(db, current_user.id, exercise_name, resolved_exercise_id)
+
+    lift = StrengthLift(
+        user_id=current_user.id,
+        workout_id=workout_id,
+        exercise_id=canonical_exercise.get("exercise_id"),
+        exercise_name=canonical_exercise["exercise_name"][:120],
+        weight_kg=round(float(payload.weight_kg), 1),
+        reps=int(payload.reps),
+    )
+    db.add(lift)
+    db.commit()
+    db.refresh(lift)
+    serialized = _serialize_strength_lift_for_history(lift, db, current_user.id) or {}
+    _notify_strength_pr_if_needed(lift, serialized, db, current_user.id)
+    return {
+        "id": lift.id,
+        "exercise_id": lift.exercise_id,
+        "exercise_name": lift.exercise_name,
+        "weight_kg": lift.weight_kg,
+        "reps": lift.reps,
+        "estimated_1rm_kg": serialized.get("estimated_1rm_kg", _estimated_one_rep_max(lift.weight_kg, lift.reps)),
+        "is_new_pr": bool(serialized.get("is_new_pr")),
+        "date": lift.date.isoformat() if lift.date else None,
+        "workout_id": lift.workout_id,
+    }
+
+
+@app.patch("/api/strength/lift/{lift_id}")
+def update_strength_lift(
+    lift_id: int,
+    payload: StrengthLiftUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    lift = db.query(StrengthLift).filter(StrengthLift.id == lift_id, StrengthLift.user_id == current_user.id).first()
+    if not lift:
+        raise HTTPException(status_code=404, detail="Strength lift not found")
+    if payload.weight_kg <= 0 or payload.weight_kg > 500:
+        raise HTTPException(status_code=422, detail="weight_kg must be between 0 and 500")
+    if payload.reps <= 0 or payload.reps > 100:
+        raise HTTPException(status_code=422, detail="reps must be between 1 and 100")
+
+    lift.weight_kg = round(float(payload.weight_kg), 1)
+    lift.reps = int(payload.reps)
+    db.add(lift)
+    db.commit()
+    db.refresh(lift)
+    serialized = _serialize_strength_lift_for_history(lift, db, current_user.id) or {}
+    _notify_strength_pr_if_needed(lift, serialized, db, current_user.id)
+    return {
+        **serialized,
+        "workout_id": lift.workout_id,
+    }
+
+
+@app.delete("/api/strength/lift/{lift_id}")
+def delete_strength_lift(
+    lift_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    lift = db.query(StrengthLift).filter(StrengthLift.id == lift_id, StrengthLift.user_id == current_user.id).first()
+    if not lift:
+        raise HTTPException(status_code=404, detail="Strength lift not found")
+    db.delete(lift)
+    db.commit()
+    return {"deleted": True, "id": lift_id}
+
+
+@app.get("/api/strength/progress")
+def get_strength_progress(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
+    onboarding = row.onboarding_json if row and isinstance(row.onboarding_json, dict) else {}
+    targets = row.targets_json if row and isinstance(row.targets_json, dict) else {}
+    goal = onboarding.get("goal") if isinstance(onboarding.get("goal"), dict) else {}
+    target_lifts = _target_lifts_from_goal(goal)
+
+    all_lifts = db.query(StrengthLift).filter(StrengthLift.user_id == current_user.id).all()
+
+    lifts = []
+    for target in target_lifts:
+        exercise_name = target["exercise_name"]
+        target_weight_kg = target["target_weight_kg"]
+        matching = [
+            lift
+            for lift in all_lifts
+            if _strength_exercises_match(lift.exercise_name, exercise_name, lift.exercise_id, target.get("exercise_id"))
+        ]
+        best_1rm = 0.0
+        best_entry: StrengthLift | None = None
+        for lift in matching:
+            estimated = _estimated_one_rep_max(lift.weight_kg, lift.reps)
+            if estimated > best_1rm:
+                best_1rm = estimated
+                best_entry = lift
+        percent = round(min(best_1rm / target_weight_kg, 1) * 100) if target_weight_kg > 0 else 0
+        lifts.append(
+            {
+                "exercise_id": target.get("exercise_id"),
+                "exercise_name": exercise_name,
+                "target_weight_kg": target_weight_kg,
+                "current_best_1rm_kg": round(best_1rm, 1),
+                "percent": percent,
+                "best_lift": {
+                    "id": best_entry.id,
+                    "exercise_id": best_entry.exercise_id,
+                    "weight_kg": best_entry.weight_kg,
+                    "reps": best_entry.reps,
+                    "date": best_entry.date.isoformat() if best_entry.date else None,
+                }
+                if best_entry
+                else None,
+            }
+        )
+
+    overall_percent = round(sum(item["percent"] for item in lifts) / len(lifts)) if lifts else 0
+    timeline = targets.get("timeline") if isinstance(targets.get("timeline"), dict) else {}
+    weeks_left = _strength_weeks_left(goal)
+    if weeks_left is None:
+        try:
+            weeks_left = int(timeline["weeks_to_goal"]) if timeline.get("weeks_to_goal") is not None else None
+        except (TypeError, ValueError):
+            weeks_left = None
+
+    return {
+        "goal_type": goal.get("type"),
+        "lifts": lifts,
+        "overall_percent": overall_percent,
+        "weeks_left": weeks_left,
+        "has_target_lifts": bool(lifts),
+    }
 
 
 @app.get("/summary")
@@ -1213,6 +1973,7 @@ def summary(current_user: User = Depends(get_current_user), db: Session = Depend
     calories_from_workouts = 0
     for workout in workouts:
         synthetic_payload = WorkoutRequest(
+            exercise_id=workout.exercise_id,
             type=workout.type,
             exerciseName=workout.exercise_name,
             sets=workout.sets,
@@ -1273,8 +2034,10 @@ def estimate_workout_calories_endpoint(
 def add_workout(
     payload: WorkoutRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
+    exercise_id = _resolve_global_exercise_id(db, exercise_id=payload.exercise_id, exercise_name=payload.exerciseName)
     workout = Workout(
         user_id=current_user.id,
+        exercise_id=exercise_id,
         type=payload.type,
         exercise_name=payload.exerciseName,
         sets=payload.sets,
@@ -1302,7 +2065,7 @@ def add_workout(
     db.add(dashboard_activity)
     db.commit()
 
-    return {"id": workout.id}
+    return {"id": workout.id, "exercise_id": workout.exercise_id}
 
 
 def _delete_workout_impl(
@@ -1350,6 +2113,10 @@ def _delete_workout_impl(
 
     if linked_activity:
         db.delete(linked_activity)
+    db.query(StrengthLift).filter(
+        StrengthLift.user_id == current_user.id,
+        StrengthLift.workout_id == workout.id,
+    ).delete(synchronize_session=False)
     db.delete(workout)
     db.commit()
     return {"deleted": True, "workout_id": workout_id}
@@ -1472,10 +2239,24 @@ def workout_history(
         .order_by(Workout.date.desc())
         .all()
     )
+    lift_by_workout_id = {
+        lift.workout_id: lift
+        for lift in (
+            db.query(StrengthLift)
+            .filter(
+                StrengthLift.user_id == current_user.id,
+                StrengthLift.workout_id.in_([i.id for i in items] or [-1]),
+            )
+            .order_by(StrengthLift.date.desc())
+            .all()
+        )
+        if lift.workout_id is not None
+    }
     return {
         "items": [
             {
                 "id": i.id,
+                "exercise_id": i.exercise_id,
                 "type": i.type,
                 "exerciseName": i.exercise_name,
                 "sets": i.sets,
@@ -1485,6 +2266,11 @@ def workout_history(
                 "bodyPart": _parse_body_part_from_notes(i.notes),
                 "caloriesBurned": _estimate_saved_workout_calories(i, current_user.weight or 70, db),
                 "date": i.date.isoformat(),
+                "strengthLift": _serialize_strength_lift_for_history(
+                    lift_by_workout_id.get(i.id),
+                    db,
+                    current_user.id,
+                ),
             }
             for i in items
         ]
@@ -1509,7 +2295,7 @@ def workout_coach_insight(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _ = current_user
+    _, target_weekly_sets_default = _weekly_target_context(db, current_user.id)
     payload = body if isinstance(body, dict) else {}
     workout_data = payload.get("workoutData") if isinstance(payload.get("workoutData"), dict) else {}
     if not workout_data:
@@ -1534,12 +2320,17 @@ def workout_coach_insight(
             "muscleGroups": [],
             "lastWorkoutDate": recent[0].date.isoformat() if recent else "No workout yet",
             "totalWeeklySets": int(sum((i.sets or 0) for i in recent)),
-            "targetWeeklySets": 84,
+            "targetWeeklySets": target_weekly_sets_default,
         }
     try:
-        return _groq_workout_coach(workout_data, user_id=current_user.id)
+        return _groq_workout_coach(
+            workout_data,
+            user_id=current_user.id,
+            target_weekly_sets_default=target_weekly_sets_default,
+            preferred_language=current_user.preferred_language,
+        )
     except Exception:
-        return _fallback_workout_coach(workout_data)
+        return _fallback_workout_coach(workout_data, target_weekly_sets_default=target_weekly_sets_default)
 
 
 @app.get("/workout/coach/data")
@@ -1549,6 +2340,7 @@ def workout_coach_data(
     db: Session = Depends(get_db),
 ):
     base_muscles = ["Chest", "Shoulders", "Triceps", "Back", "Legs", "Biceps"]
+    muscle_targets, target_weekly_sets = _weekly_target_context(db, current_user.id)
     since = datetime.utcnow() - timedelta(days=days)
 
     rows = (
@@ -1560,11 +2352,11 @@ def workout_coach_data(
     if not rows:
         return {
             "recentWorkouts": [],
-            "weeklyVolume": [{"muscle": m, "sets": 0, "targetSets": 14, "color": c} for m, c in zip(base_muscles, ["#4ADE80", "#FBBF24", "#A78BFA", "#60A5FA", "#F87171", "#2DD4BF"])],
+            "weeklyVolume": [{"muscle": m, "sets": 0, "targetSets": muscle_targets[m], "color": c} for m, c in zip(base_muscles, ["#4ADE80", "#FBBF24", "#A78BFA", "#60A5FA", "#F87171", "#2DD4BF"])],
             "muscleGroups": [{"name": m, "status": "fresh", "recoveryPercent": 90, "lastTrainedLabel": "Not trained recently"} for m in base_muscles],
             "lastWorkoutDate": "No workout yet",
             "totalWeeklySets": 0,
-            "targetWeeklySets": 84,
+            "targetWeeklySets": target_weekly_sets,
         }
 
     week_since = datetime.utcnow() - timedelta(days=7)
@@ -1589,7 +2381,7 @@ def workout_coach_data(
         "Legs": "#F87171",
         "Biceps": "#2DD4BF",
     }
-    weekly_volume = [{"muscle": m, "sets": by_muscle_sets[m], "targetSets": 14, "color": palette[m]} for m in base_muscles]
+    weekly_volume = [{"muscle": m, "sets": by_muscle_sets[m], "targetSets": muscle_targets[m], "color": palette[m]} for m in base_muscles]
     muscle_groups = []
     for m in base_muscles:
         dt = last_trained.get(m)
@@ -1631,6 +2423,47 @@ def workout_catalog(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    language = normalize_language_tag(current_user.preferred_language)
+    localized_exercise_rows = db.execute(
+        text(
+            """
+            SELECT
+              ge.id AS exercise_id,
+              ge.catalog_id,
+              ge.name AS default_name,
+              COALESCE(gel.label, ge.name) AS label
+            FROM global_exercises ge
+            LEFT JOIN global_exercise_labels gel
+              ON gel.exercise_id = ge.id AND gel.language_tag = :language
+            WHERE ge.catalog_id IS NOT NULL
+            """
+        ),
+        {"language": language},
+    ).mappings().all()
+    global_exercise_by_catalog_id = {
+        int(row["catalog_id"]): int(row["exercise_id"])
+        for row in localized_exercise_rows
+        if row["catalog_id"] is not None
+    }
+    exercise_label_by_catalog_id = {
+        int(row["catalog_id"]): str(row["label"])
+        for row in localized_exercise_rows
+        if row["catalog_id"] is not None
+    }
+    exercise_default_by_catalog_id = {
+        int(row["catalog_id"]): str(row["default_name"])
+        for row in localized_exercise_rows
+        if row["catalog_id"] is not None
+    }
+    localized_catalog_ids: list[int] = []
+    if exerciseName:
+        target = exerciseName.strip().lower()
+        localized_catalog_ids = [
+            catalog_id
+            for catalog_id, label in exercise_label_by_catalog_id.items()
+            if label.strip().lower() == target
+        ]
+
     base_query = db.query(WorkoutCatalog)
     active_goal_tag = normalize_optional_filter(goalTag)
     active_difficulty = normalize_optional_filter(difficulty)
@@ -1642,7 +2475,9 @@ def workout_catalog(
     if active_difficulty:
         base_query = base_query.filter(WorkoutCatalog.difficulty == active_difficulty)
     if exerciseName:
-        base_query = base_query.filter(WorkoutCatalog.exercise_name == exerciseName)
+        base_query = base_query.filter(
+            or_(WorkoutCatalog.exercise_name == exerciseName, WorkoutCatalog.id.in_(localized_catalog_ids))
+        )
     if equipment:
         base_query = base_query.filter(WorkoutCatalog.equipment == equipment)
     if active_goal_tag:
@@ -1650,7 +2485,6 @@ def workout_catalog(
     rows = base_query.all()
     if recommendation:
         rows = [r for r in rows if build_recommendation(r) == recommendation]
-
     def uniq(values: list[str]) -> list[str]:
         return sorted(list({v for v in values if v}))
 
@@ -1664,7 +2498,9 @@ def workout_catalog(
     if type:
         options_query = options_query.filter(WorkoutCatalog.type == type)
     if exerciseName:
-        options_query = options_query.filter(WorkoutCatalog.exercise_name == exerciseName)
+        options_query = options_query.filter(
+            or_(WorkoutCatalog.exercise_name == exerciseName, WorkoutCatalog.id.in_(localized_catalog_ids))
+        )
     if equipment:
         options_query = options_query.filter(WorkoutCatalog.equipment == equipment)
 
@@ -1680,7 +2516,7 @@ def workout_catalog(
     type_options = uniq([r.type for r in option_rows]) if bodyPart else []
     goal_tag_options = uniq([r.goal_tag for r in option_rows])
     difficulty_options = uniq([r.difficulty for r in option_rows])
-    exercise_options = uniq([r.exercise_name for r in option_rows]) if bodyPart else []
+    exercise_options = uniq([exercise_label_by_catalog_id.get(int(r.id), r.exercise_name) for r in option_rows]) if bodyPart else []
     equipment_options = uniq([r.equipment for r in option_rows]) if exerciseName else []
     recommendation_options = uniq([build_recommendation(r) for r in option_rows]) if exerciseName else []
 
@@ -1688,11 +2524,13 @@ def workout_catalog(
         "items": [
             {
                 "id": r.id,
+                "globalExerciseId": global_exercise_by_catalog_id.get(int(r.id)),
                 "type": r.type,
                 "bodyPart": r.body_part,
                 "goalTag": r.goal_tag,
                 "difficulty": r.difficulty,
-                "exerciseName": r.exercise_name,
+                "exerciseName": exercise_label_by_catalog_id.get(int(r.id), r.exercise_name),
+                "defaultExerciseName": exercise_default_by_catalog_id.get(int(r.id), r.exercise_name),
                 "equipment": r.equipment,
                 "recommendation": build_recommendation(r),
                 "sets": r.sets_recommended,
@@ -1803,6 +2641,7 @@ def profile(current_user: User = Depends(get_current_user), db: Session = Depend
         "createdAt": current_user.created_at.isoformat() if current_user.created_at else None,
         "disciplineScore": score,
         "plan_id": current_user.plan_id or "free",
+        "preferredLanguage": current_user.preferred_language,
     }
 
 
@@ -1879,7 +2718,26 @@ def update_profile(
         "difficulty": current_user.difficulty,
         "createdAt": current_user.created_at.isoformat() if current_user.created_at else None,
         "disciplineScore": score,
+        "preferredLanguage": current_user.preferred_language,
     }
+
+
+@app.patch("/profile/language")
+def update_profile_language(
+    payload: LanguagePreferenceRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    preferred_language = (payload.preferredLanguage or "").strip()
+    if preferred_language:
+        if not re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*", preferred_language):
+            raise HTTPException(status_code=400, detail="Invalid language tag")
+        current_user.preferred_language = normalize_language_tag(preferred_language)
+    else:
+        current_user.preferred_language = None
+    db.add(current_user)
+    db.commit()
+    return {"preferredLanguage": current_user.preferred_language}
 
 
 @app.post("/feedback")

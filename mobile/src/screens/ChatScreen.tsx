@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { chatWithCoach } from "../api/ai";
 import { AppButton } from "../components/AppButton";
 import { AppCard } from "../components/AppCard";
@@ -11,6 +12,7 @@ import { useAppTheme } from "../theme";
 type Message = { id: string; role: "user" | "assistant"; content: string };
 
 export const ChatScreen = () => {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -26,19 +28,19 @@ export const ChatScreen = () => {
       const botMsg: Message = { id: `${Date.now()}-${Math.random()}`, role: "assistant", content: data.reply };
       setMessages((prev) => [botMsg, ...prev]);
     } catch {
-      Alert.alert("Error", "Coach is unavailable right now.");
+      Alert.alert(t("common.error"), t("legacy.chat.unavailable"));
     }
   };
 
   return (
     <ScreenContainer>
-      <HeroHeader title="AI Coach" subtitle="Ask for workouts, recovery tips, and discipline advice" />
+      <HeroHeader title={t("legacy.chat.title")} subtitle={t("legacy.chat.subtitle")} />
       <FlatList
         style={styles.list}
         data={messages}
         inverted
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={[styles.empty, { color: colors.muted }]}>Try: "Suggest today's workout"</Text>}
+        ListEmptyComponent={<Text style={[styles.empty, { color: colors.muted }]}>{t("legacy.chat.empty")}</Text>}
         renderItem={({ item }) => (
           <View
             style={[
@@ -53,8 +55,8 @@ export const ChatScreen = () => {
         )}
       />
       <AppCard>
-        <AppInput label="Message" placeholder="Ask your coach..." value={text} onChangeText={setText} />
-        <AppButton label="Send" onPress={send} />
+        <AppInput label={t("legacy.chat.message")} placeholder={t("legacy.chat.placeholder")} value={text} onChangeText={setText} />
+        <AppButton label={t("legacy.chat.send")} onPress={send} />
       </AppCard>
     </ScreenContainer>
   );

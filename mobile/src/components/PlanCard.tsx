@@ -1,10 +1,16 @@
 import { useEffect, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import type { Plan } from "../constants/plans";
+import { TIER_COLORS } from "../constants/tierColors";
 import type { AppTheme } from "../theme/colors";
+import { logicalRow, textAlignStart } from "../utils/rtl";
 
-const SUCCESS_GREEN = "#00e5a0";
+const ORANGE = "#D85A30";
+const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
+const MUTED = "#BBBBBB";
 
 export type PlanCardProps = {
   plan: Plan;
@@ -13,12 +19,14 @@ export type PlanCardProps = {
   isYearly: boolean;
   featured: boolean;
   onSelect: () => void;
-  theme: AppTheme;
+  theme?: AppTheme;
+  isCurrentPlan?: boolean;
 };
 
-export function PlanCard({ plan, displayPrice, originalPrice, isYearly, featured, onSelect, theme }: PlanCardProps) {
-  const { colors, radius } = theme;
+export function PlanCard({ plan, displayPrice, originalPrice, isYearly, featured, onSelect, theme, isCurrentPlan = false }: PlanCardProps) {
+  const { t } = useTranslation();
   const scale = useRef(new Animated.Value(1)).current;
+  const tierColors = TIER_COLORS[plan.id.toUpperCase() as keyof typeof TIER_COLORS];
 
   useEffect(() => {
     scale.setValue(0.94);
@@ -30,39 +38,53 @@ export function PlanCard({ plan, displayPrice, originalPrice, isYearly, featured
     }).start();
   }, [displayPrice, scale]);
 
-  const period = isYearly ? "/yr" : "/mo";
+  const period = isYearly ? t("components.planCard.yearlyPeriod") : t("components.planCard.monthlyPeriod");
 
   return (
     <View style={[styles.wrapper, featured && styles.wrapperFeatured]}>
       {featured ? (
-        <View style={[styles.popularBadge, { backgroundColor: colors.danger }]}>
-          <Text style={styles.popularText}>Most Popular</Text>
+        <View style={[styles.popularBadge, { backgroundColor: ORANGE }]}>
+          <Text style={styles.popularText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+            {t("components.planCard.mostPopular")}
+          </Text>
         </View>
       ) : null}
       <Pressable
-        onPress={onSelect}
+        onPress={isCurrentPlan ? undefined : onSelect}
+        disabled={isCurrentPlan}
         style={({ pressed }) => [
           styles.card,
           {
-            backgroundColor: colors.card,
-            borderColor: featured ? colors.danger : colors.border,
-            borderWidth: featured ? 1.5 : 0.5,
-            borderRadius: radius.md,
-            opacity: pressed ? 0.94 : 1,
+            backgroundColor: tierColors.cardBg,
+            borderColor: tierColors.cardBorder,
+            borderWidth: 1.5,
+            borderRadius: 16,
+            opacity: pressed && !isCurrentPlan ? 0.94 : 1,
           },
         ]}
       >
-        <Text style={[styles.planName, { color: colors.text }]}>{plan.name}</Text>
-        <Text style={[styles.desc, { color: colors.muted }]} numberOfLines={2}>
+        {isCurrentPlan ? (
+          <View style={styles.currentCornerBadge}>
+            <Text style={[styles.currentCornerText, { color: tierColors.titleColor }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+              {t("components.planCard.currentPlan")}
+            </Text>
+          </View>
+        ) : null}
+        <View style={[styles.planBadge, { backgroundColor: tierColors.badgeBg }]}>
+          <Text style={[styles.planBadgeText, { color: tierColors.badgeText }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
+            {plan.name}
+          </Text>
+        </View>
+        <Text style={[styles.desc, { color: tierColors.mutedText }]} numberOfLines={2}>
           {plan.desc}
         </Text>
         <View style={styles.priceBlock}>
           {originalPrice != null ? (
-            <Text style={[styles.originalPrice, { color: colors.muted }]}>₹{originalPrice}</Text>
+            <Text style={styles.originalPrice}>₹{originalPrice}</Text>
           ) : null}
           <Animated.View style={[styles.priceWrap, { transform: [{ scale }] }]}>
             <Text
-              style={[styles.price, { color: colors.text }]}
+              style={styles.price}
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.55}
@@ -70,24 +92,33 @@ export function PlanCard({ plan, displayPrice, originalPrice, isYearly, featured
               ₹{displayPrice}
             </Text>
           </Animated.View>
-          <Text style={[styles.period, { color: colors.muted }]}>{period}</Text>
+          <Text style={styles.period}>{period}</Text>
         </View>
-        <View style={[styles.cta, { backgroundColor: "#00e5a0", borderRadius: radius.md - 2 }]}>
-          <Text style={styles.ctaText}>Choose {plan.name}</Text>
-          <Ionicons name="arrow-forward" size={16} color="#0b1220" />
-        </View>
+        {isCurrentPlan ? (
+          <View style={[styles.currentPlanLabel, { borderColor: tierColors.cardBorder }]}>
+            <Text style={[styles.currentPlanText, { color: tierColors.titleColor }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+              {t("components.planCard.activePlan")}
+            </Text>
+          </View>
+        ) : (
+          <View style={[styles.cta, { backgroundColor: tierColors.buttonBg }]}>
+            <Text style={[styles.ctaText, { color: tierColors.buttonText }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+              {t("components.planCard.switchTo", { planName: plan.name })}
+            </Text>
+          </View>
+        )}
         <View style={styles.features}>
           {plan.features.map((f) => (
             <View key={f.label} style={styles.featureRow}>
               <Ionicons
                 name={f.included ? "checkmark-circle" : "close-circle-outline"}
                 size={15}
-                color={f.included ? SUCCESS_GREEN : colors.muted}
+                color={f.included ? tierColors.checkColor : "#CCCCCC"}
               />
               <Text
                 style={[
                   styles.featureText,
-                  { color: f.included ? colors.text : colors.muted },
+                  { color: f.included ? "#555555" : "#CCCCCC" },
                   !f.included && styles.featureMuted,
                 ]}
                 numberOfLines={2}
@@ -120,33 +151,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 999,
+    maxWidth: "90%",
   },
   popularText: {
-    color: "#FFFFFF",
+    color: WHITE,
     fontFamily: "DMSans_600SemiBold",
     fontSize: 10,
     letterSpacing: 1,
+    textAlign: "center",
   },
   card: {
     padding: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
+    position: "relative",
   },
-  planName: {
-    fontFamily: "DMSans_600SemiBold",
-    fontSize: 17,
-    textTransform: "uppercase",
-    letterSpacing: 1,
+  planBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 6,
+    maxWidth: "100%",
   },
+  planBadgeText: { fontFamily: "DMSans_600SemiBold", fontSize: 11, letterSpacing: 0.8, textAlign: "center" },
+  currentCornerBadge: { position: "absolute", top: 12, end: 12, zIndex: 2, maxWidth: "44%" },
+  currentCornerText: { fontSize: 9, lineHeight: 11, fontWeight: "900", textAlign: "center" },
   desc: {
     fontFamily: "DMSans_400Regular",
     fontSize: 12,
-    marginTop: 6,
     minHeight: 34,
     lineHeight: 16,
+    paddingEnd: 78,
+    minWidth: 0,
+    textAlign: textAlignStart,
   },
   priceBlock: {
     marginTop: 10,
@@ -157,40 +193,60 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textDecorationLine: "line-through",
     marginBottom: 2,
+    color: MUTED,
   },
   priceWrap: {
     alignSelf: "stretch",
   },
   price: {
     fontFamily: "BebasNeue_400Regular",
-    fontSize: 38,
-    letterSpacing: -1.5,
-    lineHeight: 44,
+    fontSize: 20,
+    letterSpacing: -0.5,
+    lineHeight: 26,
+    color: TEXT,
+    fontWeight: "900",
   },
   period: {
     fontFamily: "DMSans_500Medium",
     fontSize: 12,
     marginTop: 2,
+    color: MUTED,
   },
   cta: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
     paddingVertical: 10,
+    paddingHorizontal: 8,
     marginBottom: 10,
+    borderRadius: 10,
   },
   ctaText: {
-    color: "#0b1220",
     fontFamily: "DMSans_600SemiBold",
     fontSize: 12,
     letterSpacing: 0.4,
+    textAlign: "center",
+  },
+  currentPlanLabel: {
+    borderWidth: 1.5,
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    marginBottom: 10,
+    borderRadius: 10,
+  },
+  currentPlanText: {
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 12,
+    letterSpacing: 0.4,
+    textAlign: "center",
   },
   features: {
     gap: 7,
   },
   featureRow: {
-    flexDirection: "row",
+    flexDirection: logicalRow,
     alignItems: "flex-start",
     gap: 6,
   },
@@ -201,6 +257,6 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   featureMuted: {
-    opacity: 0.55,
+    opacity: 1,
   },
 });

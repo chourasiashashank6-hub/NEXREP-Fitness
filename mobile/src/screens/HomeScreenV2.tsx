@@ -14,6 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from "react-native-svg";
 import { useFonts } from "expo-font";
+import { useTranslation } from "react-i18next";
 import { BebasNeue_400Regular } from "@expo-google-fonts/bebas-neue";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import type { CalorieDayPayload } from "../api/caloriesLog";
@@ -23,6 +24,7 @@ import { getProfile } from "../api/user";
 import { getWorkoutHistory } from "../api/workout";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
 import { useAuthStore } from "../store/authStore";
+import i18n from "../i18n";
 
 const BG_MAIN = "#080c12";
 const BG_CARD = "#0f1620";
@@ -59,10 +61,10 @@ const ffSemi = "DMSans_600SemiBold";
 
 function computeGreeting(now: Date): string {
   const h = now.getHours();
-  if (h >= 5 && h < 12) return "GOOD MORNING";
-  if (h >= 12 && h < 17) return "GOOD AFTERNOON";
-  if (h >= 17 && h < 21) return "GOOD EVENING";
-  return "GOOD NIGHT";
+  if (h >= 5 && h < 12) return i18n.t("legacy.homeV2.goodMorning");
+  if (h >= 12 && h < 17) return i18n.t("legacy.homeV2.goodAfternoon");
+  if (h >= 17 && h < 21) return i18n.t("legacy.homeV2.goodEvening");
+  return i18n.t("legacy.homeV2.goodNight");
 }
 
 function formatHeaderDate(now: Date): string {
@@ -77,7 +79,7 @@ function formatHeaderDate(now: Date): string {
 
 function formatDisplayName(raw: string | null | undefined): string {
   const parts = String(raw || "").trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "Athlete";
+  if (!parts.length) return i18n.t("legacy.homeV2.athlete");
   return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`;
 }
 
@@ -117,11 +119,12 @@ function toBurnProfile(onboarding: any): BurnProfile | null {
 }
 
 export const HomeScreen = () => {
+  const { t } = useTranslation();
   const token = useAuthStore((s) => s.token);
   useFonts({ BebasNeue_400Regular, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold });
   const [headerGreeting, setHeaderGreeting] = useState(() => computeGreeting(new Date()));
   const [headerDateLabel, setHeaderDateLabel] = useState(() => formatHeaderDate(new Date()));
-  const [headerName, setHeaderName] = useState("Athlete");
+  const [headerName, setHeaderName] = useState(() => i18n.t("legacy.homeV2.athlete"));
   const [calorieDay, setCalorieDay] = useState<CalorieDayPayload | null>(null);
   const [burnProfile, setBurnProfile] = useState<BurnProfile | null>(null);
   const [totalWorkoutBurn, setTotalWorkoutBurn] = useState(0);
@@ -144,7 +147,7 @@ export const HomeScreen = () => {
     setHeaderGreeting(computeGreeting(now));
     setHeaderDateLabel(formatHeaderDate(now));
     if (!token) {
-      setHeaderName("Athlete");
+      setHeaderName(t("legacy.homeV2.athlete"));
       setCalorieDay(null);
       setBurnProfile(null);
       setTotalWorkoutBurn(0);
@@ -171,9 +174,9 @@ export const HomeScreen = () => {
       setTimelineTargets((onboardingRes?.targets as Record<string, unknown>) ?? null);
       setHeaderName(formatDisplayName(profileRes?.name || onboardingRes?.onboarding?.personal?.name));
     } catch {
-      Alert.alert("Error", "Could not load home dashboard.");
+      Alert.alert(t("common.error"), t("legacy.homeV2.loadFailed"));
     }
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => { void load(); }, [load]);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
@@ -183,7 +186,7 @@ export const HomeScreen = () => {
   const targetKcal = Number(log?.target_calories || 0);
   const caloriesBurned = Math.max(0, Math.round(totalWorkoutBurn));
   const burnPlan = burnProfile ? computeUserCaloriePlan(burnProfile) : null;
-  const dailyGoal = burnPlan?.dailyCalorieTarget ?? targetKcal || 1800;
+  const dailyGoal = burnPlan?.dailyCalorieTarget ?? (targetKcal || 1800);
   const foodIntake = Number.isFinite(intake) ? Math.round(intake) : 0;
   const intakePercent = dailyGoal > 0 ? clamp01(foodIntake / dailyGoal) : 0;
   const kcalToBurn = Math.max(0, foodIntake - dailyGoal - caloriesBurned);
@@ -191,7 +194,7 @@ export const HomeScreen = () => {
   const netCalorieGap = foodIntake - dailyGoal - caloriesBurned;
   const remainingIntakeToGoal = netCalorieGap < 0 ? Math.abs(netCalorieGap) : 0;
   const needsBurnFromExercise = netCalorieGap > 0;
-  const summaryTargetLabel = needsBurnFromExercise ? "Still to burn" : "Remaining Intake";
+  const summaryTargetLabel = needsBurnFromExercise ? t("legacy.homeV2.stillToBurn") : t("legacy.homeV2.remainingIntake");
   const summaryTargetValue = needsBurnFromExercise ? stillToBurn : remainingIntakeToGoal;
   const summaryTargetPercent = dailyGoal > 0 ? clamp01(summaryTargetValue / dailyGoal) : 0;
 
@@ -203,12 +206,12 @@ export const HomeScreen = () => {
   const kcalDeficit = Number(timeline.daily_delta_kcal);
   const kcalDeficitValue = Number.isFinite(kcalDeficit) ? Math.round(Math.abs(kcalDeficit)) : 500;
   const kcalDeltaLabel = !Number.isFinite(kcalDeficit)
-    ? "Deficit"
+    ? t("legacy.homeV2.deficit")
     : kcalDeficit < 0
-      ? "Deficit"
+      ? t("legacy.homeV2.deficit")
       : kcalDeficit > 0
-        ? "Surplus"
-        : "Maintenance";
+        ? t("legacy.homeV2.surplus")
+        : t("legacy.homeV2.maintenance");
   const milestoneProgress = clamp01((12 - Math.max(0, weeksToGoal)) / 12);
   const burnedPercent = dailyGoal > 0 ? clamp01(caloriesBurned / dailyGoal) : 0;
 
@@ -259,24 +262,24 @@ export const HomeScreen = () => {
         </Animated.View>
 
         <Animated.View style={animatedStyle(1)}>
-          <Text style={styles.sectionLabel}>Goal Overview</Text>
+          <Text style={styles.sectionLabel}>{t("legacy.homeV2.goalOverview")}</Text>
           <View style={styles.card}>
             <LinearGradient colors={["#7c3aed", ACCENT_PURPLE, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.accentTop} />
             <View style={styles.cardBody}>
-              <Text style={styles.cardMicro}>GOAL TIMELINE</Text>
-              <Text style={styles.cardTitle}>Weeks to goal milestone</Text>
+              <Text style={styles.cardMicro}>{t("legacy.homeV2.goalTimeline")}</Text>
+              <Text style={styles.cardTitle}>{t("legacy.homeV2.weeksToGoal")}</Text>
               <View style={styles.goalTopRow}>
                 <View>
-                  <View style={styles.goalWeeksLine}><Text style={styles.goalWeeks}>{weeksToGoal}</Text><Text style={styles.goalWeeksUnit}>weeks</Text></View>
+                  <View style={styles.goalWeeksLine}><Text style={styles.goalWeeks}>{weeksToGoal}</Text><Text style={styles.goalWeeksUnit}>{t("legacy.homeV2.weeks")}</Text></View>
                   <Text style={styles.goalSub}>{kgPerWeekLabel}</Text>
                 </View>
                 <View style={styles.goalRight}>
                   <Text style={styles.goalKcal}>{formatNum(kcalDeficitValue)} kcal</Text>
-                  <Text style={styles.goalPerDay}>/day</Text>
+                  <Text style={styles.goalPerDay}>{t("legacy.homeV2.perDay")}</Text>
                   <Text style={styles.goalSub}>{kcalDeltaLabel}</Text>
                 </View>
               </View>
-              <View style={styles.progressHead}><Text style={styles.cardMicro}>MILESTONE PROGRESS</Text><Text style={styles.progressPct}>{Math.round(milestoneProgress * 100)}%</Text></View>
+              <View style={styles.progressHead}><Text style={styles.cardMicro}>{t("legacy.homeV2.milestoneProgress")}</Text><Text style={styles.progressPct}>{Math.round(milestoneProgress * 100)}%</Text></View>
               <View style={styles.progressTrack}>
                 <LinearGradient colors={["#7c3aed", ACCENT_PURPLE]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${Math.round(milestoneProgress * 100)}%` }]} />
               </View>
@@ -285,39 +288,39 @@ export const HomeScreen = () => {
         </Animated.View>
 
         <Animated.View style={animatedStyle(2)}>
-          <Text style={styles.sectionLabel}>Today's Burn</Text>
+          <Text style={styles.sectionLabel}>{t("legacy.homeV2.todaysBurn")}</Text>
           <View style={styles.card}>
             <LinearGradient colors={["#ef4444", ACCENT_RED, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.accentTop} />
             <View style={styles.cardBody}>
               <View style={styles.rowBetween}>
-                <Text style={styles.cardMicro}>CALORIES TO BURN TODAY</Text>
-                <View style={styles.burnBadge}><Text style={styles.burnBadgeText}>Burn needed</Text></View>
+                <Text style={styles.cardMicro}>{t("legacy.homeV2.caloriesToBurn")}</Text>
+                <View style={styles.burnBadge}><Text style={styles.burnBadgeText}>{t("legacy.homeV2.burnNeeded")}</Text></View>
               </View>
-              <View style={styles.userChip}><Text style={styles.userChipText}>{`${headerName} · ${Math.round(burnProfile?.current_weight_kg || 70)}kg · ${burnProfile?.activity_level || "moderate"} · Age ${burnProfile?.age || 25}`}</Text></View>
+              <View style={styles.userChip}><Text style={styles.userChipText}>{t("legacy.homeV2.userChip", { name: headerName, weight: Math.round(burnProfile?.current_weight_kg || 70), activity: burnProfile?.activity_level || "moderate", age: burnProfile?.age || 25 })}</Text></View>
               <View style={styles.centerRow}>
                 <View style={styles.ringWrap}>
                   <Svg width={ringSize} height={ringSize}>
                     <Circle cx={ringSize / 2} cy={ringSize / 2} r={radius} stroke="rgba(255,255,255,0.07)" strokeWidth={strokeWidth} fill="none" />
                     <AnimatedCircle cx={ringSize / 2} cy={ringSize / 2} r={radius} stroke="#1a3a5c" strokeWidth={strokeWidth} fill="none" strokeLinecap="round" strokeDasharray={`${circumference} ${circumference}`} strokeDashoffset={dashOffset as unknown as number} transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`} />
                   </Svg>
-                  <View style={styles.ringCenter}><Text style={styles.ringPct}>{Math.round(burnedPercent * 100)}%</Text><Text style={styles.ringLabel}>burned</Text></View>
+                  <View style={styles.ringCenter}><Text style={styles.ringPct}>{Math.round(burnedPercent * 100)}%</Text><Text style={styles.ringLabel}>{t("legacy.homeV2.burned")}</Text></View>
                 </View>
                 <View style={styles.centerCopy}>
                   <Text style={styles.kcalBig}>{formatNum(kcalToBurn)}</Text>
-                  <Text style={styles.kcalLine}>kcal to burn from exercise</Text>
-                  <Text style={styles.aiLine}>Your AI coach will suggest sessions to close the remaining burn target.</Text>
+                  <Text style={styles.kcalLine}>{t("legacy.homeV2.kcalToBurn")}</Text>
+                  <Text style={styles.aiLine}>{t("legacy.homeV2.aiLine")}</Text>
                 </View>
               </View>
               <View style={styles.statsGrid}>
-                <View style={styles.statCell}><Text style={styles.statLabel}>Body weight</Text><Text style={styles.statValue}>{Math.round(burnProfile?.current_weight_kg || 70)}</Text><Text style={styles.statUnit}>kg</Text></View>
-                <View style={styles.statCell}><Text style={styles.statLabel}>TDEE</Text><Text style={styles.statValue}>{formatNum(burnPlan?.tdee || 2200)}</Text><Text style={styles.statUnit}>kcal/day</Text></View>
-                <View style={styles.statCell}><Text style={styles.statLabel}>Daily goal</Text><Text style={styles.statValue}>{formatNum(dailyGoal)}</Text><Text style={styles.statUnit}>kcal target</Text></View>
+                <View style={styles.statCell}><Text style={styles.statLabel}>{t("legacy.homeV2.bodyWeight")}</Text><Text style={styles.statValue}>{Math.round(burnProfile?.current_weight_kg || 70)}</Text><Text style={styles.statUnit}>kg</Text></View>
+                <View style={styles.statCell}><Text style={styles.statLabel}>{t("legacy.homeV2.tdee")}</Text><Text style={styles.statValue}>{formatNum(burnPlan?.tdee || 2200)}</Text><Text style={styles.statUnit}>{t("legacy.homeV2.kcalPerDay")}</Text></View>
+                <View style={styles.statCell}><Text style={styles.statLabel}>{t("legacy.homeV2.dailyGoal")}</Text><Text style={styles.statValue}>{formatNum(dailyGoal)}</Text><Text style={styles.statUnit}>{t("legacy.homeV2.kcalTarget")}</Text></View>
               </View>
-              <View style={styles.infoRow}><Text style={styles.infoLeft}>FOOD INTAKE VS TARGET</Text><Text style={styles.infoRight}>{`${formatNum(foodIntake)} / ${formatNum(dailyGoal)} kcal`}</Text></View>
+              <View style={styles.infoRow}><Text style={styles.infoLeft}>{t("legacy.homeV2.foodVsTarget")}</Text><Text style={styles.infoRight}>{`${formatNum(foodIntake)} / ${formatNum(dailyGoal)} kcal`}</Text></View>
               <View style={styles.progressTrack}>
                 <LinearGradient colors={[ACCENT_GREEN, ACCENT_BLUE]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${Math.round(intakePercent * 100)}%` }]} />
               </View>
-              <View style={styles.infoRow}><Text style={styles.infoLeft}>CALORIES BURNED SO FAR</Text><Text style={[styles.infoRight, { color: ACCENT_GREEN }]}>{`${formatNum(caloriesBurned)} kcal`}</Text></View>
+              <View style={styles.infoRow}><Text style={styles.infoLeft}>{t("legacy.homeV2.burnedSoFar")}</Text><Text style={[styles.infoRight, { color: ACCENT_GREEN }]}>{`${formatNum(caloriesBurned)} kcal`}</Text></View>
               <View style={styles.progressTrack}>
                 <LinearGradient colors={[ACCENT_GREEN, ACCENT_BLUE]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${Math.round(burnedPercent * 100)}%` }]} />
               </View>
@@ -330,13 +333,13 @@ export const HomeScreen = () => {
         </Animated.View>
 
         <Animated.View style={animatedStyle(3)}>
-          <Text style={styles.sectionLabel}>Calculation Breakdown</Text>
+          <Text style={styles.sectionLabel}>{t("legacy.homeV2.calculationBreakdown")}</Text>
           <View style={styles.card}>
             <LinearGradient colors={[ACCENT_GREEN, ACCENT_BLUE, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.accentTop} />
             <View style={styles.cardBody}>
-              <View style={styles.breakdownRow}><Text style={styles.breakLabel}>Calories eaten today</Text><Text style={styles.breakValueMuted}>{`${formatNum(foodIntake)} kcal`}</Text></View>
-              <View style={styles.breakdownRow}><Text style={styles.breakLabel}>Minus daily calorie goal</Text><Text style={styles.breakValueRed}>{`−${formatNum(dailyGoal)} kcal`}</Text></View>
-              <View style={[styles.breakdownRow, { borderBottomWidth: 0 }]}><Text style={styles.breakLabel}>Minus already burned</Text><Text style={styles.breakValueGreen}>{`−${formatNum(caloriesBurned)} kcal`}</Text></View>
+              <View style={styles.breakdownRow}><Text style={styles.breakLabel}>{t("legacy.homeV2.caloriesEaten")}</Text><Text style={styles.breakValueMuted}>{`${formatNum(foodIntake)} kcal`}</Text></View>
+              <View style={styles.breakdownRow}><Text style={styles.breakLabel}>{t("legacy.homeV2.minusDailyGoal")}</Text><Text style={styles.breakValueRed}>{`−${formatNum(dailyGoal)} kcal`}</Text></View>
+              <View style={[styles.breakdownRow, { borderBottomWidth: 0 }]}><Text style={styles.breakLabel}>{t("legacy.homeV2.minusBurned")}</Text><Text style={styles.breakValueGreen}>{`−${formatNum(caloriesBurned)} kcal`}</Text></View>
               <View style={styles.stillRow}><Text style={styles.stillLabel}>{summaryTargetLabel}</Text><Text style={[styles.stillValue, { color: needsBurnFromExercise ? ACCENT_RED : ACCENT_GREEN }]}>{`${formatNum(summaryTargetValue)} kcal`}</Text></View>
             </View>
           </View>

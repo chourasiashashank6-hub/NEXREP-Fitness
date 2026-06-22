@@ -1,4 +1,5 @@
 import type { FocusMuscle, OnboardingData } from "../types/onboarding";
+import i18n from "../i18n";
 
 export const FOCUS_MUSCLE_CHIP_OPTIONS = ["Chest", "Back", "Shoulders", "Legs", "Arms", "Core"] as const;
 export const FOCUS_MUSCLE_BALANCED = "Balanced" as const;
@@ -44,7 +45,7 @@ export function normalizeGoalFocusFields(goal: GoalSlice): GoalSlice {
 }
 
 export function focusMusclesHint(muscles: FocusMuscle[]): string {
-  if (muscles.length === 0) return "Balanced — all muscle groups will be trained equally";
-  if (muscles.length === 1) return `Extra volume for ${muscles[0]} in your monthly workout plan`;
-  return `Extra volume for ${muscles.join(", ")} in your monthly workout plan`;
+  if (muscles.length === 0) return i18n.t("onboarding.focusMuscles.balancedHint");
+  if (muscles.length === 1) return i18n.t("onboarding.focusMuscles.singleHint", { muscle: muscles[0] });
+  return i18n.t("onboarding.focusMuscles.multiHint", { muscles: muscles.join(", ") });
 }

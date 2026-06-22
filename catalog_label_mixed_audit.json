@@ -1,0 +1,3092 @@
+{
+  "hi": [
+    {
+      "kind": "exercise",
+      "id": 2,
+      "english": "Incline Barbell Bench Press",
+      "label": "incline बारबेल बेंच प्रेस",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 3,
+      "english": "Decline Barbell Bench Press",
+      "label": "decline बारबेल बेंच प्रेस",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 5,
+      "english": "Incline Dumbbell Press",
+      "label": "incline डम्बल press",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 6,
+      "english": "Decline Dumbbell Press",
+      "label": "decline डम्बल press",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 7,
+      "english": "Dumbbell Chest Fly",
+      "label": "डम्बल chest फ्लाई",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 8,
+      "english": "Incline Dumbbell Fly",
+      "label": "incline डम्बल फ्लाई",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 9,
+      "english": "Cable Chest Fly",
+      "label": "केबल chest फ्लाई",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 10,
+      "english": "High Cable Fly",
+      "label": "high केबल फ्लाई",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 11,
+      "english": "Cable Crossover",
+      "label": "केबल crossover",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 12,
+      "english": "Pec Deck Machine",
+      "label": "pec deck मशीन",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 14,
+      "english": "Smith Machine Bench Press",
+      "label": "smith मशीन बेंच प्रेस",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 16,
+      "english": "Wide Push-Up",
+      "label": "wide पुश-अप",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 17,
+      "english": "Diamond Push-Up",
+      "label": "diamond पुश-अप",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 18,
+      "english": "Decline Push-Up",
+      "label": "decline पुश-अप",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 19,
+      "english": "Incline Push-Up",
+      "label": "incline पुश-अप",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 20,
+      "english": "Plyometric Push-Up",
+      "label": "plyometric पुश-अप",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 21,
+      "english": "Spiderman Push-Up",
+      "label": "spiderman पुश-अप",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 24,
+      "english": "Floor Press",
+      "label": "Floor Press",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 25,
+      "english": "Dumbbell Pullover",
+      "label": "डम्बल pullover",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 26,
+      "english": "Svend Press",
+      "label": "Svend Press",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 27,
+      "english": "Resistance Band Chest Press",
+      "label": "resistance band चेस्ट प्रेस",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 30,
+      "english": "Sumo Deadlift",
+      "label": "sumo डेडलिफ्ट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 31,
+      "english": "Trap Bar Deadlift",
+      "label": "trap bar डेडलिफ्ट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 33,
+      "english": "Pendlay Row",
+      "label": "pendlay रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 35,
+      "english": "T-Bar Row",
+      "label": "t bar रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 36,
+      "english": "Seated Cable Row",
+      "label": "seated केबल रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 38,
+      "english": "Close Grip Lat Pulldown",
+      "label": "close grip लैट पुलडाउन",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 41,
+      "english": "Weighted Pull-Up",
+      "label": "weighted पुल-अप",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 42,
+      "english": "Wide Grip Pull-Up",
+      "label": "wide grip पुल-अप",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 43,
+      "english": "Assisted Pull-Up",
+      "label": "assisted पुल-अप",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 44,
+      "english": "Inverted Row",
+      "label": "inverted रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 45,
+      "english": "Chest-Supported Row",
+      "label": "chest supported रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 46,
+      "english": "Seal Row",
+      "label": "seal रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 47,
+      "english": "Meadows Row",
+      "label": "meadows रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 48,
+      "english": "Barbell Shrug",
+      "label": "बारबेल shrug",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 49,
+      "english": "Dumbbell Shrug",
+      "label": "डम्बल shrug",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 51,
+      "english": "Rack Pull",
+      "label": "Rack Pull",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 52,
+      "english": "Deficit Deadlift",
+      "label": "deficit डेडलिफ्ट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 53,
+      "english": "Cable Straight Arm Pulldown",
+      "label": "केबल straight arm pulldown",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 55,
+      "english": "Yates Row",
+      "label": "yates रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 59,
+      "english": "Arnold Press",
+      "label": "Arnold Press",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 61,
+      "english": "Seated Dumbbell Press",
+      "label": "seated डम्बल press",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 62,
+      "english": "Push Press",
+      "label": "Push Press",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 65,
+      "english": "Front Raise",
+      "label": "Front Raise",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 66,
+      "english": "Rear Delt Fly",
+      "label": "rear delt फ्लाई",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 67,
+      "english": "Cable Rear Delt Fly",
+      "label": "केबल rear delt फ्लाई",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 68,
+      "english": "Upright Row",
+      "label": "upright रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 69,
+      "english": "Barbell Z-Press",
+      "label": "बारबेल z press",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 70,
+      "english": "Cable Y-Raise",
+      "label": "केबल y raise",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 71,
+      "english": "Cable Front Raise",
+      "label": "केबल front raise",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 72,
+      "english": "Dumbbell Cuban Press",
+      "label": "डम्बल cuban press",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 73,
+      "english": "Resistance Band Lateral Raise",
+      "label": "resistance band लेटरल रेज",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 74,
+      "english": "Explosive Shoulder Press",
+      "label": "explosive शोल्डर प्रेस",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 76,
+      "english": "EZ Bar Curl",
+      "label": "ez bar कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 78,
+      "english": "Hammer Curl",
+      "label": "hammer कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 79,
+      "english": "Concentration Curl",
+      "label": "concentration कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 80,
+      "english": "Preacher Curl",
+      "label": "preacher कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 82,
+      "english": "Incline Dumbbell Curl",
+      "label": "incline डम्बल कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 83,
+      "english": "Spider Curl",
+      "label": "spider कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 84,
+      "english": "Reverse Barbell Curl",
+      "label": "reverse बारबेल कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 85,
+      "english": "Cable Hammer Curl",
+      "label": "केबल hammer कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 86,
+      "english": "Barbell 21s",
+      "label": "बारबेल 21s",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 87,
+      "english": "Dumbbell Zottman Curl",
+      "label": "डम्बल zottman कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 88,
+      "english": "Cross Body Hammer Curl",
+      "label": "cross body hammer कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 89,
+      "english": "Resistance Band Curl",
+      "label": "resistance band कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 90,
+      "english": "Close Grip Bench Press",
+      "label": "close grip बेंच प्रेस",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 92,
+      "english": "Tricep Pushdown",
+      "label": "Tricep Pushdown",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 93,
+      "english": "Rope Tricep Pushdown",
+      "label": "Rope Tricep Pushdown",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 94,
+      "english": "Tricep Overhead Extension",
+      "label": "Tricep Overhead Extension",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 95,
+      "english": "Cable Overhead Tricep Extension",
+      "label": "केबल overhead tricep extension",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 96,
+      "english": "Tricep Dips",
+      "label": "Tricep Dips",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 97,
+      "english": "Tricep Kickback",
+      "label": "Tricep Kickback",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 98,
+      "english": "JM Press",
+      "label": "JM Press",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 99,
+      "english": "Barbell Back Squat",
+      "label": "बारबेल back स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 101,
+      "english": "Goblet Squat",
+      "label": "goblet स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 102,
+      "english": "Bodyweight Squat",
+      "label": "bodyweight स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 103,
+      "english": "Jump Squat",
+      "label": "jump स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 104,
+      "english": "Bulgarian Split Squat",
+      "label": "bulgarian split स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 106,
+      "english": "Dumbbell Lunges",
+      "label": "डम्बल lunges",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 110,
+      "english": "Nordic Hamstring Curl",
+      "label": "nordic hamstring कर्ल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 116,
+      "english": "Sumo Squat",
+      "label": "sumo स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 118,
+      "english": "Pistol Squat",
+      "label": "pistol स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 121,
+      "english": "Lateral Lunge",
+      "label": "lateral लंज",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 122,
+      "english": "Jump Lunge",
+      "label": "jump लंज",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 125,
+      "english": "Standing Calf Raise",
+      "label": "standing काफ रेज",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 126,
+      "english": "Seated Calf Raise",
+      "label": "seated काफ रेज",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 127,
+      "english": "Donkey Calf Raise",
+      "label": "donkey काफ रेज",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 128,
+      "english": "Tibialis Raise",
+      "label": "Tibialis Raise",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 129,
+      "english": "Overhead Squat",
+      "label": "overhead स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 130,
+      "english": "Zercher Squat",
+      "label": "zercher स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 131,
+      "english": "Suitcase Deadlift",
+      "label": "suitcase डेडलिफ्ट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 132,
+      "english": "Sandbag Squat",
+      "label": "sandbag स्क्वैट",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 134,
+      "english": "Side Plank",
+      "label": "side प्लैंक",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 136,
+      "english": "Bicycle Crunch",
+      "label": "bicycle क्रंच",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 137,
+      "english": "Leg Raise",
+      "label": "Leg Raise",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 138,
+      "english": "Hanging Leg Raise",
+      "label": "Hanging Leg Raise",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 147,
+      "english": "Weighted Cable Crunch",
+      "label": "weighted केबल क्रंच",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 150,
+      "english": "Pallof Press",
+      "label": "Pallof Press",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 154,
+      "english": "Woodchop Cable",
+      "label": "woodchop केबल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 156,
+      "english": "Barbell Clean and Press",
+      "label": "बारबेल clean and press",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 159,
+      "english": "Barbell Hang Clean",
+      "label": "बारबेल hang clean",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 163,
+      "english": "Renegade Row",
+      "label": "renegade रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 165,
+      "english": "Sled Push",
+      "label": "Sled Push",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "exercise",
+      "id": 171,
+      "english": "Dumbbell Squat to Press",
+      "label": "डम्बल स्क्वैट to press",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 172,
+      "english": "Push-Up to Renegade Row",
+      "label": "पुश-अप to renegade रो",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "exercise",
+      "id": 179,
+      "english": "Rowing Machine",
+      "label": "rowing मशीन",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 1,
+      "english": "Basmati rice (cooked)",
+      "label": "basmati चावल (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 2,
+      "english": "White rice (cooked)",
+      "label": "white चावल (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 3,
+      "english": "Brown rice (cooked)",
+      "label": "brown चावल (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 7,
+      "english": "Naan bread",
+      "label": "naan ब्रेड",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 18,
+      "english": "Whole wheat flour (atta)",
+      "label": "whole गेहूं flour (atta)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 19,
+      "english": "Maida (refined flour)",
+      "label": "Maida (refined flour)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 20,
+      "english": "Besan (chickpea flour)",
+      "label": "Besan (chickpea flour)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 31,
+      "english": "Toor dal (cooked)",
+      "label": "toor दाल (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 32,
+      "english": "Moong dal (yellow, cooked)",
+      "label": "moong दाल (yellow, cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 33,
+      "english": "Masoor dal (red lentil, cooked)",
+      "label": "masoor दाल (red दाल, cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 34,
+      "english": "Chana dal (cooked)",
+      "label": "chana दाल (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 35,
+      "english": "Urad dal (cooked)",
+      "label": "urad दाल (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 44,
+      "english": "Dal makhani",
+      "label": "दाल makhani",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 45,
+      "english": "Palak paneer",
+      "label": "palak पनीर",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 46,
+      "english": "Paneer butter masala",
+      "label": "पनीर butter masala",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 53,
+      "english": "Butter chicken",
+      "label": "butter चिकन",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 54,
+      "english": "Chicken tikka masala",
+      "label": "चिकन tikka masala",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 55,
+      "english": "Chicken curry (home)",
+      "label": "चिकन curry (home)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 57,
+      "english": "Fish curry (goan/kerala)",
+      "label": "मछली curry (goan/kerala)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 58,
+      "english": "Egg curry",
+      "label": "अंडा curry",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 60,
+      "english": "Matar paneer",
+      "label": "matar पनीर",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 61,
+      "english": "Chicken biryani",
+      "label": "चिकन biryani",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 72,
+      "english": "Chicken keema",
+      "label": "चिकन keema",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 74,
+      "english": "Chicken saag",
+      "label": "चिकन saag",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 75,
+      "english": "Dal tadka",
+      "label": "दाल tadka",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 76,
+      "english": "Paneer tikka masala",
+      "label": "पनीर tikka masala",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 92,
+      "english": "Murmura / puffed rice",
+      "label": "murmura / puffed चावल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 100,
+      "english": "Halwa (suji / wheat)",
+      "label": "halwa (suji / गेहूं)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 101,
+      "english": "Kheer (rice pudding)",
+      "label": "kheer (चावल pudding)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 102,
+      "english": "Barfi (milk)",
+      "label": "barfi (दूध)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 113,
+      "english": "Tomato (raw)",
+      "label": "टमाटर (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 114,
+      "english": "Onion (raw)",
+      "label": "प्याज (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 117,
+      "english": "Potato (boiled)",
+      "label": "आलू (boiled)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 118,
+      "english": "Sweet potato (baked)",
+      "label": "sweet आलू (baked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 125,
+      "english": "Eggplant / brinjal (raw)",
+      "label": "Eggplant / brinjal (raw)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 140,
+      "english": "Raw banana / plantain",
+      "label": "raw केला / plantain",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 142,
+      "english": "Apple (raw)",
+      "label": "सेब (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 143,
+      "english": "Banana (ripe)",
+      "label": "केला (ripe)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 168,
+      "english": "Chicken breast (raw)",
+      "label": "चिकन breast (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 169,
+      "english": "Chicken breast (grilled)",
+      "label": "चिकन breast (grilled)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 170,
+      "english": "Chicken thigh (raw)",
+      "label": "चिकन thigh (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 171,
+      "english": "Chicken legs (roasted)",
+      "label": "चिकन legs (roasted)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 172,
+      "english": "Chicken wings (raw)",
+      "label": "चिकन wings (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 173,
+      "english": "Ground chicken",
+      "label": "ground चिकन",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 197,
+      "english": "Rohu fish (raw)",
+      "label": "rohu मछली (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 199,
+      "english": "Whole egg (raw)",
+      "label": "whole अंडा (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 200,
+      "english": "Whole egg (boiled)",
+      "label": "whole अंडा (boiled)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 201,
+      "english": "Egg white (raw)",
+      "label": "अंडा white (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 202,
+      "english": "Egg yolk (raw)",
+      "label": "अंडा yolk (raw)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 203,
+      "english": "Scrambled eggs (cooked)",
+      "label": "Scrambled eggs (cooked)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 205,
+      "english": "Whole milk",
+      "label": "whole दूध",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 206,
+      "english": "Skimmed milk",
+      "label": "skimmed दूध",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 207,
+      "english": "Paneer (cottage cheese India)",
+      "label": "पनीर (cottage cheese india)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 210,
+      "english": "Plain yogurt (whole)",
+      "label": "plain दही (whole)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 211,
+      "english": "Greek yogurt (plain)",
+      "label": "greek दही (plain)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 216,
+      "english": "Curd / dahi (home)",
+      "label": "दही / dahi (home)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 217,
+      "english": "Condensed milk",
+      "label": "condensed दूध",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 240,
+      "english": "White bread",
+      "label": "white ब्रेड",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 241,
+      "english": "Whole wheat bread",
+      "label": "whole गेहूं ब्रेड",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 242,
+      "english": "Sourdough bread",
+      "label": "sourdough ब्रेड",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 243,
+      "english": "Multigrain bread",
+      "label": "multigrain ब्रेड",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 249,
+      "english": "Pita bread",
+      "label": "pita ब्रेड",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 250,
+      "english": "Tortilla (flour)",
+      "label": "Tortilla (flour)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 254,
+      "english": "Whole wheat pasta (cooked)",
+      "label": "whole गेहूं pasta (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 255,
+      "english": "Egg noodles (cooked)",
+      "label": "अंडा noodles (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 256,
+      "english": "Rice noodles (cooked)",
+      "label": "चावल noodles (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 262,
+      "english": "Fried rice (vegetable)",
+      "label": "fried चावल (vegetable)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 263,
+      "english": "Fried rice (chicken)",
+      "label": "fried चावल (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 265,
+      "english": "Chow mein (chicken)",
+      "label": "chow mein (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 268,
+      "english": "Kung pao chicken",
+      "label": "kung pao चिकन",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 273,
+      "english": "Egg fried rice",
+      "label": "अंडा fried चावल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 279,
+      "english": "Sushi rice",
+      "label": "sushi चावल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 288,
+      "english": "Teriyaki chicken",
+      "label": "teriyaki चिकन",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 290,
+      "english": "Yakitori (chicken skewer)",
+      "label": "yakitori (चिकन skewer)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 291,
+      "english": "Onigiri (rice ball, plain)",
+      "label": "onigiri (चावल ball, plain)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 293,
+      "english": "Katsu curry (chicken)",
+      "label": "katsu curry (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 301,
+      "english": "Kimbap (rice roll)",
+      "label": "kimbap (चावल roll)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 304,
+      "english": "Pad thai (chicken)",
+      "label": "pad thai (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 306,
+      "english": "Green curry (chicken)",
+      "label": "green curry (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 309,
+      "english": "Thai fried rice",
+      "label": "thai fried चावल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 312,
+      "english": "Mango sticky rice",
+      "label": "mango sticky चावल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 314,
+      "english": "Tacos (chicken, 2 corn)",
+      "label": "tacos (चिकन, 2 corn)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 316,
+      "english": "Burrito (chicken)",
+      "label": "burrito (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 320,
+      "english": "Salsa (tomato)",
+      "label": "salsa (टमाटर)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 322,
+      "english": "Enchiladas (chicken)",
+      "label": "enchiladas (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 337,
+      "english": "Shawarma (chicken)",
+      "label": "shawarma (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 342,
+      "english": "Pide (Turkish flat bread)",
+      "label": "pide (turkish flat ब्रेड)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 346,
+      "english": "Fish & chips",
+      "label": "मछली & chips",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 348,
+      "english": "Caesar salad (chicken)",
+      "label": "caesar salad (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 357,
+      "english": "Onion rings (fried)",
+      "label": "प्याज rings (fried)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 358,
+      "english": "Chicken nuggets (6pc)",
+      "label": "चिकन nuggets (6pc)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 362,
+      "english": "Chicken burger (fast food)",
+      "label": "चिकन burger (fast food)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 363,
+      "english": "Veggie burger",
+      "label": "Veggie burger",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 366,
+      "english": "Tomato soup (creamy)",
+      "label": "टमाटर soup (creamy)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 367,
+      "english": "Chicken noodle soup",
+      "label": "चिकन noodle soup",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 368,
+      "english": "Lentil soup",
+      "label": "दाल soup",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 370,
+      "english": "French onion soup",
+      "label": "french प्याज soup",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 376,
+      "english": "Whole milk (cow)",
+      "label": "whole दूध (cow)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 378,
+      "english": "Apple juice",
+      "label": "सेब juice",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 382,
+      "english": "Coffee with milk & sugar",
+      "label": "coffee with दूध & sugar",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 383,
+      "english": "Masala chai (with milk, sugar)",
+      "label": "masala chai (with दूध, sugar)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 386,
+      "english": "Almond milk (unsweetened)",
+      "label": "almond दूध (unsweetened)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 387,
+      "english": "Soy milk (unsweetened)",
+      "label": "soy दूध (unsweetened)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 388,
+      "english": "Tomato ketchup",
+      "label": "टमाटर ketchup",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 399,
+      "english": "Coconut milk (canned)",
+      "label": "coconut दूध (canned)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 401,
+      "english": "Chocolate (milk)",
+      "label": "chocolate (दूध)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 404,
+      "english": "Brownie (chocolate)",
+      "label": "Brownie (chocolate)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 412,
+      "english": "Potato chips (plain)",
+      "label": "आलू chips (plain)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 413,
+      "english": "Rice cakes (plain)",
+      "label": "चावल cakes (plain)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 415,
+      "english": "Popcorn (microwave, buttered)",
+      "label": "Popcorn (microwave, buttered)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 424,
+      "english": "Kolhapuri chicken",
+      "label": "kolhapuri चिकन",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 431,
+      "english": "Kootu (veg & lentil)",
+      "label": "kootu (veg & दाल)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 432,
+      "english": "Chettinad chicken curry",
+      "label": "chettinad चिकन curry",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 433,
+      "english": "Meen kuzhambu (fish curry)",
+      "label": "meen kuzhambu (मछली curry)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 437,
+      "english": "Akki roti (rice roti)",
+      "label": "akki roti (चावल roti)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 439,
+      "english": "Dal baati churma",
+      "label": "दाल baati churma",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 443,
+      "english": "Shahi paneer",
+      "label": "shahi पनीर",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 444,
+      "english": "Kadai paneer",
+      "label": "kadai पनीर",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 445,
+      "english": "Paneer bhurji",
+      "label": "पनीर bhurji",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 450,
+      "english": "Jeera rice",
+      "label": "jeera चावल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 457,
+      "english": "Bread pakora",
+      "label": "ब्रेड pakora",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 467,
+      "english": "Lemon rice",
+      "label": "lemon चावल",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 472,
+      "english": "Vazhaipoo vadai (banana flower)",
+      "label": "vazhaipoo vadai (केला flower)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 479,
+      "english": "Momos (steamed, chicken)",
+      "label": "momos (steamed, चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 481,
+      "english": "Jadoh (red rice & pork)",
+      "label": "jadoh (red चावल & pork)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 488,
+      "english": "Eggs Benedict",
+      "label": "Eggs Benedict",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 491,
+      "english": "Chia pudding (almond milk)",
+      "label": "chia pudding (almond दूध)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 497,
+      "english": "Focaccia bread",
+      "label": "focaccia ब्रेड",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 508,
+      "english": "French onion soup",
+      "label": "french प्याज soup",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 510,
+      "english": "Crepe (nutella & banana)",
+      "label": "crepe (nutella & केला)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 517,
+      "english": "Pancakes (buttermilk)",
+      "label": "Pancakes (buttermilk)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 520,
+      "english": "Fried chicken (southern)",
+      "label": "fried चिकन (southern)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 527,
+      "english": "Apple pie (1 slice)",
+      "label": "सेब pie (1 slice)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 529,
+      "english": "Brownies (fudge)",
+      "label": "Brownies (fudge)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 531,
+      "english": "Fish and chips",
+      "label": "मछली and chips",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 533,
+      "english": "Coxinha (chicken croquette)",
+      "label": "coxinha (चिकन croquette)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 543,
+      "english": "Rye bread (slice)",
+      "label": "rye ब्रेड (slice)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 544,
+      "english": "Pierogi (potato & cheese)",
+      "label": "pierogi (आलू & cheese)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 547,
+      "english": "Strudel (apple)",
+      "label": "strudel (सेब)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 552,
+      "english": "Mutabal (eggplant dip)",
+      "label": "Mutabal (eggplant dip)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 554,
+      "english": "Labneh (strained yogurt)",
+      "label": "labneh (strained दही)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 556,
+      "english": "Maqluba (Palestinian rice)",
+      "label": "maqluba (palestinian चावल)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 559,
+      "english": "Persian rice (chelow)",
+      "label": "persian चावल (chelow)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 562,
+      "english": "Pho (chicken)",
+      "label": "pho (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 566,
+      "english": "Com tam (broken rice)",
+      "label": "com tam (broken चावल)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 568,
+      "english": "Nasi goreng (fried rice)",
+      "label": "nasi goreng (fried चावल)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 570,
+      "english": "Satay (chicken, with peanut sauce)",
+      "label": "satay (चिकन, with peanut sauce)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 577,
+      "english": "Adobo (chicken)",
+      "label": "adobo (चिकन)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 586,
+      "english": "Lepyoshka (flatbread)",
+      "label": "Lepyoshka (flatbread)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 593,
+      "english": "Buckwheat (cooked)",
+      "label": "Buckwheat (cooked)",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 595,
+      "english": "Wild rice (cooked)",
+      "label": "wild चावल (cooked)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 597,
+      "english": "Freekeh (roasted green wheat)",
+      "label": "freekeh (roasted green गेहूं)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 601,
+      "english": "Moong dal vada",
+      "label": "moong दाल vada",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 605,
+      "english": "Seitan (wheat gluten)",
+      "label": "seitan (गेहूं gluten)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 608,
+      "english": "Chickpea flour omelette",
+      "label": "Chickpea flour omelette",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 609,
+      "english": "Lentil burger patty",
+      "label": "दाल burger patty",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 615,
+      "english": "Oat milk (unsweetened)",
+      "label": "oat दूध (unsweetened)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 616,
+      "english": "Cashew milk (unsweetened)",
+      "label": "cashew दूध (unsweetened)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 617,
+      "english": "Full fat coconut milk (drink)",
+      "label": "full fat coconut दूध (drink)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 619,
+      "english": "Buttermilk",
+      "label": "Buttermilk",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 633,
+      "english": "Yogurt (probiotic plain)",
+      "label": "दही (probiotic plain)",
+      "reason": "mixed Latin + Devanagari"
+    },
+    {
+      "kind": "food",
+      "id": 635,
+      "english": "Brown sugar",
+      "label": "Brown sugar",
+      "reason": "English-only generated Hindi label"
+    },
+    {
+      "kind": "food",
+      "id": 647,
+      "english": "Banana bread (homemade)",
+      "label": "केला ब्रेड (homemade)",
+      "reason": "mixed Latin + Devanagari"
+    }
+  ],
+  "hinglish": [
+    {
+      "kind": "food",
+      "id": 1,
+      "english": "Basmati rice (cooked)",
+      "label": "basmati chawal (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 2,
+      "english": "White rice (cooked)",
+      "label": "white chawal (cooked)",
+      "reason": "partial English hybrid: white, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 3,
+      "english": "Brown rice (cooked)",
+      "label": "brown chawal (cooked)",
+      "reason": "partial English hybrid: brown, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 18,
+      "english": "Whole wheat flour (atta)",
+      "label": "whole gehu flour (atta)",
+      "reason": "partial English hybrid: whole, flour"
+    },
+    {
+      "kind": "food",
+      "id": 33,
+      "english": "Masoor dal (red lentil, cooked)",
+      "label": "masoor dal (red dal, cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 199,
+      "english": "Whole egg (raw)",
+      "label": "whole anda (raw)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 200,
+      "english": "Whole egg (boiled)",
+      "label": "whole anda (boiled)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 201,
+      "english": "Egg white (raw)",
+      "label": "anda white (raw)",
+      "reason": "partial English hybrid: white"
+    },
+    {
+      "kind": "food",
+      "id": 205,
+      "english": "Whole milk",
+      "label": "whole doodh",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 210,
+      "english": "Plain yogurt (whole)",
+      "label": "plain dahi (whole)",
+      "reason": "partial English hybrid: whole, plain"
+    },
+    {
+      "kind": "food",
+      "id": 211,
+      "english": "Greek yogurt (plain)",
+      "label": "greek dahi (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 241,
+      "english": "Whole wheat bread",
+      "label": "whole gehu bread",
+      "reason": "partial English hybrid: whole, bread"
+    },
+    {
+      "kind": "food",
+      "id": 254,
+      "english": "Whole wheat pasta (cooked)",
+      "label": "whole gehu pasta (cooked)",
+      "reason": "partial English hybrid: whole, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 255,
+      "english": "Egg noodles (cooked)",
+      "label": "anda noodles (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 256,
+      "english": "Rice noodles (cooked)",
+      "label": "chawal noodles (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 263,
+      "english": "Fried rice (chicken)",
+      "label": "fried chawal (chicken)",
+      "reason": "partial English hybrid: chicken"
+    },
+    {
+      "kind": "food",
+      "id": 291,
+      "english": "Onigiri (rice ball, plain)",
+      "label": "onigiri (chawal ball, plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 376,
+      "english": "Whole milk (cow)",
+      "label": "whole doodh (cow)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 412,
+      "english": "Potato chips (plain)",
+      "label": "aloo chips (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 413,
+      "english": "Rice cakes (plain)",
+      "label": "chawal cakes (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 595,
+      "english": "Wild rice (cooked)",
+      "label": "wild chawal (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 633,
+      "english": "Yogurt (probiotic plain)",
+      "label": "dahi (probiotic plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 647,
+      "english": "Banana bread (homemade)",
+      "label": "kela bread (homemade)",
+      "reason": "partial English hybrid: bread"
+    }
+  ],
+  "es": [
+    {
+      "kind": "exercise",
+      "id": 1,
+      "english": "Barbell Bench Press",
+      "label": "Barbell press de banca",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 2,
+      "english": "Incline Barbell Bench Press",
+      "label": "Incline barbell press de banca",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 3,
+      "english": "Decline Barbell Bench Press",
+      "label": "Decline barbell press de banca",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 4,
+      "english": "Dumbbell Bench Press",
+      "label": "Dumbbell press de banca",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 7,
+      "english": "Dumbbell Chest Fly",
+      "label": "Dumbbell chest apertura",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 8,
+      "english": "Incline Dumbbell Fly",
+      "label": "Incline dumbbell apertura",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 9,
+      "english": "Cable Chest Fly",
+      "label": "Cable chest apertura",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 10,
+      "english": "High Cable Fly",
+      "label": "High cable apertura",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 13,
+      "english": "Machine Chest Press",
+      "label": "Machine press de pecho",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 14,
+      "english": "Smith Machine Bench Press",
+      "label": "Smith machine press de banca",
+      "reason": "partial English hybrid: machine, smith"
+    },
+    {
+      "kind": "exercise",
+      "id": 32,
+      "english": "Barbell Row",
+      "label": "Barbell remo",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 34,
+      "english": "Dumbbell Row",
+      "label": "Dumbbell remo",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 36,
+      "english": "Seated Cable Row",
+      "label": "Seated cable remo",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 54,
+      "english": "Machine Row",
+      "label": "Machine remo",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 57,
+      "english": "Barbell Overhead Press",
+      "label": "Barbell press por encima de la cabeza",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 58,
+      "english": "Dumbbell Shoulder Press",
+      "label": "Dumbbell press de hombros",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 60,
+      "english": "Machine Shoulder Press",
+      "label": "Machine press de hombros",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 63,
+      "english": "Dumbbell Lateral Raise",
+      "label": "Dumbbell elevación lateral",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 64,
+      "english": "Cable Lateral Raise",
+      "label": "Cable elevación lateral",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 67,
+      "english": "Cable Rear Delt Fly",
+      "label": "Cable rear delt apertura",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 99,
+      "english": "Barbell Back Squat",
+      "label": "Barbell back sentadilla",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 100,
+      "english": "Barbell Front Squat",
+      "label": "Barbell sentadilla frontal",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 119,
+      "english": "Dumbbell Romanian Deadlift",
+      "label": "Dumbbell peso muerto rumano",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 120,
+      "english": "Barbell Romanian Deadlift",
+      "label": "Barbell peso muerto rumano",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 146,
+      "english": "Cable Crunch",
+      "label": "Cable abdominal corto",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 147,
+      "english": "Weighted Cable Crunch",
+      "label": "Weighted cable abdominal corto",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 171,
+      "english": "Dumbbell Squat to Press",
+      "label": "Dumbbell sentadilla to press",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "food",
+      "id": 1,
+      "english": "Basmati rice (cooked)",
+      "label": "Basmati arroz (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 2,
+      "english": "White rice (cooked)",
+      "label": "White arroz (cooked)",
+      "reason": "partial English hybrid: white, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 3,
+      "english": "Brown rice (cooked)",
+      "label": "Brown arroz (cooked)",
+      "reason": "partial English hybrid: brown, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 18,
+      "english": "Whole wheat flour (atta)",
+      "label": "Whole trigo flour (atta)",
+      "reason": "partial English hybrid: whole, flour"
+    },
+    {
+      "kind": "food",
+      "id": 33,
+      "english": "Masoor dal (red lentil, cooked)",
+      "label": "Masoor dal (red lenteja, cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 53,
+      "english": "Butter chicken",
+      "label": "Butter pollo",
+      "reason": "partial English hybrid: butter"
+    },
+    {
+      "kind": "food",
+      "id": 199,
+      "english": "Whole egg (raw)",
+      "label": "Whole huevo (raw)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 200,
+      "english": "Whole egg (boiled)",
+      "label": "Whole huevo (boiled)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 201,
+      "english": "Egg white (raw)",
+      "label": "Huevo white (raw)",
+      "reason": "partial English hybrid: white"
+    },
+    {
+      "kind": "food",
+      "id": 205,
+      "english": "Whole milk",
+      "label": "Whole leche",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 210,
+      "english": "Plain yogurt (whole)",
+      "label": "Plain yogur (whole)",
+      "reason": "partial English hybrid: whole, plain"
+    },
+    {
+      "kind": "food",
+      "id": 211,
+      "english": "Greek yogurt (plain)",
+      "label": "Greek yogur (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 240,
+      "english": "White bread",
+      "label": "White pan",
+      "reason": "partial English hybrid: white"
+    },
+    {
+      "kind": "food",
+      "id": 241,
+      "english": "Whole wheat bread",
+      "label": "Whole trigo pan",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 254,
+      "english": "Whole wheat pasta (cooked)",
+      "label": "Whole trigo pasta (cooked)",
+      "reason": "partial English hybrid: whole, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 255,
+      "english": "Egg noodles (cooked)",
+      "label": "Huevo noodles (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 256,
+      "english": "Rice noodles (cooked)",
+      "label": "Arroz noodles (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 291,
+      "english": "Onigiri (rice ball, plain)",
+      "label": "Onigiri (arroz ball, plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 376,
+      "english": "Whole milk (cow)",
+      "label": "Whole leche (cow)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 412,
+      "english": "Potato chips (plain)",
+      "label": "Patata chips (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 413,
+      "english": "Rice cakes (plain)",
+      "label": "Arroz cakes (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 595,
+      "english": "Wild rice (cooked)",
+      "label": "Wild arroz (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 633,
+      "english": "Yogurt (probiotic plain)",
+      "label": "Yogur (probiotic plain)",
+      "reason": "partial English hybrid: plain"
+    }
+  ],
+  "fr": [
+    {
+      "kind": "exercise",
+      "id": 1,
+      "english": "Barbell Bench Press",
+      "label": "Barbell développé couché",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 2,
+      "english": "Incline Barbell Bench Press",
+      "label": "Incline barbell développé couché",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 3,
+      "english": "Decline Barbell Bench Press",
+      "label": "Decline barbell développé couché",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 4,
+      "english": "Dumbbell Bench Press",
+      "label": "Dumbbell développé couché",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 7,
+      "english": "Dumbbell Chest Fly",
+      "label": "Dumbbell chest écarté",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 8,
+      "english": "Incline Dumbbell Fly",
+      "label": "Incline dumbbell écarté",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 9,
+      "english": "Cable Chest Fly",
+      "label": "Cable chest écarté",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 10,
+      "english": "High Cable Fly",
+      "label": "High cable écarté",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 13,
+      "english": "Machine Chest Press",
+      "label": "Machine presse pectorale",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 14,
+      "english": "Smith Machine Bench Press",
+      "label": "Smith machine développé couché",
+      "reason": "partial English hybrid: machine, smith"
+    },
+    {
+      "kind": "exercise",
+      "id": 32,
+      "english": "Barbell Row",
+      "label": "Barbell rowing",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 34,
+      "english": "Dumbbell Row",
+      "label": "Dumbbell rowing",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 36,
+      "english": "Seated Cable Row",
+      "label": "Seated cable rowing",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 54,
+      "english": "Machine Row",
+      "label": "Machine rowing",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 57,
+      "english": "Barbell Overhead Press",
+      "label": "Barbell développé au-dessus de la tête",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 58,
+      "english": "Dumbbell Shoulder Press",
+      "label": "Dumbbell développé épaules",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 60,
+      "english": "Machine Shoulder Press",
+      "label": "Machine développé épaules",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 63,
+      "english": "Dumbbell Lateral Raise",
+      "label": "Dumbbell élévation latérale",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 64,
+      "english": "Cable Lateral Raise",
+      "label": "Cable élévation latérale",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 67,
+      "english": "Cable Rear Delt Fly",
+      "label": "Cable rear delt écarté",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 119,
+      "english": "Dumbbell Romanian Deadlift",
+      "label": "Dumbbell soulevé de terre roumain",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 120,
+      "english": "Barbell Romanian Deadlift",
+      "label": "Barbell soulevé de terre roumain",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "food",
+      "id": 1,
+      "english": "Basmati rice (cooked)",
+      "label": "Basmati riz (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 2,
+      "english": "White rice (cooked)",
+      "label": "White riz (cooked)",
+      "reason": "partial English hybrid: white, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 3,
+      "english": "Brown rice (cooked)",
+      "label": "Brown riz (cooked)",
+      "reason": "partial English hybrid: brown, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 18,
+      "english": "Whole wheat flour (atta)",
+      "label": "Whole blé flour (atta)",
+      "reason": "partial English hybrid: whole, flour"
+    },
+    {
+      "kind": "food",
+      "id": 33,
+      "english": "Masoor dal (red lentil, cooked)",
+      "label": "Masoor dal (red lentille, cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 53,
+      "english": "Butter chicken",
+      "label": "Butter poulet",
+      "reason": "partial English hybrid: butter"
+    },
+    {
+      "kind": "food",
+      "id": 199,
+      "english": "Whole egg (raw)",
+      "label": "Whole œuf (raw)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 200,
+      "english": "Whole egg (boiled)",
+      "label": "Whole œuf (boiled)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 201,
+      "english": "Egg white (raw)",
+      "label": "Œuf white (raw)",
+      "reason": "partial English hybrid: white"
+    },
+    {
+      "kind": "food",
+      "id": 205,
+      "english": "Whole milk",
+      "label": "Whole lait",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 210,
+      "english": "Plain yogurt (whole)",
+      "label": "Plain yaourt (whole)",
+      "reason": "partial English hybrid: whole, plain"
+    },
+    {
+      "kind": "food",
+      "id": 211,
+      "english": "Greek yogurt (plain)",
+      "label": "Greek yaourt (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 240,
+      "english": "White bread",
+      "label": "White pain",
+      "reason": "partial English hybrid: white"
+    },
+    {
+      "kind": "food",
+      "id": 241,
+      "english": "Whole wheat bread",
+      "label": "Whole blé pain",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 254,
+      "english": "Whole wheat pasta (cooked)",
+      "label": "Whole blé pasta (cooked)",
+      "reason": "partial English hybrid: whole, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 255,
+      "english": "Egg noodles (cooked)",
+      "label": "Œuf noodles (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 256,
+      "english": "Rice noodles (cooked)",
+      "label": "Riz noodles (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 291,
+      "english": "Onigiri (rice ball, plain)",
+      "label": "Onigiri (riz ball, plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 376,
+      "english": "Whole milk (cow)",
+      "label": "Whole lait (cow)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 412,
+      "english": "Potato chips (plain)",
+      "label": "Pomme de terre chips (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 413,
+      "english": "Rice cakes (plain)",
+      "label": "Riz cakes (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 595,
+      "english": "Wild rice (cooked)",
+      "label": "Wild riz (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 633,
+      "english": "Yogurt (probiotic plain)",
+      "label": "Yaourt (probiotic plain)",
+      "reason": "partial English hybrid: plain"
+    }
+  ],
+  "de": [
+    {
+      "kind": "exercise",
+      "id": 1,
+      "english": "Barbell Bench Press",
+      "label": "Barbell Bankdrücken",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 2,
+      "english": "Incline Barbell Bench Press",
+      "label": "Incline barbell Bankdrücken",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 3,
+      "english": "Decline Barbell Bench Press",
+      "label": "Decline barbell Bankdrücken",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 4,
+      "english": "Dumbbell Bench Press",
+      "label": "Dumbbell Bankdrücken",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 7,
+      "english": "Dumbbell Chest Fly",
+      "label": "Dumbbell chest Fliegende",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 8,
+      "english": "Incline Dumbbell Fly",
+      "label": "Incline dumbbell Fliegende",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 9,
+      "english": "Cable Chest Fly",
+      "label": "Cable chest Fliegende",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 10,
+      "english": "High Cable Fly",
+      "label": "High cable Fliegende",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 13,
+      "english": "Machine Chest Press",
+      "label": "Machine Brustpresse",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 14,
+      "english": "Smith Machine Bench Press",
+      "label": "Smith machine Bankdrücken",
+      "reason": "partial English hybrid: machine, smith"
+    },
+    {
+      "kind": "exercise",
+      "id": 32,
+      "english": "Barbell Row",
+      "label": "Barbell Rudern",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 34,
+      "english": "Dumbbell Row",
+      "label": "Dumbbell Rudern",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 36,
+      "english": "Seated Cable Row",
+      "label": "Seated cable Rudern",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 54,
+      "english": "Machine Row",
+      "label": "Machine Rudern",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 57,
+      "english": "Barbell Overhead Press",
+      "label": "Barbell Überkopfdrücken",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 58,
+      "english": "Dumbbell Shoulder Press",
+      "label": "Dumbbell Schulterdrücken",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 60,
+      "english": "Machine Shoulder Press",
+      "label": "Machine Schulterdrücken",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 63,
+      "english": "Dumbbell Lateral Raise",
+      "label": "Dumbbell Seitheben",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 64,
+      "english": "Cable Lateral Raise",
+      "label": "Cable Seitheben",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 67,
+      "english": "Cable Rear Delt Fly",
+      "label": "Cable rear delt Fliegende",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 82,
+      "english": "Incline Dumbbell Curl",
+      "label": "Incline dumbbell Curl",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 84,
+      "english": "Reverse Barbell Curl",
+      "label": "Reverse barbell Curl",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 85,
+      "english": "Cable Hammer Curl",
+      "label": "Cable hammer Curl",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 87,
+      "english": "Dumbbell Zottman Curl",
+      "label": "Dumbbell zottman Curl",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 99,
+      "english": "Barbell Back Squat",
+      "label": "Barbell back Kniebeuge",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 100,
+      "english": "Barbell Front Squat",
+      "label": "Barbell Frontkniebeuge",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 119,
+      "english": "Dumbbell Romanian Deadlift",
+      "label": "Dumbbell Rumänisches Kreuzheben",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 120,
+      "english": "Barbell Romanian Deadlift",
+      "label": "Barbell Rumänisches Kreuzheben",
+      "reason": "partial English hybrid: barbell"
+    },
+    {
+      "kind": "exercise",
+      "id": 147,
+      "english": "Weighted Cable Crunch",
+      "label": "Weighted cable Crunch",
+      "reason": "partial English hybrid: cable"
+    },
+    {
+      "kind": "exercise",
+      "id": 171,
+      "english": "Dumbbell Squat to Press",
+      "label": "Dumbbell Kniebeuge to press",
+      "reason": "partial English hybrid: dumbbell"
+    },
+    {
+      "kind": "food",
+      "id": 1,
+      "english": "Basmati rice (cooked)",
+      "label": "Basmati Reis (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 2,
+      "english": "White rice (cooked)",
+      "label": "White Reis (cooked)",
+      "reason": "partial English hybrid: white, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 3,
+      "english": "Brown rice (cooked)",
+      "label": "Brown Reis (cooked)",
+      "reason": "partial English hybrid: brown, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 18,
+      "english": "Whole wheat flour (atta)",
+      "label": "Whole Weizen flour (atta)",
+      "reason": "partial English hybrid: whole, flour"
+    },
+    {
+      "kind": "food",
+      "id": 33,
+      "english": "Masoor dal (red lentil, cooked)",
+      "label": "Masoor dal (red Linse, cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 53,
+      "english": "Butter chicken",
+      "label": "Butter Hähnchen",
+      "reason": "partial English hybrid: butter"
+    },
+    {
+      "kind": "food",
+      "id": 199,
+      "english": "Whole egg (raw)",
+      "label": "Whole Ei (raw)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 200,
+      "english": "Whole egg (boiled)",
+      "label": "Whole Ei (boiled)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 201,
+      "english": "Egg white (raw)",
+      "label": "Ei white (raw)",
+      "reason": "partial English hybrid: white"
+    },
+    {
+      "kind": "food",
+      "id": 205,
+      "english": "Whole milk",
+      "label": "Whole Milch",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 210,
+      "english": "Plain yogurt (whole)",
+      "label": "Plain Joghurt (whole)",
+      "reason": "partial English hybrid: whole, plain"
+    },
+    {
+      "kind": "food",
+      "id": 211,
+      "english": "Greek yogurt (plain)",
+      "label": "Greek Joghurt (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 240,
+      "english": "White bread",
+      "label": "White Brot",
+      "reason": "partial English hybrid: white"
+    },
+    {
+      "kind": "food",
+      "id": 241,
+      "english": "Whole wheat bread",
+      "label": "Whole Weizen Brot",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 254,
+      "english": "Whole wheat pasta (cooked)",
+      "label": "Whole Weizen pasta (cooked)",
+      "reason": "partial English hybrid: whole, cooked"
+    },
+    {
+      "kind": "food",
+      "id": 255,
+      "english": "Egg noodles (cooked)",
+      "label": "Ei noodles (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 256,
+      "english": "Rice noodles (cooked)",
+      "label": "Reis noodles (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 291,
+      "english": "Onigiri (rice ball, plain)",
+      "label": "Onigiri (Reis ball, plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 376,
+      "english": "Whole milk (cow)",
+      "label": "Whole Milch (cow)",
+      "reason": "partial English hybrid: whole"
+    },
+    {
+      "kind": "food",
+      "id": 412,
+      "english": "Potato chips (plain)",
+      "label": "Kartoffel chips (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 413,
+      "english": "Rice cakes (plain)",
+      "label": "Reis cakes (plain)",
+      "reason": "partial English hybrid: plain"
+    },
+    {
+      "kind": "food",
+      "id": 595,
+      "english": "Wild rice (cooked)",
+      "label": "Wild Reis (cooked)",
+      "reason": "partial English hybrid: cooked"
+    },
+    {
+      "kind": "food",
+      "id": 633,
+      "english": "Yogurt (probiotic plain)",
+      "label": "Joghurt (probiotic plain)",
+      "reason": "partial English hybrid: plain"
+    }
+  ]
+}

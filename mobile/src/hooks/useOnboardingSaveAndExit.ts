@@ -10,22 +10,26 @@ import { saveOnboardingData, saveTargets } from "../storage/onboarding";
 import { formatApiDetail, notifyUser } from "../utils/notify";
 import { normalizeGoalFocusFields } from "../utils/onboardingFocusMuscles";
 import { validateOnboardingForSave } from "../utils/onboardingValidation";
+import i18n from "../i18n";
+import { useLanguageStore } from "../i18n/languageStore";
 
 export function useOnboardingSaveAndExit() {
   const { data } = useOnboardingContext();
   const token = useAuthStore((s) => s.token);
   const setNeedsOnboarding = useAuthStore((s) => s.setNeedsOnboarding);
+  const language = useLanguageStore((s) => s.explicitLanguage || s.language || s.deviceLanguage);
+  const syncExplicitLanguage = useLanguageStore((s) => s.syncExplicitLanguage);
   const [saving, setSaving] = useState(false);
 
   const saveAndExit = async () => {
     if (!token) {
-      notifyUser("Session", "Sign in again to save your onboarding.");
+      notifyUser(i18n.t("onboardingSave.session"), i18n.t("onboardingSave.signInAgain"));
       return;
     }
 
     const validationError = validateOnboardingForSave(data);
     if (validationError) {
-      notifyUser("Complete required fields", validationError);
+      notifyUser(i18n.t("onboardingSave.completeRequired"), validationError);
       return;
     }
 
@@ -45,6 +49,10 @@ export function useOnboardingSaveAndExit() {
       const onboardingPayload = {
         ...data,
         goal: normalizeGoalFocusFields(data.goal),
+        app_setup: {
+          ...data.app_setup,
+          preferred_language: language,
+        },
       };
       const targets = calculateNutritionTargets(onboardingPayload);
       try {
@@ -56,15 +64,15 @@ export function useOnboardingSaveAndExit() {
         const noResponse = e.response === undefined;
         const routeMissing = status === 404 && detailText === "Not Found";
         if (status === 401 || status === 403) {
-          notifyUser("Session expired", detailText || "Sign in again, then retry.");
+          notifyUser(i18n.t("onboardingSave.sessionExpired"), detailText || i18n.t("onboardingSave.signInRetry"));
           return;
         }
         if (status === 422) {
-          notifyUser("Could not save onboarding", detailText || "The server rejected this data. Check all screens and try again.");
+          notifyUser(i18n.t("onboardingSave.saveFailed"), detailText || i18n.t("onboardingSave.serverRejected"));
           return;
         }
         if (!noResponse && !routeMissing && status !== 502 && status !== 503) {
-          notifyUser("Could not save onboarding", detailText || e.message || `Server error (${status ?? "?"}).`);
+          notifyUser(i18n.t("onboardingSave.saveFailed"), detailText || e.message || i18n.t("onboardingSave.serverError", { status: status ?? "?" }));
           return;
         }
       }
@@ -85,10 +93,11 @@ export function useOnboardingSaveAndExit() {
 
       await saveOnboardingData(token, onboardingPayload);
       await saveTargets(token, targets);
+      void syncExplicitLanguage();
       setNeedsOnboarding(false);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "";
-      notifyUser("Could not save onboarding", msg || "Something went wrong while saving. Try again.");
+      notifyUser(i18n.t("onboardingSave.saveFailed"), msg || i18n.t("onboardingSave.genericFailed"));
     } finally {
       setSaving(false);
     }

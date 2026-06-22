@@ -15,12 +15,15 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import type { CalorieDayPayload } from "../api/caloriesLog";
 import { getDailyCalorieLog, todayLocal } from "../api/caloriesLog";
 import { resolveApiBaseUrl } from "../api/client";
 import { fetchOnboardingMe } from "../api/onboarding";
-import { getProfile } from "../api/user";
+import { getStrengthProgress, type StrengthProgress } from "../api/strength";
 import { getWorkoutHistory } from "../api/workout";
+import { DailyQuoteCard } from "../components/DailyQuoteCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "../store/authStore";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
@@ -86,53 +89,6 @@ type BurnProfile = {
   goal_pace: "slow" | "moderate" | "fast";
   activity_level: "sedentary" | "light" | "moderate" | "active" | "very_active";
 };
-
-function computeGreetingForNow(now: Date): string {
-  const hour = now.getHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 17) return "Good afternoon";
-  if (hour >= 17 && hour < 21) return "Good evening";
-  return "Good night";
-}
-
-function formatHeaderDate(now: Date): string {
-  const formatter = new Intl.DateTimeFormat(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-  const parts = formatter.formatToParts(now);
-  const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
-  const month = parts.find((p) => p.type === "month")?.value ?? "";
-  const day = parts.find((p) => p.type === "day")?.value ?? "";
-  const year = parts.find((p) => p.type === "year")?.value ?? "";
-  if (weekday && month && day && year) {
-    return `${weekday}, ${month} ${day} · ${year}`;
-  }
-  return formatter.format(now);
-}
-
-function formatDisplayName(rawName: string | null | undefined): string {
-  const safe = String(rawName || "").trim();
-  if (!safe) return "Athlete";
-  const parts = safe.split(/\s+/).filter(Boolean);
-  const first = parts[0] || "Athlete";
-  const lastInitial = parts.length > 1 ? `${parts[parts.length - 1][0]}.` : "";
-  return lastInitial ? `${first} ${lastInitial}` : first;
-}
-
-function firstNameFromDisplayName(displayName: string): string {
-  return displayName.replace(/\s+\S+\.$/, "").split(/\s+/)[0] || "Athlete";
-}
-
-function initialsFromDisplayName(displayName: string): string {
-  const base = displayName.replace(/\./g, "").trim();
-  const parts = base.split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "A";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-}
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, Number.isFinite(v) ? v : 0));
 const formatNum = (v: number) => Math.round(v || 0).toLocaleString();
@@ -234,14 +190,14 @@ function StreakDayColumn({ meta }: { meta: DayMeta }) {
         <Text style={[styles.streakDateNum, { color: tile.color }]}>{meta.dayNum}</Text>
       </View>
       <Text style={[styles.streakDayLabel, meta.isToday && styles.streakDayLabelToday]}>
-        {meta.isToday ? "Today" : meta.dayLabel}
+        {meta.isToday ? i18n.t("streak.days.today") : meta.dayLabel}
       </Text>
     </View>
   );
 }
 
 function ProgressBar({ percent, color }: { percent: number; color: string }) {
-  const widthPct = `${Math.round(clamp01(percent) * 100)}%`;
+  const widthPct = `${Math.round(clamp01(percent) * 100)}%` as `${number}%`;
   return (
     <View style={styles.progressTrack}>
       <View style={[styles.progressFill, { width: widthPct, backgroundColor: color }]} />
@@ -293,21 +249,19 @@ function CalorieRing({
         />
       </Svg>
       <View style={styles.ringCenterOverlay}>
-        <Text style={[styles.ringCenterLabel, { fontSize: labelSize }]}>REMAINING</Text>
+        <Text style={[styles.ringCenterLabel, { fontSize: labelSize }]}>{i18n.t("home.remaining")}</Text>
         <Text style={[styles.ringCenterValue, { fontSize: valueSize, lineHeight: valueSize + 4 }]}>
           {formatNum(remaining)}
         </Text>
-        <Text style={[styles.ringCenterUnit, { fontSize: unitSize }]}>kcal</Text>
+        <Text style={[styles.ringCenterUnit, { fontSize: unitSize }]}>{i18n.t("home.kcal")}</Text>
       </View>
     </View>
   );
 }
 
 export const HomeScreen = () => {
+  const { t } = useTranslation();
   const token = useAuthStore((s) => s.token);
-  const [headerGreeting, setHeaderGreeting] = useState(() => computeGreetingForNow(new Date()));
-  const [headerDateLabel, setHeaderDateLabel] = useState(() => formatHeaderDate(new Date()));
-  const [headerName, setHeaderName] = useState("Athlete");
   const [calorieDay, setCalorieDay] = useState<CalorieDayPayload | null>(null);
   const [burnProfile, setBurnProfile] = useState<BurnProfile | null>(null);
   const [totalWorkoutBurn, setTotalWorkoutBurn] = useState(0);
@@ -315,6 +269,7 @@ export const HomeScreen = () => {
   const [latestWeight, setLatestWeight] = useState<LatestWeightData | null>(null);
   const [weightHistory, setWeightHistory] = useState<WeightEntry[]>([]);
   const [goalProgress, setGoalProgress] = useState<GoalProgressData | null>(null);
+  const [strengthProgress, setStrengthProgress] = useState<StrengthProgress | null>(null);
   const [showWeighInModal, setShowWeighInModal] = useState(false);
   const [weighInValue, setWeighInValue] = useState("");
   const [isLoggingWeight, setIsLoggingWeight] = useState(false);
@@ -333,17 +288,6 @@ export const HomeScreen = () => {
     ).start();
   }, [sectionAnim]);
 
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      setHeaderGreeting(computeGreetingForNow(now));
-      setHeaderDateLabel(formatHeaderDate(now));
-    };
-    tick();
-    const id = setInterval(tick, 60_000);
-    return () => clearInterval(id);
-  }, []);
-
   const isSameLocalDay = (isoDate: string, day: Date): boolean => {
     const d = parseServerDate(isoDate);
     if (!d) return false;
@@ -355,9 +299,6 @@ export const HomeScreen = () => {
   };
 
   const load = useCallback(async () => {
-    const now = new Date();
-    setHeaderGreeting(computeGreetingForNow(now));
-    setHeaderDateLabel(formatHeaderDate(now));
     if (!token) {
       setCalorieDay(null);
       setBurnProfile(null);
@@ -366,7 +307,7 @@ export const HomeScreen = () => {
       setLatestWeight(null);
       setWeightHistory([]);
       setGoalProgress(null);
-      setHeaderName("Athlete");
+      setStrengthProgress(null);
       setWorkoutHistory([]);
       setStreakCalorieLogs([]);
       setPersonalBestStreak(0);
@@ -375,12 +316,11 @@ export const HomeScreen = () => {
     const apiBase = resolveApiBaseUrl();
     const authHeaders = { Authorization: `Bearer ${token}` };
     try {
-      const [dayRes, onboardingRes, historyRes, profileRes, weightLatestRes, weightHistoryRes, goalProgressRes] =
+      const [dayRes, onboardingRes, historyRes, weightLatestRes, weightHistoryRes, goalProgressRes, strengthProgressRes] =
         await Promise.all([
           getDailyCalorieLog(todayLocal()).catch(() => null),
           fetchOnboardingMe().catch(() => null),
           getWorkoutHistory(24 * 7).catch(() => ({ items: [] })),
-          getProfile().catch(() => null),
           fetch(`${apiBase}/api/weight/latest`, { headers: authHeaders })
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
@@ -390,6 +330,7 @@ export const HomeScreen = () => {
           fetch(`${apiBase}/api/goal-progress?local_date=${todayLocal()}`, { headers: authHeaders })
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
+          getStrengthProgress().catch(() => null),
         ]);
       const today = new Date();
       const todayWorkoutBurn = (historyRes.items ?? []).reduce((sum, item) => {
@@ -403,9 +344,7 @@ export const HomeScreen = () => {
       setLatestWeight(weightLatestRes);
       setWeightHistory(weightHistoryRes?.entries ?? []);
       setGoalProgress(goalProgressRes);
-      const profileName = typeof profileRes?.name === "string" ? profileRes.name : "";
-      const onboardingName = typeof onboardingRes?.onboarding?.personal?.name === "string" ? onboardingRes.onboarding.personal.name : "";
-      setHeaderName(formatDisplayName(profileName || onboardingName));
+      setStrengthProgress(strengthProgressRes);
 
       const todayKey = todayLocal();
       const streakDates = listPastDateKeys(STREAK_LOOKBACK_DAYS);
@@ -450,14 +389,14 @@ export const HomeScreen = () => {
       }
       setPersonalBestStreak(bestStreak);
     } catch {
-      Alert.alert("Error", "Could not load home dashboard.");
+      Alert.alert(t("home.alerts.error"), t("home.alerts.loadFailed"));
     }
-  }, [token]);
+  }, [token, t]);
 
   const handleLogWeight = async () => {
     const kg = parseFloat(weighInValue);
     if (!kg || kg <= 0 || kg > 500) {
-      Alert.alert("Invalid", "Please enter a valid weight between 1 and 500 kg");
+      Alert.alert(t("home.alerts.invalid"), t("home.alerts.invalidWeight"));
       return;
     }
 
@@ -479,7 +418,7 @@ export const HomeScreen = () => {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) throw new Error(t("home.alerts.saveFailed"));
       const data = await res.json();
 
       setLatestWeight({
@@ -496,7 +435,7 @@ export const HomeScreen = () => {
       });
 
       if (data.change_label) {
-        Alert.alert("Logged!", data.change_label);
+        Alert.alert(t("home.alerts.logged"), data.change_label);
       }
 
       setShowWeighInModal(false);
@@ -508,7 +447,7 @@ export const HomeScreen = () => {
         .catch(() => null);
       if (newGoalProgress) setGoalProgress(newGoalProgress);
     } catch {
-      Alert.alert("Error", "Could not save weight. Try again.");
+      Alert.alert(t("home.alerts.error"), t("home.alerts.saveWeightFailed"));
     } finally {
       setIsLoggingWeight(false);
     }
@@ -538,7 +477,7 @@ export const HomeScreen = () => {
   const netCalorieGap = eatenToday - dailyGoal - caloriesBurnedSoFar;
   const remainingIntakeToGoal = netCalorieGap < 0 ? Math.abs(netCalorieGap) : 0;
   const needsBurnFromExercise = netCalorieGap > 0;
-  const summaryTargetLabel = needsBurnFromExercise ? "Still to burn" : "Remaining Intake";
+  const summaryTargetLabel = needsBurnFromExercise ? t("home.stillToBurn") : t("home.remainingIntake");
   const summaryTargetValue = needsBurnFromExercise ? remainingBurnTarget : remainingIntakeToGoal;
   const summaryTargetPercent = dailyGoal > 0 ? clamp01(summaryTargetValue / dailyGoal) : 0;
   const intakePercent = dailyGoal > 0 ? clamp01(eatenToday / dailyGoal) : 0;
@@ -550,7 +489,7 @@ export const HomeScreen = () => {
   const weeksToGoal = Number.isFinite(weeksToGoalRaw) ? Math.max(0, Math.round(weeksToGoalRaw)) : 12;
   const weeklyChangeRaw = goalProgress?.weekly_change_kg ?? timeline.weekly_change_kg ?? timeline.weekly_delta_kg;
   const weeklyDelta = Number(weeklyChangeRaw);
-  const paceLabel = Number.isFinite(weeklyDelta) ? `~${Math.abs(weeklyDelta).toFixed(2)} kg / week` : "~0.18 kg / week";
+  const paceLabel = Number.isFinite(weeklyDelta) ? t("home.pace", { value: Math.abs(weeklyDelta).toFixed(2) }) : t("home.defaultPace");
   const dailyDelta = Number(goalProgress?.daily_delta_kcal ?? timeline.daily_delta_kcal);
   const deltaDisplay = Number.isFinite(dailyDelta) ? Math.round(Math.abs(dailyDelta)) : 200;
   const exerciseDelta = Number(goalProgress?.exercise_delta_kcal ?? timeline.exercise_delta_kcal);
@@ -561,12 +500,12 @@ export const HomeScreen = () => {
   const exerciseSharePct = Number.isFinite(exerciseShare) ? clamp01(exerciseShare) : 0.2;
   const dietSharePct = Number.isFinite(dietShare) ? clamp01(dietShare) : 0.8;
   const dailyDeltaLabel = !Number.isFinite(dailyDelta)
-    ? "Deficit"
+    ? t("home.deficit")
     : dailyDelta < 0
-      ? "Deficit"
+      ? t("home.deficit")
       : dailyDelta > 0
-        ? "Surplus"
-        : "Maintenance";
+        ? t("home.surplus")
+        : t("home.maintenance");
   const goalWeeksProgress = clamp01((12 - Math.max(0, weeksToGoal)) / 12);
   const workoutShareAchieved = Math.min(caloriesBurnedSoFar, exerciseDeltaDisplay);
   const exerciseTargetRemaining = Math.max(0, exerciseDeltaDisplay - workoutShareAchieved);
@@ -578,22 +517,22 @@ export const HomeScreen = () => {
   const interpreter = (() => {
     if (mode === "deficit") {
       return {
-        headline: remainingExercise > 0 ? `${formatNum(remainingExercise)} kcal remaining to burn` : "Exercise goal completed",
-        subtext: "Exercise contributes to your calorie deficit",
-        progressLabel: "Fat loss progress",
+        headline: remainingExercise > 0 ? t("home.burnRemaining", { calories: formatNum(remainingExercise) }) : t("home.exerciseGoalCompleted"),
+        subtext: t("home.exerciseDeficit"),
+        progressLabel: t("home.fatLossProgress"),
       };
     }
     if (mode === "surplus") {
       return {
-        headline: exerciseProgressPct >= 100 ? "Workout target achieved" : `Training progress: ${exerciseProgressPct}%`,
-        subtext: "Training supports muscle growth",
-        progressLabel: "Training stimulus",
+        headline: exerciseProgressPct >= 100 ? t("home.workoutTargetAchieved") : t("home.trainingProgress", { percent: exerciseProgressPct }),
+        subtext: t("home.trainingSupportsGrowth"),
+        progressLabel: t("home.trainingStimulus"),
       };
     }
     return {
-      headline: "Balanced day",
-      subtext: "Maintaining energy balance",
-      progressLabel: "Daily balance",
+      headline: t("home.balancedDay"),
+      subtext: t("home.energyBalance"),
+      progressLabel: t("home.dailyBalance"),
     };
   })();
 
@@ -631,6 +570,8 @@ export const HomeScreen = () => {
   );
 
   const displayBestStreak = Math.max(personalBestStreak, streakMeta.streak);
+  const isStrengthGoal = burnProfile?.goal_tag === "Strength";
+  const strengthLiftCount = strengthProgress?.lifts.length ?? 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -638,13 +579,13 @@ export const HomeScreen = () => {
         <Animated.View style={animatedStyle(0)}>
           <View style={styles.greetingRow}>
             <View style={styles.greetingLeft}>
-              <Text style={styles.greetingSmall}>{headerGreeting}</Text>
-              <Text style={styles.greetingName}>
-                {firstNameFromDisplayName(headerName)} 👋
-              </Text>
-            </View>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>{initialsFromDisplayName(headerName)}</Text>
+              <View>
+                <Text style={styles.greetingName}>
+                  <Text style={styles.brandTextNex}>Nex</Text>
+                  <Text style={styles.brandTextRep}>Rep</Text>
+                </Text>
+                <Text style={styles.brandTagline}>{t("home.brandTagline")}</Text>
+              </View>
             </View>
           </View>
 
@@ -656,13 +597,13 @@ export const HomeScreen = () => {
                 </View>
                 <View style={styles.streakBadgeText}>
                   <Text style={styles.streakCountLine}>
-                    {streakMeta.streak} day{streakMeta.streak === 1 ? "" : "s"} streak
+                    {t("home.streakLine", { count: streakMeta.streak, plural: streakMeta.streak === 1 ? "" : "s" })}
                   </Text>
                   <Text style={styles.streakMotivation}>{streakMeta.label}</Text>
                 </View>
               </View>
               <View style={styles.streakBestCol}>
-                <Text style={styles.streakBestLabel}>Best</Text>
+                <Text style={styles.streakBestLabel}>{t("home.best")}</Text>
                 <Text style={styles.streakBestValue}>
                   {displayBestStreak} 🏆
                 </Text>
@@ -680,17 +621,17 @@ export const HomeScreen = () => {
             <View style={styles.streakLegendRow}>
               <View style={styles.streakLegendItem}>
                 <View style={[styles.streakLegendDot, { backgroundColor: GREEN }]} />
-                <Text style={styles.streakLegendText}>Food logged</Text>
+                <Text style={styles.streakLegendText}>{t("home.foodLogged")}</Text>
               </View>
               <Text style={styles.streakLegendSep}>·</Text>
               <View style={styles.streakLegendItem}>
                 <View style={[styles.streakLegendDot, { backgroundColor: ORANGE }]} />
-                <Text style={styles.streakLegendText}>Workout done</Text>
+                <Text style={styles.streakLegendText}>{t("home.workoutDone")}</Text>
               </View>
               <Text style={styles.streakLegendSep}>·</Text>
               <View style={styles.streakLegendItem}>
                 <View style={[styles.streakLegendDot, { backgroundColor: TRACK }]} />
-                <Text style={styles.streakLegendText}>Missed</Text>
+                <Text style={styles.streakLegendText}>{t("home.missed")}</Text>
               </View>
             </View>
           </View>
@@ -700,8 +641,8 @@ export const HomeScreen = () => {
           <Animated.View style={animatedStyle(1)}>
             <TouchableOpacity style={styles.weighInPrompt} onPress={openWeighInModal} activeOpacity={0.85}>
               <Text style={styles.weighInEmoji}>⚖️</Text>
-              <Text style={styles.weighInPromptText}>Log your starting weight for accurate tracking</Text>
-              <Text style={styles.weighInPromptAction}>Log →</Text>
+              <Text style={styles.weighInPromptText}>{t("home.weighInPrompt")}</Text>
+              <Text style={styles.weighInPromptAction}>{t("home.logAction")}</Text>
             </TouchableOpacity>
           </Animated.View>
         ) : null}
@@ -718,21 +659,21 @@ export const HomeScreen = () => {
               <View style={styles.kpiPill}>
                 <View style={styles.kpiPillLeft}>
                   <Text style={styles.kpiEmoji}>🍽️</Text>
-                  <Text style={styles.kpiLabel}>to eat</Text>
+                  <Text style={styles.kpiLabel}>{t("home.toEat")}</Text>
                 </View>
                 <Text style={styles.kpiValue}>{formatNum(dailyGoal)}</Text>
               </View>
               <View style={styles.kpiPill}>
                 <View style={styles.kpiPillLeft}>
                   <Text style={styles.kpiEmoji}>🔥</Text>
-                  <Text style={styles.kpiLabel}>to burn</Text>
+                  <Text style={styles.kpiLabel}>{t("home.toBurn")}</Text>
                 </View>
                 <Text style={[styles.kpiValue, styles.kpiValueOrange]}>{formatNum(exerciseDeltaDisplay)}</Text>
               </View>
               <View style={styles.kpiPill}>
                 <View style={styles.kpiPillLeft}>
                   <Text style={styles.kpiEmoji}>📉</Text>
-                  <Text style={styles.kpiLabel}>deficit</Text>
+                  <Text style={styles.kpiLabel}>{t("home.deficit").toLowerCase()}</Text>
                 </View>
                 <Text style={styles.kpiValue}>{formatNum(deltaDisplay)}</Text>
               </View>
@@ -745,22 +686,22 @@ export const HomeScreen = () => {
             <View style={styles.tdeeLeft}>
               <View style={styles.tdeeTitleRow}>
                 <Text style={styles.tdeeEmoji}>⚡</Text>
-                <Text style={styles.tdeeTitle}>TDEE</Text>
+                <Text style={styles.tdeeTitle}>{t("home.tdee")}</Text>
               </View>
               <View style={styles.tdeePill}>
-                <Text style={styles.tdeePillText}>Total Daily Energy Expenditure</Text>
+                <Text style={styles.tdeePillText}>{t("home.tdeeFull")}</Text>
               </View>
-              <Text style={styles.tdeeDesc}>Calories your body burns daily at rest + activity.</Text>
+              <Text style={styles.tdeeDesc}>{t("home.tdeeDescription")}</Text>
             </View>
             <View style={styles.tdeeRight}>
               <Text style={styles.tdeeValue}>{formatNum(tdeeValue)}</Text>
-              <Text style={styles.tdeeUnit}>kcal / day</Text>
+              <Text style={styles.tdeeUnit}>{t("home.kcalPerDay")}</Text>
             </View>
           </View>
 
           <View style={styles.barCard}>
             <View style={styles.barHeader}>
-              <Text style={styles.barTitle}>🍽️ Calories eaten</Text>
+              <Text style={styles.barTitle}>{t("home.caloriesEaten")}</Text>
               <Text style={styles.barMeta}>
                 {formatNum(eatenToday)} / {formatNum(dailyGoal)} kcal
               </Text>
@@ -770,7 +711,7 @@ export const HomeScreen = () => {
 
           <View style={styles.barCard}>
             <View style={styles.barHeader}>
-              <Text style={styles.barTitle}>🔥 Calories burnt</Text>
+              <Text style={styles.barTitle}>{t("home.caloriesBurnt")}</Text>
               <Text style={styles.barMeta}>
                 <Text style={styles.burnedOrange}>{formatNum(caloriesBurnedSoFar)}</Text>
                 {` / ${formatNum(exerciseDeltaDisplay)} kcal`}
@@ -781,17 +722,45 @@ export const HomeScreen = () => {
         </Animated.View>
 
         <Animated.View style={[styles.section, animatedStyle(4)]}>
-          <View style={styles.barCard}>
-            <View style={styles.barHeader}>
-              <Text style={styles.barTitle}>🏆 8-week goal</Text>
-              <Text style={styles.milestonePct}>{milestonePct}%</Text>
+          {isStrengthGoal ? (
+            <View style={styles.barCard}>
+              <View style={styles.barHeader}>
+                <Text style={styles.barTitle}>{t("home.strengthGoal")}</Text>
+                <Text style={styles.milestonePct}>{strengthProgress?.overall_percent ?? 0}%</Text>
+              </View>
+              {strengthProgress?.has_target_lifts ? (
+                <>
+                  <ProgressBar percent={(strengthProgress.overall_percent ?? 0) / 100} color={GREEN} />
+                  <Text style={styles.goalFooter}>
+                    {t("home.strengthFooter", { weeks: strengthProgress.weeks_left ?? weeksToGoal, count: strengthLiftCount, plural: strengthLiftCount === 1 ? "" : "s" })}
+                  </Text>
+                </>
+              ) : (
+                <View style={styles.strengthEmptyBox}>
+                  <Text style={styles.strengthEmptyTitle}>{t("home.strengthEmptyTitle")}</Text>
+                  <Text style={styles.strengthEmptyText}>
+                    {t("home.strengthEmptyBody")}
+                  </Text>
+                </View>
+              )}
             </View>
-            <ProgressBar percent={goalWeeksProgress} color={GREEN} />
-            <Text style={styles.goalFooter}>
-              {weeksToGoal} weeks left · {paceLabel}
-            </Text>
-          </View>
+          ) : (
+            <View style={styles.barCard}>
+              <View style={styles.barHeader}>
+                <Text style={styles.barTitle}>{t("home.eightWeekGoal")}</Text>
+                <Text style={styles.milestonePct}>{milestonePct}%</Text>
+              </View>
+              <ProgressBar percent={goalWeeksProgress} color={GREEN} />
+              <Text style={styles.goalFooter}>
+                {t("home.goalFooter", { weeks: weeksToGoal, pace: paceLabel })}
+              </Text>
+            </View>
+          )}
         </Animated.View>
+
+        <View style={styles.quoteWrap}>
+          <DailyQuoteCard goal={burnProfile?.goal_tag} />
+        </View>
       </ScrollView>
 
       <Modal
@@ -802,7 +771,7 @@ export const HomeScreen = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.weighInModal}>
-            <Text style={styles.weighInModalTitle}>Log Today&apos;s Weight</Text>
+            <Text style={styles.weighInModalTitle}>{t("home.logWeightTitle")}</Text>
             <Text style={styles.weighInModalSubtitle}>
               {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
             </Text>
@@ -836,12 +805,12 @@ export const HomeScreen = () => {
             </View>
 
             {latestWeight?.has_logs ? (
-              <Text style={styles.weighInLastRef}>Last logged: {latestWeight.weight_kg}kg</Text>
+              <Text style={styles.weighInLastRef}>{t("home.lastLogged", { weight: latestWeight.weight_kg })}</Text>
             ) : null}
 
             <View style={styles.weighInActions}>
               <TouchableOpacity style={styles.weighInCancel} onPress={() => setShowWeighInModal(false)}>
-                <Text style={styles.weighInCancelText}>Cancel</Text>
+                <Text style={styles.weighInCancelText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.weighInSave, isLoggingWeight && styles.weighInSaveDisabled]}
@@ -851,7 +820,7 @@ export const HomeScreen = () => {
                 {isLoggingWeight ? (
                   <ActivityIndicator size="small" color="#000" />
                 ) : (
-                  <Text style={styles.weighInSaveText}>Save</Text>
+                  <Text style={styles.weighInSaveText}>{t("common.save")}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -867,6 +836,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: BG },
   content: { paddingHorizontal: 16, paddingBottom: 34, paddingTop: 12 },
   section: { marginBottom: 4 },
+  quoteWrap: { marginTop: 16 },
   greetingRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -932,17 +902,10 @@ const styles = StyleSheet.create({
   streakLegendText: { fontSize: 10, color: TEXT_MUTED },
   streakLegendSep: { fontSize: 10, color: TEXT_MUTED },
   greetingLeft: { flex: 1, paddingRight: 12 },
-  greetingSmall: { fontSize: 13, color: TEXT_MUTED, marginBottom: 4 },
-  greetingName: { fontSize: 24, fontWeight: "700", color: TEXT_PRIMARY },
-  avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: GREEN,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: { color: CARD, fontSize: 14, fontWeight: "700" },
+  greetingName: { fontSize: 34, fontWeight: "900", color: TEXT_PRIMARY, lineHeight: 36 },
+  brandTextNex: { color: TEXT_PRIMARY },
+  brandTextRep: { color: "#167F79" },
+  brandTagline: { color: "#9A9A9A", fontSize: 11, fontWeight: "900", letterSpacing: 1.6, marginTop: 1 },
   weighInPrompt: {
     flexDirection: "row",
     alignItems: "center",
@@ -1055,6 +1018,9 @@ const styles = StyleSheet.create({
   },
   progressFill: { height: 8, borderRadius: 100 },
   goalFooter: { fontSize: 11, color: TEXT_MUTED, marginTop: 10 },
+  strengthEmptyBox: { backgroundColor: CARD, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: TRACK },
+  strengthEmptyTitle: { color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", marginBottom: 4 },
+  strengthEmptyText: { color: TEXT_MUTED, fontSize: 11, lineHeight: 16 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",

@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { logicalRow } from "../utils/rtl";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -22,20 +23,24 @@ export const MultiChips = ({
   values,
   onChange,
 }: {
-  options: string[];
+  options: Array<string | { value: string; label: string }>;
   values: string[];
   onChange: (next: string[]) => void;
 }) => (
   <View style={styles.wrap}>
     {options.map((option) => {
-      const selected = values.includes(option);
+      const value = typeof option === "string" ? option : option.value;
+      const label = typeof option === "string" ? option : option.label;
+      const selected = values.includes(value);
       return (
         <Pressable
-          key={option}
+          key={value}
           style={[styles.chip, selected ? styles.chipSelected : null]}
-          onPress={() => onChange(selected ? values.filter((v) => v !== option) : [...values, option])}
+          onPress={() => onChange(selected ? values.filter((v) => v !== value) : [...values, value])}
         >
-          <Text style={[styles.label, selected ? styles.labelSelected : null]}>{option}</Text>
+          <Text style={[styles.label, selected ? styles.labelSelected : null]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.78}>
+            {label}
+          </Text>
         </Pressable>
       );
     })}
@@ -43,7 +48,7 @@ export const MultiChips = ({
 );
 
 const styles = StyleSheet.create({
-  wrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  wrap: { flexDirection: logicalRow, flexWrap: "wrap", gap: 8 },
   chip: {
     backgroundColor: BG,
     borderColor: "transparent",
@@ -51,8 +56,9 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     paddingHorizontal: 14,
     paddingVertical: 8,
+    maxWidth: "100%",
   },
   chipSelected: { backgroundColor: GREEN_LIGHT, borderColor: GREEN },
-  label: { color: MUTED, fontSize: 13, fontWeight: "700" },
+  label: { color: MUTED, fontSize: 13, lineHeight: 16, fontWeight: "700", textAlign: "center" },
   labelSelected: { color: GREEN, fontWeight: "800" },
 });

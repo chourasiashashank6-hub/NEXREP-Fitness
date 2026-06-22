@@ -5,6 +5,7 @@ export type GoalPace = "slow" | "moderate" | "aggressive";
 export type DifficultyLevel = "beginner" | "intermediate" | "advanced";
 export type ActivityLevel = "sedentary" | "lightly_active" | "moderately_active" | "very_active" | "extremely_active";
 export type FocusMuscle = "Chest" | "Back" | "Shoulders" | "Legs" | "Arms" | "Core";
+export type TargetLift = { exercise_id?: number | null; exercise_name: string; target_weight_kg: number };
 
 export type OnboardingData = {
   personal: {
@@ -26,6 +27,7 @@ export type OnboardingData = {
     focus_muscles: FocusMuscle[];
     /** @deprecated use focus_muscles; kept for legacy payloads */
     focus_muscle?: FocusMuscle | null;
+    target_lifts?: TargetLift[];
     target_weight_kg: number | null;
     target_weight_lb: number | null;
     target_date: string | null;
@@ -37,6 +39,7 @@ export type OnboardingData = {
   };
   dietary: {
     diet_type: string;
+    regional_food_styles: string[];
     allergies: string[];
     meals_per_day: number;
   };
@@ -51,6 +54,7 @@ export type OnboardingData = {
       streak_alerts: boolean;
     };
     region: string;
+    preferred_language?: string | null;
   };
 };
 

@@ -1,0 +1,31 @@
+{
+  "notifications": {
+    "macroCheckin": {
+      "title": "Revisión de macros",
+      "body": "Su registro{{checkpoint}}está fuera de seguimiento:{{summary}}. Haz que la próxima comida cuente.",
+      "lowCalories": "{{calories}}de{{targetCalories}}kcal",
+      "lowProtein": "{{protein}}de la proteína{{targetProtein}}g",
+      "highCalories": "{{calories}}kcalya ha iniciado sesión"
+    },
+    "missingMeal": {
+      "title": "Registra tu{{meal}}",
+      "body": "Parece que{{meal}}aún no se ha registrado. Agréguelo ahora mientras esté fresco."
+    },
+    "missingWorkout": {
+      "title": "Falta registrar el entrenamiento",
+      "body": "No se ha registrado ningún entrenamiento hoy. Registra tu sesión o márcala como día de descanso en tu plan."
+    },
+    "streakRisk": {
+      "title": "Protege tu racha",
+      "body": "No has registrado comidas ni entrenamiento hoy. Agregue una entrada rápida antes de que termine el día."
+    },
+    "quoteOfDay": {
+      "title": "Frase del día",
+      "body": "\"{{quote}}\" -{{author}}"
+    },
+    "weeklyDigest": {
+      "title": "Su resumen semanalNexRep",
+      "body": "Esta semana: días de nutrición{{mealsLogged}}, entrenamientos{{workoutsLogged}}, levantamientos de fuerza{{strengthLifts}}registrados. AbraNexReppara planificar el siguiente."
+    }
+  }
+}

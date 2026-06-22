@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useAppTheme } from "../../theme";
+import { useTranslation } from "react-i18next";
+import { WC_COLORS } from "../../constants/workoutCoach";
 
 const DEFAULT_MAX_LINES = 4;
 
@@ -11,6 +12,11 @@ type Props = {
   placeholder?: string;
   maxLines?: number;
   expandLinkColor?: string;
+  backgroundColor?: string;
+  borderColor?: string;
+  textColor?: string;
+  placeholderColor?: string;
+  lineHeight?: number;
 };
 
 export function InsightBubble({
@@ -20,11 +26,16 @@ export function InsightBubble({
   placeholder = "",
   maxLines = DEFAULT_MAX_LINES,
   expandLinkColor,
+  backgroundColor = WC_COLORS.BG,
+  borderColor = WC_COLORS.BORDER,
+  textColor = WC_COLORS.TEXT,
+  placeholderColor = WC_COLORS.MUTED,
+  lineHeight = 19,
 }: Props) {
-  const { colors, radius } = useAppTheme();
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [canExpand, setCanExpand] = useState(false);
-  const linkColor = expandLinkColor ?? colors.primary;
+  const linkColor = expandLinkColor ?? WC_COLORS.PURPLE_MID;
 
   useEffect(() => {
     setExpanded(false);
@@ -35,15 +46,15 @@ export function InsightBubble({
   const isPlaceholder = !insight.trim() && Boolean(placeholder);
 
   return (
-    <View style={[styles.wrap, { backgroundColor: colors.cardAlt, borderColor: colors.border, borderRadius: radius.md }]}>
+    <View style={[styles.wrap, { backgroundColor, borderColor }]}>
       {loading ? (
-        <Text style={[styles.loading, { color: colors.muted }]}>●  ●  ●</Text>
+        <Text style={[styles.loading, { color: placeholderColor }]}>●  ●  ●</Text>
       ) : error ? (
         <Text style={styles.error}>{error}</Text>
       ) : (
         <View>
           <Text
-            style={[styles.text, { color: isPlaceholder ? colors.muted : colors.text }]}
+            style={[styles.text, { color: isPlaceholder ? placeholderColor : textColor, lineHeight }]}
             numberOfLines={expanded ? undefined : maxLines}
             ellipsizeMode={canExpand && !expanded ? "clip" : "tail"}
             onTextLayout={(e) => {
@@ -79,10 +90,10 @@ export function InsightBubble({
               onPress={() => setExpanded(false)}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel="Collapse insight"
+              accessibilityLabel={t("coach.components.showLess")}
               style={styles.expandRow}
             >
-              <Text style={[styles.collapseLink, { color: linkColor }]}>Show less</Text>
+              <Text style={[styles.collapseLink, { color: linkColor }]}>{t("coach.components.showLess")}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -94,6 +105,7 @@ export function InsightBubble({
 const styles = StyleSheet.create({
   wrap: {
     borderWidth: 1,
+    borderRadius: 12,
     padding: 12,
     minHeight: 72,
     justifyContent: "center",

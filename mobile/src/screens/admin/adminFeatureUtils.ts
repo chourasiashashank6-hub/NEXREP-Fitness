@@ -11,15 +11,15 @@ export const FEATURE_COLOR_MAP: Record<string, string> = {
 };
 
 export const FEATURE_LABEL_MAP: Record<string, string> = {
-  calorie_coach: "Calorie coach",
-  meal_day_regen: "Meal day regen",
-  workout_coach: "Workout coach",
-  meal_swap: "Meal swap",
-  protein_suggestions: "Protein sugg.",
-  workout_swap: "Workout swap",
-  meal_plan_generation: "Meal plan gen",
-  workout_plan_generation: "Workout plan gen",
-  food_photo_analysis: "Food photo",
+  calorie_coach: "admin.features.calorieCoach",
+  meal_day_regen: "admin.features.mealDayRegen",
+  workout_coach: "admin.features.workoutCoach",
+  meal_swap: "admin.features.mealSwap",
+  protein_suggestions: "admin.features.proteinSuggestions",
+  workout_swap: "admin.features.workoutSwap",
+  meal_plan_generation: "admin.features.mealPlanGeneration",
+  workout_plan_generation: "admin.features.workoutPlanGeneration",
+  food_photo_analysis: "admin.features.foodPhotoAnalysis",
 };
 
 export function buildFeatureCostEntries(

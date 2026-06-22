@@ -31,6 +31,7 @@ export interface CalorieDayPayload {
     log_id: number | null;
     meal_type: MealType;
     source_type?: "database" | "camera_ai";
+    food_id?: number | null;
     food_name: string;
     quantity_g: number;
     calories_per_100g: number;
@@ -50,13 +51,17 @@ export interface CalorieDayPayload {
 export interface FoodSearchItem {
   food_id: number;
   food_name: string;
+  default_food_name?: string;
   category: string;
+  default_category?: string;
 }
 
 export interface FoodLookupPayload {
   food_id: number;
   food_name: string;
+  default_food_name?: string;
   category: string;
+  default_category?: string;
   quantity_g: number;
   per_100g: {
     calories: number;
@@ -181,6 +186,7 @@ export const postCalorieMeal = async (payload: {
   log_date?: string;
   meal_type: MealType;
   source_type?: "database" | "camera_ai";
+  food_id?: number | null;
   food_name: string;
   quantity_g: number;
   calories_per_100g: number;

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { MultiChips } from "../../components/MultiChips";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
@@ -33,6 +34,7 @@ const BORDER = "#ECEAE5";
 const SCREEN_BG = "#FFFFFF";
 
 export default function Screen3Activity({ navigation }: any) {
+  const { t } = useTranslation();
   const { data, updateActivity, updateGoal } = useOnboardingContext();
   const { saveAndExit, saving } = useOnboardingSaveAndExit();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,8 +43,8 @@ export default function Screen3Activity({ navigation }: any) {
 
   const onNext = () => {
     const next: Record<string, string> = {};
-    if (!data.activity.level) next.level = "Activity level is required";
-    if (data.activity.workouts_per_week === null) next.workouts = "Workouts per week is required";
+    if (!data.activity.level) next.level = t("onboarding.screen3.errors.activityRequired");
+    if (data.activity.workouts_per_week === null) next.workouts = t("onboarding.screen3.errors.workoutsRequired");
     setErrors(next);
     if (Object.keys(next).length) return;
     navigation.navigate("Screen4Diet");
@@ -51,31 +53,31 @@ export default function Screen3Activity({ navigation }: any) {
   return (
     <OnboardingLayout
       step={3}
-      title="Activity level"
-      subtitle="This is the TDEE multiplier. Most users underestimate — give them concrete examples, not just labels."
+      title={t("onboarding.screen3.title")}
+      subtitle={t("onboarding.screen3.subtitle")}
       onBack={() => navigation.goBack()}
       onNext={onNext}
       onSaveExit={saveAndExit}
       saveLoading={saving}
       saveDisabled={saving}
     >
-      <Text style={styles.label}>Daily activity level</Text>
+      <Text style={styles.label}>{t("onboarding.screen3.dailyActivityLevel")}</Text>
       <TapCards options={ACTIVITY_OPTIONS as any} value={data.activity.level} onChange={(v) => updateActivity({ level: v as any })} />
       {errors.level ? <Text style={styles.error}>{errors.level}</Text> : null}
 
       <View style={styles.block}>
-        <Text style={styles.label}>Workouts per week</Text>
-        <BottomSheetPicker label="Workouts per week" value={data.activity.workouts_per_week} options={WORKOUTS_PER_WEEK_OPTIONS} onChange={(v) => updateActivity({ workouts_per_week: Number(v) })} placeholder="Select" error={errors.workouts} />
+        <Text style={styles.label}>{t("onboarding.screen3.workoutsPerWeek")}</Text>
+        <BottomSheetPicker label={t("onboarding.screen3.workoutsPerWeek")} value={data.activity.workouts_per_week} options={WORKOUTS_PER_WEEK_OPTIONS} onChange={(v) => updateActivity({ workouts_per_week: Number(v) })} placeholder={t("common.select")} error={errors.workouts} />
       </View>
 
       <View style={styles.block}>
-        <Text style={styles.label}>Workout types (optional)</Text>
+        <Text style={styles.label}>{t("onboarding.screen3.workoutTypesOptional")}</Text>
         <MultiChips options={WORKOUT_TYPE_OPTIONS} values={data.activity.workout_types} onChange={(v) => updateActivity({ workout_types: v })} />
       </View>
 
       <View style={styles.block}>
-        <Text style={styles.label}>Muscle Focus (Optional)</Text>
-        <Text style={styles.sub}>Select one or more muscle groups — we&apos;ll add extra volume in your monthly workout plan</Text>
+        <Text style={styles.label}>{t("onboarding.screen3.muscleFocusOptional")}</Text>
+        <Text style={styles.sub}>{t("onboarding.screen3.muscleFocusHelper")}</Text>
         <View style={styles.chips}>
           {FOCUS_MUSCLE_UI_OPTIONS.map((muscle) => {
             const selected = isGoalFocusMuscleSelected(data.goal, muscle);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import {
   adminScreenScroll,
   AlertBanner,
@@ -16,6 +17,7 @@ import { AdminRevenueChart } from "./AdminCharts";
 import { COLORS } from "./adminTheme";
 
 export default function AdminSubscriptionsScreen() {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
@@ -41,7 +43,7 @@ export default function AdminSubscriptionsScreen() {
       setRevenueData(r);
       setItems(h.items ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load subscriptions");
+      setError(e instanceof Error ? e.message : t("admin.subscriptions.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -70,45 +72,45 @@ export default function AdminSubscriptionsScreen() {
   const listHeader = useMemo(
     () => (
       <View>
-        <AlertBanner text="Razorpay integration pending — activate when bank account is ready" type="warning" />
+        <AlertBanner text={t("admin.subscriptions.razorpayPending")} type="warning" />
 
         {loading ? <LoadingBlock /> : null}
         {error ? <ErrorText message={error} /> : null}
 
         <View style={styles.metricRow}>
           <MetricCard
-            label="Active Pro"
+            label={t("admin.subscriptions.activePro")}
             value={String(sumCount("pro", "active"))}
-            sub="₹999/mo each"
+            sub={t("admin.subscriptions.proPriceEach")}
             accentColor={COLORS.teal}
           />
           <MetricCard
-            label="Active Elite"
+            label={t("admin.subscriptions.activeElite")}
             value={String(sumCount("elite", "active"))}
-            sub="₹1,999/mo each"
+            sub={t("admin.subscriptions.elitePriceEach")}
             accentColor={COLORS.purple}
           />
         </View>
         <View style={[styles.metricRow, { marginBottom: 20 }]}>
           <MetricCard
-            label="Trial"
+            label={t("admin.subscriptions.trial")}
             value={String(sumCount(undefined, "trial"))}
-            sub="7-day trial"
+            sub={t("admin.subscriptions.trialSub")}
             accentColor={COLORS.amber}
           />
           <MetricCard
-            label="Cancelled"
+            label={t("admin.subscriptions.cancelled")}
             value={String(sumCount(undefined, "cancelled"))}
             accentColor={COLORS.coral}
           />
         </View>
 
-        <SectionLabel>Plan distribution</SectionLabel>
+        <SectionLabel>{t("admin.subscriptions.planDistribution")}</SectionLabel>
         <CardBox>
           {[
-            { label: "Free", color: "#3d4450", count: freeCount },
-            { label: "Pro", color: COLORS.teal, count: proCount },
-            { label: "Elite", color: COLORS.purple, count: eliteCount },
+            { label: t("admin.common.free"), color: "#3d4450", count: freeCount },
+            { label: t("admin.common.pro"), color: COLORS.teal, count: proCount },
+            { label: t("admin.common.elite"), color: COLORS.purple, count: eliteCount },
           ].map(({ label, color, count }) => (
             <View key={label} style={styles.distRow}>
               <Text style={styles.distLabel}>{label}</Text>
@@ -127,37 +129,48 @@ export default function AdminSubscriptionsScreen() {
           ))}
         </CardBox>
 
-        <SectionLabel>Revenue by month</SectionLabel>
+        <SectionLabel>{t("admin.subscriptions.revenueByMonth")}</SectionLabel>
         <CardBox>
           <AdminRevenueChart revenueData={revenueData} />
         </CardBox>
 
-        <Text style={styles.filterLabel}>Plan</Text>
+        <Text style={styles.filterLabel}>{t("admin.subscriptions.plan")}</Text>
         <View style={styles.chips}>
-          {["All", "Free", "Pro", "Elite"].map((p) => (
+          {[
+            { label: t("admin.common.all"), value: null },
+            { label: t("admin.common.free"), value: "free" },
+            { label: t("admin.common.pro"), value: "pro" },
+            { label: t("admin.common.elite"), value: "elite" },
+          ].map((p) => (
             <FilterChip
-              key={p}
-              label={p}
-              active={planFilter === (p === "All" ? null : p.toLowerCase())}
-              onPress={() => setPlanFilter(p === "All" ? null : p.toLowerCase())}
+              key={p.label}
+              label={p.label}
+              active={planFilter === p.value}
+              onPress={() => setPlanFilter(p.value)}
             />
           ))}
         </View>
 
-        <Text style={styles.filterLabel}>Status</Text>
+        <Text style={styles.filterLabel}>{t("admin.subscriptions.status")}</Text>
         <View style={[styles.chips, { marginBottom: 16 }]}>
-          {["All", "Active", "Trial", "Cancelled", "Expired"].map((s) => (
+          {[
+            { label: t("admin.common.all"), value: null },
+            { label: t("admin.common.active"), value: "active" },
+            { label: t("admin.common.trial"), value: "trial" },
+            { label: t("admin.common.cancelled"), value: "cancelled" },
+            { label: t("admin.common.expired"), value: "expired" },
+          ].map((s) => (
             <FilterChip
-              key={s}
-              label={s}
-              active={statusFilter === (s === "All" ? null : s.toLowerCase())}
-              onPress={() => setStatusFilter(s === "All" ? null : s.toLowerCase())}
+              key={s.label}
+              label={s.label}
+              active={statusFilter === s.value}
+              onPress={() => setStatusFilter(s.value)}
             />
           ))}
         </View>
       </View>
     ),
-    [loading, error, summary, revenueData, planFilter, statusFilter, freeCount, proCount, eliteCount, totalUsers]
+    [loading, error, summary, revenueData, planFilter, statusFilter, freeCount, proCount, eliteCount, totalUsers, t]
   );
 
   return (
@@ -172,7 +185,7 @@ export default function AdminSubscriptionsScreen() {
           <View style={styles.rowCard}>
             <Text style={styles.rowTitle}>{item.user_email}</Text>
             <Text style={styles.rowMeta}>
-              {item.plan_id} · {item.billing_cycle} · {item.status}
+              {t("admin.subscriptions.rowMeta", { plan: item.plan_id, billingCycle: item.billing_cycle, status: item.status })}
             </Text>
             <Text style={styles.rowMeta}>
               ₹{Math.round(item.price_inr ?? 0).toLocaleString("en-IN")} ·{" "}

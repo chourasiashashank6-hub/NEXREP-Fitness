@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { useAppTheme } from "../../theme";
+import { useTranslation } from "react-i18next";
+import { WC_COLORS } from "../../constants/workoutCoach";
 
 type Props = {
   completed: number;
@@ -9,28 +10,37 @@ type Props = {
 };
 
 export function WeeklyProgressBar({ completed, target, percent, insight }: Props) {
-  const { colors, radius } = useAppTheme();
+  const { t } = useTranslation();
   const pct = Math.max(0, Math.min(100, percent));
 
   return (
-    <View style={[styles.wrap, { backgroundColor: colors.cardAlt, borderColor: colors.border, borderRadius: radius.md }]}>
-      <Text style={[styles.header, { color: "#60a5fa" }]}>WEEKLY PROGRESS</Text>
-      <View style={[styles.track, { backgroundColor: colors.border }]}>
+    <View style={styles.wrap}>
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>{t("coach.components.weeklyProgress")}</Text>
+        <Text style={styles.percent}>{pct}%</Text>
+      </View>
+      <View style={styles.track}>
         <View style={[styles.fill, { width: `${pct}%` }]} />
       </View>
-      <Text style={[styles.stats, { color: colors.text }]}>
-        {completed} / {target} sets ({pct}%)
-      </Text>
-      <Text style={[styles.insight, { color: colors.muted }]}>{insight}</Text>
+      <View style={styles.footer}>
+        <Text style={styles.stats}>
+          {completed} <Text style={styles.statsMuted}>/ {target} {t("coach.components.sets")}</Text>
+        </Text>
+        <Text style={styles.insight}>{insight}</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { borderWidth: 1, padding: 14 },
-  header: { fontSize: 11, fontWeight: "700", letterSpacing: 0.8, marginBottom: 10 },
-  track: { height: 8, borderRadius: 99, overflow: "hidden" },
-  fill: { height: "100%", backgroundColor: "#60A5FA", borderRadius: 99 },
-  stats: { fontSize: 13, fontWeight: "600", marginTop: 8 },
-  insight: { fontSize: 12, marginTop: 6, lineHeight: 17 },
+  wrap: { backgroundColor: WC_COLORS.BG, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
+  header: { color: WC_COLORS.MUTED, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
+  percent: { color: WC_COLORS.PURPLE, fontSize: 14, fontWeight: "800" },
+  track: { height: 8, borderRadius: 99, overflow: "hidden", backgroundColor: WC_COLORS.TRACK },
+  fill: { height: "100%", backgroundColor: WC_COLORS.PURPLE, borderRadius: 99 },
+  footer: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginTop: 9 },
+  stats: { color: WC_COLORS.TEXT, fontSize: 12, fontWeight: "800" },
+  statsMuted: { color: WC_COLORS.MUTED, fontWeight: "700" },
+  insight: { flex: 1, color: WC_COLORS.MUTED, fontSize: 11, lineHeight: 16, textAlign: "right" },
 });

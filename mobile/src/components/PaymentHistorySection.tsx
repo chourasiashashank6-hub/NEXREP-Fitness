@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import type { PaymentRecord } from "../types/subscription";
 import { formatDate } from "../utils/dateFormat";
@@ -12,14 +13,15 @@ const STATUS_COLORS: Record<PaymentRecord["status"], string> = {
 };
 
 function PaymentRow({ payment, isLast }: { payment: PaymentRecord; isLast: boolean }) {
+  const { t } = useTranslation();
   const statusColor = STATUS_COLORS[payment.status];
   const statusLabel =
     payment.status === "paid"
-      ? "✓ Paid"
+      ? t("subscription.paymentHistory.paid")
       : payment.status === "failed"
-        ? "✗ Failed"
+        ? t("subscription.paymentHistory.failed")
         : payment.status === "refunded"
-          ? "Refunded"
+          ? t("subscription.paymentHistory.refunded")
           : payment.status;
 
   return (
@@ -33,7 +35,7 @@ function PaymentRow({ payment, isLast }: { payment: PaymentRecord; isLast: boole
         <Text style={styles.payAmount}>₹{payment.amount.toLocaleString("en-IN")}</Text>
         {payment.invoiceUrl ? (
           <Pressable onPress={() => void Linking.openURL(payment.invoiceUrl!)}>
-            <Text style={styles.receiptLink}>Receipt</Text>
+            <Text style={styles.receiptLink}>{t("subscription.paymentHistory.receipt")}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -42,6 +44,7 @@ function PaymentRow({ payment, isLast }: { payment: PaymentRecord; isLast: boole
 }
 
 export default function PaymentHistorySection() {
+  const { t } = useTranslation();
   const payments = useSubscriptionStore((s) => s.payments);
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? payments : payments.slice(0, 3);
@@ -50,7 +53,7 @@ export default function PaymentHistorySection() {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionLabel}>Billing history</Text>
+      <Text style={styles.sectionLabel}>{t("subscription.paymentHistory.billingHistory")}</Text>
       <View style={styles.paymentCard}>
         {visible.map((p, i) => (
           <PaymentRow key={p.id} payment={p} isLast={i === visible.length - 1} />
@@ -59,7 +62,7 @@ export default function PaymentHistorySection() {
       {payments.length > 3 ? (
         <Pressable onPress={() => setExpanded(!expanded)}>
           <Text style={styles.seeAll}>
-            {expanded ? "Show less" : `See all ${payments.length} payments`}
+            {expanded ? t("subscription.paymentHistory.showLess") : t("subscription.paymentHistory.seeAll", { count: payments.length })}
           </Text>
         </Pressable>
       ) : null}

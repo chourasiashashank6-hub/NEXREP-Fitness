@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import i18n from "../i18n";
 
 export type PreparedImagePayload = {
   base64: string;
@@ -50,22 +51,22 @@ export async function prepareFoodImagePayload(base64: string, mimeType?: string)
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (!ctx) {
-          reject(new Error("Could not process image on this browser."));
+          reject(new Error(i18n.t("services.image.browserProcessFailed")));
           return;
         }
         ctx.drawImage(img, 0, 0, width, height);
         const out = canvas.toDataURL("image/jpeg", 0.82);
         const comma = out.indexOf(",");
         if (comma < 0) {
-          reject(new Error("Could not encode image."));
+          reject(new Error(i18n.t("services.image.encodeFailed")));
           return;
         }
         resolve({ base64: out.slice(comma + 1), mimeType: "image/jpeg" });
       } catch (error) {
-        reject(error instanceof Error ? error : new Error("Could not process image."));
+        reject(error instanceof Error ? error : new Error(i18n.t("services.image.processFailed")));
       }
     };
-    img.onerror = () => reject(new Error("Could not read the selected image."));
+    img.onerror = () => reject(new Error(i18n.t("services.image.readFailed")));
     img.src = dataUrl;
   });
 }

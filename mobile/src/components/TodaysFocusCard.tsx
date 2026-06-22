@@ -3,6 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { fetchWorkoutPlanCurrent, fetchWorkoutPlanDay } from "../api/workoutPlanner";
 import { AppCard } from "./AppCard";
 import { useAppTheme } from "../theme";
@@ -10,7 +11,7 @@ import type { WorkoutDayPlan, WorkoutExercise } from "../types/planner";
 
 const ACCENT = "#22d3ee";
 const ACCENT_PLANNER = ["#3b82f6", "#22d3ee", "transparent"] as const;
-const EMPTY_MESSAGE = "No workout planned — generate your plan in the Coach tab";
+const EMPTY_MESSAGE = "components.emptyFocus";
 
 function isWorkoutRestDay(day: Pick<WorkoutDayPlan, "is_rest_day" | "split_name"> | null | undefined): boolean {
   if (!day) return true;
@@ -34,6 +35,7 @@ export function dedupeMusclesFromExercises(exercises: WorkoutExercise[]): string
 }
 
 export function TodaysFocusCard() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [dayPlan, setDayPlan] = useState<WorkoutDayPlan | null>(null);
   const [hasPlan, setHasPlan] = useState(false);
@@ -108,16 +110,16 @@ export function TodaysFocusCard() {
         <View style={styles.headerText}>
           {showWorkout ? (
             <>
-              <Text style={[styles.eyebrow, { color: colors.muted }]}>TODAY&apos;S FOCUS</Text>
+              <Text style={[styles.eyebrow, { color: colors.muted }]}>{t("components.todaysFocusEyebrow")}</Text>
               <Text style={[styles.heading, { color: colors.text }]}>{heading}</Text>
             </>
           ) : (
-            <Text style={[styles.heading, { color: colors.text }]}>Today&apos;s Focus</Text>
+            <Text style={[styles.heading, { color: colors.text }]}>{t("components.todaysFocus")}</Text>
           )}
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Refresh today's focus from planner"
+          accessibilityLabel={t("components.refreshFocus")}
           style={[styles.refreshBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
           onPress={() => void syncFromPlanner()}
           disabled={refreshing}
@@ -141,7 +143,7 @@ export function TodaysFocusCard() {
           ))}
         </View>
       ) : !loading ? (
-        <Text style={[styles.emptyText, { color: colors.muted }]}>{EMPTY_MESSAGE}</Text>
+        <Text style={[styles.emptyText, { color: colors.muted }]}>{t(EMPTY_MESSAGE)}</Text>
       ) : null}
     </AppCard>
   );

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { loadOnboardingWithFallback } from "../../api/onboarding";
 import { useAuthStore } from "../../store/authStore";
 
 export default function ResultsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const token = useAuthStore((s) => s.token);
   const { width } = useWindowDimensions();
   const twoCol = width >= 900;
@@ -32,52 +34,52 @@ export default function ResultsScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={[styles.grid, twoCol ? styles.gridTwo : null]}>
           <View style={styles.panel}>
-            <Text style={styles.panelTitle}>Your details</Text>
-            {row("Biological sex", profile.personal.sex || "Not provided")}
-            {row("Age", profile.personal.age ? `${profile.personal.age}` : "Not provided")}
-            {row("Height", profile.personal.unit_system === "metric" ? `${profile.personal.height_cm ?? "-"} cm` : `${profile.personal.height_in ?? "-"} in`)}
-            {row("Current weight", profile.personal.unit_system === "metric" ? `${profile.personal.weight_kg ?? "-"} kg` : `${profile.personal.weight_lb ?? "-"} lbs`)}
-            {row("Body fat %", profile.personal.body_fat_percentage ? `${profile.personal.body_fat_percentage}%` : "Not provided")}
-            {row("Activity level", profile.activity.level || "Not provided")}
-            {row("Goal", profile.goal.type || "Not provided")}
+            <Text style={styles.panelTitle}>{t("onboarding.results.yourDetails")}</Text>
+            {row(t("onboarding.results.biologicalSex"), profile.personal.sex || t("onboarding.results.notProvided"))}
+            {row(t("onboarding.results.age"), profile.personal.age ? `${profile.personal.age}` : t("onboarding.results.notProvided"))}
+            {row(t("onboarding.results.height"), profile.personal.unit_system === "metric" ? `${profile.personal.height_cm ?? "-"} cm` : `${profile.personal.height_in ?? "-"} in`)}
+            {row(t("onboarding.results.currentWeight"), profile.personal.unit_system === "metric" ? `${profile.personal.weight_kg ?? "-"} kg` : `${profile.personal.weight_lb ?? "-"} lbs`)}
+            {row(t("onboarding.results.bodyFat"), profile.personal.body_fat_percentage ? `${profile.personal.body_fat_percentage}%` : t("onboarding.results.notProvided"))}
+            {row(t("onboarding.results.activityLevel"), profile.activity.level || t("onboarding.results.notProvided"))}
+            {row(t("onboarding.results.goal"), profile.goal.type || t("onboarding.results.notProvided"))}
           </View>
 
           <View style={styles.panel}>
-            <Text style={styles.panelTitle}>Calculated targets</Text>
+            <Text style={styles.panelTitle}>{t("onboarding.results.calculatedTargets")}</Text>
             <View style={styles.energyRow}>
-              <View style={styles.energyCard}><Text style={styles.energyLabel}>BMR</Text><Text style={styles.energyValue}>{targets.bmr.value_kcal}</Text><Text style={styles.energyUnit}>kcal</Text></View>
-              <View style={styles.energyCard}><Text style={styles.energyLabel}>TDEE</Text><Text style={styles.energyValue}>{targets.tdee.value_kcal}</Text><Text style={styles.energyUnit}>kcal</Text></View>
+              <View style={styles.energyCard}><Text style={styles.energyLabel}>{t("onboarding.results.bmr")}</Text><Text style={styles.energyValue}>{targets.bmr.value_kcal}</Text><Text style={styles.energyUnit}>{t("onboarding.results.kcal")}</Text></View>
+              <View style={styles.energyCard}><Text style={styles.energyLabel}>{t("onboarding.results.tdee")}</Text><Text style={styles.energyValue}>{targets.tdee.value_kcal}</Text><Text style={styles.energyUnit}>{t("onboarding.results.kcal")}</Text></View>
             </View>
             <View style={styles.targetCard}>
-              <Text style={styles.targetLabel}>Daily calorie target</Text>
+              <Text style={styles.targetLabel}>{t("onboarding.results.dailyCalorieTarget")}</Text>
               <Text style={styles.targetValue}>{targets.target_kcal}</Text>
-              <Text style={styles.targetUnit}>kcal/day</Text>
+              <Text style={styles.targetUnit}>{t("onboarding.results.kcalPerDay")}</Text>
             </View>
 
-            <Text style={styles.section}>Macro split</Text>
+            <Text style={styles.section}>{t("onboarding.results.macroSplit")}</Text>
             <View style={styles.bar}>
               <View style={[styles.seg, { flex: macroWidths.p, backgroundColor: ONBOARDING_COLORS.protein }]} />
               <View style={[styles.seg, { flex: macroWidths.c, backgroundColor: ONBOARDING_COLORS.carbs }]} />
               <View style={[styles.seg, { flex: macroWidths.f, backgroundColor: ONBOARDING_COLORS.fat }]} />
             </View>
-            {row("Protein", `${targets.macros.protein_g}g (${targets.macros.protein_kcal}kcal)`)}
-            {row("Carbohydrates", `${targets.macros.carbs_g}g (${targets.macros.carbs_kcal}kcal)`)}
-            {row("Fat", `${targets.macros.fat_g}g (${targets.macros.fat_kcal}kcal)`)}
-            {row("Fiber (target)", `${targets.macros.fiber_g}g`)}
-            {row("Water (minimum)", `${targets.macros.water_l}L`)}
+            {row(t("onboarding.results.protein"), `${targets.macros.protein_g}g (${targets.macros.protein_kcal}kcal)`)}
+            {row(t("onboarding.results.carbohydrates"), `${targets.macros.carbs_g}g (${targets.macros.carbs_kcal}kcal)`)}
+            {row(t("onboarding.results.fat"), `${targets.macros.fat_g}g (${targets.macros.fat_kcal}kcal)`)}
+            {row(t("onboarding.results.fiberTarget"), `${targets.macros.fiber_g}g`)}
+            {row(t("onboarding.results.waterMinimum"), `${targets.macros.water_l}L`)}
 
-            <Text style={styles.section}>Timeline</Text>
-            {row("Formula used", targets.bmr.formula_used)}
-            {row("Deficit / surplus", `${targets.timeline.daily_delta_kcal} kcal`)}
-            {row("Expected rate", targets.timeline.pace_label)}
-            {row("Weeks to goal", targets.timeline.weeks_to_goal ? String(targets.timeline.weeks_to_goal) : "-" )}
-            {row("Safety floor", `${targets.safety.floor_kcal} kcal`)}
+            <Text style={styles.section}>{t("onboarding.results.timeline")}</Text>
+            {row(t("onboarding.results.formulaUsed"), targets.bmr.formula_used)}
+            {row(t("onboarding.results.deficitSurplus"), `${targets.timeline.daily_delta_kcal} kcal`)}
+            {row(t("onboarding.results.expectedRate"), targets.timeline.pace_label)}
+            {row(t("onboarding.results.weeksToGoal"), targets.timeline.weeks_to_goal ? String(targets.timeline.weeks_to_goal) : "-" )}
+            {row(t("onboarding.results.safetyFloor"), `${targets.safety.floor_kcal} kcal`)}
 
-            <View style={styles.coachBox}><Text style={styles.coachLabel}>AI COACH</Text><Text style={styles.coachText}>{targets.coach_message}</Text></View>
+            <View style={styles.coachBox}><Text style={styles.coachLabel}>{t("onboarding.results.aiCoach")}</Text><Text style={styles.coachText}>{targets.coach_message}</Text></View>
           </View>
         </View>
       </ScrollView>
-      <View style={styles.footer}><Pressable style={styles.startBtn} onPress={() => navigation.navigate("Main")}><Text style={styles.startText}>Start tracking →</Text></Pressable></View>
+      <View style={styles.footer}><Pressable style={styles.startBtn} onPress={() => navigation.navigate("Main")}><Text style={styles.startText}>{t("onboarding.results.startTracking")}</Text></Pressable></View>
     </View>
   );
 }

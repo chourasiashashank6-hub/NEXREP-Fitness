@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { WC_COLORS } from "../../constants/workoutCoach";
 
 function scoreColor(score: number): string {
   if (score >= 81) return "#4ADE80";
@@ -15,14 +16,30 @@ type Props = {
   subtitle?: string;
   size?: number;
   pulseWhenHigh?: boolean;
+  strokeColor?: string;
+  trackColor?: string;
+  textColor?: string;
+  labelColor?: string;
+  subtitleColor?: string;
 };
 
-export function CircularScore({ score, label, subtitle, size = 120, pulseWhenHigh = false }: Props) {
+export function CircularScore({
+  score,
+  label,
+  subtitle,
+  size = 120,
+  pulseWhenHigh = false,
+  strokeColor,
+  trackColor = WC_COLORS.TRACK,
+  textColor,
+  labelColor = WC_COLORS.TEXT,
+  subtitleColor = WC_COLORS.MUTED,
+}: Props) {
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
   const radius = (size - 14) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (clamped / 100) * circumference;
-  const color = scoreColor(clamped);
+  const color = strokeColor ?? scoreColor(clamped);
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -41,7 +58,7 @@ export function CircularScore({ score, label, subtitle, size = 120, pulseWhenHig
     <View style={styles.wrap}>
       <Animated.View style={{ transform: [{ scale: pulse }] }}>
         <Svg width={size} height={size}>
-          <Circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255,255,255,0.08)" strokeWidth={8} fill="none" />
+          <Circle cx={size / 2} cy={size / 2} r={radius} stroke={trackColor} strokeWidth={8} fill="none" />
           <Circle
             cx={size / 2}
             cy={size / 2}
@@ -57,11 +74,11 @@ export function CircularScore({ score, label, subtitle, size = 120, pulseWhenHig
           />
         </Svg>
         <View style={[styles.center, { width: size, height: size }]}>
-          <Text style={[styles.score, { color }]}>{clamped}</Text>
+          <Text style={[styles.score, { color: textColor ?? color }]}>{clamped}</Text>
         </View>
       </Animated.View>
-      <Text style={styles.label}>{label}</Text>
-      {subtitle ? <Text style={styles.sub}>{subtitle}</Text> : null}
+      {label ? <Text style={[styles.label, { color: labelColor }]}>{label}</Text> : null}
+      {subtitle ? <Text style={[styles.sub, { color: subtitleColor }]}>{subtitle}</Text> : null}
     </View>
   );
 }
@@ -70,6 +87,6 @@ const styles = StyleSheet.create({
   wrap: { alignItems: "center", paddingVertical: 8 },
   center: { position: "absolute", top: 0, left: 0, alignItems: "center", justifyContent: "center" },
   score: { fontSize: 28, fontWeight: "800" },
-  label: { marginTop: 10, fontSize: 16, fontWeight: "700", color: "#ECF2FF" },
-  sub: { marginTop: 4, fontSize: 11, color: "#9AA8C4", textAlign: "center", paddingHorizontal: 16, lineHeight: 16 },
+  label: { marginTop: 10, fontSize: 16, fontWeight: "700" },
+  sub: { marginTop: 4, fontSize: 11, textAlign: "center", paddingHorizontal: 16, lineHeight: 16 },
 });

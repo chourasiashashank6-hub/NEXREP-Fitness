@@ -10,22 +10,23 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import type { TodaysPlan } from "../../types/workoutCoach";
-import { useAppTheme } from "../../theme";
+import { WC_COLORS } from "../../constants/workoutCoach";
 import { ExerciseRow } from "./ExerciseRow";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const ACCENT = "#4ADE80";
+const ACCENT = WC_COLORS.PURPLE;
 
 export function TodaysWorkoutPlan({ plan }: { plan: TodaysPlan }) {
-  const { colors, radius } = useAppTheme();
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const chevronRotation = useRef(new Animated.Value(0)).current;
 
-  const focusLabel = plan.focusMuscles.length ? plan.focusMuscles.join(", ") : "General training";
+  const focusLabel = plan.focusMuscles.length ? plan.focusMuscles.join(", ") : t("coach.components.generalTraining");
 
   const handleToggle = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -50,18 +51,19 @@ export function TodaysWorkoutPlan({ plan }: { plan: TodaysPlan }) {
   };
 
   return (
-    <View style={[styles.wrap, { backgroundColor: colors.cardAlt, borderColor: colors.border, borderRadius: radius.md }]}>
+    <View style={styles.wrap}>
       <Pressable
         onPress={handleToggle}
         style={styles.planHeader}
         accessibilityRole="button"
         accessibilityState={{ expanded: isExpanded }}
-        accessibilityLabel={`Today's plan: ${plan.splitName}`}
+        accessibilityLabel={t("coach.components.todaysPlanAccessibility", { splitName: plan.splitName })}
       >
         <View style={styles.planHeaderText}>
-          <Text style={[styles.header, { color: ACCENT }]}>TODAY&apos;S PLAN: {plan.splitName}</Text>
-          <Text style={[styles.meta, { color: colors.muted }]}>
-            Focus: {focusLabel} · {plan.estimatedDuration}
+          <Text style={styles.sectionLabel}>{t("coach.components.todaysPlan")}</Text>
+          <Text style={styles.planName}>{plan.splitName}</Text>
+          <Text style={styles.meta}>
+            {t("coach.components.focus", { focus: focusLabel, duration: plan.estimatedDuration })}
           </Text>
         </View>
         <Animated.View style={chevronStyle}>
@@ -73,7 +75,9 @@ export function TodaysWorkoutPlan({ plan }: { plan: TodaysPlan }) {
         <View style={styles.planContent}>
           <View style={styles.divider} />
           {plan.avoidMuscles.length > 0 ? (
-            <Text style={[styles.meta, { color: colors.muted }]}>Avoid: {plan.avoidMuscles.join(", ")}</Text>
+            <View style={styles.avoidPill}>
+              <Text style={styles.avoidText}>{t("coach.components.avoid", { muscles: plan.avoidMuscles.join(", ") })}</Text>
+            </View>
           ) : null}
           {plan.exercises.map((ex, i) => (
             <ExerciseRow key={`${ex.name}-${i}`} index={i + 1} {...ex} />
@@ -85,17 +89,18 @@ export function TodaysWorkoutPlan({ plan }: { plan: TodaysPlan }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { borderWidth: 1, marginTop: 4, overflow: "hidden" },
+  wrap: { backgroundColor: WC_COLORS.BG, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: 4, overflow: "hidden" },
   planHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 14,
     gap: 10,
   },
   planHeaderText: { flex: 1 },
-  header: { fontSize: 12, fontWeight: "800", letterSpacing: 0.5 },
-  meta: { fontSize: 12, marginTop: 6, lineHeight: 17 },
-  planContent: { paddingHorizontal: 14, paddingBottom: 14 },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: "rgba(255,255,255,0.08)", marginBottom: 10 },
+  sectionLabel: { color: WC_COLORS.MUTED, fontSize: 10, fontWeight: "800", letterSpacing: 0.7, textTransform: "uppercase" },
+  planName: { color: ACCENT, fontSize: 15, fontWeight: "800", marginTop: 7 },
+  meta: { color: WC_COLORS.MUTED, fontSize: 11, marginTop: 4, lineHeight: 16 },
+  planContent: { paddingTop: 12 },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: WC_COLORS.BORDER, marginBottom: 10 },
+  avoidPill: { alignSelf: "flex-start", backgroundColor: WC_COLORS.ORANGE_LIGHT, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 4 },
+  avoidText: { color: WC_COLORS.ORANGE, fontSize: 11, fontWeight: "700" },
 });

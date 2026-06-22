@@ -10,6 +10,7 @@ import {
 import type { ActionCodeSettings } from "firebase/auth";
 import { auth } from "../config/firebase";
 import { useAuthStore } from "../store/authStore";
+import i18n from "../i18n";
 
 export { auth };
 
@@ -102,18 +103,18 @@ export const signOutSession = async () => {
 
 const getReadableError = (errorCode: string): string => {
   const errorMessages: Record<string, string> = {
-    "auth/email-already-in-use": "This email is already registered.",
-    "auth/invalid-email": "Please enter a valid email address.",
+    "auth/email-already-in-use": i18n.t("auth.firebaseErrors.emailInUse"),
+    "auth/invalid-email": i18n.t("auth.firebaseErrors.invalidEmail"),
     "auth/weak-password":
-      "Password does not meet requirements (8–16 characters with upper & lowercase, number, and special character).",
-    "auth/user-not-found": "No account found with this email.",
-    "auth/wrong-password": "Incorrect password. Please try again.",
-    "auth/invalid-credential": "Invalid email or password.",
-    "auth/network-request-failed": "Network error. Check your connection.",
-    "auth/too-many-requests": "Too many attempts. Please try again later.",
-    "auth/missing-email": "Please enter your email address.",
+      i18n.t("auth.firebaseErrors.weakPassword"),
+    "auth/user-not-found": i18n.t("auth.firebaseErrors.userNotFound"),
+    "auth/wrong-password": i18n.t("auth.firebaseErrors.wrongPassword"),
+    "auth/invalid-credential": i18n.t("auth.firebaseErrors.invalidCredential"),
+    "auth/network-request-failed": i18n.t("auth.firebaseErrors.network"),
+    "auth/too-many-requests": i18n.t("auth.firebaseErrors.tooMany"),
+    "auth/missing-email": i18n.t("auth.firebaseErrors.missingEmail"),
     "auth/unauthorized-continue-uri":
-      "Reset link URL is not authorized. In Firebase Console → Authentication → Settings, add your domain under Authorized domains (include localhost for Expo web). Or set EXPO_PUBLIC_FIREBASE_ACTION_CONTINUE_URL to https://YOUR_PROJECT.firebaseapp.com/__/auth/action",
+      i18n.t("auth.firebaseErrors.unauthorizedContinueUri"),
   };
-  return errorMessages[errorCode] || "Something went wrong. Please try again.";
+  return errorMessages[errorCode] || i18n.t("auth.firebaseErrors.generic");
 };

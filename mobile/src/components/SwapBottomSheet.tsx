@@ -1,5 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import { useAppTheme } from "../theme";
 
 export type SwapReason = { key: string; label: string };
@@ -10,11 +12,13 @@ type Props = {
   subtitle?: string;
   reasons: SwapReason[];
   confirmLabel: string;
+  accentColor?: string;
   onConfirm: (reason?: string) => void;
   onCancel: () => void;
 };
 
-export function SwapBottomSheet({ visible, title, subtitle, reasons, confirmLabel, onConfirm, onCancel }: Props) {
+export function SwapBottomSheet({ visible, title, subtitle, reasons, confirmLabel, accentColor = "#22d3ee", onConfirm, onCancel }: Props) {
+  const { t } = useTranslation();
   const { colors, radius } = useAppTheme();
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -32,29 +36,29 @@ export function SwapBottomSheet({ visible, title, subtitle, reasons, confirmLabe
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
       <Pressable style={styles.backdrop} onPress={handleCancel}>
-        <Pressable style={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl }]} onPress={(e) => e.stopPropagation()}>
+        <Pressable style={[styles.sheet, { backgroundColor: "#FFFFFF", borderColor: "#ECEAE5", borderTopLeftRadius: 20, borderTopRightRadius: 20 }]} onPress={(e) => e.stopPropagation()}>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
           {subtitle ? <Text style={[styles.subtitle, { color: colors.muted }]}>{subtitle}</Text> : null}
-          <Text style={[styles.hint, { color: colors.muted }]}>Why are you replacing? (optional)</Text>
+          <Text style={[styles.hint, { color: colors.muted }]}>{t("components.swapSheet.hint")}</Text>
           <View style={styles.chips}>
             {reasons.map((r) => {
               const on = selected === r.key;
               return (
                 <Pressable
                   key={r.key}
-                  style={[styles.chip, { borderColor: on ? "#22d3ee" : colors.border, backgroundColor: on ? "rgba(34,211,238,0.15)" : colors.cardAlt }]}
+                  style={[styles.chip, { borderColor: on ? accentColor : colors.border, backgroundColor: on ? "rgba(240,238,249,1)" : colors.cardAlt }]}
                   onPress={() => setSelected(on ? null : r.key)}
                 >
-                  <Text style={{ color: on ? "#22d3ee" : colors.text, fontSize: 13, fontWeight: on ? "700" : "500" }}>{r.label}</Text>
+                  <Text style={{ color: on ? accentColor : colors.text, fontSize: 13, fontWeight: on ? "700" : "500" }}>{r.label}</Text>
                 </Pressable>
               );
             })}
           </View>
           <View style={styles.actions}>
             <Pressable style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={handleCancel}>
-              <Text style={{ color: colors.muted, fontWeight: "600" }}>Cancel</Text>
+              <Text style={{ color: colors.muted, fontWeight: "600" }}>{t("components.swapSheet.cancel")}</Text>
             </Pressable>
-            <Pressable style={styles.confirmBtn} onPress={handleConfirm}>
+            <Pressable style={[styles.confirmBtn, { backgroundColor: accentColor }]} onPress={handleConfirm}>
               <Text style={styles.confirmText}>{confirmLabel}</Text>
             </Pressable>
           </View>
@@ -65,18 +69,18 @@ export function SwapBottomSheet({ visible, title, subtitle, reasons, confirmLabe
 }
 
 export const MEAL_SWAP_REASONS: SwapReason[] = [
-  { key: "dont_like", label: "Don't like it" },
-  { key: "too_expensive", label: "Too expensive" },
-  { key: "not_available", label: "Not available" },
-  { key: "want_variety", label: "Want variety" },
+  { key: "dont_like", label: i18n.t("components.swapSheet.reasons.dontLike") },
+  { key: "too_expensive", label: i18n.t("components.swapSheet.reasons.tooExpensive") },
+  { key: "not_available", label: i18n.t("components.swapSheet.reasons.notAvailable") },
+  { key: "want_variety", label: i18n.t("components.swapSheet.reasons.wantVariety") },
 ];
 
 export const EXERCISE_SWAP_REASONS: SwapReason[] = [
-  { key: "no_equipment", label: "No equipment" },
-  { key: "too_hard", label: "Too hard" },
-  { key: "too_easy", label: "Too easy" },
-  { key: "injury", label: "Injury" },
-  { key: "want_variety", label: "Want variety" },
+  { key: "no_equipment", label: i18n.t("components.swapSheet.reasons.noEquipment") },
+  { key: "too_hard", label: i18n.t("components.swapSheet.reasons.tooHard") },
+  { key: "too_easy", label: i18n.t("components.swapSheet.reasons.tooEasy") },
+  { key: "injury", label: i18n.t("components.swapSheet.reasons.injury") },
+  { key: "want_variety", label: i18n.t("components.swapSheet.reasons.wantVariety") },
 ];
 
 const styles = StyleSheet.create({

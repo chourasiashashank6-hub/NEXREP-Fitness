@@ -16,6 +16,7 @@ class MealCreateRequest(BaseModel):
     log_date: str | None = None
     meal_type: MealTypeLiteral
     source_type: Literal["database", "camera_ai"] = "database"
+    food_id: int | None = Field(default=None, gt=0)
     food_name: str = Field(..., min_length=1, max_length=200)
     quantity_g: Decimal = Field(..., gt=0)
     calories_per_100g: Decimal = Field(..., ge=0)

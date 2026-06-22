@@ -11,12 +11,14 @@ import {
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import { adminApi } from "../../api/adminApi";
 import { useAdminStore } from "../../store/adminStore";
 import { adminColors } from "./adminTheme";
 import { ErrorText } from "../../components/admin/AdminShared";
 
 export default function AdminLoginScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const setAuth = useAdminStore((s) => s.setAuth);
   const [email, setEmail] = useState("");
@@ -31,7 +33,7 @@ export default function AdminLoginScreen() {
       const res = await adminApi.login(email.trim().toLowerCase(), password);
       setAuth(res.access_token, res.role, res.name);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Login failed");
+      setError(e instanceof Error ? e.message : t("admin.login.loginFailed"));
     } finally {
       setLoading(false);
     }
@@ -47,33 +49,33 @@ export default function AdminLoginScreen() {
         style={styles.backButton}
         hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
       >
-        <Text style={styles.backButtonText}>← Back</Text>
+        <Text style={styles.backButtonText}>{t("admin.login.back")}</Text>
       </TouchableOpacity>
       <View style={styles.card}>
-        <Text style={styles.title}>Admin Dashboard</Text>
-        <Text style={styles.sub}>Sign in with your admin account</Text>
+        <Text style={styles.title}>{t("admin.login.title")}</Text>
+        <Text style={styles.sub}>{t("admin.login.subtitle")}</Text>
         {error ? <ErrorText message={error} /> : null}
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>{t("admin.login.email")}</Text>
         <TextInput
           style={styles.input}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
-          placeholder="admin@example.com"
+          placeholder={t("admin.login.emailPlaceholder")}
           placeholderTextColor={adminColors.muted}
         />
-        <Text style={styles.label}>Password</Text>
+        <Text style={styles.label}>{t("admin.login.password")}</Text>
         <TextInput
           style={styles.input}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
-          placeholder="••••••••"
+          placeholder={t("admin.login.passwordPlaceholder")}
           placeholderTextColor={adminColors.muted}
         />
         <Pressable style={styles.submit} onPress={() => void onSubmit()} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Sign in</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>{t("admin.login.signIn")}</Text>}
         </Pressable>
       </View>
     </KeyboardAvoidingView>

@@ -1,10 +1,15 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, useEffect, type ErrorInfo, type ReactNode } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { AppState, Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import "./src/i18n";
+import i18n from "./src/i18n";
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import { NotificationPermissionBanner } from "./src/components/NotificationPermissionBanner";
 import { AppThemeProvider } from "./src/theme";
+import { useLanguageStore } from "./src/i18n/languageStore";
+import { useAuthStore } from "./src/store/authStore";
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -22,9 +27,9 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error
       return (
         <View style={errorStyles.wrap}>
           <ScrollView contentContainerStyle={errorStyles.content}>
-            <Text style={errorStyles.title}>Something went wrong</Text>
+            <Text style={errorStyles.title}>{i18n.t("app.errorBoundary.title")}</Text>
             <Text style={errorStyles.message}>{this.state.error.message}</Text>
-            <Text style={errorStyles.hint}>Try a hard refresh (Cmd+Shift+R). If it persists, clear site data for localhost.</Text>
+            <Text style={errorStyles.hint}>{i18n.t("app.errorBoundary.hint")}</Text>
           </ScrollView>
         </View>
       );
@@ -56,13 +61,45 @@ if (!typographyAdjusted) {
   });
 }
 
+function I18nBootstrap() {
+  const token = useAuthStore((s) => s.token);
+  const explicitLanguage = useLanguageStore((s) => s.explicitLanguage);
+  const syncPending = useLanguageStore((s) => s.syncPending);
+  const bootstrapLanguage = useLanguageStore((s) => s.bootstrap);
+  const syncExplicitLanguage = useLanguageStore((s) => s.syncExplicitLanguage);
+
+  useEffect(() => {
+    void bootstrapLanguage();
+  }, [bootstrapLanguage]);
+
+  useEffect(() => {
+    if (token && explicitLanguage && syncPending) {
+      void syncExplicitLanguage();
+    }
+  }, [explicitLanguage, syncExplicitLanguage, syncPending, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void syncExplicitLanguage();
+      }
+    });
+    return () => subscription.remove();
+  }, [syncExplicitLanguage, token]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <AppErrorBoundary>
       <SafeAreaProvider>
         <AppThemeProvider>
+          <I18nBootstrap />
           <NavigationContainer>
             <StatusBar style="dark" />
+            <NotificationPermissionBanner />
             <RootNavigator />
           </NavigationContainer>
         </AppThemeProvider>

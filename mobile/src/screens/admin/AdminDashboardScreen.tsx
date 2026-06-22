@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
 import {
   adminScreenScroll,
   CardBox,
@@ -33,6 +34,7 @@ type Overview = {
 };
 
 export default function AdminDashboardScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AdminStackParamList>>();
   const adminName = useAdminStore((s) => s.adminName);
 
@@ -57,7 +59,7 @@ export default function AdminDashboardScreen() {
       setGrowthData(gr);
       setAiSummary(ai);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load dashboard");
+      setError(e instanceof Error ? e.message : t("admin.dashboard.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -79,7 +81,7 @@ export default function AdminDashboardScreen() {
     <ScrollView style={adminScreenScroll.style} contentContainerStyle={adminScreenScroll.contentContainerStyle}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Hi, {adminName ?? "Admin"}</Text>
+          <Text style={styles.headerTitle}>{t("admin.dashboard.greeting", { name: adminName ?? t("admin.dashboard.fallbackName") })}</Text>
           <Text style={styles.headerSub}>
             {new Date().toLocaleDateString("en-IN", {
               weekday: "long",
@@ -95,7 +97,7 @@ export default function AdminDashboardScreen() {
           }}
           style={styles.logoutBtn}
         >
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>{t("admin.dashboard.logout")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -106,87 +108,87 @@ export default function AdminDashboardScreen() {
         <>
           <View style={styles.metricRow}>
             <MetricCard
-              label="Total users"
+              label={t("admin.dashboard.totalUsers")}
               value={String(overview.total_users ?? "—")}
-              sub={`+${overview.new_users_today ?? 0} today`}
+              sub={t("admin.dashboard.newTodaySub", { count: overview.new_users_today ?? 0 })}
               accentColor={COLORS.teal}
             />
             <MetricCard
-              label="Paid users"
+              label={t("admin.dashboard.paidUsers")}
               value={String((overview.pro_users ?? 0) + (overview.elite_users ?? 0))}
-              sub={`${overview.total_users ? (((overview.pro_users + overview.elite_users) / overview.total_users) * 100).toFixed(0) : 0}% conversion`}
+              sub={t("admin.dashboard.conversionSub", { percent: overview.total_users ? (((overview.pro_users + overview.elite_users) / overview.total_users) * 100).toFixed(0) : 0 })}
               accentColor={COLORS.purple}
             />
           </View>
           <View style={styles.metricRow}>
             <MetricCard
-              label="MRR"
+              label={t("admin.dashboard.mrr")}
               value={`₹${Math.round(overview.mrr_inr ?? 0).toLocaleString("en-IN")}`}
-              sub="Monthly recurring"
+              sub={t("admin.dashboard.monthlyRecurring")}
               accentColor={COLORS.blue}
             />
             <MetricCard
-              label="AI cost (month)"
+              label={t("admin.dashboard.aiCostMonth")}
               value={`₹${(overview.ai_cost_month_inr ?? 0).toFixed(2)}`}
-              sub="This month"
+              sub={t("admin.dashboard.thisMonth")}
               accentColor={COLORS.amber}
             />
           </View>
           <View style={styles.metricRow}>
             <MetricCard
-              label="Free users"
+              label={t("admin.dashboard.freeUsers")}
               value={String(overview.free_users ?? "—")}
-              sub={`${overview.total_users ? ((overview.free_users / overview.total_users) * 100).toFixed(0) : 0}% of base`}
+              sub={t("admin.dashboard.ofBaseSub", { percent: overview.total_users ? ((overview.free_users / overview.total_users) * 100).toFixed(0) : 0 })}
             />
             <MetricCard
-              label="DAU / MAU"
+              label={t("admin.dashboard.dauMau")}
               value={`${overview.dau ?? 0} / ${overview.mau ?? 0}`}
-              sub={`${overview.mau ? ((overview.dau / overview.mau) * 100).toFixed(0) : 0}% stickiness`}
+              sub={t("admin.dashboard.stickinessSub", { percent: overview.mau ? ((overview.dau / overview.mau) * 100).toFixed(0) : 0 })}
             />
           </View>
           <View style={[styles.metricRow, { marginBottom: 20 }]}>
-            <MetricCard label="New today" value={String(overview.new_users_today ?? 0)} />
+            <MetricCard label={t("admin.dashboard.newToday")} value={String(overview.new_users_today ?? 0)} />
             <MetricCard
-              label="Total revenue"
+              label={t("admin.dashboard.totalRevenue")}
               value={`₹${Math.round(overview.total_revenue_inr ?? 0).toLocaleString("en-IN")}`}
             />
           </View>
 
           <CardBox>
-            <Text style={styles.cardTitle}>User growth (30d)</Text>
+            <Text style={styles.cardTitle}>{t("admin.dashboard.userGrowth")}</Text>
             <AdminGrowthChart growthData={growthData} />
           </CardBox>
 
           <CardBox>
-            <Text style={styles.cardTitle}>AI cost by feature (30d)</Text>
+            <Text style={styles.cardTitle}>{t("admin.dashboard.aiCostByFeature")}</Text>
             {featureEntries.length > 0 ? (
               featureEntries.map(([feature, cost]) => (
                 <FeatureBar
                   key={feature}
-                  name={FEATURE_LABEL_MAP[feature] ?? feature}
+                  name={t(FEATURE_LABEL_MAP[feature] ?? feature, { defaultValue: feature })}
                   value={cost}
                   maxValue={maxCost}
                   color={FEATURE_COLOR_MAP[feature] ?? "#888"}
                 />
               ))
             ) : (
-              <Text style={styles.emptyHint}>No AI usage this period</Text>
+              <Text style={styles.emptyHint}>{t("admin.dashboard.noAiUsage")}</Text>
             )}
           </CardBox>
 
-          <SectionLabel>Quick links</SectionLabel>
+          <SectionLabel>{t("admin.dashboard.quickLinks")}</SectionLabel>
           <NavButton
-            label="View all users"
+            label={t("admin.dashboard.viewAllUsers")}
             iconColor={COLORS.blue}
             onPress={() => navigation.navigate("AdminUsers")}
           />
           <NavButton
-            label="AI usage detail"
+            label={t("admin.dashboard.aiUsageDetail")}
             iconColor={COLORS.purple}
             onPress={() => navigation.navigate("AdminAiUsage")}
           />
           <NavButton
-            label="Subscriptions"
+            label={t("admin.dashboard.subscriptions")}
             iconColor={COLORS.teal}
             onPress={() => navigation.navigate("AdminSubscriptions")}
           />

@@ -1,15 +1,16 @@
-import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
+import { StyleSheet, Text, TextInput, TextInputProps, View, type StyleProp, type ViewStyle } from "react-native";
 import { useAppTheme } from "../theme";
 
 type Props = TextInputProps & {
   label?: string;
+  wrapperStyle?: StyleProp<ViewStyle>;
 };
 
-export const AppInput = ({ label, ...props }: Props) => {
+export const AppInput = ({ label, wrapperStyle, ...props }: Props) => {
   const { colors, radius } = useAppTheme();
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, wrapperStyle]}>
       {label ? <Text style={[styles.label, { color: colors.text }]}>{label}</Text> : null}
       <TextInput
         placeholderTextColor={colors.muted}

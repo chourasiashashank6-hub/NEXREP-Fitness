@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from src.core.config import settings
 from src.core.http_client import post_json
 from src.services.ai_logger import log_gemini_call, log_groq_call
+from src.services.language_service import ai_language_instruction
 from src.models.meal_plan import DailyWorkoutPlanEntry, MonthlyWorkoutPlan
 from src.models.models import User, UserOnboarding
 from src.services.planner_common import (
@@ -262,7 +263,7 @@ def _build_workout_system_prompt(ctx: dict[str, Any], *, continue_from_split: bo
     prompt += _workout_focus_instruction(ctx.get("focus_muscles") or [])
     if continue_from_split:
         prompt += WORKOUT_REGEN_PROMPT_SUFFIX
-    return prompt
+    return prompt + ai_language_instruction(ctx.get("preferred_language"))
 
 
 def _onboarding_context(db: Session, user_id: int) -> tuple[dict, dict]:
@@ -626,6 +627,7 @@ def _build_workout_ctx(
         "focus_muscles": focus_muscles,
         "has_muscle_focus": len(focus_muscles) > 0,
         "workout_types": activity.get("workout_types") if isinstance(activity.get("workout_types"), list) else ["strength"],
+        "preferred_language": user.preferred_language,
         "user_weight_kg": float(personal.get("weight_kg") or user.weight or 70),
     }
 
@@ -1364,7 +1366,12 @@ def get_fallback_exercise_swap(muscle: str, exclude_names: list[str]) -> dict[st
     return dict(alternatives[0])
 
 
-def _groq_swap_exercise(user_msg: dict[str, Any], *, user_id: int | None = None) -> dict[str, Any]:
+def _groq_swap_exercise(
+    user_msg: dict[str, Any],
+    *,
+    user_id: int | None = None,
+    preferred_language: str | None = None,
+) -> dict[str, Any]:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing")
     model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
@@ -1380,7 +1387,7 @@ def _groq_swap_exercise(user_msg: dict[str, Any], *, user_id: int | None = None)
             "max_tokens": 300,
             "response_format": {"type": "json_object"},
             "messages": [
-                {"role": "system", "content": EXERCISE_SWAP_SYSTEM_PROMPT},
+                {"role": "system", "content": EXERCISE_SWAP_SYSTEM_PROMPT + ai_language_instruction(preferred_language)},
                 {"role": "user", "content": json.dumps(user_msg)},
             ],
         },
@@ -1450,7 +1457,7 @@ def swap_exercise(
 
     replacement: dict[str, Any] | None = None
     try:
-        replacement = _groq_swap_exercise(user_msg, user_id=user.id)
+        replacement = _groq_swap_exercise(user_msg, user_id=user.id, preferred_language=user.preferred_language)
     except Exception:
         replacement = None
 

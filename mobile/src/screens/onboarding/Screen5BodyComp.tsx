@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
@@ -23,14 +24,15 @@ const BORDER = "#ECEAE5";
 const SCREEN_BG = "#FFFFFF";
 
 export default function Screen5BodyComp({ navigation }: any) {
+  const { t } = useTranslation();
   const { data, updatePersonal } = useOnboardingContext();
   const { saveAndExit, saving } = useOnboardingSaveAndExit();
 
   return (
     <OnboardingLayout
       step={5}
-      title="Body composition"
-      subtitle="Optional — but unlocks a more accurate calorie formula."
+      title={t("onboarding.screen5.title")}
+      subtitle={t("onboarding.screen5.subtitle")}
       onBack={() => navigation.goBack()}
       onNext={() => navigation.navigate("Screen6Setup")}
       onSaveExit={saveAndExit}
@@ -38,20 +40,20 @@ export default function Screen5BodyComp({ navigation }: any) {
       saveDisabled={saving}
       extraFooter={
         <Pressable onPress={() => navigation.navigate("Screen6Setup")}>
-          <Text style={styles.skip}>Skip this step →</Text>
+          <Text style={styles.skip}>{t("onboarding.screen5.skip")}</Text>
         </Pressable>
       }
     >
       <View style={styles.infoBox}>
-        <Text style={styles.infoText}>💡 If you enter your body fat %, we switch from Mifflin-St Jeor to Katch-McArdle — more accurate for muscular or heavier users.</Text>
+        <Text style={styles.infoText}>{t("onboarding.screen5.infoBody")}</Text>
       </View>
-      <Text style={styles.label}>Body fat percentage</Text>
-      <BottomSheetPicker label="Body fat percentage" value={data.personal.body_fat_percentage} options={BODY_FAT_OPTIONS} onChange={(v) => updatePersonal({ body_fat_percentage: v as number | null, bf_measurement_method: v === null ? null : data.personal.bf_measurement_method })} placeholder="Skip — I don't know" />
+      <Text style={styles.label}>{t("onboarding.screen5.bodyFatPercentage")}</Text>
+      <BottomSheetPicker label={t("onboarding.screen5.bodyFatPercentage")} value={data.personal.body_fat_percentage} options={BODY_FAT_OPTIONS} onChange={(v) => updatePersonal({ body_fat_percentage: v as number | null, bf_measurement_method: v === null ? null : data.personal.bf_measurement_method })} placeholder={t("onboarding.screen5.bodyFatPlaceholder")} />
 
       {data.personal.body_fat_percentage !== null ? (
         <View style={{ marginTop: 12 }}>
-          <Text style={styles.label}>How did you measure it?</Text>
-          <BottomSheetPicker label="How did you measure it?" value={data.personal.bf_measurement_method} options={BF_METHOD_OPTIONS} onChange={(v) => updatePersonal({ bf_measurement_method: v as any })} placeholder="Select method" />
+          <Text style={styles.label}>{t("onboarding.screen5.measurementMethod")}</Text>
+          <BottomSheetPicker label={t("onboarding.screen5.measurementMethod")} value={data.personal.bf_measurement_method} options={BF_METHOD_OPTIONS} onChange={(v) => updatePersonal({ bf_measurement_method: v as any })} placeholder={t("onboarding.screen5.measurementPlaceholder")} />
         </View>
       ) : null}
     </OnboardingLayout>

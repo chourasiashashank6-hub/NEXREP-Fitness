@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
+import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { ToggleRow } from "../../components/ToggleRow";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
+import {
+  requestNotificationPermissions,
+  rescheduleMotivationalQuoteReminder,
+  rescheduleWaterReminders,
+} from "../../services/notificationService";
 import { REGION_OPTIONS, REMINDER_TIME_OPTIONS, WATER_GOAL_OPTIONS } from "../../utils/onboardingOptions";
 
 const GREEN = "#0F6E56";
@@ -25,6 +31,7 @@ const BORDER = "#ECEAE5";
 const SCREEN_BG = "#FFFFFF";
 
 export default function Screen6Setup({ navigation }: any) {
+  const { t } = useTranslation();
   const { data, updateAppSetup } = useOnboardingContext();
   const { saveAndExit } = useOnboardingSaveAndExit();
   const [saving, setSaving] = useState(false);
@@ -32,6 +39,11 @@ export default function Screen6Setup({ navigation }: any) {
   const onFinish = async () => {
     setSaving(true);
     try {
+      if (data.app_setup.notifications.meal_logging || data.app_setup.water_intake_goal_liters) {
+        await requestNotificationPermissions("settings").catch(() => undefined);
+      }
+      await rescheduleWaterReminders(Boolean(data.app_setup.water_intake_goal_liters)).catch(() => undefined);
+      await rescheduleMotivationalQuoteReminder(Boolean(data.app_setup.notifications.coach_insights)).catch(() => undefined);
       await saveAndExit();
     } catch (e: unknown) {
       // saveAndExit already shows user-facing errors.
@@ -43,11 +55,11 @@ export default function Screen6Setup({ navigation }: any) {
   return (
     <OnboardingLayout
       step={6}
-      title="App setup"
-      subtitle="Final preferences. These affect how the app behaves, not the calorie calculation."
+      title={t("onboarding.screen6.title")}
+      subtitle={t("onboarding.screen6.subtitle")}
       onBack={() => navigation.goBack()}
       onNext={onFinish}
-      nextLabel="Save & exit"
+      nextLabel={t("onboarding.screen6.saveAndExit")}
       nextLoading={saving}
       nextDisabled={saving}
       onSaveExit={saveAndExit}
@@ -55,26 +67,51 @@ export default function Screen6Setup({ navigation }: any) {
       saveDisabled={saving}
     >
       <ToggleRow
-        label="📅 Daily weigh-in reminder"
-        subLabel="Needed for adaptive recalibration after day 14"
+        label={t("onboarding.screen6.dailyWeighIn")}
+        subLabel={t("onboarding.screen6.dailyWeighInSub")}
         value={data.app_setup.weigh_in_reminder_enabled}
         onChange={(v) => updateAppSetup({ weigh_in_reminder_enabled: v })}
       />
       {data.app_setup.weigh_in_reminder_enabled ? (
-        <BottomSheetPicker label="Reminder time" value={data.app_setup.reminder_time} options={REMINDER_TIME_OPTIONS} onChange={(v) => updateAppSetup({ reminder_time: String(v) })} placeholder="7:00 AM" />
+        <BottomSheetPicker label={t("onboarding.screen6.reminderTime")} value={data.app_setup.reminder_time} options={REMINDER_TIME_OPTIONS} onChange={(v) => updateAppSetup({ reminder_time: String(v) })} placeholder={t("onboarding.screen6.reminderPlaceholder")} />
       ) : null}
 
-      <Text style={styles.section}>Water intake goal</Text>
-      <BottomSheetPicker label="Water intake goal" value={data.app_setup.water_intake_goal_liters} options={WATER_GOAL_OPTIONS} onChange={(v) => updateAppSetup({ water_intake_goal_liters: v as number | null })} placeholder="2.5 L (auto)" />
+      <Text style={styles.section}>{t("onboarding.screen6.waterGoal")}</Text>
+      <BottomSheetPicker
+        label={t("onboarding.screen6.waterGoal")}
+        value={data.app_setup.water_intake_goal_liters}
+        options={WATER_GOAL_OPTIONS}
+        onChange={(v) => {
+          updateAppSetup({ water_intake_goal_liters: v as number | null });
+          if (v != null) void requestNotificationPermissions("settings");
+        }}
+        placeholder={t("onboarding.screen6.waterGoalPlaceholder")}
+      />
 
-      <Text style={styles.section}>Notifications</Text>
-      <ToggleRow label="🍽️ Meal logging reminders" subLabel="Remind me to log breakfast, lunch, dinner" value={data.app_setup.notifications.meal_logging} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, meal_logging: v } })} />
-      <ToggleRow label="🤖 AI coach insights" subLabel="Daily tips based on your progress" value={data.app_setup.notifications.coach_insights} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, coach_insights: v } })} />
-      <ToggleRow label="📊 Weekly progress summary" subLabel="Sunday recap of the week" value={data.app_setup.notifications.weekly_summary} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, weekly_summary: v } })} />
-      <ToggleRow label="⚡ Streak alerts" subLabel="Don't break your streak" value={data.app_setup.notifications.streak_alerts} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, streak_alerts: v } })} />
+      <Text style={styles.section}>{t("onboarding.screen6.notifications")}</Text>
+      <ToggleRow
+        label={t("onboarding.screen6.mealLogging")}
+        subLabel={t("onboarding.screen6.mealLoggingSub")}
+        value={data.app_setup.notifications.meal_logging}
+        onChange={(v) => {
+          updateAppSetup({ notifications: { ...data.app_setup.notifications, meal_logging: v } });
+          if (v) void requestNotificationPermissions("meal_planner");
+        }}
+      />
+      <ToggleRow
+        label={t("onboarding.screen6.coachInsights")}
+        subLabel={t("onboarding.screen6.coachInsightsSub")}
+        value={data.app_setup.notifications.coach_insights}
+        onChange={(v) => {
+          updateAppSetup({ notifications: { ...data.app_setup.notifications, coach_insights: v } });
+          if (v) void requestNotificationPermissions("settings");
+        }}
+      />
+      <ToggleRow label={t("onboarding.screen6.weeklySummary")} subLabel={t("onboarding.screen6.weeklySummarySub")} value={data.app_setup.notifications.weekly_summary} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, weekly_summary: v } })} />
+      <ToggleRow label={t("onboarding.screen6.streakAlerts")} subLabel={t("onboarding.screen6.streakAlertsSub")} value={data.app_setup.notifications.streak_alerts} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, streak_alerts: v } })} />
 
-      <Text style={styles.section}>Region / language</Text>
-      <BottomSheetPicker label="Region / language" value={data.app_setup.region} options={REGION_OPTIONS} onChange={(v) => updateAppSetup({ region: String(v) })} placeholder="India (auto-detected)" />
+      <Text style={styles.section}>{t("onboarding.screen6.regionLanguage")}</Text>
+      <BottomSheetPicker label={t("onboarding.screen6.regionLanguage")} value={data.app_setup.region} options={REGION_OPTIONS} onChange={(v) => updateAppSetup({ region: String(v) })} placeholder={t("onboarding.screen6.regionPlaceholder")} />
     </OnboardingLayout>
   );
 }

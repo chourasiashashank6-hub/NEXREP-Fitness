@@ -3,6 +3,7 @@ import type { WorkoutData } from "../types/workoutCoach";
 
 export type WorkoutHistoryItem = {
   id: number;
+  exercise_id?: number | null;
   type: string;
   exerciseName: string;
   sets?: number | null;
@@ -12,10 +13,21 @@ export type WorkoutHistoryItem = {
   musclesTrained?: string[];
   notes?: string | null;
   caloriesBurned?: number | null;
+  strengthLift?: {
+    id: number;
+    exercise_id?: number | null;
+    exercise_name: string;
+    weight_kg: number;
+    reps: number;
+    estimated_1rm_kg: number;
+    is_new_pr: boolean;
+    date: string | null;
+  } | null;
   date: string;
 };
 
 export const addWorkout = async (payload: {
+  exercise_id?: number | null;
   type: "stability" | "hiit" | "compound";
   exerciseName: string;
   sets?: number;
@@ -32,6 +44,7 @@ export const addWorkout = async (payload: {
 
 /** Same server MET model as saving a workout — preview only. */
 export const estimateWorkoutCalories = async (payload: {
+  exercise_id?: number | null;
   type: string;
   exerciseName: string;
   sets?: number;

@@ -1,10 +1,12 @@
 import Svg, { Circle } from "react-native-svg";
 import { StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useAppTheme } from "../theme";
 
 type Props = { score: number };
 
 export const CircularScore = ({ score }: Props) => {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const radius = 44;
   const circumference = 2 * Math.PI * radius;
@@ -30,7 +32,7 @@ export const CircularScore = ({ score }: Props) => {
       </Svg>
       <View style={styles.center}>
         <Text style={[styles.value, { color: colors.text }]}>{progress}</Text>
-        <Text style={[styles.label, { color: colors.muted }]}>Score</Text>
+        <Text style={[styles.label, { color: colors.muted }]}>{t("components.score")}</Text>
       </View>
     </View>
   );

@@ -1,4 +1,4 @@
-import type { AICoachResponse, AlertItem, CoachAlertItem, MacroStatus, NutritionData } from "../types/coach";
+import type { AICoachResponse, AlertItem, CoachAlertItem, DietTipCategory, DietTipItem, MacroStatus, NutritionData } from "../types/coach";
 import type {
   DynamicCoachingTip,
   DynamicCoachingTipCategory,
@@ -7,6 +7,10 @@ import type {
   WorkoutCoachInsight,
   WorkoutData,
 } from "../types/workoutCoach";
+import type { OnboardingData } from "../types/onboarding";
+import i18n from "../i18n";
+import { getGoalFocusMuscles } from "../utils/onboardingFocusMuscles";
+import { getTargetWeeklySets } from "../utils/weeklyMuscleTargets";
 
 const COACHING_TIP_ICONS = new Set<DynamicCoachingTipIcon>([
   "lightning",
@@ -29,6 +33,7 @@ const COACHING_TIP_CATEGORIES = new Set<DynamicCoachingTipCategory>([
   "programming",
 ]);
 const COACHING_TIP_PRIORITIES = new Set<DynamicCoachingTipPriority>(["high", "medium", "low"]);
+const DIET_TIP_CATEGORIES = new Set<DietTipCategory>(["gut", "protein", "digestion", "timing", "fat"]);
 
 export function buildFallbackCoachingTips(data: WorkoutData, readinessScore = 70): DynamicCoachingTip[] {
   const tips: DynamicCoachingTip[] = [];
@@ -38,8 +43,12 @@ export function buildFallbackCoachingTips(data: WorkoutData, readinessScore = 70
     const soreList = soreMuscles.join(", ");
     tips.push({
       icon: "moon",
-      title: `Rest ${soreMuscles[0]} today`,
-      body: `${soreList} ${soreMuscles.length === 1 ? "is" : "are"} still recovering. Avoid training ${soreMuscles.length === 1 ? "it" : "them"} today and prioritize sleep for faster repair.`,
+      title: i18n.t("coach.workout.fallback.restTitle", { muscle: soreMuscles[0] }),
+      body: i18n.t("coach.workout.fallback.restBody", {
+        muscles: soreList,
+        verb: soreMuscles.length === 1 ? "is" : "are",
+        pronoun: soreMuscles.length === 1 ? "it" : "them",
+      }),
       category: "recovery",
       priority: "high",
     });
@@ -52,8 +61,8 @@ export function buildFallbackCoachingTips(data: WorkoutData, readinessScore = 70
     const target = undertrained[0].targetSets;
     tips.push({
       icon: "target",
-      title: `Close the ${muscleName} gap`,
-      body: `You have only ${current} sets for ${muscleName} this week vs a ${target}-set target. Add a ${muscleName.toLowerCase()}-focused session before the week ends.`,
+      title: i18n.t("coach.workout.fallback.gapTitle", { muscle: muscleName }),
+      body: i18n.t("coach.workout.fallback.gapBody", { current, muscle: muscleName, target, lowerMuscle: muscleName.toLowerCase() }),
       category: "volume",
       priority: "high",
     });
@@ -62,8 +71,8 @@ export function buildFallbackCoachingTips(data: WorkoutData, readinessScore = 70
   if (readinessScore < 50 && tips.filter((t) => t.category === "recovery").length < 2) {
     tips.push({
       icon: "moon",
-      title: "Prioritize recovery today",
-      body: `Your readiness score is ${readinessScore}/100. Keep today's session light and aim for 7-8 hours of sleep tonight.`,
+      title: i18n.t("coach.workout.fallback.recoveryTitle"),
+      body: i18n.t("coach.workout.fallback.recoveryBody", { score: readinessScore }),
       category: "recovery",
       priority: "high",
     });
@@ -74,8 +83,8 @@ export function buildFallbackCoachingTips(data: WorkoutData, readinessScore = 70
     if (fresh.length) {
       tips.push({
         icon: "fire",
-        title: `Push ${fresh[0]} volume`,
-        body: `${fresh[0]} is fresh and ready — use this session to add quality sets while form stays crisp.`,
+        title: i18n.t("coach.workout.fallback.pushTitle", { muscle: fresh[0] }),
+        body: i18n.t("coach.workout.fallback.pushBody", { muscle: fresh[0] }),
         category: "programming",
         priority: "medium",
       });
@@ -84,15 +93,15 @@ export function buildFallbackCoachingTips(data: WorkoutData, readinessScore = 70
 
   tips.push({
     icon: "dumbbell",
-    title: "Slow the eccentric",
-    body: "For any exercise today, slow the lowering phase to 3 seconds. This increases time under tension without adding weight.",
+    title: i18n.t("coach.workout.fallback.eccentricTitle"),
+    body: i18n.t("coach.workout.fallback.eccentricBody"),
     category: "technique",
     priority: "medium",
   });
   tips.push({
     icon: "droplet",
-    title: "Hydrate before training",
-    body: "Drink 500ml of water 30 minutes before your session. Even slight dehydration reduces strength output measurably.",
+    title: i18n.t("coach.workout.fallback.hydrateTitle"),
+    body: i18n.t("coach.workout.fallback.hydrateBody"),
     category: "nutrition",
     priority: "low",
   });
@@ -100,8 +109,8 @@ export function buildFallbackCoachingTips(data: WorkoutData, readinessScore = 70
   if (!tips.length) {
     tips.push({
       icon: "target",
-      title: "Log workouts for insights",
-      body: "Start logging your workouts to get personalized coaching tips based on your actual training data.",
+      title: i18n.t("coach.workout.fallback.logTitle"),
+      body: i18n.t("coach.workout.fallback.logBody"),
       category: "programming",
       priority: "high",
     });
@@ -160,22 +169,22 @@ function parseCoachingTips(raw: unknown, data: WorkoutData, readinessScore: numb
 }
 
 export const CALORIE_COACH_DEFAULTS: AICoachResponse = {
-  insight: "Log more meals to get personalized insights.",
-  bodyImpact: "Not enough data yet to assess body impact.",
+  insight: i18n.t("coach.calorie.defaults.insight"),
+  bodyImpact: i18n.t("coach.calorie.defaults.bodyImpact"),
   mealPlan: [],
   macroVerdict: {
-    protein: { status: "low", tip: "Add a protein source to your next meal." },
-    carbs: { status: "on_track", tip: "Carb intake looks reasonable." },
-    fat: { status: "on_track", tip: "Fat intake is within range." },
+    protein: { status: "low", tip: i18n.t("coach.calorie.defaults.proteinTip") },
+    carbs: { status: "on_track", tip: i18n.t("coach.calorie.defaults.carbsTip") },
+    fat: { status: "on_track", tip: i18n.t("coach.calorie.defaults.fatTip") },
   },
   hydrationPlan: {
     currentMl: 0,
     targetMl: 2500,
     remainingMl: 2500,
-    nextAction: "Start drinking water.",
+    nextAction: i18n.t("coach.calorie.defaults.waterAction"),
   },
   dailyScore: 0,
-  scoreLabel: "Needs Work",
+  scoreLabel: i18n.t("coach.calorie.defaults.scoreLabel"),
   alerts: [],
 };
 
@@ -218,7 +227,7 @@ export function normalizeCalorieCoachResponse(raw: unknown, nutrition?: Nutritio
   const mealPlan = mealPlanRaw.slice(0, 3).map((item) => {
     const m = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
     return {
-      meal: String(m.meal || "Meal"),
+      meal: String(m.meal || i18n.t("coach.calorie.defaults.meal")),
       items: String(m.items || ""),
       calories: Number(m.calories) || 0,
       protein: Number(m.protein) || 0,
@@ -233,9 +242,26 @@ export function normalizeCalorieCoachResponse(raw: unknown, nutrition?: Nutritio
     return {
       type: String(x.type || "info"),
       icon: String(x.icon || ""),
-      title: String(x.title || "Alert"),
+      title: String(x.title || i18n.t("coach.calorie.defaults.alert")),
       subtitle: String(x.subtitle || ""),
     };
+  });
+  const dietTipsRaw = Array.isArray(p.dietTips) ? p.dietTips : [];
+  const dietTips: DietTipItem[] = dietTipsRaw.slice(0, 5).flatMap((item) => {
+    const x = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+    const title = String(x.title || "").trim();
+    const body = String(x.body || "").trim();
+    if (!title || !body) return [];
+    const categoryRaw = String(x.category || "gut");
+    return [
+      {
+        emoji: String(x.emoji || "🌿"),
+        title,
+        body,
+        tag: String(x.tag || i18n.t("coach.calorie.defaults.gut")),
+        category: DIET_TIP_CATEGORIES.has(categoryRaw as DietTipCategory) ? (categoryRaw as DietTipCategory) : "gut",
+      },
+    ];
   });
 
   const dailyScore = Math.max(0, Math.min(100, Number(p.dailyScore) || base.dailyScore));
@@ -258,6 +284,7 @@ export function normalizeCalorieCoachResponse(raw: unknown, nutrition?: Nutritio
     dailyScore,
     scoreLabel: String(p.scoreLabel || base.scoreLabel),
     alerts,
+    dietTips: dietTips.length ? dietTips : undefined,
     source: typeof p.source === "string" ? p.source : undefined,
   };
 }
@@ -290,14 +317,18 @@ export function coachAlertsToPills(alerts: CoachAlertItem[]): AlertItem[] {
   }));
 }
 
-export function normalizeWorkoutCoachResponse(raw: unknown, data?: WorkoutData | null): WorkoutCoachInsight {
+export function normalizeWorkoutCoachResponse(raw: unknown, data?: WorkoutData | null, onboardingData?: OnboardingData | null): WorkoutCoachInsight {
   const p = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const groups = data?.muscleGroups ?? [];
   const fresh = groups.filter((m) => m.status === "fresh").map((m) => m.name);
   const sore = groups.filter((m) => m.status === "sore").map((m) => m.name);
   const avg = groups.length ? groups.reduce((a, m) => a + m.recoveryPercent, 0) / groups.length : 68;
   const completed = data?.totalWeeklySets ?? 0;
-  const target = data?.targetWeeklySets ?? 84;
+  const fallbackFocusMuscles = onboardingData?.goal ? getGoalFocusMuscles(onboardingData.goal) : undefined;
+  const fallbackTarget = onboardingData
+    ? getTargetWeeklySets(onboardingData.activity?.workouts_per_week, fallbackFocusMuscles)
+    : 84;
+  const target = data?.targetWeeklySets ?? fallbackTarget;
   const pct = target > 0 ? Math.round((completed / target) * 100) : 0;
 
   const planRaw = p.todaysPlan && typeof p.todaysPlan === "object" ? (p.todaysPlan as Record<string, unknown>) : {};
@@ -305,19 +336,19 @@ export function normalizeWorkoutCoachResponse(raw: unknown, data?: WorkoutData |
   let exercises = exercisesRaw.slice(0, 6).map((ex) => {
     const e = ex && typeof ex === "object" ? (ex as Record<string, unknown>) : {};
     return {
-      name: String(e.name || "Exercise"),
+      name: String(e.name || i18n.t("coach.workout.fallback.exercise")),
       sets: Number(e.sets) || 3,
       reps: String(e.reps || "10-12"),
-      muscle: String(e.muscle || "General"),
+      muscle: String(e.muscle || i18n.t("coach.workout.fallback.general")),
       note: String(e.note || ""),
     };
   });
   if (exercises.length < 4) {
     exercises = [
-      { name: "Barbell Bench Press", sets: 4, reps: "8-12", muscle: "Chest", note: "Control the descent and drive through your feet." },
-      { name: "Overhead Press", sets: 3, reps: "10", muscle: "Shoulders", note: "Brace your core and press straight overhead." },
-      { name: "Incline Dumbbell Press", sets: 3, reps: "10-12", muscle: "Chest", note: "Squeeze at the top for one second." },
-      { name: "Lateral Raises", sets: 3, reps: "15", muscle: "Shoulders", note: "Lead with your elbows, not your hands." },
+      { name: i18n.t("coach.workout.fallback.bench"), sets: 4, reps: "8-12", muscle: "Chest", note: i18n.t("coach.workout.fallback.benchNote") },
+      { name: i18n.t("coach.workout.fallback.overheadPress"), sets: 3, reps: "10", muscle: "Shoulders", note: i18n.t("coach.workout.fallback.overheadPressNote") },
+      { name: i18n.t("coach.workout.fallback.inclinePress"), sets: 3, reps: "10-12", muscle: "Chest", note: i18n.t("coach.workout.fallback.inclinePressNote") },
+      { name: i18n.t("coach.workout.fallback.lateralRaises"), sets: 3, reps: "15", muscle: "Shoulders", note: i18n.t("coach.workout.fallback.lateralRaisesNote") },
     ];
   }
 
@@ -332,10 +363,10 @@ export function normalizeWorkoutCoachResponse(raw: unknown, data?: WorkoutData |
   });
   while (readinessFactors.length < 4) {
     const fill = [
-      { label: fresh[0] ? `${fresh[0]} fresh` : "Recovery OK", type: "good" as const },
-      { label: sore[0] ? `${sore[0]} sore` : "Low soreness", type: sore[0] ? ("bad" as const) : ("good" as const) },
-      { label: `Weekly volume ${pct}%`, type: pct < 50 ? ("warning" as const) : ("info" as const) },
-      { label: "Check sleep quality", type: "info" as const },
+      { label: fresh[0] ? i18n.t("coach.workout.fallback.freshLabel", { muscle: fresh[0] }) : i18n.t("coach.workout.fallback.recoveryOk"), type: "good" as const },
+      { label: sore[0] ? i18n.t("coach.workout.fallback.soreLabel", { muscle: sore[0] }) : i18n.t("coach.workout.fallback.lowSoreness"), type: sore[0] ? ("bad" as const) : ("good" as const) },
+      { label: i18n.t("coach.workout.fallback.weeklyVolumeFactor", { percent: pct }), type: pct < 50 ? ("warning" as const) : ("info" as const) },
+      { label: i18n.t("coach.workout.fallback.sleepQuality"), type: "info" as const },
     ];
     readinessFactors.push(fill[readinessFactors.length]);
   }
@@ -346,15 +377,15 @@ export function normalizeWorkoutCoachResponse(raw: unknown, data?: WorkoutData |
     const icon = String(x.icon || "rest");
     return {
       icon: (["sleep", "water", "stretch", "food", "rest"].includes(icon) ? icon : "rest") as "sleep" | "water" | "stretch" | "food" | "rest",
-      title: String(x.title || "Recovery"),
+      title: String(x.title || i18n.t("coach.workout.fallback.recovery")),
       description: String(x.description || ""),
     };
   });
   if (recoveryTips.length < 3) {
     const defaults = [
-      { icon: "sleep" as const, title: "Sleep 7-8 hours", description: "Recovery improves with consistent sleep tonight." },
-      { icon: "water" as const, title: "Hydrate well", description: "Drink water through the day to reduce soreness." },
-      { icon: "stretch" as const, title: "Mobility work", description: "Add 10 minutes of stretching for tight muscle groups." },
+      { icon: "sleep" as const, title: i18n.t("coach.workout.fallback.sleepTitle"), description: i18n.t("coach.workout.fallback.sleepDescription") },
+      { icon: "water" as const, title: i18n.t("coach.workout.fallback.waterTitle"), description: i18n.t("coach.workout.fallback.waterDescription") },
+      { icon: "stretch" as const, title: i18n.t("coach.workout.fallback.mobilityTitle"), description: i18n.t("coach.workout.fallback.mobilityDescription") },
     ];
     recoveryTips = [...recoveryTips, ...defaults.slice(recoveryTips.length)].slice(0, 3);
   }
@@ -365,33 +396,36 @@ export function normalizeWorkoutCoachResponse(raw: unknown, data?: WorkoutData |
     recentWorkouts: [],
     weeklyVolume: [],
     muscleGroups: [],
-    lastWorkoutDate: "No workout yet",
+    lastWorkoutDate: i18n.t("coach.workout.fallback.noWorkoutYet"),
     totalWeeklySets: 0,
-    targetWeeklySets: 84,
+    targetWeeklySets: fallbackTarget,
   };
   const coachingTips = parseCoachingTips(p.coachingTips, workoutData, score);
 
   return {
     insightText: String(
       p.insightText ||
-        `${fresh.length ? `${fresh.join(" and ")} are ready. ` : ""}${sore.length ? `Avoid heavy ${sore.join(" and ")} work. ` : ""}Train with control and intent.`,
+        i18n.t("coach.workout.fallback.defaultInsight", {
+          readyText: fresh.length ? i18n.t("coach.workout.fallback.readyText", { muscles: fresh.join(" and ") }) : "",
+          avoidText: sore.length ? i18n.t("coach.workout.fallback.avoidText", { muscles: sore.join(" and ") }) : "",
+        }),
     ),
     todaysPlan: {
-      splitName: String(planRaw.splitName || "Training Day"),
+      splitName: String(planRaw.splitName || i18n.t("coach.workout.fallback.trainingDay")),
       focusMuscles: Array.isArray(planRaw.focusMuscles) ? planRaw.focusMuscles.map(String) : fresh,
       avoidMuscles: Array.isArray(planRaw.avoidMuscles) ? planRaw.avoidMuscles.map(String) : sore,
       exercises,
       estimatedDuration: String(planRaw.estimatedDuration || "45-55 min"),
     },
     readinessScore: score,
-    readinessLabel: String(p.readinessLabel || (score >= 76 ? "Ready to push" : score >= 51 ? "Train moderately" : "Light activity only")),
-    readinessDescription: String(p.readinessDescription || "Recovery and weekly volume inform today's training intensity."),
+    readinessLabel: String(p.readinessLabel || (score >= 76 ? i18n.t("coach.workout.fallback.readyToPush") : score >= 51 ? i18n.t("coach.workout.fallback.trainModerately") : i18n.t("coach.workout.fallback.lightActivity"))),
+    readinessDescription: String(p.readinessDescription || i18n.t("coach.workout.fallback.readinessDescription")),
     readinessFactors,
     weeklyProgress: {
       completedSets: Number(wp.completedSets) || completed,
       targetSets: Number(wp.targetSets) || target,
       percentComplete: Number(wp.percentComplete) || pct,
-      insight: String(wp.insight || `Weekly volume is at ${pct}% of target.`),
+      insight: String(wp.insight || i18n.t("coach.workout.fallback.weeklyVolume", { percent: pct })),
     },
     recoveryTips,
     coachingTips,
