@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from src.db.session import get_db
 from src.models.admin_models import AdminUser, AiUsageLog, Subscription, UserActivityLog
-from src.models.models import User
+from src.models.models import User, UserReport
 from src.utils.admin_auth import (
     create_admin_token,
     get_current_admin,
@@ -116,6 +116,53 @@ def overview(db: Session = Depends(get_db), admin: AdminUser = Depends(get_curre
         "new_users_today": new_today,
         "dau": dau,
         "mau": mau,
+    }
+
+
+@router.get("/reports")
+def list_user_reports(
+    status: Optional[str] = Query(default=None),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin),
+):
+    _ = admin
+    query = (
+        db.query(UserReport, User.name.label("reporter_name"), User.email.label("reporter_email"))
+        .join(User, User.id == UserReport.reporter_id)
+    )
+    if status:
+        query = query.filter(UserReport.status == status)
+    total = query.count()
+    rows = query.order_by(UserReport.created_at.desc()).offset(offset).limit(limit).all()
+    reported_ids = [report.reported_user_id for report, _reporter_name, _reporter_email in rows]
+    reported_users = db.query(User).filter(User.id.in_(reported_ids or [-1])).all()
+    reported_by_id = {user.id: user for user in reported_users}
+    return {
+        "total": total,
+        "items": [
+            {
+                "id": report.id,
+                "reporter": {
+                    "user_id": report.reporter_id,
+                    "name": reporter_name,
+                    "email": reporter_email,
+                },
+                "reported_user": {
+                    "user_id": report.reported_user_id,
+                    "name": reported_by_id.get(report.reported_user_id).name if report.reported_user_id in reported_by_id else None,
+                    "email": reported_by_id.get(report.reported_user_id).email if report.reported_user_id in reported_by_id else None,
+                },
+                "reason": report.reason,
+                "context": report.context,
+                "reference_id": report.reference_id,
+                "details": report.details,
+                "created_at": report.created_at.isoformat() if report.created_at else None,
+                "status": report.status,
+            }
+            for report, reporter_name, reporter_email in rows
+        ],
     }
 
 

@@ -12,7 +12,8 @@
     "workout": "वर्कआउट",
     "calories": "कैलोरी",
     "coach": "कोच",
-    "profile": "प्रोफाइल"
+    "profile": "प्रोफाइल",
+    "social": "सोशल"
   },
   "home": {
     "alerts": {
@@ -373,7 +374,401 @@
     "error": "त्रुटि",
     "retry": "पुनः प्रयास करें",
     "loading": "लोड हो रहा है...",
-    "required": "आवश्यक"
+    "required": "आवश्यक",
+    "close": "बंद करें"
+  },
+  "social": {
+    "nav": {
+      "home": "Squad",
+      "leaderboard": "लीडरबोर्ड",
+      "friends": "दोस्त",
+      "threads": "थ्रेड्स",
+      "messages": "संदेश"
+    },
+    "home": {
+      "eyebrow": "Squad",
+      "fallbackName": "दोस्त",
+      "heroTitle": "Hey {{name}}",
+      "friendCount": "{{count}} दोस्त",
+      "nextSessionEyebrow": "आपका अगला सेशन",
+      "openThread": "खोलें",
+      "feedTitle": "Squad गतिविधि",
+      "reactions": {
+        "flame": "फ्लेम",
+        "cheer": "चीयर"
+      },
+      "time": {
+        "now": "अभी"
+      },
+      "feed": {
+        "prFallback": "Strength PR",
+        "prBadge": "PR",
+        "weight": "वजन",
+        "reps": "Reps",
+        "oneRm": "अनुमानित 1RM",
+        "streakTitle": "{{count}} दिन की स्ट्रीक",
+        "streakBody": "माइलस्टोन अनलॉक हुआ। आग जारी रखें।",
+        "threadJoined": "{{title}} में शामिल हुए",
+        "threadFallback": "एक gym thread"
+      },
+      "empty": {
+        "zeroFriendsTitle": "Squad में आपका स्वागत है",
+        "zeroFriendsBody": "दोस्त खोजें, उनके PRs देखें, और साथ में training शुरू करें।",
+        "searchFriends": "दोस्त खोजें",
+        "quietTitle": "आपका squad शांत है",
+        "quietBody": "आपका squad शांत है — आज workout log करने वाले पहले बनें।"
+      },
+      "alerts": {
+        "loadFailed": "अभी Squad load नहीं हो सका।",
+        "reactionFailed": "आपकी reaction add नहीं हो सकी। फिर कोशिश करें।"
+      }
+    },
+    "leaderboard": {
+      "eyebrow": "साप्ताहिक रीसेट",
+      "title": "लीडरबोर्ड",
+      "resetsIn": "रीसेट में",
+      "soon": "जल्द",
+      "optIn": "शामिल हों",
+      "optOut": "बाहर निकलें",
+      "emptyTitle": "और दोस्तों को आमंत्रित करें",
+      "emptyBody": "Leaderboard unlock करने के लिए और दोस्तों को invite करें.",
+      "inviteFriends": "दोस्त खोजें",
+      "workouts": "{{count}} workout",
+      "rowMeta": "{{workouts}} workout · {{streak}} दिन की streak",
+      "alerts": {
+        "loadFailed": "अभी leaderboard load नहीं हो सका।",
+        "settingsFailed": "Leaderboard settings update नहीं हो सकीं।"
+      }
+    },
+    "challenges": {
+      "createCta": "Challenge",
+      "accept": "स्वीकार करें",
+      "decline": "अस्वीकार करें",
+      "active": "सक्रिय challenges",
+      "invites": "Challenge invites",
+      "history": "इतिहास",
+      "noActive": "सबको move कराने के लिए squad challenge शुरू करें।",
+      "target": "{{count}} target",
+      "endsIn": "{{time}} में समाप्त",
+      "winner": "{{name}} जीता",
+      "completed": "पूरा हुआ",
+      "types": {
+        "streak_battle": "Streak battle",
+        "workout_count": "Workout count"
+      },
+      "status": {
+        "active": "सक्रिय",
+        "completed": "पूरा",
+        "cancelled": "रद्द"
+      },
+      "participantStatus": {
+        "invited": "आमंत्रित",
+        "joined": "शामिल",
+        "declined": "अस्वीकार",
+        "left": "छोड़ा"
+      },
+      "form": {
+        "title": "Squad challenge शुरू करें",
+        "challengeTitle": "शीर्षक",
+        "titlePlaceholder": "7-day consistency battle",
+        "type": "प्रकार",
+        "target": "Target",
+        "duration": "अवधि",
+        "days": "{{count}} दिन",
+        "inviteFriends": "दोस्तों को invite करें",
+        "noFriends": "Invite करने के लिए पहले दोस्त add करें।",
+        "titleRequired": "Challenge title दर्ज करें।",
+        "targetRequired": "Valid target दर्ज करें।",
+        "create": "Challenge बनाएं"
+      },
+      "detail": {
+        "standings": "Standings",
+        "noStandings": "अभी standings नहीं हैं।",
+        "progress": "{{progress}} / {{target}}",
+        "leave": "छोड़ें",
+        "leaveTitle": "Challenge छोड़ें?",
+        "leaveBody": "आप इस challenge में दिखाई नहीं देंगे।"
+      },
+      "alerts": {
+        "loadFailed": "अभी challenge load नहीं हो सका।",
+        "saveFailed": "Challenge create नहीं हो सका।",
+        "actionFailed": "Challenge update नहीं हो सका।"
+      },
+      "noHistory": "अभी कोई पूरा हुआ चैलेंज नहीं"
+    },
+    "common": {
+      "comingSoon": "जल्द आ रहा है"
+    },
+    "threads": {
+      "eyebrow": "जिम थ्रेड्स",
+      "title": "थ्रेड्स",
+      "create": "बनाएँ",
+      "accept": "स्वीकार करें",
+      "decline": "अस्वीकार करें",
+      "supplementSlot": "स्टैक स्लॉट",
+      "stackMore": "+{{count}} और",
+      "stackSheetTitle": "मेंबर स्टैक्स",
+      "stackNotShared": "स्टैक शेयर नहीं किया गया",
+      "stackEmpty": "अभी कोई स्टैक आइटम नहीं",
+      "goingCount": "{{count}} जा रहे हैं",
+      "tabs": {
+        "active": "एक्टिव",
+        "invited": "आमंत्रित",
+        "past": "पुराने"
+      },
+      "empty": {
+        "active": {
+          "title": "कोई एक्टिव थ्रेड नहीं",
+          "body": "जिम थ्रेड बनाकर दोस्तों को साथ ट्रेन करने के लिए बुलाएँ।"
+        },
+        "invited": {
+          "title": "कोई इनवाइट नहीं",
+          "body": "दोस्तों के थ्रेड इनवाइट यहाँ दिखेंगे।"
+        },
+        "past": {
+          "title": "कोई पुराना थ्रेड नहीं",
+          "body": "पूरे और रद्द हुए थ्रेड यहाँ दिखेंगे।"
+        }
+      },
+      "status": {
+        "active": "एक्टिव",
+        "completed": "पूरा हुआ",
+        "cancelled": "रद्द"
+      },
+      "memberStatus": {
+        "invited": "आमंत्रित",
+        "joined": "जुड़े",
+        "declined": "अस्वीकार किया"
+      },
+      "form": {
+        "createTitle": "थ्रेड बनाएँ",
+        "editTitle": "थ्रेड एडिट करें",
+        "threadTitle": "शीर्षक",
+        "titlePlaceholder": "लेग डे 7 बजे?",
+        "gym": "जिम",
+        "gymPlaceholder": "जिम का नाम डालें",
+        "time": "तारीख और समय",
+        "inviteFriends": "दोस्तों को बुलाएँ",
+        "noFriends": "दोस्तों को बुलाने से पहले उन्हें जोड़ें।",
+        "select": "चुनें",
+        "selected": "चुना गया",
+        "selectedCount": "{{count}} चुने गए",
+        "titleRequired": "कृपया थ्रेड का शीर्षक डालें।",
+        "gymRequired": "कृपया जिम चुनें।",
+        "create": "थ्रेड बनाएँ",
+        "save": "बदलाव सेव करें"
+      },
+      "detail": {
+        "edit": "एडिट",
+        "mute": "म्यूट",
+        "unmute": "अनम्यूट",
+        "leave": "छोड़ें",
+        "cancelThread": "थ्रेड रद्द करें",
+        "cancelTitle": "थ्रेड रद्द करें?",
+        "cancelBody": "मेंबर्स को बताया जाएगा कि यह थ्रेड रद्द हो गया है।",
+        "leaveTitle": "थ्रेड छोड़ें?",
+        "leaveBody": "आप अब जाने वालों में नहीं दिखेंगे।",
+        "members": "मेंबर्स",
+        "host": "होस्ट",
+        "remove": "हटाएँ",
+        "inviteFriends": "दोस्तों को बुलाएँ",
+        "noInviteCandidates": "बुलाने के लिए और दोस्त नहीं हैं।",
+        "sendInvites": "इनवाइट भेजें",
+        "chat": "चैट",
+        "chatPlaceholder": "थ्रेड चैट Phase 4 में आएगी।"
+      },
+      "alerts": {
+        "loadFailed": "अभी थ्रेड्स लोड नहीं हो पाए।",
+        "actionFailed": "यह थ्रेड अपडेट नहीं हो पाया। फिर कोशिश करें।",
+        "saveFailed": "यह थ्रेड सेव नहीं हो पाया। फिर कोशिश करें।",
+        "inviteFailed": "इनवाइट भेजे नहीं जा सके। सुनिश्चित करें कि invitees दोस्त हैं और थ्रेड में जगह है।"
+      },
+      "referral": {
+        "title": "थ्रेड रेफरल",
+        "set": "सेट करें",
+        "edit": "एडिट",
+        "empty": "इस थ्रेड के लिए कोई रेफरल सेट नहीं है।",
+        "stats": "व्यू {{views}} · कॉपी {{copies}}",
+        "copyCode": "कोड कॉपी करें",
+        "shareInChat": "चैट में शेयर करें",
+        "codePlaceholder": "रेफरल कोड",
+        "discountPlaceholder": "डिस्काउंट टेक्स्ट",
+        "descriptionPlaceholder": "विवरण",
+        "save": "रेफरल सेव करें",
+        "remove": "रेफरल हटाएँ",
+        "saveFailed": "रेफरल सेव नहीं हो पाया।",
+        "removeFailed": "रेफरल हटाया नहीं जा सका।",
+        "sharedTitle": "रेफरल शेयर हुआ",
+        "sharedBody": "रेफरल कार्ड थ्रेड चैट में पोस्ट हो गया।",
+        "shareFailed": "रेफरल शेयर नहीं हो पाया।"
+      }
+    },
+    "messages": {
+      "eyebrow": "डायरेक्ट मैसेज",
+      "title": "मैसेज",
+      "chat": "चैट",
+      "unknownUser": "यूज़र",
+      "emptyTitle": "अभी कोई मैसेज नहीं",
+      "emptyBody": "दोस्त की प्रोफ़ाइल से DM शुरू करें या थ्रेड में चैट जारी रखें।",
+      "noMessagesYet": "अभी कोई मैसेज नहीं",
+      "emptyChat": "बातचीत शुरू करें — हेलो कहें",
+      "placeholder": "मैसेज...",
+      "send": "भेजें",
+      "edited": "एडिटेड",
+      "read": "रीड",
+      "deleted": "मैसेज डिलीट किया गया",
+      "deletedSender": "डिलीटेड मैसेज",
+      "editing": "मैसेज एडिट कर रहे हैं",
+      "replyingTo": "{{name}} को जवाब",
+      "actions": {
+        "messageOptions": "मैसेज विकल्प",
+        "reply": "रिप्लाई",
+        "edit": "एडिट",
+        "delete": "डिलीट"
+      },
+      "attach": {
+        "title": "शेयर करें",
+        "location": "लोकेशन",
+        "referral": "रेफरल",
+        "workout": "वर्कआउट / PR",
+        "stack": "स्टैक आइटम",
+        "locationShared": "लोकेशन शेयर की",
+        "referralShared": "रेफरल शेयर किया",
+        "workoutShared": "वर्कआउट शेयर किया",
+        "stackShared": "स्टैक आइटम शेयर किया"
+      },
+      "stackCard": {
+        "title": "{{name}} के स्टैक से"
+      },
+      "referral": {
+        "threadOnly": "रेफरल शेयरिंग केवल थ्रेड चैट में उपलब्ध है।",
+        "sharedTitle": "रेफरल शेयर हुआ",
+        "sharedBody": "रेफरल कार्ड थ्रेड चैट में पोस्ट हो गया।",
+        "noneSet": "इस थ्रेड के लिए अभी कोई रेफरल सेट नहीं है।",
+        "codeLabel": "रेफरल कोड",
+        "copyCode": "कोड कॉपी करें"
+      },
+      "alerts": {
+        "loadFailed": "मैसेज लोड नहीं हो पाए।",
+        "sendFailed": "यह मैसेज भेजा नहीं जा सका।",
+        "loadConversationsFailed": "कन्वर्सेशन लोड नहीं हो पाए।"
+      }
+    },
+    "friends": {
+      "eyebrow": "सोशल",
+      "title": "दोस्त",
+      "searchCta": "खोजें",
+      "friendsWithCount": "दोस्त ({{count}})",
+      "pending": "पेंडिंग",
+      "incoming": "आ रहे",
+      "outgoing": "भेजे गए",
+      "mutualCount": "{{count}} कॉमन दोस्त",
+      "noPendingRequests": "कोई पेंडिंग रिक्वेस्ट नहीं।",
+      "noOutgoingRequests": "कोई भेजी हुई रिक्वेस्ट नहीं।",
+      "zeroFriendsTitle": "अभी कोई दोस्त नहीं",
+      "zeroFriendsBody": "नाम से दोस्तों को खोजें और अपना ट्रेनिंग सर्कल बनाएँ।",
+      "searchByName": "नाम से दोस्त खोजें"
+    },
+    "search": {
+      "title": "दोस्त खोजें",
+      "placeholder": "नाम से खोजें",
+      "startTyping": "नाम से दोस्तों को खोजें।",
+      "noResults": "कोई मिलता-जुलता व्यक्ति नहीं मिला।"
+    },
+    "profilePeek": {
+      "friendshipStatus": "फ्रेंडशिप स्टेटस",
+      "supplementStack": "सप्लीमेंट स्टैक",
+      "supplementPlaceholder": "अभी कोई शेयर किए हुए स्टैक आइटम नहीं।",
+      "shareInChat": "चैट में शेयर करें"
+    },
+    "stacks": {
+      "title": "मेरा स्टैक",
+      "subtitle": "जब visibility on हो तो दोस्त जो सप्लीमेंट देख सकते हैं उन्हें ट्रैक करें।",
+      "open": "मेरा सप्लीमेंट स्टैक",
+      "visible": "दोस्तों को दिखेगा",
+      "hidden": "दोस्तों से छिपा",
+      "addTitle": "स्टैक आइटम जोड़ें",
+      "editTitle": "स्टैक आइटम एडिट करें",
+      "category": "कैटेगरी",
+      "productName": "प्रोडक्ट नाम",
+      "productPlaceholder": "Whey isolate",
+      "quantity": "मात्रा",
+      "quantityPlaceholder": "1 scoop · 30g",
+      "timing": "टाइमिंग",
+      "timingPlaceholder": "वर्कआउट के बाद",
+      "add": "आइटम जोड़ें",
+      "save": "आइटम सेव करें",
+      "delete": "डिलीट",
+      "moveUp": "ऊपर",
+      "moveDown": "नीचे",
+      "empty": "अपना protein, creatine या daily basics यहाँ जोड़ें।",
+      "notShared": "स्टैक शेयर नहीं किया गया",
+      "categories": {
+        "protein": "प्रोटीन",
+        "creatine": "क्रिएटिन",
+        "preworkout": "प्री-वर्कआउट",
+        "bcaa": "BCAA",
+        "multivitamin": "मल्टीविटामिन",
+        "other": "अन्य"
+      },
+      "timingTypes": {
+        "time_of_day": "दिन का समय",
+        "relative_to_workout": "वर्कआउट टाइमिंग",
+        "custom_text": "कस्टम"
+      },
+      "alerts": {
+        "loadFailed": "सप्लीमेंट स्टैक लोड नहीं हो पाया।",
+        "saveFailed": "स्टैक आइटम सेव नहीं हो पाया।",
+        "deleteFailed": "स्टैक आइटम डिलीट नहीं हो पाया।",
+        "reorderFailed": "स्टैक रीऑर्डर नहीं हो पाया।",
+        "visibilityFailed": "स्टैक visibility अपडेट नहीं हो पाई।",
+        "productRequired": "कृपया प्रोडक्ट नाम डालें।"
+      }
+    },
+    "status": {
+      "none": "दोस्त नहीं",
+      "pendingSent": "रिक्वेस्ट भेजी",
+      "pendingReceived": "रिक्वेस्ट मिली",
+      "friends": "दोस्त"
+    },
+    "actions": {
+      "add": "जोड़ें",
+      "cancelRequest": "रिक्वेस्ट रद्द करें",
+      "requested": "रिक्वेस्टेड",
+      "accept": "स्वीकार करें",
+      "ignore": "इग्नोर",
+      "remove": "हटाएँ",
+      "message": "मैसेज"
+    },
+    "alerts": {
+      "loadFailed": "अभी दोस्त लोड नहीं हो पाए।",
+      "searchFailed": "अभी लोगों को खोज नहीं पाए।",
+      "actionFailed": "यह फ्रेंडशिप अपडेट नहीं हो पाई। फिर कोशिश करें।",
+      "removeTitle": "दोस्त हटाएँ?",
+      "removeBody": "{{name}} को दोस्तों से हटाएँ?"
+    },
+    "reports": {
+      "submitted": "रिपोर्ट सबमिट हुई",
+      "alsoBlock": "इस यूज़र को ब्लॉक भी करें?",
+      "notNow": "अभी नहीं",
+      "block": "ब्लॉक",
+      "blockFailed": "इस यूज़र को ब्लॉक नहीं किया जा सका।",
+      "submitFailed": "यह रिपोर्ट सबमिट नहीं हो पाई।",
+      "report": "रिपोर्ट",
+      "messageTitle": "मैसेज रिपोर्ट करें",
+      "reasonPromptMessage": "आप यह मैसेज क्यों रिपोर्ट कर रहे हैं?",
+      "memberTitle": "मेंबर रिपोर्ट करें",
+      "reasonPromptMember": "आप इस मेंबर को क्यों रिपोर्ट कर रहे हैं?",
+      "userTitle": "यूज़र रिपोर्ट करें",
+      "reasonPromptUser": "आप इस यूज़र को क्यों रिपोर्ट कर रहे हैं?",
+      "reasons": {
+        "harassment": "हैरसमेंट",
+        "spam": "स्पैम",
+        "inappropriate_content": "अनुचित",
+        "fake_profile": "फेक प्रोफ़ाइल",
+        "other": "अन्य"
+      }
+    }
   },
   "streak": {
     "days": {

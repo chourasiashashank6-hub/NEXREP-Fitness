@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import relationship
 from src.db.session import Base
@@ -27,6 +27,7 @@ class User(Base):
     subscription_expiry = Column(DateTime(timezone=True), nullable=True)
     razorpay_subscription_id = Column(String(128), nullable=True, index=True)
     preferred_language = Column(String(32), nullable=True)
+    stack_visibility = Column(Boolean, nullable=False, default=True)
 
     onboarding = relationship("UserOnboarding", back_populates="user", uselist=False)
 
@@ -75,6 +76,212 @@ class StrengthLift(Base):
 
     user = relationship("User")
     workout = relationship("Workout")
+
+
+class Friendship(Base):
+    __tablename__ = "friendships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    friend_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(16), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    accepted_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = relationship("User", foreign_keys=[user_id])
+    friend = relationship("User", foreign_keys=[friend_id])
+
+    __table_args__ = (
+        CheckConstraint("user_id <> friend_id", name="ck_friendships_not_self"),
+        CheckConstraint("status IN ('pending', 'accepted', 'blocked')", name="ck_friendships_status"),
+    )
+
+
+class FriendRequestDailyCount(Base):
+    __tablename__ = "friend_request_daily_counts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    request_date = Column(Date, nullable=False, index=True)
+    count = Column(Integer, nullable=False, default=0)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = relationship("User")
+
+    __table_args__ = (UniqueConstraint("user_id", "request_date", name="uq_friend_request_daily_counts_user_date"),)
+
+
+class UserReport(Base):
+    __tablename__ = "user_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reporter_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    reported_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    reason = Column(String(32), nullable=False, index=True)
+    context = Column(String(16), nullable=False, index=True)
+    reference_id = Column(Integer, nullable=True, index=True)
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    status = Column(String(16), nullable=False, default="open", index=True)
+
+    reporter = relationship("User", foreign_keys=[reporter_id])
+    reported_user = relationship("User", foreign_keys=[reported_user_id])
+
+    __table_args__ = (
+        CheckConstraint("reporter_id <> reported_user_id", name="ck_user_reports_not_self"),
+        CheckConstraint(
+            "reason IN ('harassment', 'spam', 'inappropriate_content', 'fake_profile', 'other')",
+            name="ck_user_reports_reason",
+        ),
+        CheckConstraint("context IN ('profile', 'message', 'thread')", name="ck_user_reports_context"),
+        CheckConstraint("status IN ('open', 'reviewed', 'actioned')", name="ck_user_reports_status"),
+    )
+
+
+class UserSupplementStack(Base):
+    __tablename__ = "user_supplement_stack"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    category = Column(String(32), nullable=False, index=True)
+    product_name = Column(String(255), nullable=False)
+    quantity_note = Column(String(255), nullable=True)
+    timing_type = Column(String(32), nullable=False)
+    timing_value = Column(String(255), nullable=True)
+    sort_order = Column(Integer, nullable=False, default=0, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = relationship("User")
+
+    __table_args__ = (
+        CheckConstraint(
+            "category IN ('protein', 'creatine', 'preworkout', 'bcaa', 'multivitamin', 'other')",
+            name="ck_user_supplement_stack_category",
+        ),
+        CheckConstraint(
+            "timing_type IN ('time_of_day', 'relative_to_workout', 'custom_text')",
+            name="ck_user_supplement_stack_timing_type",
+        ),
+    )
+
+
+class Thread(Base):
+    __tablename__ = "threads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    host_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(160), nullable=False)
+    gym_name = Column(String(255), nullable=False)
+    gym_place_id = Column(String(255), nullable=True, index=True)
+    scheduled_time = Column(DateTime, nullable=False, index=True)
+    status = Column(String(16), nullable=False, default="active", index=True)
+    max_members = Column(Integer, nullable=False, default=20)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    referral_code = Column(String(80), nullable=True)
+    referral_description = Column(Text, nullable=True)
+    referral_discount_text = Column(String(160), nullable=True)
+    referral_viewed_count = Column(Integer, nullable=False, default=0)
+    referral_copied_count = Column(Integer, nullable=False, default=0)
+
+    host = relationship("User", foreign_keys=[host_user_id])
+    members = relationship("ThreadMember", back_populates="thread", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint("status IN ('active', 'completed', 'cancelled')", name="ck_threads_status"),
+        CheckConstraint("max_members > 0", name="ck_threads_max_members_positive"),
+    )
+
+
+class ThreadMember(Base):
+    __tablename__ = "thread_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    thread_id = Column(Integer, ForeignKey("threads.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(16), nullable=False, default="member", index=True)
+    status = Column(String(16), nullable=False, default="invited", index=True)
+    joined_at = Column(DateTime, nullable=True, index=True)
+    last_read_message_id = Column(Integer, ForeignKey("messages.id", ondelete="SET NULL"), nullable=True)
+
+    thread = relationship("Thread", back_populates="members")
+    user = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("thread_id", "user_id", name="uq_thread_members_thread_user"),
+        CheckConstraint("role IN ('host', 'member')", name="ck_thread_members_role"),
+        CheckConstraint("status IN ('invited', 'joined', 'declined')", name="ck_thread_members_status"),
+    )
+
+
+class ThreadMute(Base):
+    __tablename__ = "thread_mutes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    thread_id = Column(Integer, ForeignKey("threads.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    muted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    thread = relationship("Thread")
+    user = relationship("User")
+
+    __table_args__ = (UniqueConstraint("thread_id", "user_id", name="uq_thread_mutes_thread_user"),)
+
+
+class DMConversation(Base):
+    __tablename__ = "dm_conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    members = relationship("DMConversationMember", back_populates="conversation", cascade="all, delete-orphan")
+
+
+class DMConversationMember(Base):
+    __tablename__ = "dm_conversation_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    dm_conversation_id = Column(Integer, ForeignKey("dm_conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    joined_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    muted_at = Column(DateTime, nullable=True)
+    last_read_message_id = Column(Integer, ForeignKey("messages.id", ondelete="SET NULL"), nullable=True)
+
+    conversation = relationship("DMConversation", back_populates="members")
+    user = relationship("User")
+
+    __table_args__ = (UniqueConstraint("dm_conversation_id", "user_id", name="uq_dm_conversation_members_conversation_user"),)
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    thread_id = Column(Integer, ForeignKey("threads.id", ondelete="CASCADE"), nullable=True, index=True)
+    dm_conversation_id = Column(Integer, ForeignKey("dm_conversations.id", ondelete="CASCADE"), nullable=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    reply_to_message_id = Column(Integer, ForeignKey("messages.id", ondelete="SET NULL"), nullable=True, index=True)
+    type = Column(String(32), nullable=False, default="text", index=True)
+    body = Column(Text, nullable=True)
+    metadata_json = Column("metadata", JSONB, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    edited_at = Column(DateTime, nullable=True)
+    deleted_at = Column(DateTime, nullable=True, index=True)
+
+    thread = relationship("Thread")
+    dm_conversation = relationship("DMConversation")
+    sender = relationship("User", foreign_keys=[sender_id])
+    reply_to = relationship("Message", remote_side=[id])
+
+    __table_args__ = (
+        CheckConstraint("(thread_id IS NOT NULL) <> (dm_conversation_id IS NOT NULL)", name="ck_messages_one_conversation"),
+        CheckConstraint(
+            "type IN ('text', 'location', 'referral', 'workout_share', 'stack_share', 'system')",
+            name="ck_messages_type",
+        ),
+    )
 
 
 class MotivationalQuote(Base):
@@ -133,6 +340,88 @@ class NotificationLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     user = relationship("User")
+
+
+class ActivityEvent(Base):
+    __tablename__ = "activity_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    type = Column(String(32), nullable=False, index=True)
+    payload_json = Column("payload", JSONB, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    visibility = Column(String(16), nullable=False, default="friends", index=True)
+    deleted_at = Column(DateTime, nullable=True, index=True)
+
+    user = relationship("User")
+    reactions = relationship("FeedReaction", back_populates="event", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint("type IN ('pr', 'streak_milestone', 'thread_joined')", name="ck_activity_events_type"),
+        CheckConstraint("visibility IN ('friends', 'private')", name="ck_activity_events_visibility"),
+    )
+
+
+class FeedReaction(Base):
+    __tablename__ = "feed_reactions"
+
+    event_id = Column(Integer, ForeignKey("activity_events.id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    type = Column(String(16), primary_key=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    event = relationship("ActivityEvent", back_populates="reactions")
+    user = relationship("User")
+
+    __table_args__ = (CheckConstraint("type IN ('flame', 'clap')", name="ck_feed_reactions_type"),)
+
+
+class Challenge(Base):
+    __tablename__ = "challenges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    creator_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    type = Column(String(32), nullable=False, index=True)
+    title = Column(String(160), nullable=False)
+    target = Column(Integer, nullable=False)
+    start_date = Column(Date, nullable=False, index=True)
+    end_date = Column(Date, nullable=False, index=True)
+    status = Column(String(16), nullable=False, default="active", index=True)
+    winner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    creator = relationship("User", foreign_keys=[creator_id])
+    winner = relationship("User", foreign_keys=[winner_user_id])
+    participants = relationship("ChallengeParticipant", back_populates="challenge", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint("type IN ('streak_battle', 'workout_count')", name="ck_challenges_type"),
+        CheckConstraint("status IN ('active', 'completed', 'cancelled')", name="ck_challenges_status"),
+        CheckConstraint("target > 0", name="ck_challenges_target_positive"),
+        CheckConstraint("end_date >= start_date", name="ck_challenges_date_order"),
+    )
+
+
+class ChallengeParticipant(Base):
+    __tablename__ = "challenge_participants"
+
+    challenge_id = Column(Integer, ForeignKey("challenges.id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    progress = Column(Integer, nullable=False, default=0)
+    joined_at = Column(DateTime, nullable=True)
+    status = Column(String(16), nullable=False, default="invited", index=True)
+    target_reached_at = Column(DateTime, nullable=True, index=True)
+
+    challenge = relationship("Challenge", back_populates="participants")
+    user = relationship("User")
+
+    __table_args__ = (
+        CheckConstraint("progress >= 0", name="ck_challenge_participants_progress_nonnegative"),
+        CheckConstraint(
+            "status IN ('invited', 'joined', 'declined', 'left')",
+            name="ck_challenge_participants_status",
+        ),
+    )
 
 
 class Meal(Base):

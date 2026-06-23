@@ -29,6 +29,7 @@ from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.services.food_image_utils import prepare_food_image_for_vision
 from src.services.language_service import normalize_language_tag
 from src.services.ai_logger import log_gemini_call, log_groq_call
+from src.services.activity_feed_service import emit_streak_milestone_if_needed
 from src.utils.auth import get_current_user
 
 router = APIRouter()
@@ -1515,6 +1516,8 @@ def add_meal_entry(payload: MealCreateRequest, current_user: User = Depends(get_
     db.flush()
     recalculate_daily_log(db, log)
     db.commit()
+    if total_calories > 0:
+        emit_streak_milestone_if_needed(db, user_id=current_user.id, source="meal", source_id=entry.meal_id)
     return _serialize_day(db, current_user, log_date)
 
 
@@ -1578,6 +1581,8 @@ def update_meal_entry(
     db.flush()
     recalculate_daily_log(db, log)
     db.commit()
+    if meal.total_calories > 0:
+        emit_streak_milestone_if_needed(db, user_id=current_user.id, source="meal", source_id=meal.meal_id)
     return _serialize_day(db, current_user, log.log_date)
 
 
@@ -1706,6 +1711,8 @@ def create_ai_meal_entry(
     db.add(row)
     db.commit()
     db.refresh(row)
+    if row.calories and row.calories > 0:
+        emit_streak_milestone_if_needed(db, user_id=current_user.id, source="ai_meal", source_id=row.ai_meal_id)
     day_payload = _serialize_day(db, current_user, log_date)
     return {
         "ai_meal_id": row.ai_meal_id,

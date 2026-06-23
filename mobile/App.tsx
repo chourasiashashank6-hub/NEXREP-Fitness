@@ -6,6 +6,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./src/i18n";
 import i18n from "./src/i18n";
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import NotificationDeepLinkHandler from "./src/navigation/NotificationDeepLinkHandler";
+import { flushPendingNotificationNavigation, navigationRef } from "./src/navigation/navigationRef";
 import { NotificationPermissionBanner } from "./src/components/NotificationPermissionBanner";
 import { AppThemeProvider } from "./src/theme";
 import { useLanguageStore } from "./src/i18n/languageStore";
@@ -97,9 +99,10 @@ export default function App() {
       <SafeAreaProvider>
         <AppThemeProvider>
           <I18nBootstrap />
-          <NavigationContainer>
+          <NavigationContainer ref={navigationRef} onReady={flushPendingNotificationNavigation}>
             <StatusBar style="dark" />
             <NotificationPermissionBanner />
+            <NotificationDeepLinkHandler />
             <RootNavigator />
           </NavigationContainer>
         </AppThemeProvider>

@@ -10,6 +10,7 @@ import { useAuthStore } from "../store/authStore";
 import { AuthScreen } from "../screens/AuthScreen";
 import CoachNavigator from "../screens/Coach/CoachNavigator";
 import { ProfileStackNavigator } from "./ProfileStackNavigator";
+import SocialNavigator from "./SocialNavigator";
 import AdminNavigator from "./AdminNavigator";
 import { OnboardingProvider } from "../hooks/OnboardingContext";
 import Screen1Personal from "../screens/onboarding/Screen1Personal";
@@ -122,6 +123,7 @@ const MainTabs = ({ initialRouteName = "Home" }: { initialRouteName?: "Home" | "
             Workout: { on: "barbell", off: "barbell-outline" },
             Calories: { on: "flame", off: "flame-outline" },
             Coach: { on: "chatbubble-ellipses", off: "chatbubble-ellipses-outline" },
+            Social: { on: "people", off: "people-outline" },
           };
           const iconName = map[route.name]?.[focused ? "on" : "off"] ?? "ellipse-outline";
           return <Ionicons name={iconName} size={iconSize} color={color} />;
@@ -132,6 +134,7 @@ const MainTabs = ({ initialRouteName = "Home" }: { initialRouteName?: "Home" | "
       <Tabs.Screen name="Workout" getComponent={() => require("../screens/WorkoutScreen").WorkoutScreen} />
       <Tabs.Screen name="Calories" getComponent={() => require("../screens/CalorieLog").CalorieLog} />
       <Tabs.Screen name="Coach" component={CoachNavigator} />
+      <Tabs.Screen name="Social" component={SocialNavigator} />
       <Tabs.Screen name="Profile" component={ProfileStackNavigator} />
     </Tabs.Navigator>
   );

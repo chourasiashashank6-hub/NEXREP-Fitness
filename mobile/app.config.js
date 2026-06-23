@@ -21,6 +21,8 @@ module.exports = {
           "NexRep needs camera access to scan food and track workouts.",
         NSPhotoLibraryUsageDescription:
           "NexRep needs photo library access to analyze meal photos.",
+        NSLocationWhenInUseUsageDescription:
+          "NexRep uses your location to suggest nearby gyms when you search.",
       },
     },
     android: {
@@ -31,6 +33,8 @@ module.exports = {
       },
       permissions: [
         "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.SCHEDULE_EXACT_ALARM",
       ],
@@ -41,6 +45,13 @@ module.exports = {
     plugins: [
       "@react-native-community/datetimepicker",
       "expo-image-picker",
+      [
+        "expo-location",
+        {
+          locationWhenInUsePermission:
+            "NexRep uses your location to suggest nearby gyms when you search.",
+        },
+      ],
       [
         "expo-notifications",
         {

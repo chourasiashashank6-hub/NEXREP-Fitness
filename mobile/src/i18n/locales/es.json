@@ -12,7 +12,8 @@
     "workout": "Entrenamiento",
     "calories": "Calorías",
     "coach": "Coach",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "social": "Social"
   },
   "home": {
     "alerts": {
@@ -373,7 +374,401 @@
     "error": "Error",
     "retry": "Rever",
     "loading": "Cargando...",
-    "required": "Requerido"
+    "required": "Requerido",
+    "close": "Cerrar"
+  },
+  "social": {
+    "nav": {
+      "home": "Squad",
+      "leaderboard": "Ranking",
+      "friends": "Amigos",
+      "threads": "Hilos",
+      "messages": "Mensajes"
+    },
+    "home": {
+      "eyebrow": "Squad",
+      "fallbackName": "ahi",
+      "heroTitle": "Hola {{name}}",
+      "friendCount": "{{count}} amigos",
+      "nextSessionEyebrow": "Tu proxima sesion",
+      "openThread": "Abrir",
+      "feedTitle": "Actividad del squad",
+      "reactions": {
+        "flame": "Fuego",
+        "cheer": "Animar"
+      },
+      "time": {
+        "now": "ahora"
+      },
+      "feed": {
+        "prFallback": "PR de fuerza",
+        "prBadge": "PR",
+        "weight": "Peso",
+        "reps": "Reps",
+        "oneRm": "1RM est.",
+        "streakTitle": "Racha de {{count}} dias",
+        "streakBody": "Hito desbloqueado. Mantén el fuego.",
+        "threadJoined": "Se unio a {{title}}",
+        "threadFallback": "un hilo de gimnasio"
+      },
+      "empty": {
+        "zeroFriendsTitle": "Bienvenido a Squad",
+        "zeroFriendsBody": "Encuentra amigos, sigue sus PRs y empiecen a entrenar juntos.",
+        "searchFriends": "Buscar amigos",
+        "quietTitle": "Tu squad ha estado tranquilo",
+        "quietBody": "Tu squad ha estado tranquilo — se el primero en registrar un entrenamiento hoy."
+      },
+      "alerts": {
+        "loadFailed": "No se pudo cargar Squad ahora.",
+        "reactionFailed": "No se pudo agregar tu reaccion. Intenta de nuevo."
+      }
+    },
+    "leaderboard": {
+      "eyebrow": "Reinicio semanal",
+      "title": "Ranking",
+      "resetsIn": "Se reinicia en",
+      "soon": "pronto",
+      "optIn": "Participar",
+      "optOut": "Salir",
+      "emptyTitle": "Invita mas amigos",
+      "emptyBody": "Invite more friends to unlock the leaderboard.",
+      "inviteFriends": "Buscar amigos",
+      "workouts": "{{count}} entrenos",
+      "rowMeta": "{{workouts}} entrenos · racha de {{streak}} dias",
+      "alerts": {
+        "loadFailed": "No se pudo cargar el ranking ahora.",
+        "settingsFailed": "No se pudo actualizar la configuracion del ranking."
+      }
+    },
+    "challenges": {
+      "createCta": "Reto",
+      "accept": "Aceptar",
+      "decline": "Rechazar",
+      "active": "Retos activos",
+      "invites": "Invitaciones a retos",
+      "history": "Historial",
+      "noActive": "Inicia un reto de squad para mover a todos.",
+      "target": "{{count}} objetivo",
+      "endsIn": "Termina en {{time}}",
+      "winner": "{{name}} gano",
+      "completed": "Completado",
+      "types": {
+        "streak_battle": "Batalla de racha",
+        "workout_count": "Conteo de entrenos"
+      },
+      "status": {
+        "active": "Activo",
+        "completed": "Completado",
+        "cancelled": "Cancelado"
+      },
+      "participantStatus": {
+        "invited": "Invitado",
+        "joined": "Unido",
+        "declined": "Rechazado",
+        "left": "Salio"
+      },
+      "form": {
+        "title": "Iniciar reto de squad",
+        "challengeTitle": "Titulo",
+        "titlePlaceholder": "Batalla de constancia de 7 dias",
+        "type": "Tipo",
+        "target": "Objetivo",
+        "duration": "Duracion",
+        "days": "{{count}} dias",
+        "inviteFriends": "Invitar amigos",
+        "noFriends": "Agrega amigos primero para invitarlos.",
+        "titleRequired": "Ingresa un titulo para el reto.",
+        "targetRequired": "Ingresa un objetivo valido.",
+        "create": "Crear reto"
+      },
+      "detail": {
+        "standings": "Posiciones",
+        "noStandings": "Aun no hay posiciones.",
+        "progress": "{{progress}} / {{target}}",
+        "leave": "Salir",
+        "leaveTitle": "Salir del reto?",
+        "leaveBody": "Ya no apareceras en este reto."
+      },
+      "alerts": {
+        "loadFailed": "No se pudo cargar el reto ahora.",
+        "saveFailed": "No se pudo crear este reto.",
+        "actionFailed": "No se pudo actualizar este reto."
+      },
+      "noHistory": "Aún no hay desafíos completados"
+    },
+    "common": {
+      "comingSoon": "Próximamente"
+    },
+    "threads": {
+      "eyebrow": "Hilos de gym",
+      "title": "Hilos",
+      "create": "Crear",
+      "accept": "Aceptar",
+      "decline": "Rechazar",
+      "supplementSlot": "Espacio de stack",
+      "stackMore": "+{{count}} más",
+      "stackSheetTitle": "Stacks de miembros",
+      "stackNotShared": "Stack no compartido",
+      "stackEmpty": "Aún no hay elementos en el stack",
+      "goingCount": "{{count}} van",
+      "tabs": {
+        "active": "Activos",
+        "invited": "Invitado",
+        "past": "Pasados"
+      },
+      "empty": {
+        "active": {
+          "title": "No hay hilos activos",
+          "body": "Crea un hilo de gym e invita amigos a entrenar juntos."
+        },
+        "invited": {
+          "title": "No hay invitaciones",
+          "body": "Las invitaciones a hilos de amigos aparecerán aquí."
+        },
+        "past": {
+          "title": "No hay hilos pasados",
+          "body": "Los hilos completados y cancelados aparecerán aquí."
+        }
+      },
+      "status": {
+        "active": "Activo",
+        "completed": "Completado",
+        "cancelled": "Cancelado"
+      },
+      "memberStatus": {
+        "invited": "Invitado",
+        "joined": "Unido",
+        "declined": "Rechazado"
+      },
+      "form": {
+        "createTitle": "Crear hilo",
+        "editTitle": "Editar hilo",
+        "threadTitle": "Título",
+        "titlePlaceholder": "¿Pierna a las 7?",
+        "gym": "Gym",
+        "gymPlaceholder": "Ingresa el nombre del gym",
+        "time": "Fecha y hora",
+        "inviteFriends": "Invitar amigos",
+        "noFriends": "Agrega amigos primero para invitarlos.",
+        "select": "Seleccionar",
+        "selected": "Seleccionado",
+        "selectedCount": "{{count}} seleccionados",
+        "titleRequired": "Ingresa un título para el hilo.",
+        "gymRequired": "Selecciona un gym.",
+        "create": "Crear hilo",
+        "save": "Guardar cambios"
+      },
+      "detail": {
+        "edit": "Editar",
+        "mute": "Silenciar",
+        "unmute": "Activar sonido",
+        "leave": "Salir",
+        "cancelThread": "Cancelar hilo",
+        "cancelTitle": "¿Cancelar hilo?",
+        "cancelBody": "Se avisará a los miembros que este hilo fue cancelado.",
+        "leaveTitle": "¿Salir del hilo?",
+        "leaveBody": "Ya no aparecerás como asistente.",
+        "members": "Miembros",
+        "host": "Host",
+        "remove": "Eliminar",
+        "inviteFriends": "Invitar amigos",
+        "noInviteCandidates": "No hay más amigos para invitar.",
+        "sendInvites": "Enviar invitaciones",
+        "chat": "Chat",
+        "chatPlaceholder": "El chat del hilo llega en la Fase 4."
+      },
+      "alerts": {
+        "loadFailed": "No se pudieron cargar los hilos ahora.",
+        "actionFailed": "No se pudo actualizar este hilo. Inténtalo de nuevo.",
+        "saveFailed": "No se pudo guardar este hilo. Inténtalo de nuevo.",
+        "inviteFailed": "No se pudieron enviar invitaciones. Asegúrate de que sean amigos y que el hilo tenga espacio."
+      },
+      "referral": {
+        "title": "Referido del hilo",
+        "set": "Configurar",
+        "edit": "Editar",
+        "empty": "No hay referido configurado para este hilo.",
+        "stats": "Vistas {{views}} · Copias {{copies}}",
+        "copyCode": "Copiar código",
+        "shareInChat": "Compartir en chat",
+        "codePlaceholder": "Código de referido",
+        "discountPlaceholder": "Texto de descuento",
+        "descriptionPlaceholder": "Descripción",
+        "save": "Guardar referido",
+        "remove": "Eliminar referido",
+        "saveFailed": "No se pudo guardar el referido.",
+        "removeFailed": "No se pudo eliminar el referido.",
+        "sharedTitle": "Referido compartido",
+        "sharedBody": "La tarjeta de referido se publicó en el chat del hilo.",
+        "shareFailed": "No se pudo compartir el referido."
+      }
+    },
+    "messages": {
+      "eyebrow": "Mensajes directos",
+      "title": "Mensajes",
+      "chat": "Chat",
+      "unknownUser": "Usuario",
+      "emptyTitle": "Aún no hay mensajes",
+      "emptyBody": "Inicia un DM desde el perfil de un amigo o sigue chateando en un hilo.",
+      "noMessagesYet": "Aún no hay mensajes",
+      "emptyChat": "Inicia la conversación — saluda",
+      "placeholder": "Mensaje...",
+      "send": "Enviar",
+      "edited": "editado",
+      "read": "Leído",
+      "deleted": "Mensaje eliminado",
+      "deletedSender": "Mensaje eliminado",
+      "editing": "Editando mensaje",
+      "replyingTo": "Respondiendo a {{name}}",
+      "actions": {
+        "messageOptions": "Opciones del mensaje",
+        "reply": "Responder",
+        "edit": "Editar",
+        "delete": "Eliminar"
+      },
+      "attach": {
+        "title": "Compartir",
+        "location": "Ubicación",
+        "referral": "Referido",
+        "workout": "Entreno / PR",
+        "stack": "Elemento del stack",
+        "locationShared": "Ubicación compartida",
+        "referralShared": "Referido compartido",
+        "workoutShared": "Entreno compartido",
+        "stackShared": "Elemento del stack compartido"
+      },
+      "stackCard": {
+        "title": "Del stack de {{name}}"
+      },
+      "referral": {
+        "threadOnly": "Los referidos solo se pueden compartir en chats de hilos.",
+        "sharedTitle": "Referido compartido",
+        "sharedBody": "La tarjeta de referido se publicó en el chat del hilo.",
+        "noneSet": "Aún no hay referido configurado para este hilo.",
+        "codeLabel": "Código de referido",
+        "copyCode": "Copiar código"
+      },
+      "alerts": {
+        "loadFailed": "No se pudieron cargar los mensajes.",
+        "sendFailed": "No se pudo enviar este mensaje.",
+        "loadConversationsFailed": "No se pudieron cargar las conversaciones."
+      }
+    },
+    "friends": {
+      "eyebrow": "Social",
+      "title": "Amigos",
+      "searchCta": "Buscar",
+      "friendsWithCount": "Amigos ({{count}})",
+      "pending": "Pendientes",
+      "incoming": "Entrantes",
+      "outgoing": "Enviadas",
+      "mutualCount": "{{count}} amigos en común",
+      "noPendingRequests": "No hay solicitudes pendientes.",
+      "noOutgoingRequests": "No hay solicitudes enviadas.",
+      "zeroFriendsTitle": "Aún no tienes amigos",
+      "zeroFriendsBody": "Busca amigos por nombre y arma tu círculo de entrenamiento.",
+      "searchByName": "Buscar amigos por nombre"
+    },
+    "search": {
+      "title": "Buscar amigos",
+      "placeholder": "Buscar por nombre",
+      "startTyping": "Busca amigos por nombre.",
+      "noResults": "No se encontraron personas."
+    },
+    "profilePeek": {
+      "friendshipStatus": "Estado de amistad",
+      "supplementStack": "Stack de suplementos",
+      "supplementPlaceholder": "Aún no hay elementos de stack compartidos.",
+      "shareInChat": "Compartir en chat"
+    },
+    "stacks": {
+      "title": "Mi stack",
+      "subtitle": "Registra suplementos que tus amigos pueden ver cuando la visibilidad está activa.",
+      "open": "Mi stack de suplementos",
+      "visible": "Visible para amigos",
+      "hidden": "Oculto para amigos",
+      "addTitle": "Agregar elemento al stack",
+      "editTitle": "Editar elemento del stack",
+      "category": "Categoría",
+      "productName": "Nombre del producto",
+      "productPlaceholder": "Whey isolate",
+      "quantity": "Cantidad",
+      "quantityPlaceholder": "1 scoop · 30g",
+      "timing": "Timing",
+      "timingPlaceholder": "Después del entreno",
+      "add": "Agregar elemento",
+      "save": "Guardar elemento",
+      "delete": "Eliminar",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "empty": "Agrega tu proteína, creatina o básicos diarios aquí.",
+      "notShared": "Stack no compartido",
+      "categories": {
+        "protein": "Proteína",
+        "creatine": "Creatina",
+        "preworkout": "Pre-workout",
+        "bcaa": "BCAA",
+        "multivitamin": "Multivitamínico",
+        "other": "Otro"
+      },
+      "timingTypes": {
+        "time_of_day": "Hora del día",
+        "relative_to_workout": "Timing del entreno",
+        "custom_text": "Personalizado"
+      },
+      "alerts": {
+        "loadFailed": "No se pudo cargar el stack de suplementos.",
+        "saveFailed": "No se pudo guardar el elemento del stack.",
+        "deleteFailed": "No se pudo eliminar el elemento del stack.",
+        "reorderFailed": "No se pudo reordenar el stack.",
+        "visibilityFailed": "No se pudo actualizar la visibilidad del stack.",
+        "productRequired": "Ingresa un nombre de producto."
+      }
+    },
+    "status": {
+      "none": "No son amigos",
+      "pendingSent": "Solicitado",
+      "pendingReceived": "Solicitud recibida",
+      "friends": "Amigos"
+    },
+    "actions": {
+      "add": "Agregar",
+      "cancelRequest": "Cancelar solicitud",
+      "requested": "Solicitado",
+      "accept": "Aceptar",
+      "ignore": "Ignorar",
+      "remove": "Eliminar",
+      "message": "Mensaje"
+    },
+    "alerts": {
+      "loadFailed": "No se pudieron cargar amigos ahora.",
+      "searchFailed": "No se pudo buscar personas ahora.",
+      "actionFailed": "No se pudo actualizar esta amistad. Inténtalo de nuevo.",
+      "removeTitle": "¿Eliminar amigo?",
+      "removeBody": "¿Eliminar a {{name}} de tus amigos?"
+    },
+    "reports": {
+      "submitted": "Reporte enviado",
+      "alsoBlock": "¿También bloquear a este usuario?",
+      "notNow": "Ahora no",
+      "block": "Bloquear",
+      "blockFailed": "No se pudo bloquear a este usuario.",
+      "submitFailed": "No se pudo enviar este reporte.",
+      "report": "Reportar",
+      "messageTitle": "Reportar mensaje",
+      "reasonPromptMessage": "¿Por qué reportas este mensaje?",
+      "memberTitle": "Reportar miembro",
+      "reasonPromptMember": "¿Por qué reportas a este miembro?",
+      "userTitle": "Reportar usuario",
+      "reasonPromptUser": "¿Por qué reportas a este usuario?",
+      "reasons": {
+        "harassment": "Acoso",
+        "spam": "Spam",
+        "inappropriate_content": "Inapropiado",
+        "fake_profile": "Perfil falso",
+        "other": "Otro"
+      }
+    }
   },
   "streak": {
     "days": {

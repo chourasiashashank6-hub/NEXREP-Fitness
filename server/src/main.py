@@ -61,6 +61,7 @@ from src.services.notification_service import (
     start_notification_scheduler,
     stop_notification_scheduler,
 )
+from src.services.activity_feed_service import emit_activity_event, emit_streak_milestone_if_needed
 from src.services.language_service import ai_language_instruction
 from src.services.language_service import normalize_language_tag
 from src.services.subscription_service import (
@@ -74,6 +75,13 @@ from src.routes.weight_log import router as weight_router
 from src.routes.payments import router as payments_router
 from src.routes.subscriptions import invoices_router, router as subscriptions_router
 from src.routes.admin import router as admin_router
+from src.routes.social import router as social_router
+from src.routes.places import router as places_router
+from src.routes.threads import router as threads_router
+from src.routes.messages import router as messages_router
+from src.routes.supplement_stacks import router as supplement_stacks_router
+from src.routes.feed import router as feed_router
+from src.routes.social_challenges import challenges_router, leaderboard_router
 from src.services.ai_logger import log_groq_call
 from src.utils.auth import decode_user_id_from_token
 from src.coach_targets import (
@@ -119,6 +127,14 @@ app.include_router(payments_router)
 app.include_router(subscriptions_router)
 app.include_router(invoices_router)
 app.include_router(admin_router)
+app.include_router(social_router)
+app.include_router(places_router)
+app.include_router(threads_router)
+app.include_router(messages_router)
+app.include_router(supplement_stacks_router)
+app.include_router(feed_router)
+app.include_router(leaderboard_router)
+app.include_router(challenges_router)
 
 
 _ACTIVITY_SKIP_PATHS = {
@@ -1417,6 +1433,21 @@ def _notify_strength_pr_if_needed(lift: StrengthLift, serialized: dict[str, Any]
     if not serialized.get("is_new_pr"):
         return
     estimated_1rm = serialized.get("estimated_1rm_kg")
+    emit_activity_event(
+        db,
+        user_id=user_id,
+        event_type="pr",
+        payload={
+            "lift_id": lift.id,
+            "exercise_id": lift.exercise_id,
+            "exercise_name": lift.exercise_name,
+            "weight_kg": lift.weight_kg,
+            "reps": lift.reps,
+            "estimated_1rm_kg": estimated_1rm,
+            "date": serialized.get("date"),
+        },
+        identity_payload={"lift_id": lift.id},
+    )
     send_push_to_user(
         db,
         user_id=user_id,
@@ -1647,6 +1678,11 @@ DEFAULT_NOTIFICATION_PREFERENCES = {
         "dress_change_minutes": 18,
         "meditation_minutes": 10,
     },
+    "feed_auto_share": {
+        "share_prs": True,
+        "share_streak_milestones": True,
+        "share_thread_joins": True,
+    },
 }
 
 
@@ -1655,6 +1691,7 @@ def _normalize_notification_preferences(raw: dict | None) -> dict:
     categories = raw.get("categories") if isinstance(raw.get("categories"), dict) else {}
     quiet_hours = raw.get("quiet_hours") if isinstance(raw.get("quiet_hours"), dict) else {}
     offsets = raw.get("offsets") if isinstance(raw.get("offsets"), dict) else {}
+    feed_auto_share = raw.get("feed_auto_share") if isinstance(raw.get("feed_auto_share"), dict) else {}
 
     def bool_value(value: Any, fallback: bool) -> bool:
         return fallback if value is None else bool(value)
@@ -1688,6 +1725,11 @@ def _normalize_notification_preferences(raw: dict | None) -> dict:
             "pre_workout_minutes": int_value(offsets.get("pre_workout_minutes"), 20, 1, 120),
             "dress_change_minutes": int_value(offsets.get("dress_change_minutes"), 18, 1, 120),
             "meditation_minutes": int_value(offsets.get("meditation_minutes"), 10, 1, 120),
+        },
+        "feed_auto_share": {
+            "share_prs": bool_value(feed_auto_share.get("share_prs"), True),
+            "share_streak_milestones": bool_value(feed_auto_share.get("share_streak_milestones"), True),
+            "share_thread_joins": bool_value(feed_auto_share.get("share_thread_joins"), True),
         },
     }
 
@@ -2064,6 +2106,7 @@ def add_workout(
     )
     db.add(dashboard_activity)
     db.commit()
+    emit_streak_milestone_if_needed(db, user_id=current_user.id, source="workout", source_id=workout.id)
 
     return {"id": workout.id, "exercise_id": workout.exercise_id}
 

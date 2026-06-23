@@ -1,5 +1,5 @@
-import type { PropsWithChildren } from "react";
-import type { StyleProp, ViewStyle } from "react-native";
+import type { PropsWithChildren, ReactElement } from "react";
+import type { RefreshControlProps, StyleProp, ViewStyle } from "react-native";
 import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 
 const SCREEN_BG = "#FFFFFF";
@@ -8,14 +8,16 @@ type ScreenContainerProps = PropsWithChildren<{
   bg?: string;
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
+  refreshControl?: ReactElement<RefreshControlProps>;
 }>;
 
-export const ScreenContainer = ({ children, bg = SCREEN_BG, style, contentStyle }: ScreenContainerProps) => {
+export const ScreenContainer = ({ children, bg = SCREEN_BG, style, contentStyle, refreshControl }: ScreenContainerProps) => {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bg }, style]}>
       <ScrollView
         style={[styles.root, { backgroundColor: bg }]}
         contentContainerStyle={[styles.content, contentStyle]}
+        refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="on-drag"

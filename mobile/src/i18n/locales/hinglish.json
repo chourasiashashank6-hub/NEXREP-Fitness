@@ -12,7 +12,8 @@
     "workout": "Workout",
     "calories": "Calories",
     "coach": "Coach",
-    "profile": "Profile"
+    "profile": "Profile",
+    "social": "Social"
   },
   "home": {
     "alerts": {
@@ -373,7 +374,401 @@
     "error": "Error",
     "retry": "Retry",
     "loading": "Loading...",
-    "required": "Required"
+    "required": "Required",
+    "close": "Band karein"
+  },
+  "social": {
+    "nav": {
+      "home": "Squad",
+      "leaderboard": "Leaderboard",
+      "friends": "Friends",
+      "threads": "Threads",
+      "messages": "Messages"
+    },
+    "home": {
+      "eyebrow": "Squad",
+      "fallbackName": "there",
+      "heroTitle": "Hey {{name}}",
+      "friendCount": "{{count}} friends",
+      "nextSessionEyebrow": "Aapka next session",
+      "openThread": "Open",
+      "feedTitle": "Squad activity",
+      "reactions": {
+        "flame": "Flame",
+        "cheer": "Cheer"
+      },
+      "time": {
+        "now": "abhi"
+      },
+      "feed": {
+        "prFallback": "Strength PR",
+        "prBadge": "PR",
+        "weight": "Weight",
+        "reps": "Reps",
+        "oneRm": "Est. 1RM",
+        "streakTitle": "{{count}}-day streak",
+        "streakBody": "Milestone unlock ho gaya. Fire continue rakhein.",
+        "threadJoined": "{{title}} join kiya",
+        "threadFallback": "gym thread"
+      },
+      "empty": {
+        "zeroFriendsTitle": "Squad mein welcome",
+        "zeroFriendsBody": "Friends search karein, unke PRs follow karein, aur saath train karein.",
+        "searchFriends": "Friends search karein",
+        "quietTitle": "Aapka squad quiet hai",
+        "quietBody": "Aapka squad quiet hai — aaj workout log karne wale pehle banein."
+      },
+      "alerts": {
+        "loadFailed": "Squad abhi load nahi ho paya.",
+        "reactionFailed": "Aapki reaction add nahi ho payi. Dobara try karein."
+      }
+    },
+    "leaderboard": {
+      "eyebrow": "Weekly reset",
+      "title": "Leaderboard",
+      "resetsIn": "Reset in",
+      "soon": "soon",
+      "optIn": "Opt in",
+      "optOut": "Opt out",
+      "emptyTitle": "Aur friends invite karein",
+      "emptyBody": "Leaderboard unlock karne ke liye aur friends invite karein.",
+      "inviteFriends": "Friends search karein",
+      "workouts": "{{count}} workouts",
+      "rowMeta": "{{workouts}} workouts · {{streak}} day streak",
+      "alerts": {
+        "loadFailed": "Leaderboard abhi load nahi ho paya.",
+        "settingsFailed": "Leaderboard settings update nahi ho payi."
+      }
+    },
+    "challenges": {
+      "createCta": "Challenge",
+      "accept": "Accept",
+      "decline": "Decline",
+      "active": "Active challenges",
+      "invites": "Challenge invites",
+      "history": "History",
+      "noActive": "Squad ko move karne ke liye challenge start karein.",
+      "target": "{{count}} target",
+      "endsIn": "{{time}} mein end",
+      "winner": "{{name}} jeeta",
+      "completed": "Complete",
+      "types": {
+        "streak_battle": "Streak battle",
+        "workout_count": "Workout count"
+      },
+      "status": {
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "participantStatus": {
+        "invited": "Invited",
+        "joined": "Joined",
+        "declined": "Declined",
+        "left": "Left"
+      },
+      "form": {
+        "title": "Squad challenge start karein",
+        "challengeTitle": "Title",
+        "titlePlaceholder": "7-day consistency battle",
+        "type": "Type",
+        "target": "Target",
+        "duration": "Duration",
+        "days": "{{count}} days",
+        "inviteFriends": "Friends invite karein",
+        "noFriends": "Invite karne ke liye pehle friends add karein.",
+        "titleRequired": "Challenge title enter karein.",
+        "targetRequired": "Valid target enter karein.",
+        "create": "Challenge create karein"
+      },
+      "detail": {
+        "standings": "Standings",
+        "noStandings": "Abhi standings nahi hain.",
+        "progress": "{{progress}} / {{target}}",
+        "leave": "Leave",
+        "leaveTitle": "Challenge leave karein?",
+        "leaveBody": "Aap is challenge mein nahi dikhoge."
+      },
+      "alerts": {
+        "loadFailed": "Challenge abhi load nahi ho paya.",
+        "saveFailed": "Challenge create nahi ho paya.",
+        "actionFailed": "Challenge update nahi ho paya."
+      },
+      "noHistory": "Abhi completed challenges nahi hain"
+    },
+    "common": {
+      "comingSoon": "Jald aa raha hai"
+    },
+    "threads": {
+      "eyebrow": "Gym threads",
+      "title": "Threads",
+      "create": "Create",
+      "accept": "Accept",
+      "decline": "Decline",
+      "supplementSlot": "Stack slot",
+      "stackMore": "+{{count}} aur",
+      "stackSheetTitle": "Member stacks",
+      "stackNotShared": "Stack share nahi hai",
+      "stackEmpty": "Abhi stack items nahi hain",
+      "goingCount": "{{count}} ja rahe hain",
+      "tabs": {
+        "active": "Active",
+        "invited": "Invited",
+        "past": "Past"
+      },
+      "empty": {
+        "active": {
+          "title": "Active threads nahi hain",
+          "body": "Gym thread banao aur friends ko saath train karne bulao."
+        },
+        "invited": {
+          "title": "Invites nahi hain",
+          "body": "Friends ke thread invites yahan dikhेंगे."
+        },
+        "past": {
+          "title": "Past threads nahi hain",
+          "body": "Completed aur cancelled threads yahan dikhेंगे."
+        }
+      },
+      "status": {
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "memberStatus": {
+        "invited": "Invited",
+        "joined": "Joined",
+        "declined": "Declined"
+      },
+      "form": {
+        "createTitle": "Thread create karein",
+        "editTitle": "Thread edit karein",
+        "threadTitle": "Title",
+        "titlePlaceholder": "Leg day 7 baje?",
+        "gym": "Gym",
+        "gymPlaceholder": "Gym ka naam daalein",
+        "time": "Date & time",
+        "inviteFriends": "Friends invite karein",
+        "noFriends": "Invite karne se pehle friends add karein.",
+        "select": "Select",
+        "selected": "Selected",
+        "selectedCount": "{{count}} selected",
+        "titleRequired": "Please thread title daalein.",
+        "gymRequired": "Please gym select karein.",
+        "create": "Thread create karein",
+        "save": "Changes save karein"
+      },
+      "detail": {
+        "edit": "Edit",
+        "mute": "Mute",
+        "unmute": "Unmute",
+        "leave": "Leave",
+        "cancelThread": "Thread cancel karein",
+        "cancelTitle": "Thread cancel karein?",
+        "cancelBody": "Members ko notify kiya jayega ki thread cancel ho gaya hai.",
+        "leaveTitle": "Thread leave karein?",
+        "leaveBody": "Aap going list mein nahi dikhenge.",
+        "members": "Members",
+        "host": "Host",
+        "remove": "Remove",
+        "inviteFriends": "Friends invite karein",
+        "noInviteCandidates": "Invite karne ke liye aur friends nahi hain.",
+        "sendInvites": "Invites bhejein",
+        "chat": "Chat",
+        "chatPlaceholder": "Thread chat Phase 4 mein aayegi."
+      },
+      "alerts": {
+        "loadFailed": "Threads abhi load nahi ho paaye.",
+        "actionFailed": "Thread update nahi ho paaya. Phir try karein.",
+        "saveFailed": "Thread save nahi ho paaya. Phir try karein.",
+        "inviteFailed": "Invites bhej nahi paaye. Check karein invitees friends hain aur thread mein room hai."
+      },
+      "referral": {
+        "title": "Thread referral",
+        "set": "Set",
+        "edit": "Edit",
+        "empty": "Is thread ke liye referral set nahi hai.",
+        "stats": "Views {{views}} · Copies {{copies}}",
+        "copyCode": "Code copy karein",
+        "shareInChat": "Chat mein share karein",
+        "codePlaceholder": "Referral code",
+        "discountPlaceholder": "Discount text",
+        "descriptionPlaceholder": "Description",
+        "save": "Referral save karein",
+        "remove": "Referral remove karein",
+        "saveFailed": "Referral save nahi ho paaya.",
+        "removeFailed": "Referral remove nahi ho paaya.",
+        "sharedTitle": "Referral shared",
+        "sharedBody": "Referral card thread chat mein post ho gaya.",
+        "shareFailed": "Referral share nahi ho paaya."
+      }
+    },
+    "messages": {
+      "eyebrow": "Direct messages",
+      "title": "Messages",
+      "chat": "Chat",
+      "unknownUser": "User",
+      "emptyTitle": "Abhi messages nahi hain",
+      "emptyBody": "Friend profile se DM start karo ya thread mein chat continue karo.",
+      "noMessagesYet": "Abhi messages nahi hain",
+      "emptyChat": "Conversation start karein — hello bolo",
+      "placeholder": "Message...",
+      "send": "Send",
+      "edited": "edited",
+      "read": "Read",
+      "deleted": "Message deleted",
+      "deletedSender": "Deleted message",
+      "editing": "Editing message",
+      "replyingTo": "{{name}} ko reply",
+      "actions": {
+        "messageOptions": "Message options",
+        "reply": "Reply",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "attach": {
+        "title": "Share",
+        "location": "Location",
+        "referral": "Referral",
+        "workout": "Workout / PR",
+        "stack": "Stack item",
+        "locationShared": "Location share ki",
+        "referralShared": "Referral share kiya",
+        "workoutShared": "Workout share kiya",
+        "stackShared": "Stack item share kiya"
+      },
+      "stackCard": {
+        "title": "{{name}} ke stack se"
+      },
+      "referral": {
+        "threadOnly": "Referral sharing sirf thread chats mein available hai.",
+        "sharedTitle": "Referral shared",
+        "sharedBody": "Referral card thread chat mein post ho gaya.",
+        "noneSet": "Is thread ke liye abhi referral set nahi hai.",
+        "codeLabel": "Referral code",
+        "copyCode": "Code copy karein"
+      },
+      "alerts": {
+        "loadFailed": "Messages load nahi ho paaye.",
+        "sendFailed": "Message send nahi ho paaya.",
+        "loadConversationsFailed": "Conversations load nahi ho paayi."
+      }
+    },
+    "friends": {
+      "eyebrow": "Social",
+      "title": "Friends",
+      "searchCta": "Search",
+      "friendsWithCount": "Friends ({{count}})",
+      "pending": "Pending",
+      "incoming": "Incoming",
+      "outgoing": "Outgoing",
+      "mutualCount": "{{count}} mutual friends",
+      "noPendingRequests": "Pending requests nahi hain.",
+      "noOutgoingRequests": "Outgoing requests nahi hain.",
+      "zeroFriendsTitle": "Abhi friends nahi hain",
+      "zeroFriendsBody": "Naam se friends search karo aur apna training circle banao.",
+      "searchByName": "Naam se friends search karo"
+    },
+    "search": {
+      "title": "Friends search karein",
+      "placeholder": "Naam se search",
+      "startTyping": "Naam se friends search karo.",
+      "noResults": "Matching people nahi mile."
+    },
+    "profilePeek": {
+      "friendshipStatus": "Friendship status",
+      "supplementStack": "Supplement stack",
+      "supplementPlaceholder": "Abhi shared stack items nahi hain.",
+      "shareInChat": "Chat mein share karein"
+    },
+    "stacks": {
+      "title": "Mera stack",
+      "subtitle": "Visibility on ho to friends jo supplements dekh sakte hain unhe track karo.",
+      "open": "Mera supplement stack",
+      "visible": "Friends ko visible",
+      "hidden": "Friends se hidden",
+      "addTitle": "Stack item add karein",
+      "editTitle": "Stack item edit karein",
+      "category": "Category",
+      "productName": "Product name",
+      "productPlaceholder": "Whey isolate",
+      "quantity": "Quantity",
+      "quantityPlaceholder": "1 scoop · 30g",
+      "timing": "Timing",
+      "timingPlaceholder": "Workout ke baad",
+      "add": "Item add karein",
+      "save": "Item save karein",
+      "delete": "Delete",
+      "moveUp": "Up",
+      "moveDown": "Down",
+      "empty": "Apna protein, creatine, ya daily basics yahan add karo.",
+      "notShared": "Stack share nahi hai",
+      "categories": {
+        "protein": "Protein",
+        "creatine": "Creatine",
+        "preworkout": "Pre-workout",
+        "bcaa": "BCAA",
+        "multivitamin": "Multivitamin",
+        "other": "Other"
+      },
+      "timingTypes": {
+        "time_of_day": "Time of day",
+        "relative_to_workout": "Workout timing",
+        "custom_text": "Custom"
+      },
+      "alerts": {
+        "loadFailed": "Supplement stack load nahi ho paaya.",
+        "saveFailed": "Stack item save nahi ho paaya.",
+        "deleteFailed": "Stack item delete nahi ho paaya.",
+        "reorderFailed": "Stack reorder nahi ho paaya.",
+        "visibilityFailed": "Stack visibility update nahi ho paayi.",
+        "productRequired": "Please product name daalein."
+      }
+    },
+    "status": {
+      "none": "Friends nahi",
+      "pendingSent": "Requested",
+      "pendingReceived": "Request received",
+      "friends": "Friends"
+    },
+    "actions": {
+      "add": "Add",
+      "cancelRequest": "Request cancel karein",
+      "requested": "Requested",
+      "accept": "Accept",
+      "ignore": "Ignore",
+      "remove": "Remove",
+      "message": "Message"
+    },
+    "alerts": {
+      "loadFailed": "Friends abhi load nahi ho paaye.",
+      "searchFailed": "People search nahi ho paaye.",
+      "actionFailed": "Friendship update nahi ho paayi. Phir try karein.",
+      "removeTitle": "Friend remove karein?",
+      "removeBody": "{{name}} ko friends se remove karein?"
+    },
+    "reports": {
+      "submitted": "Report submitted",
+      "alsoBlock": "Is user ko block bhi karein?",
+      "notNow": "Abhi nahi",
+      "block": "Block",
+      "blockFailed": "Is user ko block nahi kar paaye.",
+      "submitFailed": "Report submit nahi ho paayi.",
+      "report": "Report",
+      "messageTitle": "Message report karein",
+      "reasonPromptMessage": "Aap is message ko kyun report kar rahe hain?",
+      "memberTitle": "Member report karein",
+      "reasonPromptMember": "Aap is member ko kyun report kar rahe hain?",
+      "userTitle": "User report karein",
+      "reasonPromptUser": "Aap is user ko kyun report kar rahe hain?",
+      "reasons": {
+        "harassment": "Harassment",
+        "spam": "Spam",
+        "inappropriate_content": "Inappropriate",
+        "fake_profile": "Fake profile",
+        "other": "Other"
+      }
+    }
   },
   "streak": {
     "days": {

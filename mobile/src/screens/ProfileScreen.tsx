@@ -950,6 +950,13 @@ export const ProfileScreen = () => {
             <Text style={styles.footerChevron}>›</Text>
           </Pressable>
         ) : null}
+        <Pressable style={styles.footerRow} onPress={() => navigation.navigate("MySupplementStack")}>
+          <View style={styles.footerIconTile}>
+            <Text style={styles.footerEmoji}>💊</Text>
+          </View>
+          <Text style={styles.footerLabel}>{t("social.stacks.open")}</Text>
+          <Text style={styles.footerChevron}>›</Text>
+        </Pressable>
         <Pressable
           style={styles.footerRow}
           onPress={() => {

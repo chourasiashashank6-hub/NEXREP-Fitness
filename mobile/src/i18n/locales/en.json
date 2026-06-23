@@ -12,6 +12,7 @@
     "workout": "Workout",
     "calories": "Calories",
     "coach": "Coach",
+    "social": "Social",
     "profile": "Profile"
   },
   "home": {
@@ -370,10 +371,404 @@
     "next": "Next",
     "back": "← Back",
     "select": "Select",
+    "close": "Close",
     "error": "Error",
     "retry": "Retry",
     "loading": "Loading...",
     "required": "Required"
+  },
+  "social": {
+    "nav": {
+      "home": "Squad",
+      "leaderboard": "Leaderboard",
+      "friends": "Friends",
+      "threads": "Threads",
+      "messages": "Messages"
+    },
+    "common": {
+      "comingSoon": "Coming soon"
+    },
+    "home": {
+      "eyebrow": "Squad",
+      "fallbackName": "there",
+      "heroTitle": "Hey {{name}}",
+      "friendCount": "{{count}} friends",
+      "nextSessionEyebrow": "Your next session",
+      "openThread": "Open",
+      "feedTitle": "Squad activity",
+      "reactions": {
+        "flame": "Flame",
+        "cheer": "Cheer"
+      },
+      "time": {
+        "now": "now"
+      },
+      "feed": {
+        "prFallback": "Strength PR",
+        "prBadge": "PR",
+        "weight": "Weight",
+        "reps": "Reps",
+        "oneRm": "Est. 1RM",
+        "streakTitle": "{{count}}-day streak",
+        "streakBody": "Milestone unlocked. Keep the fire going.",
+        "threadJoined": "Joined {{title}}",
+        "threadFallback": "a gym thread"
+      },
+      "empty": {
+        "zeroFriendsTitle": "Welcome to Squad",
+        "zeroFriendsBody": "Find friends, follow their PRs, and start training together.",
+        "searchFriends": "Search for friends",
+        "quietTitle": "Your squad's been quiet",
+        "quietBody": "Your squad's been quiet — be the first to log a workout today."
+      },
+      "alerts": {
+        "loadFailed": "Could not load Squad right now.",
+        "reactionFailed": "Could not add your reaction. Try again."
+      }
+    },
+    "leaderboard": {
+      "eyebrow": "Weekly reset",
+      "title": "Leaderboard",
+      "resetsIn": "Resets in",
+      "soon": "soon",
+      "optIn": "Opt in",
+      "optOut": "Opt out",
+      "emptyTitle": "Invite more friends",
+      "emptyBody": "Invite more friends to unlock the leaderboard.",
+      "inviteFriends": "Search friends",
+      "workouts": "{{count}} workouts",
+      "rowMeta": "{{workouts}} workouts · {{streak}} day streak",
+      "alerts": {
+        "loadFailed": "Could not load leaderboard right now.",
+        "settingsFailed": "Could not update leaderboard settings."
+      }
+    },
+    "challenges": {
+      "createCta": "Challenge",
+      "accept": "Accept",
+      "decline": "Decline",
+      "active": "Active challenges",
+      "invites": "Challenge invites",
+      "history": "History",
+      "noActive": "Start a squad challenge to get everyone moving.",
+      "target": "{{count}} target",
+      "endsIn": "Ends in {{time}}",
+      "winner": "{{name}} won",
+      "completed": "Completed",
+      "types": {
+        "streak_battle": "Streak battle",
+        "workout_count": "Workout count"
+      },
+      "status": {
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "participantStatus": {
+        "invited": "Invited",
+        "joined": "Joined",
+        "declined": "Declined",
+        "left": "Left"
+      },
+      "form": {
+        "title": "Start a squad challenge",
+        "challengeTitle": "Title",
+        "titlePlaceholder": "7-day consistency battle",
+        "type": "Type",
+        "target": "Target",
+        "duration": "Duration",
+        "days": "{{count}} days",
+        "inviteFriends": "Invite friends",
+        "noFriends": "Add friends first to invite them.",
+        "titleRequired": "Please enter a challenge title.",
+        "targetRequired": "Please enter a valid target.",
+        "create": "Create challenge"
+      },
+      "detail": {
+        "standings": "Standings",
+        "noStandings": "No standings yet.",
+        "progress": "{{progress}} / {{target}}",
+        "leave": "Leave",
+        "leaveTitle": "Leave challenge?",
+        "leaveBody": "You will no longer appear in this challenge."
+      },
+      "alerts": {
+        "loadFailed": "Could not load challenge right now.",
+        "saveFailed": "Could not create this challenge.",
+        "actionFailed": "Could not update this challenge."
+      },
+      "noHistory": "No completed challenges yet"
+    },
+    "threads": {
+      "eyebrow": "Gym threads",
+      "title": "Threads",
+      "create": "Create",
+      "accept": "Accept",
+      "decline": "Decline",
+      "supplementSlot": "Stack slot",
+      "stackMore": "+{{count}} more",
+      "stackSheetTitle": "Member stacks",
+      "stackNotShared": "Stack not shared",
+      "stackEmpty": "No stack items yet",
+      "goingCount": "{{count}} going",
+      "tabs": {
+        "active": "Active",
+        "invited": "Invited",
+        "past": "Past"
+      },
+      "empty": {
+        "active": {
+          "title": "No active threads",
+          "body": "Create a gym thread and invite friends to train together."
+        },
+        "invited": {
+          "title": "No invites",
+          "body": "Thread invites from friends will appear here."
+        },
+        "past": {
+          "title": "No past threads",
+          "body": "Completed and cancelled threads will appear here."
+        }
+      },
+      "status": {
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "memberStatus": {
+        "invited": "Invited",
+        "joined": "Joined",
+        "declined": "Declined"
+      },
+      "form": {
+        "createTitle": "Create thread",
+        "editTitle": "Edit thread",
+        "threadTitle": "Title",
+        "titlePlaceholder": "Leg day at 7?",
+        "gym": "Gym",
+        "gymPlaceholder": "Enter gym name",
+        "time": "Date & time",
+        "inviteFriends": "Invite friends",
+        "noFriends": "Add friends first to invite them.",
+        "select": "Select",
+        "selected": "Selected",
+        "selectedCount": "{{count}} selected",
+        "titleRequired": "Please enter a thread title.",
+        "gymRequired": "Please select a gym.",
+        "create": "Create thread",
+        "save": "Save changes"
+      },
+      "detail": {
+        "edit": "Edit",
+        "mute": "Mute",
+        "unmute": "Unmute",
+        "leave": "Leave",
+        "cancelThread": "Cancel thread",
+        "cancelTitle": "Cancel thread?",
+        "cancelBody": "Members will be notified that this thread was cancelled.",
+        "leaveTitle": "Leave thread?",
+        "leaveBody": "You will no longer appear as going.",
+        "members": "Members",
+        "host": "Host",
+        "remove": "Remove",
+        "inviteFriends": "Invite friends",
+        "noInviteCandidates": "No more friends to invite.",
+        "sendInvites": "Send invites",
+        "chat": "Chat",
+        "chatPlaceholder": "Thread chat arrives in Phase 4."
+      },
+      "alerts": {
+        "loadFailed": "Could not load threads right now.",
+        "actionFailed": "Could not update this thread. Try again.",
+        "saveFailed": "Could not save this thread. Try again.",
+        "inviteFailed": "Could not send invites. Make sure invitees are friends and the thread has room."
+      },
+      "referral": {
+        "title": "Thread referral",
+        "set": "Set",
+        "edit": "Edit",
+        "empty": "No referral set for this thread.",
+        "stats": "Views {{views}} · Copies {{copies}}",
+        "copyCode": "Copy code",
+        "shareInChat": "Share in chat",
+        "codePlaceholder": "Referral code",
+        "discountPlaceholder": "Discount text",
+        "descriptionPlaceholder": "Description",
+        "save": "Save referral",
+        "remove": "Remove referral",
+        "saveFailed": "Could not save referral.",
+        "removeFailed": "Could not remove referral.",
+        "sharedTitle": "Referral shared",
+        "sharedBody": "The referral card was posted in thread chat.",
+        "shareFailed": "Could not share referral."
+      }
+    },
+    "messages": {
+      "eyebrow": "Direct messages",
+      "title": "Messages",
+      "chat": "Chat",
+      "unknownUser": "User",
+      "emptyTitle": "No messages yet",
+      "emptyBody": "Start a DM from a friend's profile or keep chatting inside a thread.",
+      "noMessagesYet": "No messages yet",
+      "placeholder": "Message...",
+      "send": "Send",
+      "edited": "edited",
+      "read": "Read",
+      "deleted": "Message deleted",
+      "deletedSender": "Deleted message",
+      "editing": "Editing message",
+      "replyingTo": "Replying to {{name}}",
+      "actions": {
+        "messageOptions": "Message options",
+        "reply": "Reply",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "attach": {
+        "title": "Share",
+        "location": "Location",
+        "referral": "Referral",
+        "workout": "Workout / PR",
+        "stack": "Stack item",
+        "locationShared": "Shared a location",
+        "referralShared": "Shared a referral",
+        "workoutShared": "Shared a workout",
+        "stackShared": "Shared a stack item"
+      },
+      "stackCard": {
+        "title": "From {{name}}'s stack"
+      },
+      "alerts": {
+        "loadFailed": "Could not load messages.",
+        "sendFailed": "Could not send this message.",
+        "loadConversationsFailed": "Could not load conversations."
+      },
+      "emptyChat": "Start the conversation — say hello",
+      "referral": {
+        "threadOnly": "Referral sharing is only available in thread chats.",
+        "sharedTitle": "Referral shared",
+        "sharedBody": "The referral card was posted in thread chat.",
+        "noneSet": "No referral is set for this thread yet.",
+        "codeLabel": "Referral code",
+        "copyCode": "Copy code"
+      }
+    },
+    "friends": {
+      "eyebrow": "Social",
+      "title": "Friends",
+      "searchCta": "Search",
+      "friendsWithCount": "Friends ({{count}})",
+      "pending": "Pending",
+      "incoming": "Incoming",
+      "outgoing": "Outgoing",
+      "mutualCount": "{{count}} mutual friends",
+      "noPendingRequests": "No pending requests.",
+      "noOutgoingRequests": "No outgoing requests.",
+      "zeroFriendsTitle": "No friends yet",
+      "zeroFriendsBody": "Search for friends by name and build your training circle.",
+      "searchByName": "Search for friends by name"
+    },
+    "search": {
+      "title": "Search friends",
+      "placeholder": "Search by name",
+      "startTyping": "Search for friends by name.",
+      "noResults": "No matching people found."
+    },
+    "profilePeek": {
+      "friendshipStatus": "Friendship status",
+      "supplementStack": "Supplement stack",
+      "supplementPlaceholder": "No shared stack items yet.",
+      "shareInChat": "Share in chat"
+    },
+    "stacks": {
+      "title": "My stack",
+      "subtitle": "Track supplements friends can see when visibility is on.",
+      "open": "My supplement stack",
+      "visible": "Visible to friends",
+      "hidden": "Hidden from friends",
+      "addTitle": "Add stack item",
+      "editTitle": "Edit stack item",
+      "category": "Category",
+      "productName": "Product name",
+      "productPlaceholder": "Whey isolate",
+      "quantity": "Quantity",
+      "quantityPlaceholder": "1 scoop · 30g",
+      "timing": "Timing",
+      "timingPlaceholder": "After workout",
+      "add": "Add item",
+      "save": "Save item",
+      "delete": "Delete",
+      "moveUp": "Up",
+      "moveDown": "Down",
+      "empty": "Add your protein, creatine, or daily basics here.",
+      "notShared": "Stack not shared",
+      "categories": {
+        "protein": "Protein",
+        "creatine": "Creatine",
+        "preworkout": "Pre-workout",
+        "bcaa": "BCAA",
+        "multivitamin": "Multivitamin",
+        "other": "Other"
+      },
+      "timingTypes": {
+        "time_of_day": "Time of day",
+        "relative_to_workout": "Workout timing",
+        "custom_text": "Custom"
+      },
+      "alerts": {
+        "loadFailed": "Could not load supplement stack.",
+        "saveFailed": "Could not save stack item.",
+        "deleteFailed": "Could not delete stack item.",
+        "reorderFailed": "Could not reorder stack.",
+        "visibilityFailed": "Could not update stack visibility.",
+        "productRequired": "Please enter a product name."
+      }
+    },
+    "status": {
+      "none": "Not friends",
+      "pendingSent": "Requested",
+      "pendingReceived": "Request received",
+      "friends": "Friends"
+    },
+    "actions": {
+      "add": "Add",
+      "cancelRequest": "Cancel Request",
+      "requested": "Requested",
+      "accept": "Accept",
+      "ignore": "Ignore",
+      "remove": "Remove",
+      "message": "Message"
+    },
+    "alerts": {
+      "loadFailed": "Could not load friends right now.",
+      "searchFailed": "Could not search people right now.",
+      "actionFailed": "Could not update this friendship. Try again.",
+      "removeTitle": "Remove friend?",
+      "removeBody": "Remove {{name}} from your friends?"
+    },
+    "reports": {
+      "submitted": "Report submitted",
+      "alsoBlock": "Also block this user?",
+      "notNow": "Not now",
+      "block": "Block",
+      "blockFailed": "Could not block this user.",
+      "submitFailed": "Could not submit this report.",
+      "report": "Report",
+      "messageTitle": "Report message",
+      "reasonPromptMessage": "Why are you reporting this message?",
+      "memberTitle": "Report member",
+      "reasonPromptMember": "Why are you reporting this member?",
+      "userTitle": "Report user",
+      "reasonPromptUser": "Why are you reporting this user?",
+      "reasons": {
+        "harassment": "Harassment",
+        "spam": "Spam",
+        "inappropriate_content": "Inappropriate",
+        "fake_profile": "Fake profile",
+        "other": "Other"
+      }
+    }
   },
   "streak": {
     "days": {

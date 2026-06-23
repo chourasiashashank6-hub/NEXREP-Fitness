@@ -12,7 +12,8 @@
     "workout": "Entraînement",
     "calories": "Calories",
     "coach": "Coach",
-    "profile": "Profil"
+    "profile": "Profil",
+    "social": "Social"
   },
   "home": {
     "alerts": {
@@ -373,7 +374,401 @@
     "error": "Erreur",
     "retry": "Réessayer",
     "loading": "Chargement...",
-    "required": "Obligatoire"
+    "required": "Obligatoire",
+    "close": "Fermer"
+  },
+  "social": {
+    "nav": {
+      "home": "Squad",
+      "leaderboard": "Classement",
+      "friends": "Amis",
+      "threads": "Threads",
+      "messages": "Messages"
+    },
+    "home": {
+      "eyebrow": "Squad",
+      "fallbackName": "toi",
+      "heroTitle": "Salut {{name}}",
+      "friendCount": "{{count}} amis",
+      "nextSessionEyebrow": "Ta prochaine seance",
+      "openThread": "Ouvrir",
+      "feedTitle": "Activite du squad",
+      "reactions": {
+        "flame": "Flamme",
+        "cheer": "Encourager"
+      },
+      "time": {
+        "now": "maintenant"
+      },
+      "feed": {
+        "prFallback": "PR de force",
+        "prBadge": "PR",
+        "weight": "Poids",
+        "reps": "Reps",
+        "oneRm": "1RM est.",
+        "streakTitle": "Serie de {{count}} jours",
+        "streakBody": "Jalon debloque. Garde le feu.",
+        "threadJoined": "A rejoint {{title}}",
+        "threadFallback": "un thread de gym"
+      },
+      "empty": {
+        "zeroFriendsTitle": "Bienvenue dans Squad",
+        "zeroFriendsBody": "Trouve des amis, suis leurs PRs et entrainez-vous ensemble.",
+        "searchFriends": "Rechercher des amis",
+        "quietTitle": "Ton squad est calme",
+        "quietBody": "Ton squad est calme — sois le premier a enregistrer un entrainement aujourd'hui."
+      },
+      "alerts": {
+        "loadFailed": "Impossible de charger Squad pour le moment.",
+        "reactionFailed": "Impossible d'ajouter ta reaction. Reessaie."
+      }
+    },
+    "leaderboard": {
+      "eyebrow": "Reset hebdo",
+      "title": "Classement",
+      "resetsIn": "Reset dans",
+      "soon": "bientot",
+      "optIn": "Participer",
+      "optOut": "Quitter",
+      "emptyTitle": "Invite plus d'amis",
+      "emptyBody": "Invite more friends to unlock the leaderboard.",
+      "inviteFriends": "Rechercher des amis",
+      "workouts": "{{count}} entrainements",
+      "rowMeta": "{{workouts}} entrainements · serie de {{streak}} jours",
+      "alerts": {
+        "loadFailed": "Impossible de charger le classement pour le moment.",
+        "settingsFailed": "Impossible de mettre a jour les reglages du classement."
+      }
+    },
+    "challenges": {
+      "createCta": "Defi",
+      "accept": "Accepter",
+      "decline": "Refuser",
+      "active": "Defis actifs",
+      "invites": "Invitations aux defis",
+      "history": "Historique",
+      "noActive": "Lance un defi de squad pour faire bouger tout le monde.",
+      "target": "{{count}} objectif",
+      "endsIn": "Se termine dans {{time}}",
+      "winner": "{{name}} a gagne",
+      "completed": "Termine",
+      "types": {
+        "streak_battle": "Bataille de serie",
+        "workout_count": "Nombre d'entrainements"
+      },
+      "status": {
+        "active": "Actif",
+        "completed": "Termine",
+        "cancelled": "Annule"
+      },
+      "participantStatus": {
+        "invited": "Invite",
+        "joined": "Inscrit",
+        "declined": "Refuse",
+        "left": "Parti"
+      },
+      "form": {
+        "title": "Lancer un defi de squad",
+        "challengeTitle": "Titre",
+        "titlePlaceholder": "Bataille de regularite de 7 jours",
+        "type": "Type",
+        "target": "Objectif",
+        "duration": "Duree",
+        "days": "{{count}} jours",
+        "inviteFriends": "Inviter des amis",
+        "noFriends": "Ajoute d'abord des amis pour les inviter.",
+        "titleRequired": "Saisis un titre de defi.",
+        "targetRequired": "Saisis un objectif valide.",
+        "create": "Creer le defi"
+      },
+      "detail": {
+        "standings": "Classement",
+        "noStandings": "Aucun classement pour le moment.",
+        "progress": "{{progress}} / {{target}}",
+        "leave": "Quitter",
+        "leaveTitle": "Quitter le defi ?",
+        "leaveBody": "Tu n'apparaitras plus dans ce defi."
+      },
+      "alerts": {
+        "loadFailed": "Impossible de charger le defi pour le moment.",
+        "saveFailed": "Impossible de creer ce defi.",
+        "actionFailed": "Impossible de mettre a jour ce defi."
+      },
+      "noHistory": "Aucun challenge terminé pour le moment"
+    },
+    "common": {
+      "comingSoon": "Bientôt disponible"
+    },
+    "threads": {
+      "eyebrow": "Fils de gym",
+      "title": "Fils",
+      "create": "Créer",
+      "accept": "Accepter",
+      "decline": "Refuser",
+      "supplementSlot": "Slot de stack",
+      "stackMore": "+{{count}} de plus",
+      "stackSheetTitle": "Stacks des membres",
+      "stackNotShared": "Stack non partagé",
+      "stackEmpty": "Aucun élément de stack pour le moment",
+      "goingCount": "{{count}} participants",
+      "tabs": {
+        "active": "Actifs",
+        "invited": "Invité",
+        "past": "Passés"
+      },
+      "empty": {
+        "active": {
+          "title": "Aucun fil actif",
+          "body": "Crée un fil de gym et invite des amis à s’entraîner ensemble."
+        },
+        "invited": {
+          "title": "Aucune invitation",
+          "body": "Les invitations de tes amis apparaîtront ici."
+        },
+        "past": {
+          "title": "Aucun ancien fil",
+          "body": "Les fils terminés et annulés apparaîtront ici."
+        }
+      },
+      "status": {
+        "active": "Actif",
+        "completed": "Terminé",
+        "cancelled": "Annulé"
+      },
+      "memberStatus": {
+        "invited": "Invité",
+        "joined": "Inscrit",
+        "declined": "Refusé"
+      },
+      "form": {
+        "createTitle": "Créer un fil",
+        "editTitle": "Modifier le fil",
+        "threadTitle": "Titre",
+        "titlePlaceholder": "Leg day à 19 h ?",
+        "gym": "Gym",
+        "gymPlaceholder": "Saisis le nom du gym",
+        "time": "Date et heure",
+        "inviteFriends": "Inviter des amis",
+        "noFriends": "Ajoute d’abord des amis pour les inviter.",
+        "select": "Sélectionner",
+        "selected": "Sélectionné",
+        "selectedCount": "{{count}} sélectionnés",
+        "titleRequired": "Saisis un titre pour le fil.",
+        "gymRequired": "Sélectionne un gym.",
+        "create": "Créer le fil",
+        "save": "Enregistrer"
+      },
+      "detail": {
+        "edit": "Modifier",
+        "mute": "Muet",
+        "unmute": "Réactiver",
+        "leave": "Quitter",
+        "cancelThread": "Annuler le fil",
+        "cancelTitle": "Annuler le fil ?",
+        "cancelBody": "Les membres seront informés que ce fil a été annulé.",
+        "leaveTitle": "Quitter le fil ?",
+        "leaveBody": "Tu n’apparaîtras plus comme participant.",
+        "members": "Membres",
+        "host": "Hôte",
+        "remove": "Retirer",
+        "inviteFriends": "Inviter des amis",
+        "noInviteCandidates": "Plus aucun ami à inviter.",
+        "sendInvites": "Envoyer les invitations",
+        "chat": "Chat",
+        "chatPlaceholder": "Le chat de fil arrive en Phase 4."
+      },
+      "alerts": {
+        "loadFailed": "Impossible de charger les fils pour le moment.",
+        "actionFailed": "Impossible de mettre à jour ce fil. Réessaie.",
+        "saveFailed": "Impossible d’enregistrer ce fil. Réessaie.",
+        "inviteFailed": "Impossible d’envoyer les invitations. Vérifie que les invités sont amis et qu’il reste de la place."
+      },
+      "referral": {
+        "title": "Parrainage du fil",
+        "set": "Définir",
+        "edit": "Modifier",
+        "empty": "Aucun parrainage défini pour ce fil.",
+        "stats": "Vues {{views}} · Copies {{copies}}",
+        "copyCode": "Copier le code",
+        "shareInChat": "Partager dans le chat",
+        "codePlaceholder": "Code de parrainage",
+        "discountPlaceholder": "Texte de réduction",
+        "descriptionPlaceholder": "Description",
+        "save": "Enregistrer le parrainage",
+        "remove": "Supprimer le parrainage",
+        "saveFailed": "Impossible d’enregistrer le parrainage.",
+        "removeFailed": "Impossible de supprimer le parrainage.",
+        "sharedTitle": "Parrainage partagé",
+        "sharedBody": "La carte de parrainage a été publiée dans le chat du fil.",
+        "shareFailed": "Impossible de partager le parrainage."
+      }
+    },
+    "messages": {
+      "eyebrow": "Messages directs",
+      "title": "Messages",
+      "chat": "Chat",
+      "unknownUser": "Utilisateur",
+      "emptyTitle": "Aucun message pour le moment",
+      "emptyBody": "Lance un DM depuis le profil d’un ami ou continue dans un fil.",
+      "noMessagesYet": "Aucun message pour le moment",
+      "emptyChat": "Lance la conversation — dis bonjour",
+      "placeholder": "Message...",
+      "send": "Envoyer",
+      "edited": "modifié",
+      "read": "Lu",
+      "deleted": "Message supprimé",
+      "deletedSender": "Message supprimé",
+      "editing": "Modification du message",
+      "replyingTo": "Réponse à {{name}}",
+      "actions": {
+        "messageOptions": "Options du message",
+        "reply": "Répondre",
+        "edit": "Modifier",
+        "delete": "Supprimer"
+      },
+      "attach": {
+        "title": "Partager",
+        "location": "Position",
+        "referral": "Parrainage",
+        "workout": "Entraînement / PR",
+        "stack": "Élément du stack",
+        "locationShared": "Position partagée",
+        "referralShared": "Parrainage partagé",
+        "workoutShared": "Entraînement partagé",
+        "stackShared": "Élément du stack partagé"
+      },
+      "stackCard": {
+        "title": "Du stack de {{name}}"
+      },
+      "referral": {
+        "threadOnly": "Le partage de parrainage est disponible uniquement dans les chats de fil.",
+        "sharedTitle": "Parrainage partagé",
+        "sharedBody": "La carte de parrainage a été publiée dans le chat du fil.",
+        "noneSet": "Aucun parrainage n’est encore défini pour ce fil.",
+        "codeLabel": "Code de parrainage",
+        "copyCode": "Copier le code"
+      },
+      "alerts": {
+        "loadFailed": "Impossible de charger les messages.",
+        "sendFailed": "Impossible d’envoyer ce message.",
+        "loadConversationsFailed": "Impossible de charger les conversations."
+      }
+    },
+    "friends": {
+      "eyebrow": "Social",
+      "title": "Amis",
+      "searchCta": "Rechercher",
+      "friendsWithCount": "Amis ({{count}})",
+      "pending": "En attente",
+      "incoming": "Reçues",
+      "outgoing": "Envoyées",
+      "mutualCount": "{{count}} amis en commun",
+      "noPendingRequests": "Aucune demande en attente.",
+      "noOutgoingRequests": "Aucune demande envoyée.",
+      "zeroFriendsTitle": "Aucun ami pour le moment",
+      "zeroFriendsBody": "Recherche des amis par nom et crée ton cercle d’entraînement.",
+      "searchByName": "Rechercher des amis par nom"
+    },
+    "search": {
+      "title": "Rechercher des amis",
+      "placeholder": "Rechercher par nom",
+      "startTyping": "Recherche des amis par nom.",
+      "noResults": "Aucune personne trouvée."
+    },
+    "profilePeek": {
+      "friendshipStatus": "Statut d’amitié",
+      "supplementStack": "Stack de compléments",
+      "supplementPlaceholder": "Aucun élément de stack partagé pour le moment.",
+      "shareInChat": "Partager dans le chat"
+    },
+    "stacks": {
+      "title": "Mon stack",
+      "subtitle": "Suis les compléments que tes amis peuvent voir quand la visibilité est activée.",
+      "open": "Mon stack de compléments",
+      "visible": "Visible par les amis",
+      "hidden": "Masqué aux amis",
+      "addTitle": "Ajouter un élément au stack",
+      "editTitle": "Modifier l’élément du stack",
+      "category": "Catégorie",
+      "productName": "Nom du produit",
+      "productPlaceholder": "Whey isolate",
+      "quantity": "Quantité",
+      "quantityPlaceholder": "1 scoop · 30g",
+      "timing": "Timing",
+      "timingPlaceholder": "Après l’entraînement",
+      "add": "Ajouter",
+      "save": "Enregistrer",
+      "delete": "Supprimer",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
+      "empty": "Ajoute ici ta protéine, ta créatine ou tes bases quotidiennes.",
+      "notShared": "Stack non partagé",
+      "categories": {
+        "protein": "Protéine",
+        "creatine": "Créatine",
+        "preworkout": "Pré-workout",
+        "bcaa": "BCAA",
+        "multivitamin": "Multivitamines",
+        "other": "Autre"
+      },
+      "timingTypes": {
+        "time_of_day": "Heure de la journée",
+        "relative_to_workout": "Timing de l’entraînement",
+        "custom_text": "Personnalisé"
+      },
+      "alerts": {
+        "loadFailed": "Impossible de charger le stack de compléments.",
+        "saveFailed": "Impossible d’enregistrer l’élément du stack.",
+        "deleteFailed": "Impossible de supprimer l’élément du stack.",
+        "reorderFailed": "Impossible de réordonner le stack.",
+        "visibilityFailed": "Impossible de mettre à jour la visibilité du stack.",
+        "productRequired": "Saisis un nom de produit."
+      }
+    },
+    "status": {
+      "none": "Pas amis",
+      "pendingSent": "Demandé",
+      "pendingReceived": "Demande reçue",
+      "friends": "Amis"
+    },
+    "actions": {
+      "add": "Ajouter",
+      "cancelRequest": "Annuler la demande",
+      "requested": "Demandé",
+      "accept": "Accepter",
+      "ignore": "Ignorer",
+      "remove": "Retirer",
+      "message": "Message"
+    },
+    "alerts": {
+      "loadFailed": "Impossible de charger les amis pour le moment.",
+      "searchFailed": "Impossible de rechercher des personnes pour le moment.",
+      "actionFailed": "Impossible de mettre à jour cette amitié. Réessaie.",
+      "removeTitle": "Retirer cet ami ?",
+      "removeBody": "Retirer {{name}} de tes amis ?"
+    },
+    "reports": {
+      "submitted": "Signalement envoyé",
+      "alsoBlock": "Bloquer aussi cet utilisateur ?",
+      "notNow": "Pas maintenant",
+      "block": "Bloquer",
+      "blockFailed": "Impossible de bloquer cet utilisateur.",
+      "submitFailed": "Impossible d’envoyer ce signalement.",
+      "report": "Signaler",
+      "messageTitle": "Signaler le message",
+      "reasonPromptMessage": "Pourquoi signales-tu ce message ?",
+      "memberTitle": "Signaler le membre",
+      "reasonPromptMember": "Pourquoi signales-tu ce membre ?",
+      "userTitle": "Signaler l’utilisateur",
+      "reasonPromptUser": "Pourquoi signales-tu cet utilisateur ?",
+      "reasons": {
+        "harassment": "Harcèlement",
+        "spam": "Spam",
+        "inappropriate_content": "Inapproprié",
+        "fake_profile": "Faux profil",
+        "other": "Autre"
+      }
+    }
   },
   "streak": {
     "days": {

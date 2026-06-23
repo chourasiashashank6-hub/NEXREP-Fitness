@@ -416,6 +416,9 @@ def run_hourly_notification_checks(now: datetime | None = None) -> None:
     now = now or datetime.utcnow()
     db = SessionLocal()
     try:
+        from src.services.social_challenge_service import complete_expired_challenges
+
+        complete_expired_challenges(db)
         for user in _users_with_active_tokens(db):
             _run_macro_checkpoint(db, user, now)
             _run_missing_log_checks(db, user, now)
