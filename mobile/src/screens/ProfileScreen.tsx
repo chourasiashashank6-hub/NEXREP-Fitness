@@ -3,7 +3,9 @@ import Constants from "expo-constants";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
+  PermissionsAndroid,
   Platform,
   Pressable,
   ScrollView,
@@ -14,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Circle } from "react-native-svg";
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from "@react-native-community/datetimepicker";
@@ -24,11 +27,12 @@ import { getDailyCalorieLog, todayLocal } from "../api/caloriesLog";
 import { submitFeedback } from "../api/feedback";
 import { fetchOnboardingMe } from "../api/onboarding";
 import { getStrengthProgress, type StrengthProgress } from "../api/strength";
-import { getProfile } from "../api/user";
+import { getProfile, removeProfilePhoto, uploadProfilePhoto } from "../api/user";
 import { getWorkoutHistory } from "../api/workout";
 import { BottomSheetPicker } from "../components/BottomSheetPicker";
 import DevSubscriptionToggle from "../components/DevSubscriptionToggle";
 import { ScreenContainer } from "../components/ScreenContainer";
+import { UserAvatar } from "../components/UserAvatar";
 import { TIER_COLORS } from "../constants/tierColors";
 import { useLanguageStore } from "../i18n/languageStore";
 import { signOutSession } from "../services/authService";
@@ -36,6 +40,7 @@ import { useAuthStore } from "../store/authStore";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import type { PlanTier } from "../types/subscription";
 import { logicalRow, textAlignStart } from "../utils/rtl";
+import { prepareFoodImagePayload } from "../utils/foodImagePayload";
 
 type GoalTag = "Fat Loss" | "Muscle Gain" | "Strength";
 
@@ -69,6 +74,19 @@ const MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
 const BORDER = "#ECEAE5";
 const SCREEN_BG = "#FFFFFF";
+const PROFILE_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+const PROFILE_PHOTO_ALLOWED_MIME = new Set(["image/jpeg", "image/png"]);
+
+const normalizeProfilePhotoMime = (mimeType?: string | null) => {
+  const mime = String(mimeType || "image/jpeg").trim().toLowerCase();
+  return mime === "image/jpg" || mime === "image/pjpeg" ? "image/jpeg" : mime;
+};
+
+const estimatedBase64Bytes = (base64: string) => {
+  const clean = base64.replace(/\s/g, "");
+  const padding = clean.endsWith("==") ? 2 : clean.endsWith("=") ? 1 : 0;
+  return Math.max(0, Math.floor((clean.length * 3) / 4) - padding);
+};
 
 type DailyExerciseHistory = {
   date: string;
@@ -202,6 +220,9 @@ export const ProfileScreen = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [profilePhotoSheetOpen, setProfilePhotoSheetOpen] = useState(false);
+  const [profilePhotoUploading, setProfilePhotoUploading] = useState(false);
   const [memberSince, setMemberSince] = useState("");
   const [difficulty, setDifficulty] = useState("Intermediate");
   const [profileWeightKg, setProfileWeightKg] = useState(70);
@@ -272,6 +293,7 @@ export const ProfileScreen = () => {
       setFirstName(f || "User");
       setLastName(l || "");
       setUserEmail(String(profile.email || ""));
+      setProfilePhotoUrl(profile.profilePhotoUrl ?? profile.profile_photo_url ?? null);
       setPlanId(String(profile.plan_id || "free"));
       setDifficulty(profile.difficulty || "Intermediate");
       setProfileWeightKg(Number(profile.weight || 0));
@@ -429,6 +451,188 @@ export const ProfileScreen = () => {
       void fetchLatestWeight();
     }, [token]),
   );
+
+  const askPhotoPermissionSettings = () => {
+    Alert.alert("Permission needed", "Allow photo access in settings to update your profile photo.", [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: "Open settings",
+        onPress: () => {
+          void Linking.openSettings();
+        },
+      },
+    ]);
+  };
+
+  const requestAndroidPermission = async (permission: Parameters<typeof PermissionsAndroid.request>[0]): Promise<boolean> => {
+    if (Platform.OS !== "android") return true;
+    const result = await PermissionsAndroid.request(permission);
+    return result === PermissionsAndroid.RESULTS.GRANTED;
+  };
+
+  const waitForPhotoSheetToClose = () => new Promise<void>((resolve) => setTimeout(resolve, 180));
+
+  const deriveBase64FromUri = async (uri?: string): Promise<string | null> => {
+    if (!uri || Platform.OS !== "web") return null;
+    try {
+      const commaIdx = uri.indexOf(",");
+      if (uri.startsWith("data:") && commaIdx > 0) {
+        return uri.slice(commaIdx + 1);
+      }
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Could not read the selected image."));
+        reader.readAsDataURL(blob);
+      });
+      const dataCommaIdx = dataUrl.indexOf(",");
+      return dataCommaIdx >= 0 ? dataUrl.slice(dataCommaIdx + 1) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const deriveBase64FromWebFile = async (file?: File): Promise<string | null> => {
+    if (!file || Platform.OS !== "web") return null;
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Could not read the selected image."));
+        reader.readAsDataURL(file);
+      });
+      const commaIdx = dataUrl.indexOf(",");
+      return commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const resolvePhotoAssetBase64 = async (asset?: ImagePicker.ImagePickerAsset): Promise<string | null> => {
+    if (!asset) return null;
+    if (asset.base64) return asset.base64;
+    const webFile = (asset as ImagePicker.ImagePickerAsset & { file?: File }).file;
+    return (await deriveBase64FromWebFile(webFile)) || (await deriveBase64FromUri(asset.uri));
+  };
+
+  const uploadSelectedProfilePhoto = async (asset?: ImagePicker.ImagePickerAsset) => {
+    if (!asset || profilePhotoUploading) return;
+    const mimeType = normalizeProfilePhotoMime(asset.mimeType);
+    if (!PROFILE_PHOTO_ALLOWED_MIME.has(mimeType)) {
+      Alert.alert("Unsupported image", "Please choose a JPG or PNG image.");
+      return;
+    }
+    const resolvedBase64 = await resolvePhotoAssetBase64(asset);
+    if (!resolvedBase64) {
+      Alert.alert("Image error", "Could not read this image. Please choose another photo.");
+      return;
+    }
+    const prepared = await prepareFoodImagePayload(resolvedBase64, mimeType);
+    const preparedMime = normalizeProfilePhotoMime(prepared.mimeType);
+    if (!PROFILE_PHOTO_ALLOWED_MIME.has(preparedMime)) {
+      Alert.alert("Unsupported image", "Please choose a JPG or PNG image.");
+      return;
+    }
+    if (estimatedBase64Bytes(prepared.base64) > PROFILE_PHOTO_MAX_BYTES) {
+      Alert.alert("Photo too large", "Profile photo must be 5MB or smaller.");
+      return;
+    }
+    try {
+      setProfilePhotoUploading(true);
+      const updated = await uploadProfilePhoto({ base64: prepared.base64, mimeType: preparedMime });
+      setProfilePhotoUrl(updated.profilePhotoUrl ?? updated.profile_photo_url ?? null);
+    } catch (error) {
+      const message =
+        error && typeof error === "object" && "response" in error
+          ? String((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "")
+          : "";
+      Alert.alert("Upload failed", message || "Could not update your profile photo.");
+    } finally {
+      setProfilePhotoUploading(false);
+    }
+  };
+
+  const selectProfilePhoto = async (source: "camera" | "library") => {
+    setProfilePhotoSheetOpen(false);
+    if (Platform.OS !== "web") {
+      await waitForPhotoSheetToClose();
+    }
+    try {
+      if (source === "camera") {
+        const cameraGranted = await requestAndroidPermission(PermissionsAndroid.PERMISSIONS.CAMERA);
+        if (!cameraGranted) {
+          askPhotoPermissionSettings();
+          return;
+        }
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          askPhotoPermissionSettings();
+          return;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: false,
+          quality: Platform.OS === "web" ? 0.65 : 0.75,
+          base64: true,
+          exif: false,
+          cameraType: ImagePicker.CameraType.front,
+        });
+        if (!result.canceled) {
+          await uploadSelectedProfilePhoto(result.assets?.[0]);
+        }
+        return;
+      }
+
+      if (Platform.OS === "android") {
+        const galleryPermission =
+          Platform.Version >= 33
+            ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+            : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+        const granted = await requestAndroidPermission(galleryPermission);
+        if (!granted) {
+          askPhotoPermissionSettings();
+          return;
+        }
+      }
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        askPhotoPermissionSettings();
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: Platform.OS === "web" ? 0.65 : 0.75,
+        base64: true,
+        exif: false,
+      });
+      if (!result.canceled) {
+        await uploadSelectedProfilePhoto(result.assets?.[0]);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not open the image picker.";
+      Alert.alert("Photo error", message);
+    }
+  };
+
+  const removeCurrentProfilePhoto = async () => {
+    setProfilePhotoSheetOpen(false);
+    try {
+      setProfilePhotoUploading(true);
+      const updated = await removeProfilePhoto();
+      setProfilePhotoUrl(updated.profilePhotoUrl ?? updated.profile_photo_url ?? null);
+    } catch (error) {
+      const message =
+        error && typeof error === "object" && "response" in error
+          ? String((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "")
+          : "";
+      Alert.alert("Remove failed", message || "Could not remove your profile photo.");
+    } finally {
+      setProfilePhotoUploading(false);
+    }
+  };
 
   const displayCurrentWeight = latestWeightLog?.has_logs ? latestWeightLog.weight_kg : profileWeightKg;
 
@@ -747,9 +951,28 @@ export const ProfileScreen = () => {
                 origin="31,31"
               />
             </Svg>
-            <View style={styles.avatarInner}>
-              <Text style={styles.avatarText}>{getInitials(firstName, lastName)}</Text>
-            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Update profile photo"
+              onPress={() => setProfilePhotoSheetOpen(true)}
+              disabled={profilePhotoUploading}
+              style={styles.avatarPressable}
+            >
+              <UserAvatar
+                name={`${firstName} ${lastName}`}
+                initials={getInitials(firstName, lastName)}
+                profilePhotoUrl={profilePhotoUrl}
+                style={styles.avatarInner}
+                textStyle={styles.avatarText}
+              />
+              <View style={styles.avatarCameraBadge}>
+                {profilePhotoUploading ? (
+                  <ActivityIndicator size="small" color={GREEN} />
+                ) : (
+                  <Ionicons name="camera" size={12} color={GREEN} />
+                )}
+              </View>
+            </Pressable>
           </View>
           <View style={styles.identityTextBlock}>
             <View style={styles.nameBadgeRow}>
@@ -1322,6 +1545,41 @@ export const ProfileScreen = () => {
         </View>
       </Modal>
 
+      <Modal visible={profilePhotoSheetOpen} transparent animationType="fade" onRequestClose={() => setProfilePhotoSheetOpen(false)}>
+        <View style={styles.modalBackdropBottom}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setProfilePhotoSheetOpen(false)} />
+          <View style={styles.profilePhotoSheet}>
+            <View style={styles.profilePhotoHandle} />
+            <Text style={styles.profilePhotoTitle}>Profile photo</Text>
+            <Text style={styles.profilePhotoSubtitle}>Use a JPG or PNG up to 5MB.</Text>
+            <View style={styles.profilePhotoOptions}>
+              <Pressable style={styles.profilePhotoOption} onPress={() => void selectProfilePhoto("library")}>
+                <View style={styles.profilePhotoOptionIcon}>
+                  <Ionicons name="image-outline" size={18} color={GREEN} />
+                </View>
+                <Text style={styles.profilePhotoOptionText}>Choose from library</Text>
+              </Pressable>
+              {Platform.OS !== "web" ? (
+                <Pressable style={styles.profilePhotoOption} onPress={() => void selectProfilePhoto("camera")}>
+                  <View style={styles.profilePhotoOptionIcon}>
+                    <Ionicons name="camera-outline" size={18} color={GREEN} />
+                  </View>
+                  <Text style={styles.profilePhotoOptionText}>Take photo</Text>
+                </Pressable>
+              ) : null}
+              {profilePhotoUrl ? (
+                <Pressable style={[styles.profilePhotoOption, styles.profilePhotoRemoveOption]} onPress={() => void removeCurrentProfilePhoto()}>
+                  <View style={[styles.profilePhotoOptionIcon, styles.profilePhotoRemoveIcon]}>
+                    <Ionicons name="trash-outline" size={18} color={ORANGE} />
+                  </View>
+                  <Text style={[styles.profilePhotoOptionText, styles.profilePhotoRemoveText]}>Remove current photo</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </ScreenContainer>
   );
 };
@@ -1336,8 +1594,22 @@ const styles = StyleSheet.create({
   identityTopRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatarRingWrap: { width: 62, height: 62, alignItems: "center", justifyContent: "center" },
   avatarSvg: { position: "absolute" },
+  avatarPressable: { width: 54, height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center" },
   avatarInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
   avatarText: { color: WHITE, fontSize: 18, fontWeight: "900" },
+  avatarCameraBadge: {
+    position: "absolute",
+    right: -4,
+    bottom: -4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: WHITE,
+    borderWidth: 2,
+    borderColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   identityTextBlock: { flex: 1 },
   nameBadgeRow: { flexDirection: logicalRow, alignItems: "center", gap: 8, flexWrap: "wrap" },
   nameText: { color: WHITE, fontSize: 18, fontWeight: "900" },
@@ -1452,6 +1724,27 @@ const styles = StyleSheet.create({
   versionWrap: { alignItems: "center", paddingVertical: 8 },
   versionText: { color: MUTED, fontSize: 12, fontWeight: "700" },
   modalBackdropBottom: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", justifyContent: "flex-end" },
+  profilePhotoSheet: { backgroundColor: WHITE, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingBottom: 34 },
+  profilePhotoHandle: { alignSelf: "center", width: 42, height: 4, borderRadius: 99, backgroundColor: BORDER, marginBottom: 14 },
+  profilePhotoTitle: { color: TEXT, fontSize: 18, fontWeight: "900", textAlign: "center" },
+  profilePhotoSubtitle: { color: MUTED, fontSize: 12, fontWeight: "700", textAlign: "center", marginTop: 4, marginBottom: 16 },
+  profilePhotoOptions: { gap: 10 },
+  profilePhotoOption: {
+    minHeight: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: BG,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 12,
+  },
+  profilePhotoOptionIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: WHITE, alignItems: "center", justifyContent: "center" },
+  profilePhotoOptionText: { color: TEXT, fontSize: 14, fontWeight: "900" },
+  profilePhotoRemoveOption: { backgroundColor: ORANGE_LIGHT, borderColor: "rgba(216,90,48,0.2)" },
+  profilePhotoRemoveIcon: { backgroundColor: WHITE },
+  profilePhotoRemoveText: { color: ORANGE },
   weighInModal: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
   weighInModalTitle: { color: TEXT, fontSize: 18, fontWeight: "900", marginBottom: 4 },
   weighInModalSubtitle: { color: MUTED, fontSize: 13, marginBottom: 20 },

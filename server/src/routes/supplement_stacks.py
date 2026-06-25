@@ -45,7 +45,7 @@ def _initials(name: str) -> str:
 
 
 def _public_user(user: User) -> dict[str, Any]:
-    return {"user_id": user.id, "name": user.name, "initials": _initials(user.name)}
+    return {"user_id": user.id, "name": user.name, "initials": _initials(user.name), "profile_photo_url": user.profile_photo_url}
 
 
 def _relationship_between(db: Session, left_id: int, right_id: int) -> Friendship | None:

@@ -514,7 +514,8 @@
       "tabs": {
         "active": "Active",
         "invited": "Invited",
-        "past": "Past"
+        "past": "Past",
+        "discover": "Discover"
       },
       "empty": {
         "active": {
@@ -528,6 +529,10 @@
         "past": {
           "title": "No past threads",
           "body": "Completed and cancelled threads will appear here."
+        },
+        "discover": {
+          "title": "No threads to discover",
+          "body": "Public threads and private threads from friends will appear here."
         }
       },
       "status": {
@@ -556,7 +561,10 @@
         "titleRequired": "Please enter a thread title.",
         "gymRequired": "Please select a gym.",
         "create": "Create thread",
-        "save": "Save changes"
+        "save": "Save changes",
+        "privateSwitchWarning": "Switching to Private will remove any non-friend members and pending public requests.",
+        "visibilityTitle": "Who can see this thread?",
+        "inactiveEditWarning": "Completed or cancelled threads can’t be edited."
       },
       "detail": {
         "edit": "Edit",
@@ -575,13 +583,24 @@
         "noInviteCandidates": "No more friends to invite.",
         "sendInvites": "Send invites",
         "chat": "Chat",
-        "chatPlaceholder": "Thread chat arrives in Phase 4."
+        "chatPlaceholder": "Thread chat arrives in Phase 4.",
+        "membersPreview": "Members going",
+        "hostedBy": "Hosted by {{name}}",
+        "requestSent": "Request sent",
+        "requestHelper": "The host will be notified and can approve your request.",
+        "joinRequests": "Join requests",
+        "newRequests": "{{count}} new",
+        "mutualFriends": "{{count}} mutual friends",
+        "noMutualFriends": "No mutual friends",
+        "approveRequest": "Approve",
+        "declineRequest": "Decline"
       },
       "alerts": {
         "loadFailed": "Could not load threads right now.",
         "actionFailed": "Could not update this thread. Try again.",
         "saveFailed": "Could not save this thread. Try again.",
-        "inviteFailed": "Could not send invites. Make sure invitees are friends and the thread has room."
+        "inviteFailed": "Could not send invites. Make sure invitees are friends and the thread has room.",
+        "requestFailed": "Could not send this join request."
       },
       "referral": {
         "title": "Thread referral",
@@ -601,7 +620,27 @@
         "sharedTitle": "Referral shared",
         "sharedBody": "The referral card was posted in thread chat.",
         "shareFailed": "Could not share referral."
-      }
+      },
+      "visibility": {
+        "public": {
+          "title": "Public",
+          "body": "Visible to all NexRep users. Anyone can request to join.",
+          "badge": "🌐 Public"
+        },
+        "private": {
+          "title": "Private",
+          "body": "Only visible to your friends. They can request to join.",
+          "badge": "🔒 Private",
+          "friendBadge": "🔒 Private · friend"
+        }
+      },
+      "discover": {
+        "requestToJoin": "Request to join",
+        "requested": "Requested",
+        "requestClosed": "Request closed"
+      },
+      "pendingRequestsLine_one": "🔔 {{count}} pending request",
+      "pendingRequestsLine_other": "🔔 {{count}} pending requests"
     },
     "messages": {
       "eyebrow": "Direct messages",

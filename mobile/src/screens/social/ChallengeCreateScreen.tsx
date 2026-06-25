@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { createChallenge, type ChallengeType } from "../../api/socialChallenges";
 import { getFriends, type SocialUserProfile } from "../../api/social";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { UserAvatar } from "../../components/UserAvatar";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -145,9 +146,13 @@ export default function ChallengeCreateScreen() {
               style={[styles.friendRow, selected ? styles.friendRowSelected : null]}
               onPress={() => toggleFriend(friend.user_id)}
             >
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{friend.initials}</Text>
-              </View>
+              <UserAvatar
+                name={friend.name}
+                initials={friend.initials}
+                profilePhotoUrl={friend.profile_photo_url}
+                style={styles.avatar}
+                textStyle={styles.avatarText}
+              />
               <Text style={styles.friendName}>{friend.name}</Text>
               <Text style={styles.selectText}>{selected ? t("social.threads.form.selected") : t("social.threads.form.select")}</Text>
             </Pressable>

@@ -6,6 +6,7 @@ export type MessageUser = {
   user_id: number;
   name: string;
   initials: string;
+  profile_photo_url?: string | null;
 };
 
 export type ChatMessage = {
@@ -43,6 +44,7 @@ export type DMConversation = {
 
 export type UnreadCounts = {
   total: number;
+  pending_join_requests?: number;
   threads: Array<{ thread_id: number; unread_count: number }>;
   dms: Array<{ dm_conversation_id: number; unread_count: number }>;
 };

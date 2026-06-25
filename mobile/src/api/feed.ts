@@ -7,6 +7,7 @@ export type FeedUser = {
   user_id: number;
   name: string;
   initials: string;
+  profile_photo_url?: string | null;
 };
 
 export type FeedEventPayload = {

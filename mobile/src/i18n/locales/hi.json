@@ -514,7 +514,8 @@
       "tabs": {
         "active": "एक्टिव",
         "invited": "आमंत्रित",
-        "past": "पुराने"
+        "past": "पुराने",
+        "discover": "डिस्कवर"
       },
       "empty": {
         "active": {
@@ -528,6 +529,10 @@
         "past": {
           "title": "कोई पुराना थ्रेड नहीं",
           "body": "पूरे और रद्द हुए थ्रेड यहाँ दिखेंगे।"
+        },
+        "discover": {
+          "title": "डिस्कवर करने के लिए कोई थ्रेड नहीं",
+          "body": "पब्लिक थ्रेड और दोस्तों के प्राइवेट थ्रेड यहाँ दिखेंगे।"
         }
       },
       "status": {
@@ -556,7 +561,10 @@
         "titleRequired": "कृपया थ्रेड का शीर्षक डालें।",
         "gymRequired": "कृपया जिम चुनें।",
         "create": "थ्रेड बनाएँ",
-        "save": "बदलाव सेव करें"
+        "save": "बदलाव सेव करें",
+        "privateSwitchWarning": "Private पर स्विच करने से non-friend members और pending public requests हट जाएँगी।",
+        "visibilityTitle": "यह थ्रेड कौन देख सकता है?",
+        "inactiveEditWarning": "पूरे या रद्द हुए थ्रेड एडिट नहीं किए जा सकते।"
       },
       "detail": {
         "edit": "एडिट",
@@ -575,13 +583,24 @@
         "noInviteCandidates": "बुलाने के लिए और दोस्त नहीं हैं।",
         "sendInvites": "इनवाइट भेजें",
         "chat": "चैट",
-        "chatPlaceholder": "थ्रेड चैट Phase 4 में आएगी।"
+        "chatPlaceholder": "थ्रेड चैट Phase 4 में आएगी।",
+        "membersPreview": "जाने वाले मेंबर्स",
+        "hostedBy": "Host: {{name}}",
+        "requestSent": "Request भेजी गई",
+        "requestHelper": "Host को notify किया जाएगा और वह आपकी request approve कर सकता है।",
+        "joinRequests": "Join requests",
+        "newRequests": "{{count}} नई",
+        "mutualFriends": "{{count}} कॉमन दोस्त",
+        "noMutualFriends": "कोई कॉमन दोस्त नहीं",
+        "approveRequest": "Approve",
+        "declineRequest": "Decline"
       },
       "alerts": {
         "loadFailed": "अभी थ्रेड्स लोड नहीं हो पाए।",
         "actionFailed": "यह थ्रेड अपडेट नहीं हो पाया। फिर कोशिश करें।",
         "saveFailed": "यह थ्रेड सेव नहीं हो पाया। फिर कोशिश करें।",
-        "inviteFailed": "इनवाइट भेजे नहीं जा सके। सुनिश्चित करें कि invitees दोस्त हैं और थ्रेड में जगह है।"
+        "inviteFailed": "इनवाइट भेजे नहीं जा सके। सुनिश्चित करें कि invitees दोस्त हैं और थ्रेड में जगह है।",
+        "requestFailed": "यह join request भेजी नहीं जा सकी।"
       },
       "referral": {
         "title": "थ्रेड रेफरल",
@@ -601,7 +620,27 @@
         "sharedTitle": "रेफरल शेयर हुआ",
         "sharedBody": "रेफरल कार्ड थ्रेड चैट में पोस्ट हो गया।",
         "shareFailed": "रेफरल शेयर नहीं हो पाया।"
-      }
+      },
+      "visibility": {
+        "public": {
+          "title": "पब्लिक",
+          "body": "सभी NexRep यूज़र्स को दिखेगा। कोई भी join request भेज सकता है।",
+          "badge": "🌐 पब्लिक"
+        },
+        "private": {
+          "title": "प्राइवेट",
+          "body": "सिर्फ आपके दोस्तों को दिखेगा। वे join request भेज सकते हैं।",
+          "badge": "🔒 प्राइवेट",
+          "friendBadge": "🔒 प्राइवेट · दोस्त"
+        }
+      },
+      "discover": {
+        "requestToJoin": "Join request भेजें",
+        "requested": "Requested",
+        "requestClosed": "Request बंद"
+      },
+      "pendingRequestsLine_one": "🔔 {{count}} pending request",
+      "pendingRequestsLine_other": "🔔 {{count}} pending requests"
     },
     "messages": {
       "eyebrow": "डायरेक्ट मैसेज",

@@ -514,7 +514,8 @@
       "tabs": {
         "active": "Actifs",
         "invited": "Invité",
-        "past": "Passés"
+        "past": "Passés",
+        "discover": "Découvrir"
       },
       "empty": {
         "active": {
@@ -528,6 +529,10 @@
         "past": {
           "title": "Aucun ancien fil",
           "body": "Les fils terminés et annulés apparaîtront ici."
+        },
+        "discover": {
+          "title": "Aucun fil à découvrir",
+          "body": "Les fils publics et les fils privés de tes amis apparaîtront ici."
         }
       },
       "status": {
@@ -556,7 +561,10 @@
         "titleRequired": "Saisis un titre pour le fil.",
         "gymRequired": "Sélectionne un gym.",
         "create": "Créer le fil",
-        "save": "Enregistrer"
+        "save": "Enregistrer",
+        "privateSwitchWarning": "Passer en privé supprimera les membres qui ne sont pas amis et les demandes publiques en attente.",
+        "visibilityTitle": "Qui peut voir ce fil ?",
+        "inactiveEditWarning": "Les fils terminés ou annulés ne peuvent pas être modifiés."
       },
       "detail": {
         "edit": "Modifier",
@@ -575,13 +583,24 @@
         "noInviteCandidates": "Plus aucun ami à inviter.",
         "sendInvites": "Envoyer les invitations",
         "chat": "Chat",
-        "chatPlaceholder": "Le chat de fil arrive en Phase 4."
+        "chatPlaceholder": "Le chat de fil arrive en Phase 4.",
+        "membersPreview": "Membres participants",
+        "hostedBy": "Organisé par {{name}}",
+        "requestSent": "Demande envoyée",
+        "requestHelper": "L’hôte sera notifié et pourra approuver ta demande.",
+        "joinRequests": "Demandes de participation",
+        "newRequests": "{{count}} nouvelles",
+        "mutualFriends": "{{count}} amis en commun",
+        "noMutualFriends": "Aucun ami en commun",
+        "approveRequest": "Approuver",
+        "declineRequest": "Refuser"
       },
       "alerts": {
         "loadFailed": "Impossible de charger les fils pour le moment.",
         "actionFailed": "Impossible de mettre à jour ce fil. Réessaie.",
         "saveFailed": "Impossible d’enregistrer ce fil. Réessaie.",
-        "inviteFailed": "Impossible d’envoyer les invitations. Vérifie que les invités sont amis et qu’il reste de la place."
+        "inviteFailed": "Impossible d’envoyer les invitations. Vérifie que les invités sont amis et qu’il reste de la place.",
+        "requestFailed": "Impossible d’envoyer cette demande."
       },
       "referral": {
         "title": "Parrainage du fil",
@@ -601,7 +620,27 @@
         "sharedTitle": "Parrainage partagé",
         "sharedBody": "La carte de parrainage a été publiée dans le chat du fil.",
         "shareFailed": "Impossible de partager le parrainage."
-      }
+      },
+      "visibility": {
+        "public": {
+          "title": "Public",
+          "body": "Visible par tous les utilisateurs NexRep. Tout le monde peut demander à rejoindre.",
+          "badge": "🌐 Public"
+        },
+        "private": {
+          "title": "Privé",
+          "body": "Visible uniquement par tes amis. Ils peuvent demander à rejoindre.",
+          "badge": "🔒 Privé",
+          "friendBadge": "🔒 Privé · ami"
+        }
+      },
+      "discover": {
+        "requestToJoin": "Demander à rejoindre",
+        "requested": "Demandé",
+        "requestClosed": "Demande clôturée"
+      },
+      "pendingRequestsLine_one": "🔔 {{count}} demande en attente",
+      "pendingRequestsLine_other": "🔔 {{count}} demandes en attente"
     },
     "messages": {
       "eyebrow": "Messages directs",

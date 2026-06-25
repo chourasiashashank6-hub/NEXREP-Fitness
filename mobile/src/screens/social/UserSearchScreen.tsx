@@ -12,6 +12,7 @@ import {
 import { ScreenContainer } from "../../components/ScreenContainer";
 import SocialProfilePeekSheet from "../../components/social/SocialProfilePeekSheet";
 import SocialUserCard from "../../components/social/SocialUserCard";
+import { notifySocialUnreadChanged } from "../../utils/socialUnreadEvents";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -120,6 +121,7 @@ export default function UserSearchScreen() {
       const friend = await acceptFriendRequest(user.user_id);
       setResults((current) => current.map((item) => (item.user_id === friend.user_id ? friend : item)));
       setSelectedUser((current) => (current?.user_id === friend.user_id ? friend : current));
+      notifySocialUnreadChanged();
     } catch {
       rollback(previousResults, previousSelected);
       Alert.alert(t("common.error"), t("social.alerts.actionFailed"));

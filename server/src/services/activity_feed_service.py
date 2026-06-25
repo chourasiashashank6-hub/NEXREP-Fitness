@@ -211,6 +211,7 @@ def serialize_event(db: Session, event: ActivityEvent, viewer_id: int) -> dict[s
             "user_id": event.user_id,
             "name": user.name if user else "User",
             "initials": _initials(user.name if user else "User"),
+            "profile_photo_url": user.profile_photo_url if user else None,
         },
         "type": event.type,
         "payload": event.payload_json,

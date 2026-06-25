@@ -17,6 +17,7 @@ import { sendMessage, startOrGetDMConversation } from "../../api/messages";
 import type { SupplementStackItem } from "../../api/supplementStacks";
 import SocialProfilePeekSheet from "../../components/social/SocialProfilePeekSheet";
 import SocialUserCard from "../../components/social/SocialUserCard";
+import { notifySocialUnreadChanged } from "../../utils/socialUnreadEvents";
 
 type ViewMode = "friends" | "pending";
 
@@ -139,6 +140,7 @@ export default function FriendsScreen({ initialView = "friends" }: Props) {
       const friend = await acceptFriendRequest(user.user_id);
       setFriends((current) => current.map((item) => (item.user_id === friend.user_id ? friend : item)));
       setSelectedUser((current) => (current?.user_id === friend.user_id ? friend : current));
+      notifySocialUnreadChanged();
     } catch {
       rollback(previous);
       Alert.alert(t("common.error"), t("social.alerts.actionFailed"));
@@ -154,6 +156,7 @@ export default function FriendsScreen({ initialView = "friends" }: Props) {
     updateSelected(user.user_id, "none");
     try {
       await declineFriendRequest(user.user_id);
+      notifySocialUnreadChanged();
     } catch {
       rollback(previous);
       Alert.alert(t("common.error"), t("social.alerts.actionFailed"));

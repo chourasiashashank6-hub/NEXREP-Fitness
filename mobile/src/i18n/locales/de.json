@@ -514,7 +514,8 @@
       "tabs": {
         "active": "Aktiv",
         "invited": "Eingeladen",
-        "past": "Vergangen"
+        "past": "Vergangen",
+        "discover": "Entdecken"
       },
       "empty": {
         "active": {
@@ -528,6 +529,10 @@
         "past": {
           "title": "Keine vergangenen Threads",
           "body": "Abgeschlossene und abgesagte Threads erscheinen hier."
+        },
+        "discover": {
+          "title": "Keine Threads zum Entdecken",
+          "body": "Öffentliche Threads und private Threads von Freunden erscheinen hier."
         }
       },
       "status": {
@@ -556,7 +561,10 @@
         "titleRequired": "Bitte gib einen Thread-Titel ein.",
         "gymRequired": "Bitte wähle ein Gym aus.",
         "create": "Thread erstellen",
-        "save": "Änderungen speichern"
+        "save": "Änderungen speichern",
+        "privateSwitchWarning": "Beim Wechsel zu Privat werden Nicht-Freunde als Mitglieder und ausstehende öffentliche Anfragen entfernt.",
+        "visibilityTitle": "Wer kann diesen Thread sehen?",
+        "inactiveEditWarning": "Abgeschlossene oder abgesagte Threads können nicht bearbeitet werden."
       },
       "detail": {
         "edit": "Bearbeiten",
@@ -575,13 +583,24 @@
         "noInviteCandidates": "Keine weiteren Freunde zum Einladen.",
         "sendInvites": "Einladungen senden",
         "chat": "Chat",
-        "chatPlaceholder": "Thread-Chat kommt in Phase 4."
+        "chatPlaceholder": "Thread-Chat kommt in Phase 4.",
+        "membersPreview": "Teilnehmende Member",
+        "hostedBy": "Gehostet von {{name}}",
+        "requestSent": "Anfrage gesendet",
+        "requestHelper": "Der Host wird benachrichtigt und kann deine Anfrage genehmigen.",
+        "joinRequests": "Beitrittsanfragen",
+        "newRequests": "{{count}} neu",
+        "mutualFriends": "{{count}} gemeinsame Freunde",
+        "noMutualFriends": "Keine gemeinsamen Freunde",
+        "approveRequest": "Genehmigen",
+        "declineRequest": "Ablehnen"
       },
       "alerts": {
         "loadFailed": "Threads konnten gerade nicht geladen werden.",
         "actionFailed": "Dieser Thread konnte nicht aktualisiert werden. Versuch es erneut.",
         "saveFailed": "Dieser Thread konnte nicht gespeichert werden. Versuch es erneut.",
-        "inviteFailed": "Einladungen konnten nicht gesendet werden. Stelle sicher, dass Eingeladene Freunde sind und der Thread Platz hat."
+        "inviteFailed": "Einladungen konnten nicht gesendet werden. Stelle sicher, dass Eingeladene Freunde sind und der Thread Platz hat.",
+        "requestFailed": "Diese Beitrittsanfrage konnte nicht gesendet werden."
       },
       "referral": {
         "title": "Thread-Referral",
@@ -601,7 +620,27 @@
         "sharedTitle": "Referral geteilt",
         "sharedBody": "Die Referral-Karte wurde im Thread-Chat gepostet.",
         "shareFailed": "Referral konnte nicht geteilt werden."
-      }
+      },
+      "visibility": {
+        "public": {
+          "title": "Öffentlich",
+          "body": "Für alle NexRep-User sichtbar. Jeder kann eine Beitrittsanfrage senden.",
+          "badge": "🌐 Öffentlich"
+        },
+        "private": {
+          "title": "Privat",
+          "body": "Nur für deine Freunde sichtbar. Sie können eine Beitrittsanfrage senden.",
+          "badge": "🔒 Privat",
+          "friendBadge": "🔒 Privat · Freund"
+        }
+      },
+      "discover": {
+        "requestToJoin": "Beitritt anfragen",
+        "requested": "Angefragt",
+        "requestClosed": "Anfrage geschlossen"
+      },
+      "pendingRequestsLine_one": "🔔 {{count}} ausstehende Anfrage",
+      "pendingRequestsLine_other": "🔔 {{count}} ausstehende Anfragen"
     },
     "messages": {
       "eyebrow": "Direktnachrichten",

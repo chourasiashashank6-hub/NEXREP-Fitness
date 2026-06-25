@@ -1708,59 +1708,59 @@ export const WorkoutScreen = () => {
 
       <Modal visible={durationPickerOpen} transparent animationType="fade" onRequestClose={() => setDurationPickerOpen(false)}>
         <View style={styles.durationModalBackdrop}>
-          <View style={[styles.durationModalCard, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.lg }]}>
-            <Text style={[styles.durationModalTitle, { color: colors.text }]}>{t("workoutLog.setDuration")}</Text>
-            <Text style={[styles.durationModalSub, { color: colors.muted }]}>{t("workoutLog.durationSub")}</Text>
+          <View style={styles.durationModalCard}>
+            <Text style={styles.durationModalTitle}>{t("workoutLog.setDuration")}</Text>
+            <Text style={styles.durationModalSub}>{t("workoutLog.durationSub")}</Text>
             <View style={styles.durationPickerRow}>
               <View style={styles.durationCol}>
-                <Text style={[styles.durationUnit, { color: colors.muted }]}>{t("workoutLog.minutes")}</Text>
+                <Text style={styles.durationUnit}>{t("workoutLog.minutes")}</Text>
                 <Pressable
-                  style={[styles.durationStepBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+                  style={styles.durationStepBtn}
                   onPress={() => setPickerMinutes((m) => Math.max(0, m - 1))}
                 >
-                  <Text style={[styles.durationStepText, { color: colors.text }]}>−</Text>
+                  <Text style={styles.durationStepText}>−</Text>
                 </Pressable>
-                <Text style={[styles.durationNumber, { color: colors.text }]}>{pickerMinutes}</Text>
+                <Text style={styles.durationNumber}>{pickerMinutes}</Text>
                 <Pressable
-                  style={[styles.durationStepBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+                  style={styles.durationStepBtn}
                   onPress={() => setPickerMinutes((m) => Math.min(999, m + 1))}
                 >
-                  <Text style={[styles.durationStepText, { color: colors.text }]}>＋</Text>
+                  <Text style={styles.durationStepText}>＋</Text>
                 </Pressable>
               </View>
 
-              <Text style={[styles.durationSeparator, { color: colors.text }]}>:</Text>
+              <Text style={styles.durationSeparator}>:</Text>
 
               <View style={styles.durationCol}>
-                <Text style={[styles.durationUnit, { color: colors.muted }]}>{t("workoutLog.seconds")}</Text>
+                <Text style={styles.durationUnit}>{t("workoutLog.seconds")}</Text>
                 <Pressable
-                  style={[styles.durationStepBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+                  style={styles.durationStepBtn}
                   onPress={() => setPickerSeconds((s) => Math.max(0, s - 1))}
                 >
-                  <Text style={[styles.durationStepText, { color: colors.text }]}>−</Text>
+                  <Text style={styles.durationStepText}>−</Text>
                 </Pressable>
-                <Text style={[styles.durationNumber, { color: colors.text }]}>{String(pickerSeconds).padStart(2, "0")}</Text>
+                <Text style={styles.durationNumber}>{String(pickerSeconds).padStart(2, "0")}</Text>
                 <Pressable
-                  style={[styles.durationStepBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+                  style={styles.durationStepBtn}
                   onPress={() => setPickerSeconds((s) => Math.min(59, s + 1))}
                 >
-                  <Text style={[styles.durationStepText, { color: colors.text }]}>＋</Text>
+                  <Text style={styles.durationStepText}>＋</Text>
                 </Pressable>
               </View>
             </View>
 
             <View style={styles.durationModalActions}>
               <Pressable
-                style={[styles.durationActionBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+                style={[styles.durationActionBtn, styles.durationCancelBtn]}
                 onPress={() => setDurationPickerOpen(false)}
               >
-                <Text style={[styles.durationActionText, { color: colors.text }]}>{t("common.cancel")}</Text>
+                <Text style={styles.durationCancelText}>{t("common.cancel")}</Text>
               </Pressable>
               <Pressable
-                style={[styles.durationActionBtn, { borderColor: colors.primary, backgroundColor: colors.primary }]}
+                style={[styles.durationActionBtn, styles.durationSetBtn]}
                 onPress={applyDurationSelection}
               >
-                <Text style={[styles.durationActionText, { color: colors.background }]}>{t("workoutLog.set")}</Text>
+                <Text style={styles.durationSetText}>{t("workoutLog.set")}</Text>
               </Pressable>
             </View>
           </View>
@@ -2361,7 +2361,7 @@ const styles = StyleSheet.create({
   durationValue: { fontSize: 15, fontWeight: "700" },
   durationModalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(26,26,24,0.32)",
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
@@ -2370,34 +2370,47 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 360,
     borderWidth: 1,
-    padding: 16,
+    borderColor: BORDER,
+    borderRadius: 20,
+    backgroundColor: WHITE,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
   },
-  durationModalTitle: { fontSize: 18, fontWeight: "800" },
-  durationModalSub: { fontSize: 12, marginTop: 4, marginBottom: 14 },
+  durationModalTitle: { color: TEXT, fontSize: 20, fontWeight: "900" },
+  durationModalSub: { color: "#6F766F", fontSize: 13, marginTop: 4, marginBottom: 16 },
   durationPickerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   durationCol: { alignItems: "center", flex: 1 },
-  durationUnit: { fontSize: 11, fontWeight: "700", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 },
+  durationUnit: { color: "#6F766F", fontSize: 11, fontWeight: "800", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 },
   durationStepBtn: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderColor: BORDER,
+    borderRadius: 12,
+    backgroundColor: BG,
     width: 44,
     height: 36,
     alignItems: "center",
     justifyContent: "center",
   },
-  durationStepText: { fontSize: 18, fontWeight: "800" },
-  durationNumber: { fontSize: 28, fontWeight: "900", marginVertical: 8 },
-  durationSeparator: { fontSize: 28, fontWeight: "900", marginHorizontal: 8 },
+  durationStepText: { color: GREEN, fontSize: 18, fontWeight: "900" },
+  durationNumber: { color: TEXT, fontSize: 30, fontWeight: "900", marginVertical: 8 },
+  durationSeparator: { color: TEXT, fontSize: 28, fontWeight: "900", marginHorizontal: 8 },
   durationModalActions: { flexDirection: "row", gap: 10, marginTop: 16 },
   durationActionBtn: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
-  durationActionText: { fontSize: 14, fontWeight: "800" },
+  durationCancelBtn: { backgroundColor: WHITE, borderColor: BORDER },
+  durationSetBtn: { backgroundColor: GREEN_LIGHT, borderColor: GREEN_LIGHT },
+  durationCancelText: { color: TEXT, fontSize: 14, fontWeight: "900" },
+  durationSetText: { color: GREEN, fontSize: 14, fontWeight: "900" },
   editModalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(26,26,24,0.32)",

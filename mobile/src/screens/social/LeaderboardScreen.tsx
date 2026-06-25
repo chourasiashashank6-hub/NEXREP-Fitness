@@ -13,6 +13,7 @@ import {
   type LeaderboardResponse,
   type SquadChallenge,
 } from "../../api/socialChallenges";
+import { UserAvatar } from "../../components/UserAvatar";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -238,9 +239,13 @@ function PodiumBlock({ entry, color, height, label }: { entry?: LeaderboardEntry
   if (!entry) return <View style={styles.podiumSlot} />;
   return (
     <View style={styles.podiumSlot}>
-      <View style={styles.podiumAvatar}>
-        <Text style={styles.podiumAvatarText}>{entry.user.initials}</Text>
-      </View>
+      <UserAvatar
+        name={entry.user.name}
+        initials={entry.user.initials}
+        profilePhotoUrl={entry.user.profile_photo_url}
+        style={styles.podiumAvatar}
+        textStyle={styles.podiumAvatarText}
+      />
       <Text style={styles.podiumName} numberOfLines={1}>
         {entry.user.name}
       </Text>
@@ -257,9 +262,13 @@ function RankRow({ entry }: { entry: LeaderboardEntry }) {
   return (
     <View style={styles.rankRow}>
       <Text style={styles.rankNumber}>#{entry.rank}</Text>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{entry.user.initials}</Text>
-      </View>
+      <UserAvatar
+        name={entry.user.name}
+        initials={entry.user.initials}
+        profilePhotoUrl={entry.user.profile_photo_url}
+        style={styles.avatar}
+        textStyle={styles.avatarText}
+      />
       <View style={styles.rankText}>
         <Text style={styles.rankName}>{entry.user.name}</Text>
         <Text style={styles.rankMeta}>

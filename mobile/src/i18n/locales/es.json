@@ -514,7 +514,8 @@
       "tabs": {
         "active": "Activos",
         "invited": "Invitado",
-        "past": "Pasados"
+        "past": "Pasados",
+        "discover": "Descubrir"
       },
       "empty": {
         "active": {
@@ -528,6 +529,10 @@
         "past": {
           "title": "No hay hilos pasados",
           "body": "Los hilos completados y cancelados aparecerán aquí."
+        },
+        "discover": {
+          "title": "No hay hilos para descubrir",
+          "body": "Aquí aparecerán hilos públicos y privados de tus amigos."
         }
       },
       "status": {
@@ -556,7 +561,10 @@
         "titleRequired": "Ingresa un título para el hilo.",
         "gymRequired": "Selecciona un gym.",
         "create": "Crear hilo",
-        "save": "Guardar cambios"
+        "save": "Guardar cambios",
+        "privateSwitchWarning": "Cambiar a Privado eliminará a los miembros que no sean amigos y las solicitudes públicas pendientes.",
+        "visibilityTitle": "¿Quién puede ver este hilo?",
+        "inactiveEditWarning": "Los hilos completados o cancelados no se pueden editar."
       },
       "detail": {
         "edit": "Editar",
@@ -575,13 +583,24 @@
         "noInviteCandidates": "No hay más amigos para invitar.",
         "sendInvites": "Enviar invitaciones",
         "chat": "Chat",
-        "chatPlaceholder": "El chat del hilo llega en la Fase 4."
+        "chatPlaceholder": "El chat del hilo llega en la Fase 4.",
+        "membersPreview": "Miembros que van",
+        "hostedBy": "Organizado por {{name}}",
+        "requestSent": "Solicitud enviada",
+        "requestHelper": "El host recibirá una notificación y podrá aprobar tu solicitud.",
+        "joinRequests": "Solicitudes para unirse",
+        "newRequests": "{{count}} nuevas",
+        "mutualFriends": "{{count}} amigos en común",
+        "noMutualFriends": "Sin amigos en común",
+        "approveRequest": "Aprobar",
+        "declineRequest": "Rechazar"
       },
       "alerts": {
         "loadFailed": "No se pudieron cargar los hilos ahora.",
         "actionFailed": "No se pudo actualizar este hilo. Inténtalo de nuevo.",
         "saveFailed": "No se pudo guardar este hilo. Inténtalo de nuevo.",
-        "inviteFailed": "No se pudieron enviar invitaciones. Asegúrate de que sean amigos y que el hilo tenga espacio."
+        "inviteFailed": "No se pudieron enviar invitaciones. Asegúrate de que sean amigos y que el hilo tenga espacio.",
+        "requestFailed": "No se pudo enviar esta solicitud."
       },
       "referral": {
         "title": "Referido del hilo",
@@ -601,7 +620,27 @@
         "sharedTitle": "Referido compartido",
         "sharedBody": "La tarjeta de referido se publicó en el chat del hilo.",
         "shareFailed": "No se pudo compartir el referido."
-      }
+      },
+      "visibility": {
+        "public": {
+          "title": "Público",
+          "body": "Visible para todos los usuarios de NexRep. Cualquiera puede pedir unirse.",
+          "badge": "🌐 Público"
+        },
+        "private": {
+          "title": "Privado",
+          "body": "Solo visible para tus amigos. Pueden pedir unirse.",
+          "badge": "🔒 Privado",
+          "friendBadge": "🔒 Privado · amigo"
+        }
+      },
+      "discover": {
+        "requestToJoin": "Pedir unirme",
+        "requested": "Solicitado",
+        "requestClosed": "Solicitud cerrada"
+      },
+      "pendingRequestsLine_one": "🔔 {{count}} solicitud pendiente",
+      "pendingRequestsLine_other": "🔔 {{count}} solicitudes pendientes"
     },
     "messages": {
       "eyebrow": "Mensajes directos",

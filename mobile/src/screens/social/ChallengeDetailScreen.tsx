@@ -11,6 +11,7 @@ import {
   type SquadChallenge,
 } from "../../api/socialChallenges";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { UserAvatar } from "../../components/UserAvatar";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -163,9 +164,13 @@ function StandingRow({ standing, target }: { standing: ChallengeStanding; target
   return (
     <View style={styles.standingRow}>
       <Text style={styles.rank}>#{standing.rank}</Text>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{standing.user.initials}</Text>
-      </View>
+      <UserAvatar
+        name={standing.user.name}
+        initials={standing.user.initials}
+        profilePhotoUrl={standing.user.profile_photo_url}
+        style={styles.avatar}
+        textStyle={styles.avatarText}
+      />
       <View style={styles.standingText}>
         <Text style={styles.name}>{standing.user.name}</Text>
         <Text style={styles.progressText}>{t("social.challenges.detail.progress", { progress: standing.progress, target })}</Text>

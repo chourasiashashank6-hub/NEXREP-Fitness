@@ -1,7 +1,11 @@
+import base64
 from datetime import date, datetime, timedelta
+from io import BytesIO
 import json
 import os
+from pathlib import Path
 import re
+import secrets
 from typing import Any
 import smtplib
 from email.message import EmailMessage
@@ -10,6 +14,8 @@ from sqlalchemy import func, or_, text
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from src.db.session import Base, SessionLocal, engine, get_db
 from src.models import admin_models  # noqa: F401 — registers admin analytics tables
@@ -91,6 +97,20 @@ from src.coach_targets import (
 )
 
 app = FastAPI(title="Fitness API", version="1.0.0")
+
+UPLOAD_ROOT = Path(__file__).resolve().parents[1] / "uploads"
+PROFILE_PHOTO_DIR = UPLOAD_ROOT / "profile_photos"
+PROFILE_PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_ROOT)), name="uploads")
+
+MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024
+PROFILE_PHOTO_SIZE = 512
+PROFILE_PHOTO_ALLOWED_MIME = {"image/jpeg", "image/png"}
+
+
+class ProfilePhotoUploadRequest(BaseModel):
+    base64: str = Field(..., min_length=20)
+    mime_type: str = Field(..., min_length=3, max_length=100)
 
 _origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", settings.ALLOWED_ORIGINS).split(",") if o.strip()]
 if settings.APP_ENV == "development":
@@ -2668,6 +2688,90 @@ def chat(payload: ChatRequest, current_user: User = Depends(get_current_user), d
     }
 
 
+def _profile_payload(db: Session, user: User) -> dict[str, Any]:
+    workouts = db.query(Workout).filter(Workout.user_id == user.id).count()
+    meals = db.query(Meal).filter(Meal.user_id == user.id).count()
+    activity_logs = db.query(Activity).filter(Activity.user_id == user.id).count()
+    score = compute_discipline_score(workouts, meals, activity_logs)
+    return {
+        "id": str(user.id),
+        "name": user.name,
+        "email": user.email,
+        "age": user.age,
+        "weight": user.weight,
+        "goals": user.goals,
+        "goalTag": user.goal_tag,
+        "difficulty": user.difficulty,
+        "createdAt": user.created_at.isoformat() if user.created_at else None,
+        "disciplineScore": score,
+        "plan_id": user.plan_id or "free",
+        "preferredLanguage": user.preferred_language,
+        "profilePhotoUrl": user.profile_photo_url,
+        "profile_photo_url": user.profile_photo_url,
+    }
+
+
+def _normalize_image_mime(mime_type: str) -> str:
+    cleaned = (mime_type or "").strip().lower()
+    if cleaned in {"image/jpg", "image/jpe", "image/pjpeg"}:
+        return "image/jpeg"
+    return cleaned
+
+
+def _decode_profile_photo(payload: ProfilePhotoUploadRequest) -> bytes:
+    raw = (payload.base64 or "").strip()
+    mime = _normalize_image_mime(payload.mime_type)
+    match = re.match(r"^data:(image/[\w.+-]+);base64,(.+)$", raw, re.IGNORECASE | re.DOTALL)
+    if match:
+        mime = _normalize_image_mime(match.group(1))
+        raw = match.group(2)
+    if mime not in PROFILE_PHOTO_ALLOWED_MIME:
+        raise HTTPException(status_code=422, detail="Please choose a JPG or PNG image.")
+    try:
+        data = base64.b64decode(raw.replace("\n", "").replace("\r", "").replace(" ", ""), validate=True)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="Invalid image data. Please choose another photo.") from exc
+    if len(data) > MAX_PROFILE_PHOTO_BYTES:
+        raise HTTPException(status_code=413, detail="Profile photo must be 5MB or smaller.")
+    if len(data) < 64:
+        raise HTTPException(status_code=422, detail="Could not read this image. Please choose another photo.")
+    return data
+
+
+def _save_profile_photo(user_id: int, data: bytes) -> str:
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail="Image processing is not available on this server.") from exc
+
+    try:
+        image = Image.open(BytesIO(data))
+        image.verify()
+        image = Image.open(BytesIO(data)).convert("RGB")
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="Could not read this image. Please choose a JPG or PNG photo.") from exc
+
+    side = min(image.size)
+    left = max(0, (image.width - side) // 2)
+    top = max(0, (image.height - side) // 2)
+    cropped = image.crop((left, top, left + side, top + side)).resize((PROFILE_PHOTO_SIZE, PROFILE_PHOTO_SIZE))
+    filename = f"user_{user_id}_{secrets.token_hex(12)}.jpg"
+    output_path = PROFILE_PHOTO_DIR / filename
+    cropped.save(output_path, format="JPEG", quality=88, optimize=True)
+    return f"/uploads/profile_photos/{filename}"
+
+
+def _remove_profile_photo_file(url: str | None) -> None:
+    if not url or not url.startswith("/uploads/profile_photos/"):
+        return
+    path = PROFILE_PHOTO_DIR / Path(url).name
+    try:
+        if path.exists():
+            path.unlink()
+    except OSError:
+        pass
+
+
 @app.get("/profile")
 def profile(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Re-apply onboarding mapping on read so legacy users stay in sync.
@@ -2678,25 +2782,7 @@ def profile(current_user: User = Depends(get_current_user), db: Session = Depend
         db.commit()
         db.refresh(current_user)
 
-    workouts = db.query(Workout).filter(Workout.user_id == current_user.id).count()
-    meals = db.query(Meal).filter(Meal.user_id == current_user.id).count()
-    activity_logs = db.query(Activity).filter(Activity.user_id == current_user.id).count()
-    score = compute_discipline_score(workouts, meals, activity_logs)
-
-    return {
-        "id": str(current_user.id),
-        "name": current_user.name,
-        "email": current_user.email,
-        "age": current_user.age,
-        "weight": current_user.weight,
-        "goals": current_user.goals,
-        "goalTag": current_user.goal_tag,
-        "difficulty": current_user.difficulty,
-        "createdAt": current_user.created_at.isoformat() if current_user.created_at else None,
-        "disciplineScore": score,
-        "plan_id": current_user.plan_id or "free",
-        "preferredLanguage": current_user.preferred_language,
-    }
+    return _profile_payload(db, current_user)
 
 
 def _dev_tier_toggle_email_set() -> set[str]:
@@ -2755,25 +2841,36 @@ def update_profile(
     current_user.difficulty = (payload.difficulty or "").strip()
     db.add(current_user)
     db.commit()
+    db.refresh(current_user)
+    return _profile_payload(db, current_user)
 
-    workouts = db.query(Workout).filter(Workout.user_id == current_user.id).count()
-    meals = db.query(Meal).filter(Meal.user_id == current_user.id).count()
-    activity_logs = db.query(Activity).filter(Activity.user_id == current_user.id).count()
-    score = compute_discipline_score(workouts, meals, activity_logs)
 
-    return {
-        "id": str(current_user.id),
-        "name": current_user.name,
-        "email": current_user.email,
-        "age": current_user.age,
-        "weight": current_user.weight,
-        "goals": current_user.goals,
-        "goalTag": current_user.goal_tag,
-        "difficulty": current_user.difficulty,
-        "createdAt": current_user.created_at.isoformat() if current_user.created_at else None,
-        "disciplineScore": score,
-        "preferredLanguage": current_user.preferred_language,
-    }
+@app.post("/profile/photo")
+def upload_profile_photo(
+    payload: ProfilePhotoUploadRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    data = _decode_profile_photo(payload)
+    old_url = current_user.profile_photo_url
+    photo_url = _save_profile_photo(current_user.id, data)
+    current_user.profile_photo_url = photo_url
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    _remove_profile_photo_file(old_url)
+    return _profile_payload(db, current_user)
+
+
+@app.delete("/profile/photo")
+def remove_profile_photo(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    old_url = current_user.profile_photo_url
+    current_user.profile_photo_url = None
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    _remove_profile_photo_file(old_url)
+    return _profile_payload(db, current_user)
 
 
 @app.patch("/profile/language")

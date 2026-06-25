@@ -15,6 +15,7 @@ from src.models.models import (
     Friendship,
     Message,
     Thread,
+    ThreadJoinRequest,
     ThreadMember,
     ThreadMute,
     User,
@@ -67,7 +68,7 @@ def _initials(name: str) -> str:
 
 
 def _public_user(user: User) -> dict[str, Any]:
-    return {"user_id": user.id, "name": user.name, "initials": _initials(user.name)}
+    return {"user_id": user.id, "name": user.name, "initials": _initials(user.name), "profile_photo_url": user.profile_photo_url}
 
 
 def _relationship_between(db: Session, left_id: int, right_id: int) -> Friendship | None:
@@ -405,8 +406,14 @@ def unread_counts(current_user: User = Depends(get_current_user), db: Session = 
         }
         for row in dm_rows
     ]
-    total = sum(item["unread_count"] for item in threads) + sum(item["unread_count"] for item in dms)
-    return {"total": total, "threads": threads, "dms": dms}
+    pending_join_requests = (
+        db.query(ThreadJoinRequest)
+        .join(Thread, Thread.id == ThreadJoinRequest.thread_id)
+        .filter(Thread.host_user_id == current_user.id, ThreadJoinRequest.status == "pending")
+        .count()
+    )
+    total = sum(item["unread_count"] for item in threads) + sum(item["unread_count"] for item in dms) + pending_join_requests
+    return {"total": total, "threads": threads, "dms": dms, "pending_join_requests": pending_join_requests}
 
 
 @router.patch("/{message_id}")

@@ -3,6 +3,8 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "rea
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { listDMConversations, type DMConversation } from "../../api/messages";
+import { UserAvatar } from "../../components/UserAvatar";
+import { notifySocialUnreadChanged } from "../../utils/socialUnreadEvents";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -36,6 +38,7 @@ export default function MessagesScreen() {
     setLoading(true);
     try {
       setItems(await listDMConversations());
+      notifySocialUnreadChanged();
     } catch {
       Alert.alert(t("common.error"), t("social.messages.alerts.loadConversationsFailed"));
     } finally {
@@ -74,9 +77,13 @@ export default function MessagesScreen() {
               })
             }
           >
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{conversation.other_user?.initials ?? "DM"}</Text>
-            </View>
+            <UserAvatar
+              name={conversation.other_user?.name}
+              initials={conversation.other_user?.initials ?? "DM"}
+              profilePhotoUrl={conversation.other_user?.profile_photo_url}
+              style={styles.avatar}
+              textStyle={styles.avatarText}
+            />
             <View style={styles.textWrap}>
               <Text style={styles.name} numberOfLines={1}>
                 {conversation.other_user?.name ?? t("social.messages.unknownUser")}

@@ -4,11 +4,12 @@ import type { StackSummaryItem } from "./supplementStacks";
 import type { ChatMessage } from "./messages";
 
 export type ThreadStatus = "active" | "completed" | "cancelled";
+export type ThreadVisibility = "public" | "private";
 export type ThreadMemberRole = "host" | "member";
 export type ThreadMemberStatus = "invited" | "joined" | "declined";
 export type ThreadBucket = "active" | "invited" | "past" | "all";
 
-export type ThreadMember = Pick<SocialUserProfile, "user_id" | "name" | "initials"> & {
+export type ThreadMember = Pick<SocialUserProfile, "user_id" | "name" | "initials" | "profile_photo_url"> & {
   role: ThreadMemberRole;
   status: ThreadMemberStatus;
   joined_at?: string | null;
@@ -22,6 +23,7 @@ export type GymThread = {
   gym_place_id?: string | null;
   scheduled_time: string;
   status: ThreadStatus;
+  visibility: ThreadVisibility;
   max_members: number;
   created_at?: string | null;
   expires_at: string;
@@ -31,10 +33,27 @@ export type GymThread = {
   current_user_role?: ThreadMemberRole | null;
   current_user_status?: ThreadMemberStatus | null;
   is_host: boolean;
+  is_member: boolean;
+  can_request_join: boolean;
+  join_request_status?: "pending" | "approved" | "declined" | null;
+  host?: Pick<SocialUserProfile, "user_id" | "name" | "initials" | "profile_photo_url"> | null;
   member_preview: ThreadMember[];
   members?: ThreadMember[];
+  pending_join_requests?: ThreadJoinRequest[];
+  pending_join_request_count?: number;
   stack_summary?: StackSummaryItem[];
   referral?: ThreadReferral | null;
+};
+
+export type ThreadJoinRequest = {
+  id: number;
+  thread_id: number;
+  status: "pending" | "approved" | "declined";
+  created_at?: string | null;
+  responded_at?: string | null;
+  requester: Pick<SocialUserProfile, "user_id" | "name" | "initials" | "profile_photo_url"> & {
+    mutual_friends_count: number;
+  };
 };
 
 export type ThreadReferral = {
@@ -52,19 +71,40 @@ export type ThreadFormPayload = {
     place_id?: string | null;
   };
   scheduled_time: string;
+  visibility?: ThreadVisibility;
   max_members?: number;
   invite_user_ids?: number[];
 };
 
-export type ThreadUpdatePayload = Partial<Pick<ThreadFormPayload, "title" | "gym" | "scheduled_time">>;
+export type ThreadUpdatePayload = Partial<Pick<ThreadFormPayload, "title" | "gym" | "scheduled_time" | "visibility">>;
 
 export const listThreads = async (bucket: ThreadBucket): Promise<GymThread[]> => {
   const { data } = await apiClient.get<{ items: GymThread[] }>("/api/social/threads", { params: { bucket } });
   return data.items ?? [];
 };
 
+export const discoverThreads = async (): Promise<GymThread[]> => {
+  const { data } = await apiClient.get<{ items: GymThread[] }>("/api/social/threads/discover");
+  return data.items ?? [];
+};
+
 export const getThread = async (threadId: number): Promise<GymThread> => {
   const { data } = await apiClient.get<{ thread: GymThread }>(`/api/social/threads/${threadId}`);
+  return data.thread;
+};
+
+export const requestToJoinThread = async (threadId: number): Promise<GymThread> => {
+  const { data } = await apiClient.post<{ thread: GymThread }>(`/api/social/threads/${threadId}/join-requests`);
+  return data.thread;
+};
+
+export const approveThreadJoinRequest = async (threadId: number, requestId: number): Promise<GymThread> => {
+  const { data } = await apiClient.post<{ thread: GymThread }>(`/api/social/threads/${threadId}/join-requests/${requestId}/approve`);
+  return data.thread;
+};
+
+export const declineThreadJoinRequest = async (threadId: number, requestId: number): Promise<GymThread> => {
+  const { data } = await apiClient.post<{ thread: GymThread }>(`/api/social/threads/${threadId}/join-requests/${requestId}/decline`);
   return data.thread;
 };
 

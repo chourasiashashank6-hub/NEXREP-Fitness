@@ -9,7 +9,7 @@ from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from src.db.session import get_db
-from src.models.models import Friendship, Message, Thread, ThreadMember, ThreadMute, User, UserSupplementStack
+from src.models.models import Friendship, Message, Thread, ThreadJoinRequest, ThreadMember, ThreadMute, User, UserSupplementStack
 from src.services.activity_feed_service import emit_activity_event
 from src.services.notification_service import send_push_to_user
 from src.utils.auth import get_current_user
@@ -19,6 +19,7 @@ router = APIRouter(prefix="/api/social/threads", tags=["social-threads"])
 ThreadStatus = Literal["active", "completed", "cancelled"]
 ThreadMemberRole = Literal["host", "member"]
 ThreadMemberStatus = Literal["invited", "joined", "declined"]
+ThreadVisibility = Literal["public", "private"]
 THREAD_CREATION_DAILY_LIMIT = 10
 
 
@@ -31,6 +32,7 @@ class ThreadCreatePayload(BaseModel):
     title: str = Field(..., min_length=1, max_length=160)
     gym: ThreadGymPayload
     scheduled_time: datetime
+    visibility: ThreadVisibility = "private"
     max_members: int = Field(default=20, ge=1, le=100)
     invite_user_ids: list[int] = Field(default_factory=list)
 
@@ -39,6 +41,7 @@ class ThreadUpdatePayload(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=160)
     gym: ThreadGymPayload | None = None
     scheduled_time: datetime | None = None
+    visibility: ThreadVisibility | None = None
 
 
 class ThreadInvitePayload(BaseModel):
@@ -61,7 +64,7 @@ def _initials(name: str) -> str:
 
 
 def _public_user(user: User) -> dict[str, Any]:
-    return {"user_id": user.id, "name": user.name, "initials": _initials(user.name)}
+    return {"user_id": user.id, "name": user.name, "initials": _initials(user.name), "profile_photo_url": user.profile_photo_url}
 
 
 def _thread_deep_link(thread_id: int) -> str:
@@ -98,6 +101,22 @@ def _is_friend(db: Session, left_id: int, right_id: int) -> bool:
         .first()
         is not None
     )
+
+
+def _accepted_friend_ids(db: Session, user_id: int) -> set[int]:
+    rows = (
+        db.query(Friendship)
+        .filter(
+            Friendship.status == "accepted",
+            or_(Friendship.user_id == user_id, Friendship.friend_id == user_id),
+        )
+        .all()
+    )
+    return {row.friend_id if row.user_id == user_id else row.user_id for row in rows}
+
+
+def _mutual_friends_count(db: Session, viewer_id: int, target_id: int) -> int:
+    return len(_accepted_friend_ids(db, viewer_id) & _accepted_friend_ids(db, target_id))
 
 
 def _is_blocked_between(db: Session, left_id: int, right_id: int) -> bool:
@@ -149,6 +168,28 @@ def _require_visible_thread(db: Session, thread_id: int, user_id: int) -> Thread
     return thread
 
 
+def _is_discoverable_thread(db: Session, thread: Thread, user_id: int) -> bool:
+    if thread.host_user_id == user_id:
+        return True
+    if _is_blocked_between(db, user_id, thread.host_user_id):
+        return False
+    if thread.visibility == "public":
+        return True
+    return _is_friend(db, user_id, thread.host_user_id)
+
+
+def _require_viewable_thread(db: Session, thread_id: int, user_id: int) -> Thread:
+    thread = _require_thread(db, thread_id)
+    membership = _member_row(db, thread.id, user_id)
+    if membership:
+        if not _has_visible_other_member(db, thread.id, user_id):
+            raise HTTPException(status_code=404, detail="Thread not found")
+        return thread
+    if thread.status == "active" and _is_discoverable_thread(db, thread, user_id):
+        return thread
+    raise HTTPException(status_code=404, detail="Thread not found")
+
+
 def _require_host(thread: Thread, current_user: User) -> None:
     if thread.host_user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the host can do this")
@@ -160,6 +201,29 @@ def _active_member_count(db: Session, thread_id: int) -> int:
         .filter(ThreadMember.thread_id == thread_id, ThreadMember.status.in_(["invited", "joined"]))
         .count()
     )
+
+
+def _join_request_for_user(db: Session, thread_id: int, user_id: int) -> ThreadJoinRequest | None:
+    return (
+        db.query(ThreadJoinRequest)
+        .filter(ThreadJoinRequest.thread_id == thread_id, ThreadJoinRequest.requester_user_id == user_id)
+        .first()
+    )
+
+
+def _public_join_request(db: Session, request: ThreadJoinRequest, viewer_id: int) -> dict[str, Any]:
+    user = request.requester
+    return {
+        "id": request.id,
+        "thread_id": request.thread_id,
+        "status": request.status,
+        "created_at": request.created_at.isoformat() if request.created_at else None,
+        "responded_at": request.responded_at.isoformat() if request.responded_at else None,
+        "requester": {
+            **_public_user(user),
+            "mutual_friends_count": _mutual_friends_count(db, viewer_id, user.id),
+        },
+    }
 
 
 def _check_thread_creation_rate_limit(db: Session, user_id: int) -> None:
@@ -266,6 +330,18 @@ def _notify_members(
         _notify_thread_user(db, user_id=user.id, kind=kind, title=title, body=body, thread=thread, actor=actor)
 
 
+def _notify_join_request(db: Session, thread: Thread, requester: User) -> None:
+    _notify_thread_user(
+        db,
+        user_id=thread.host_user_id,
+        kind="thread_join_request",
+        title="Join request",
+        body=f"{requester.name} wants to join {_notification_title_snippet(thread.title)}.",
+        thread=thread,
+        actor=requester,
+    )
+
+
 def _serialize_member(member: ThreadMember, user: User) -> dict[str, Any]:
     return {
         **_public_user(user),
@@ -289,6 +365,8 @@ def _serialize_referral(thread: Thread) -> dict[str, Any] | None:
 
 def _serialize_thread(db: Session, thread: Thread, current_user_id: int, include_members: bool = False) -> dict[str, Any]:
     membership = _member_row(db, thread.id, current_user_id)
+    host = db.query(User).filter(User.id == thread.host_user_id).first()
+    join_request = _join_request_for_user(db, thread.id, current_user_id)
     mute = (
         db.query(ThreadMute)
         .filter(ThreadMute.thread_id == thread.id, ThreadMute.user_id == current_user_id)
@@ -304,6 +382,13 @@ def _serialize_thread(db: Session, thread: Thread, current_user_id: int, include
     blocked_ids = _blocked_user_ids(db, current_user_id)
     visible_members = [(member, user) for member, user in members if user.id == current_user_id or user.id not in blocked_ids]
     joined_members = [member for member, _user in visible_members if member.status == "joined"]
+    pending_join_request_count = 0
+    if thread.host_user_id == current_user_id:
+        pending_join_request_count = (
+            db.query(ThreadJoinRequest)
+            .filter(ThreadJoinRequest.thread_id == thread.id, ThreadJoinRequest.status == "pending")
+            .count()
+        )
     payload: dict[str, Any] = {
         "id": thread.id,
         "host_user_id": thread.host_user_id,
@@ -312,6 +397,7 @@ def _serialize_thread(db: Session, thread: Thread, current_user_id: int, include
         "gym_place_id": thread.gym_place_id,
         "scheduled_time": thread.scheduled_time.isoformat(),
         "status": thread.status,
+        "visibility": thread.visibility,
         "max_members": thread.max_members,
         "created_at": thread.created_at.isoformat() if thread.created_at else None,
         "expires_at": thread.expires_at.isoformat(),
@@ -321,11 +407,25 @@ def _serialize_thread(db: Session, thread: Thread, current_user_id: int, include
         "current_user_role": membership.role if membership else None,
         "current_user_status": membership.status if membership else None,
         "is_host": thread.host_user_id == current_user_id,
+        "is_member": membership is not None and membership.status in {"invited", "joined"},
+        "pending_join_request_count": pending_join_request_count,
+        "can_request_join": membership is None and thread.status == "active" and join_request is None and _is_discoverable_thread(db, thread, current_user_id),
+        "join_request_status": join_request.status if join_request else None,
+        "host": _public_user(host) if host else None,
         "member_preview": [_serialize_member(member, user) for member, user in visible_members if member.status == "joined"][:5],
         "referral": _serialize_referral(thread),
     }
-    if include_members:
+    if include_members and membership:
         payload["members"] = [_serialize_member(member, user) for member, user in visible_members]
+    if include_members and thread.host_user_id == current_user_id:
+        pending_requests = (
+            db.query(ThreadJoinRequest)
+            .join(User, User.id == ThreadJoinRequest.requester_user_id)
+            .filter(ThreadJoinRequest.thread_id == thread.id, ThreadJoinRequest.status == "pending")
+            .order_by(ThreadJoinRequest.created_at.asc(), ThreadJoinRequest.id.asc())
+            .all()
+        )
+        payload["pending_join_requests"] = [_public_join_request(db, request, current_user_id) for request in pending_requests]
     if membership and membership.status == "joined":
         summary_query = (
             db.query(UserSupplementStack.category, func.count(UserSupplementStack.id))
@@ -363,6 +463,37 @@ def _add_system_message(db: Session, thread: Thread, actor: User, body: str, met
 def _ensure_invite_capacity(db: Session, thread: Thread, count: int) -> None:
     if _active_member_count(db, thread.id) + count > thread.max_members:
         raise HTTPException(status_code=409, detail="Thread is at max members")
+
+
+def _apply_private_visibility_cascade(db: Session, thread: Thread, owner_id: int) -> None:
+    friend_ids = _accepted_friend_ids(db, owner_id)
+    keep_ids = friend_ids | {owner_id}
+    non_friend_members = (
+        db.query(ThreadMember)
+        .filter(
+            ThreadMember.thread_id == thread.id,
+            ThreadMember.user_id != owner_id,
+            ThreadMember.user_id.notin_(keep_ids or {-1}),
+            ThreadMember.status.in_(["invited", "joined"]),
+        )
+        .all()
+    )
+    for member in non_friend_members:
+        db.delete(member)
+
+    pending_requests = (
+        db.query(ThreadJoinRequest)
+        .filter(
+            ThreadJoinRequest.thread_id == thread.id,
+            ThreadJoinRequest.status == "pending",
+            ThreadJoinRequest.requester_user_id.notin_(keep_ids or {-1}),
+        )
+        .all()
+    )
+    for request in pending_requests:
+        request.status = "declined"
+        request.responded_at = datetime.utcnow()
+        db.add(request)
 
 
 def _invite_users(db: Session, thread: Thread, host: User, user_ids: list[int]) -> list[dict[str, Any]]:
@@ -416,6 +547,7 @@ def create_thread(payload: ThreadCreatePayload, current_user: User = Depends(get
         gym_place_id=(payload.gym.place_id or None),
         scheduled_time=payload.scheduled_time,
         status="active",
+        visibility=payload.visibility,
         max_members=payload.max_members,
         expires_at=_expires_at(payload.scheduled_time),
     )
@@ -565,9 +697,123 @@ def list_my_threads(
     return {"items": [_serialize_thread(db, thread, current_user.id) for thread in threads]}
 
 
+@router.get("/discover")
+def discover_threads(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    friend_ids = _accepted_friend_ids(db, current_user.id)
+    blocked_ids = _blocked_user_ids(db, current_user.id)
+    member_thread_ids = db.query(ThreadMember.thread_id).filter(ThreadMember.user_id == current_user.id)
+    query = (
+        db.query(Thread)
+        .filter(
+            Thread.status == "active",
+            Thread.expires_at > datetime.utcnow(),
+            Thread.id.notin_(member_thread_ids),
+            Thread.host_user_id != current_user.id,
+            or_(Thread.visibility == "public", and_(Thread.visibility == "private", Thread.host_user_id.in_(friend_ids or [-1]))),
+        )
+    )
+    if blocked_ids:
+        query = query.filter(Thread.host_user_id.notin_(blocked_ids))
+    threads = query.order_by(Thread.scheduled_time.asc(), Thread.id.asc()).all()
+    return {"items": [_serialize_thread(db, thread, current_user.id) for thread in threads]}
+
+
 @router.get("/{thread_id}")
 def get_thread_detail(thread_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    thread = _require_visible_thread(db, thread_id, current_user.id)
+    thread = _require_viewable_thread(db, thread_id, current_user.id)
+    return {"thread": _serialize_thread(db, thread, current_user.id, include_members=True)}
+
+
+@router.post("/{thread_id}/join-requests")
+def request_to_join_thread(thread_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    thread = _require_viewable_thread(db, thread_id, current_user.id)
+    if thread.status != "active":
+        raise HTTPException(status_code=409, detail="Thread is not active")
+    if thread.host_user_id == current_user.id or _member_row(db, thread.id, current_user.id):
+        raise HTTPException(status_code=409, detail="Already in this thread")
+    if not _is_discoverable_thread(db, thread, current_user.id):
+        raise HTTPException(status_code=404, detail="Thread not found")
+    existing = _join_request_for_user(db, thread.id, current_user.id)
+    if existing:
+        if existing.status == "pending":
+            return {"request": _public_join_request(db, existing, current_user.id), "thread": _serialize_thread(db, thread, current_user.id)}
+        raise HTTPException(status_code=409, detail="Join request already resolved")
+    request = ThreadJoinRequest(thread_id=thread.id, requester_user_id=current_user.id, status="pending")
+    db.add(request)
+    db.commit()
+    db.refresh(request)
+    _notify_join_request(db, thread, current_user)
+    return {"request": _public_join_request(db, request, current_user.id), "thread": _serialize_thread(db, thread, current_user.id)}
+
+
+@router.post("/{thread_id}/join-requests/{request_id}/approve")
+def approve_join_request(
+    thread_id: int,
+    request_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    thread = _require_thread(db, thread_id)
+    _require_host(thread, current_user)
+    request = (
+        db.query(ThreadJoinRequest)
+        .filter(ThreadJoinRequest.id == request_id, ThreadJoinRequest.thread_id == thread.id, ThreadJoinRequest.status == "pending")
+        .first()
+    )
+    if not request:
+        raise HTTPException(status_code=404, detail="Join request not found")
+    _ensure_invite_capacity(db, thread, 1)
+    existing_member = _member_row(db, thread.id, request.requester_user_id)
+    if existing_member:
+        existing_member.status = "invited"
+        existing_member.role = "member"
+        existing_member.joined_at = None
+        db.add(existing_member)
+    else:
+        db.add(ThreadMember(thread_id=thread.id, user_id=request.requester_user_id, role="member", status="invited"))
+    request.status = "approved"
+    request.responded_at = datetime.utcnow()
+    db.add(request)
+    db.commit()
+    db.refresh(thread)
+    requester = db.query(User).filter(User.id == request.requester_user_id).first()
+    if requester:
+        _notify_thread_user(
+            db,
+            user_id=requester.id,
+            kind="thread_join_request_approved",
+            title="Join request approved",
+            body=f"{current_user.name} approved your request to join {_notification_title_snippet(thread.title)}.",
+            thread=thread,
+            actor=current_user,
+        )
+    return {"thread": _serialize_thread(db, thread, current_user.id, include_members=True)}
+
+
+@router.post("/{thread_id}/join-requests/{request_id}/decline")
+def decline_join_request(
+    thread_id: int,
+    request_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    thread = _require_thread(db, thread_id)
+    _require_host(thread, current_user)
+    request = (
+        db.query(ThreadJoinRequest)
+        .filter(ThreadJoinRequest.id == request_id, ThreadJoinRequest.thread_id == thread.id, ThreadJoinRequest.status == "pending")
+        .first()
+    )
+    if not request:
+        raise HTTPException(status_code=404, detail="Join request not found")
+    request.status = "declined"
+    request.responded_at = datetime.utcnow()
+    db.add(request)
+    db.commit()
+    db.refresh(thread)
     return {"thread": _serialize_thread(db, thread, current_user.id, include_members=True)}
 
 
@@ -582,11 +828,16 @@ def edit_thread(
     _require_host(thread, current_user)
     if thread.status != "active":
         raise HTTPException(status_code=409, detail="Thread is not active")
+    old_visibility = thread.visibility
     if payload.title is not None:
         thread.title = payload.title.strip()
     if payload.gym is not None:
         thread.gym_name = payload.gym.name.strip()
         thread.gym_place_id = payload.gym.place_id or None
+    if payload.visibility is not None:
+        thread.visibility = payload.visibility
+        if old_visibility == "public" and payload.visibility == "private":
+            _apply_private_visibility_cascade(db, thread, current_user.id)
     if payload.scheduled_time is not None:
         old_time = thread.scheduled_time.isoformat() if thread.scheduled_time else None
         thread.scheduled_time = payload.scheduled_time
@@ -704,7 +955,10 @@ def leave_thread(thread_id: int, current_user: User = Depends(get_current_user),
     if not member or member.status != "joined":
         raise HTTPException(status_code=404, detail="Thread membership not found")
     was_host = member.role == "host"
-    db.delete(member)
+    member.status = "declined"
+    member.role = "member"
+    member.joined_at = None
+    db.add(member)
     db.flush()
     if was_host:
         next_host = (

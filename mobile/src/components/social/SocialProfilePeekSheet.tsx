@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } fr
 import { useTranslation } from "react-i18next";
 import { blockSocialUser, submitUserReport, type FriendshipStatus, type SocialUserProfile } from "../../api/social";
 import { getFriendSupplementStack, type SupplementStackItem } from "../../api/supplementStacks";
+import { UserAvatar } from "../UserAvatar";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -108,9 +109,13 @@ export default function SocialProfilePeekSheet({ visible, user, actionLabel, act
           {user ? (
             <>
               <View style={styles.header}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{user.initials}</Text>
-                </View>
+                <UserAvatar
+                  name={user.name}
+                  initials={user.initials}
+                  profilePhotoUrl={user.profile_photo_url}
+                  style={styles.avatar}
+                  textStyle={styles.avatarText}
+                />
                 <View style={styles.identity}>
                   <Text style={styles.name}>{user.name}</Text>
                   <Text style={styles.mutual}>

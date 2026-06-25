@@ -1,9 +1,10 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getUnreadCounts } from "../api/messages";
+import { getFriendRequests } from "../api/social";
 import { ScreenContainer } from "../components/ScreenContainer";
 import FriendsScreen from "../screens/social/FriendsScreen";
 import SocialHomeScreen from "../screens/social/SocialHomeScreen";
@@ -17,6 +18,7 @@ import ChatScreen from "../screens/social/ChatScreen";
 import ChallengeCreateScreen from "../screens/social/ChallengeCreateScreen";
 import ChallengeDetailScreen from "../screens/social/ChallengeDetailScreen";
 import type { SocialStackParamList } from "./types";
+import { subscribeToSocialUnreadChanges } from "../utils/socialUnreadEvents";
 
 const Stack = createNativeStackNavigator<SocialStackParamList>();
 
@@ -35,27 +37,50 @@ function SocialSectionTabs({ active }: { active: SocialRouteName }) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const [unreadTotal, setUnreadTotal] = useState(0);
+  const [pendingJoinRequests, setPendingJoinRequests] = useState(0);
+  const [incomingFriendRequests, setIncomingFriendRequests] = useState(0);
+  const unreadRequestId = useRef(0);
+  const loadUnreadCounts = useCallback(async () => {
+    const requestId = unreadRequestId.current + 1;
+    unreadRequestId.current = requestId;
+    try {
+      const counts = await getUnreadCounts();
+      const requests = await getFriendRequests();
+      if (requestId !== unreadRequestId.current) return;
+      const joinRequests = counts.pending_join_requests ?? 0;
+      const dmUnread = (counts.dms ?? []).reduce((sum, item) => sum + (item.unread_count ?? 0), 0);
+      setPendingJoinRequests(joinRequests);
+      setIncomingFriendRequests(requests.incoming.length);
+      setUnreadTotal(dmUnread);
+    } catch {
+      // Keep the last visible count if the network request fails.
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadUnreadCounts();
+    }, [loadUnreadCounts]),
+  );
+
   useEffect(() => {
-    let alive = true;
-    const load = () => {
-      getUnreadCounts()
-        .then((counts) => {
-          if (alive) setUnreadTotal(counts.total ?? 0);
-        })
-        .catch(() => undefined);
-    };
-    load();
-    const id = setInterval(load, 30000);
+    void loadUnreadCounts();
+    const unsubscribe = subscribeToSocialUnreadChanges(() => {
+      void loadUnreadCounts();
+    });
+    const id = setInterval(() => {
+      void loadUnreadCounts();
+    }, 30000);
     return () => {
-      alive = false;
+      unsubscribe();
       clearInterval(id);
     };
-  }, []);
+  }, [loadUnreadCounts]);
   const tabs: Array<{ route: SocialRouteName; label: string }> = [
+    { route: "SocialThreads", label: t("social.nav.threads") },
     { route: "SocialHome", label: t("social.nav.home") },
     { route: "SocialLeaderboard", label: t("social.nav.leaderboard") },
     { route: "SocialFriends", label: t("social.nav.friends") },
-    { route: "SocialThreads", label: t("social.nav.threads") },
     { route: "SocialMessages", label: t("social.nav.messages") },
   ];
   return (
@@ -73,6 +98,16 @@ function SocialSectionTabs({ active }: { active: SocialRouteName }) {
             {tab.route === "SocialMessages" && unreadTotal > 0 ? (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadTotal}</Text>
+              </View>
+            ) : null}
+            {tab.route === "SocialThreads" && pendingJoinRequests > 0 ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{pendingJoinRequests}</Text>
+              </View>
+            ) : null}
+            {tab.route === "SocialFriends" && incomingFriendRequests > 0 ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{incomingFriendRequests}</Text>
               </View>
             ) : null}
           </Pressable>
@@ -133,7 +168,7 @@ function PendingRequestsRouteScreen() {
 
 export default function SocialNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="SocialThreads" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="SocialHome" component={SocialHomeRouteScreen} />
       <Stack.Screen name="SocialLeaderboard" component={LeaderboardRouteScreen} />
       <Stack.Screen name="SocialFriends" component={FriendsRouteScreen} />

@@ -3,7 +3,9 @@ import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, TextInput
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import {
+  approveThreadJoinRequest,
   cancelThread,
+  declineThreadJoinRequest,
   getThread,
   inviteThreadFriends,
   incrementThreadReferralCopy,
@@ -12,15 +14,19 @@ import {
   muteThread,
   removeThreadMember,
   removeThreadReferral,
+  requestToJoinThread,
   shareThreadReferral,
   unmuteThread,
   upsertThreadReferral,
   type GymThread,
+  type ThreadJoinRequest,
   type ThreadMember,
 } from "../../api/threads";
 import { blockSocialUser, getFriends, submitUserReport, type ReportReason, type SocialUserProfile } from "../../api/social";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { UserAvatar } from "../../components/UserAvatar";
 import { useAuthStore } from "../../store/authStore";
+import { notifySocialUnreadChanged } from "../../utils/socialUnreadEvents";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -57,6 +63,7 @@ export default function ThreadDetailScreen() {
   const [referralCode, setReferralCode] = useState("");
   const [referralDescription, setReferralDescription] = useState("");
   const [referralDiscount, setReferralDiscount] = useState("");
+  const [busyRequestId, setBusyRequestId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -244,8 +251,39 @@ export default function ThreadDetailScreen() {
     }
   };
 
+  const requestJoin = async () => {
+    if (!thread) return;
+    setSaving(true);
+    try {
+      setThread(await requestToJoinThread(thread.id));
+    } catch {
+      Alert.alert(t("common.error"), t("social.threads.alerts.requestFailed"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const respondToJoinRequest = async (request: ThreadJoinRequest, action: "approve" | "decline") => {
+    if (!thread) return;
+    setBusyRequestId(request.id);
+    try {
+      setThread(
+        action === "approve"
+          ? await approveThreadJoinRequest(thread.id, request.id)
+          : await declineThreadJoinRequest(thread.id, request.id),
+      );
+      notifySocialUnreadChanged();
+    } catch {
+      Alert.alert(t("common.error"), t("social.threads.alerts.actionFailed"));
+    } finally {
+      setBusyRequestId(null);
+    }
+  };
+
   const memberIds = new Set((thread?.members ?? []).map((member) => member.user_id));
   const inviteCandidates = friends.filter((friend) => !memberIds.has(friend.user_id));
+  const pendingJoinRequests = thread?.pending_join_requests ?? [];
+  const isOutsider = Boolean(thread && !thread.is_member);
 
   return (
     <ScreenContainer bg={BG}>
@@ -253,7 +291,7 @@ export default function ThreadDetailScreen() {
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>{t("common.back")}</Text>
         </Pressable>
-        {thread?.is_host ? (
+        {thread?.is_host && thread.status === "active" ? (
           <Pressable style={styles.editButton} onPress={() => navigation.navigate("SocialThreadEdit", { threadId: thread.id })}>
             <Text style={styles.editText}>{t("social.threads.detail.edit")}</Text>
           </Pressable>
@@ -265,11 +303,17 @@ export default function ThreadDetailScreen() {
       ) : (
         <>
           <View style={styles.heroCard}>
-            <Text style={styles.status}>{t(`social.threads.status.${thread.status}`)}</Text>
+            <View style={styles.statusRow}>
+              <Text style={styles.status}>{t(`social.threads.status.${thread.status}`)}</Text>
+              <Text style={styles.visibilityBadge}>
+                {thread.visibility === "public" ? t("social.threads.visibility.public.badge") : t("social.threads.visibility.private.badge")}
+              </Text>
+            </View>
             <Text style={styles.title}>{thread.title}</Text>
             <Text style={styles.gym}>{thread.gym_name}</Text>
             <Text style={styles.time}>{formatThreadTime(thread.scheduled_time)}</Text>
-            <View style={styles.heroActions}>
+            {!isOutsider ? (
+              <View style={styles.heroActions}>
               <Pressable style={styles.secondaryButton} onPress={toggleMute}>
                 <Text style={styles.secondaryText}>
                   {thread.muted ? t("social.threads.detail.unmute") : t("social.threads.detail.mute")}
@@ -283,9 +327,101 @@ export default function ThreadDetailScreen() {
                   <Text style={styles.dangerText}>{t("social.threads.detail.cancelThread")}</Text>
                 </Pressable>
               ) : null}
-            </View>
+              </View>
+            ) : null}
           </View>
 
+          {isOutsider ? (
+            <>
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>{t("social.threads.detail.membersPreview")}</Text>
+                <View style={styles.avatarRow}>
+                  {thread.member_preview.slice(0, 5).map((member) => (
+                    <UserAvatar
+                      key={member.user_id}
+                      name={member.name}
+                      initials={member.initials}
+                      profilePhotoUrl={member.profile_photo_url}
+                      style={styles.avatar}
+                      textStyle={styles.avatarText}
+                    />
+                  ))}
+                  <Text style={styles.goingText}>{t("social.threads.goingCount", { count: thread.going_count })}</Text>
+                </View>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>{t("social.threads.detail.hostedBy", { name: thread.host?.name ?? "" })}</Text>
+                {thread.host ? (
+                  <View style={styles.memberRow}>
+                    <UserAvatar
+                      name={thread.host.name}
+                      initials={thread.host.initials}
+                      profilePhotoUrl={thread.host.profile_photo_url}
+                      style={styles.avatar}
+                      textStyle={styles.avatarText}
+                    />
+                    <Text style={styles.memberName}>{thread.host.name}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <View style={styles.card}>
+                {thread.join_request_status === "pending" ? (
+                  <Pressable style={[styles.primaryButton, styles.disabled]} disabled>
+                    <Text style={styles.primaryText}>{t("social.threads.detail.requestSent")}</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable style={[styles.primaryButton, saving ? styles.disabled : null]} disabled={saving || !thread.can_request_join} onPress={requestJoin}>
+                    <Text style={styles.primaryText}>{t("social.threads.discover.requestToJoin")}</Text>
+                  </Pressable>
+                )}
+                <Text style={styles.helperText}>{t("social.threads.detail.requestHelper")}</Text>
+              </View>
+            </>
+          ) : null}
+
+          {!isOutsider && pendingJoinRequests.length > 0 ? (
+            <View style={styles.card}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>{t("social.threads.detail.joinRequests")}</Text>
+                <Text style={styles.countBadge}>{t("social.threads.detail.newRequests", { count: pendingJoinRequests.length })}</Text>
+              </View>
+              {pendingJoinRequests.map((request) => (
+                <View key={request.id} style={styles.joinRequestRow}>
+                  <UserAvatar
+                    name={request.requester.name}
+                    initials={request.requester.initials}
+                    profilePhotoUrl={request.requester.profile_photo_url}
+                    style={styles.avatar}
+                    textStyle={styles.avatarText}
+                  />
+                  <View style={styles.memberText}>
+                    <Text style={styles.memberName}>{request.requester.name}</Text>
+                    <Text style={styles.memberStatus}>
+                      {request.requester.mutual_friends_count > 0
+                        ? t("social.threads.detail.mutualFriends", { count: request.requester.mutual_friends_count })
+                        : t("social.threads.detail.noMutualFriends")}
+                    </Text>
+                  </View>
+                  <Pressable
+                    style={[styles.secondaryButton, busyRequestId === request.id ? styles.disabled : null]}
+                    disabled={busyRequestId === request.id}
+                    onPress={() => void respondToJoinRequest(request, "decline")}
+                  >
+                    <Text style={styles.dangerText}>{t("social.threads.detail.declineRequest")}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.smallButton, busyRequestId === request.id ? styles.disabled : null]}
+                    disabled={busyRequestId === request.id}
+                    onPress={() => void respondToJoinRequest(request, "approve")}
+                  >
+                    <Text style={styles.smallButtonText}>{t("social.threads.detail.approveRequest")}</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          {!isOutsider ? (
           <View style={styles.card}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionTitle}>{t("social.threads.referral.title")}</Text>
@@ -321,14 +457,20 @@ export default function ThreadDetailScreen() {
               <Text style={styles.emptyText}>{t("social.threads.referral.empty")}</Text>
             )}
           </View>
+          ) : null}
 
+          {!isOutsider ? (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>{t("social.threads.detail.members")}</Text>
             {(thread.members ?? []).map((member) => (
               <View key={member.user_id} style={styles.memberRow}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{member.initials}</Text>
-                </View>
+                <UserAvatar
+                  name={member.name}
+                  initials={member.initials}
+                  profilePhotoUrl={member.profile_photo_url}
+                  style={styles.avatar}
+                  textStyle={styles.avatarText}
+                />
                 <View style={styles.memberText}>
                   <Text style={styles.memberName}>{member.name}</Text>
                   <Text style={styles.memberStatus}>{t(`social.threads.memberStatus.${member.status}`)}</Text>
@@ -347,7 +489,9 @@ export default function ThreadDetailScreen() {
               </View>
             ))}
           </View>
+          ) : null}
 
+          {!isOutsider ? (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>{t("social.threads.detail.inviteFriends")}</Text>
             {inviteCandidates.length === 0 ? <Text style={styles.emptyText}>{t("social.threads.detail.noInviteCandidates")}</Text> : null}
@@ -381,7 +525,9 @@ export default function ThreadDetailScreen() {
               </Pressable>
             ) : null}
           </View>
+          ) : null}
 
+          {!isOutsider ? (
           <Pressable
             style={styles.chatPlaceholder}
             onPress={() => navigation.navigate("SocialChat", { threadId: thread.id, title: thread.title })}
@@ -389,6 +535,7 @@ export default function ThreadDetailScreen() {
             <Text style={styles.sectionTitle}>{t("social.threads.detail.chat")}</Text>
             <Text style={styles.emptyText}>{t("social.threads.detail.chatPlaceholder")}</Text>
           </Pressable>
+          ) : null}
           <Modal visible={referralModalVisible} transparent animationType="slide" onRequestClose={() => setReferralModalVisible(false)}>
             <Pressable style={styles.backdrop} onPress={() => setReferralModalVisible(false)}>
               <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
@@ -442,7 +589,9 @@ const styles = StyleSheet.create({
   editText: { color: GREEN, fontSize: 13, fontWeight: "900" },
   loader: { marginTop: 40 },
   heroCard: { backgroundColor: WHITE, borderColor: BORDER, borderRadius: 22, borderWidth: 1, marginBottom: 12, padding: 18 },
-  status: { color: GREEN, fontSize: 11, fontWeight: "900", letterSpacing: 0.8, marginBottom: 8, textTransform: "uppercase" },
+  statusRow: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 },
+  status: { color: GREEN, fontSize: 11, fontWeight: "900", letterSpacing: 0.8, textTransform: "uppercase" },
+  visibilityBadge: { backgroundColor: GREEN_LIGHT, borderRadius: 999, color: GREEN, fontSize: 11, fontWeight: "900", overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4 },
   title: { color: TEXT, fontSize: 25, fontWeight: "900", marginBottom: 6 },
   gym: { color: MUTED, fontSize: 14, fontWeight: "800", marginBottom: 5 },
   time: { color: ORANGE, fontSize: 13, fontWeight: "900" },
@@ -452,6 +601,7 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
   smallButton: { backgroundColor: GREEN_LIGHT, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7 },
   smallButtonText: { color: GREEN, fontSize: 12, fontWeight: "900" },
+  countBadge: { backgroundColor: GREEN_LIGHT, borderRadius: 999, color: GREEN, fontSize: 11, fontWeight: "900", overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4 },
   referralCard: { backgroundColor: "#F7FBF8", borderColor: BORDER, borderRadius: 16, borderWidth: 1, padding: 12 },
   referralCode: { color: TEXT, fontSize: 22, fontWeight: "900", letterSpacing: 1.3, marginBottom: 4 },
   referralDiscount: { color: GREEN, fontSize: 14, fontWeight: "900", marginBottom: 4 },
@@ -459,8 +609,11 @@ const styles = StyleSheet.create({
   referralStats: { color: TERTIARY, fontSize: 11, fontWeight: "800", marginTop: 8 },
   referralActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   memberRow: { alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 8 },
+  joinRequestRow: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, paddingVertical: 8 },
   avatar: { alignItems: "center", backgroundColor: GREEN_LIGHT, borderRadius: 18, height: 36, justifyContent: "center", width: 36 },
   avatarText: { color: GREEN, fontSize: 12, fontWeight: "900" },
+  avatarRow: { alignItems: "center", flexDirection: "row" },
+  goingText: { color: MUTED, fontSize: 12, fontWeight: "800", marginLeft: 12 },
   memberText: { flex: 1, minWidth: 0 },
   memberName: { color: TEXT, fontSize: 14, fontWeight: "900" },
   memberStatus: { color: MUTED, fontSize: 12, fontWeight: "700" },
@@ -478,6 +631,7 @@ const styles = StyleSheet.create({
   dangerText: { color: DANGER, fontSize: 12, fontWeight: "900" },
   disabled: { opacity: 0.55 },
   emptyText: { color: TERTIARY, fontSize: 13, fontWeight: "700", lineHeight: 18 },
+  helperText: { color: MUTED, fontSize: 12, fontWeight: "700", lineHeight: 17, marginTop: 8, textAlign: "center" },
   chatPlaceholder: { backgroundColor: WHITE, borderColor: BORDER, borderRadius: 20, borderStyle: "dashed", borderWidth: 1, padding: 16 },
   backdrop: { backgroundColor: "rgba(0,0,0,0.32)", flex: 1, justifyContent: "flex-end" },
   sheet: { backgroundColor: WHITE, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 18 },

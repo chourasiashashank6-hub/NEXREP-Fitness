@@ -25,6 +25,7 @@ import {
 import { blockSocialUser, submitUserReport, type ReportReason } from "../../api/social";
 import { incrementThreadReferralCopy, shareThreadReferral } from "../../api/threads";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { notifySocialUnreadChanged } from "../../utils/socialUnreadEvents";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -79,7 +80,9 @@ export default function ChatScreen() {
       setMessages(items);
       const last = items[items.length - 1];
       if (last) {
-        void markConversationRead({ ...conversationParams, last_read_message_id: last.id }).catch(() => undefined);
+        void markConversationRead({ ...conversationParams, last_read_message_id: last.id })
+          .then(() => notifySocialUnreadChanged())
+          .catch(() => undefined);
       }
     } catch {
       Alert.alert(t("common.error"), t("social.messages.alerts.loadFailed"));

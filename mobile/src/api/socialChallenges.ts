@@ -7,7 +7,7 @@ export type ChallengeParticipantStatus = "invited" | "joined" | "declined" | "le
 
 export type LeaderboardEntry = {
   rank: number;
-  user: Pick<SocialUserProfile, "user_id" | "name" | "initials">;
+  user: Pick<SocialUserProfile, "user_id" | "name" | "initials" | "profile_photo_url">;
   workouts_this_week: number;
   current_streak: number;
   score: number;
@@ -24,7 +24,7 @@ export type LeaderboardResponse = {
 
 export type ChallengeStanding = {
   rank: number;
-  user: Pick<SocialUserProfile, "user_id" | "name" | "initials">;
+  user: Pick<SocialUserProfile, "user_id" | "name" | "initials" | "profile_photo_url">;
   progress: number;
   status: ChallengeParticipantStatus;
   joined_at?: string | null;
@@ -33,14 +33,14 @@ export type ChallengeStanding = {
 
 export type SquadChallenge = {
   id: number;
-  creator: Pick<SocialUserProfile, "user_id" | "name" | "initials">;
+  creator: Pick<SocialUserProfile, "user_id" | "name" | "initials" | "profile_photo_url">;
   type: ChallengeType;
   title: string;
   target: number;
   start_date: string;
   end_date: string;
   status: ChallengeStatus;
-  winner?: Pick<SocialUserProfile, "user_id" | "name" | "initials"> | null;
+  winner?: Pick<SocialUserProfile, "user_id" | "name" | "initials" | "profile_photo_url"> | null;
   created_at?: string | null;
   viewer_status?: ChallengeParticipantStatus | null;
   viewer_is_creator?: boolean;

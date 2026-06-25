@@ -1,15 +1,19 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import {
   acceptThreadInvite,
   declineThreadInvite,
+  discoverThreads,
   listThreads,
+  requestToJoinThread,
   type GymThread,
   type ThreadBucket,
 } from "../../api/threads";
 import { getThreadStackDetails, type SupplementCategory, type ThreadStackMember } from "../../api/supplementStacks";
+import { UserAvatar } from "../../components/UserAvatar";
+import { subscribeToSocialUnreadChanges } from "../../utils/socialUnreadEvents";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -29,7 +33,8 @@ const STACK_COLORS: Record<SupplementCategory, string> = {
   other: "#6F766F",
 };
 
-const buckets: ThreadBucket[] = ["active", "invited", "past"];
+type ThreadTab = ThreadBucket | "discover";
+const buckets: ThreadTab[] = ["discover", "active", "invited", "past"];
 
 const formatThreadTime = (value: string) =>
   new Date(value).toLocaleString(undefined, {
@@ -42,7 +47,7 @@ const formatThreadTime = (value: string) =>
 export default function ThreadsScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
-  const [bucket, setBucket] = useState<ThreadBucket>("active");
+  const [bucket, setBucket] = useState<ThreadTab>("discover");
   const [items, setItems] = useState<GymThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyThreadId, setBusyThreadId] = useState<number | null>(null);
@@ -53,7 +58,7 @@ export default function ThreadsScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setItems(await listThreads(bucket));
+      setItems(bucket === "discover" ? await discoverThreads() : await listThreads(bucket));
     } catch {
       Alert.alert(t("common.error"), t("social.threads.alerts.loadFailed"));
     } finally {
@@ -66,6 +71,15 @@ export default function ThreadsScreen() {
       void load();
     }, [load]),
   );
+
+  useEffect(() => {
+    const unsubscribe = subscribeToSocialUnreadChanges(() => {
+      if (bucket === "active") void load();
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [bucket, load]);
 
   const handleAccept = async (thread: GymThread) => {
     const previous = items;
@@ -90,6 +104,27 @@ export default function ThreadsScreen() {
     } catch {
       setItems(previous);
       Alert.alert(t("common.error"), t("social.threads.alerts.actionFailed"));
+    } finally {
+      setBusyThreadId(null);
+    }
+  };
+
+  const handleRequestJoin = async (thread: GymThread) => {
+    const previous = items;
+    setBusyThreadId(thread.id);
+    setItems((current) =>
+      current.map((item) =>
+        item.id === thread.id
+          ? { ...item, join_request_status: "pending", can_request_join: false }
+          : item,
+      ),
+    );
+    try {
+      const updated = await requestToJoinThread(thread.id);
+      setItems((current) => current.map((item) => (item.id === thread.id ? updated : item)));
+    } catch {
+      setItems(previous);
+      Alert.alert(t("common.error"), t("social.threads.alerts.requestFailed"));
     } finally {
       setBusyThreadId(null);
     }
@@ -153,9 +188,141 @@ export default function ThreadsScreen() {
         items.map((thread) => (
           <Pressable
             key={thread.id}
-            style={styles.card}
+            style={[styles.card, styles.activeCard]}
             onPress={() => navigation.navigate("SocialThreadDetail", { threadId: thread.id })}
           >
+            <View style={styles.activeHostHeader}>
+              <View style={styles.hostIdentity}>
+                <UserAvatar
+                  name={thread.host?.name}
+                  initials={thread.host?.initials ?? "H"}
+                  profilePhotoUrl={thread.host?.profile_photo_url}
+                  style={styles.hostAvatar}
+                  textStyle={styles.hostAvatarText}
+                />
+                <Text style={styles.hostingText} numberOfLines={1}>
+                  <Text style={styles.hostingName}>{thread.host?.name ?? t("social.threads.detail.host")}</Text>
+                  <Text> is hosting</Text>
+                </Text>
+              </View>
+              <Text style={styles.hostBadge}>{t("social.threads.detail.host")}</Text>
+            </View>
+            {bucket === "discover" ? (
+              <View style={styles.activeBody}>
+                <View style={styles.discoverHeader}>
+                  <View style={styles.cardText}>
+                    <Text style={styles.threadTitle} numberOfLines={1}>
+                      {thread.title}
+                    </Text>
+                    <Text style={styles.threadGym} numberOfLines={1}>
+                      {thread.gym_name}
+                    </Text>
+                    <Text style={styles.threadTime}>{formatThreadTime(thread.scheduled_time)}</Text>
+                  </View>
+                  <Text style={styles.visibilityBadge}>
+                    {thread.visibility === "public" ? t("social.threads.visibility.public.badge") : t("social.threads.visibility.private.friendBadge")}
+                  </Text>
+                </View>
+                <View style={styles.cardBottom}>
+                  <View style={styles.avatarRow}>
+                    {thread.member_preview
+                      .filter((member) => member.user_id !== thread.host?.user_id)
+                      .slice(0, 4)
+                      .map((member) => (
+                        <UserAvatar
+                          key={member.user_id}
+                          name={member.name}
+                          initials={member.initials}
+                          profilePhotoUrl={member.profile_photo_url}
+                          style={styles.avatar}
+                          textStyle={styles.avatarText}
+                        />
+                      ))}
+                    <Text style={styles.goingText}>{t("social.threads.goingCount", { count: thread.going_count })}</Text>
+                  </View>
+                  {thread.join_request_status ? (
+                    <View style={styles.requestedPill}>
+                      <Text style={styles.requestedText}>
+                        {thread.join_request_status === "pending" ? t("social.threads.discover.requested") : t("social.threads.discover.requestClosed")}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Pressable
+                      style={[styles.primaryButton, busyThreadId === thread.id ? styles.disabled : null]}
+                      disabled={busyThreadId === thread.id}
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        void handleRequestJoin(thread);
+                      }}
+                    >
+                      <Text style={styles.primaryText}>{t("social.threads.discover.requestToJoin")}</Text>
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+            ) : bucket === "active" ? (
+              <View style={styles.activeBody}>
+                  <View style={styles.cardTop}>
+                    <View style={styles.cardText}>
+                      <Text style={styles.threadTitle} numberOfLines={1}>
+                        {thread.title}
+                      </Text>
+                      <Text style={styles.threadGym} numberOfLines={1}>
+                        {thread.gym_name}
+                      </Text>
+                      <Text style={styles.threadTime}>{formatThreadTime(thread.scheduled_time)}</Text>
+                    </View>
+                    {thread.current_user_status === "joined" && (thread.stack_summary?.length ?? 0) > 0 ? (
+                      <Pressable
+                        style={styles.stackCluster}
+                        onPress={(event) => {
+                          event.stopPropagation();
+                          void openStackSheet(thread);
+                        }}
+                      >
+                        <View style={styles.stackDots}>
+                          {(thread.stack_summary ?? []).slice(0, 3).map((item) => (
+                            <View key={item.category} style={[styles.stackDot, { backgroundColor: STACK_COLORS[item.category] }]}>
+                              <Text style={styles.stackDotText}>{item.count}</Text>
+                            </View>
+                          ))}
+                        </View>
+                        <Text style={styles.stackCaption} numberOfLines={2}>
+                          {stackCaption(thread)}
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <View style={styles.supplementSlot}>
+                        <Text style={styles.supplementText}>{t("social.threads.supplementSlot")}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.cardBottom}>
+                    <View style={styles.avatarRow}>
+                      {thread.member_preview
+                        .filter((member) => member.user_id !== thread.host?.user_id)
+                        .slice(0, 4)
+                        .map((member) => (
+                          <UserAvatar
+                            key={member.user_id}
+                            name={member.name}
+                            initials={member.initials}
+                            profilePhotoUrl={member.profile_photo_url}
+                            style={styles.avatar}
+                            textStyle={styles.avatarText}
+                          />
+                        ))}
+                      <Text style={styles.goingText}>{t("social.threads.goingCount", { count: thread.going_count })}</Text>
+                    </View>
+                    {thread.is_host && (thread.pending_join_request_count ?? 0) > 0 ? (
+                      <Text style={styles.pendingRequestText}>
+                        {t("social.threads.pendingRequestsLine", { count: thread.pending_join_request_count })}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+            ) : (
+              <View style={styles.activeBody}>
             <View style={styles.cardTop}>
               <View style={styles.cardText}>
                 <Text style={styles.threadTitle} numberOfLines={1}>
@@ -193,13 +360,26 @@ export default function ThreadsScreen() {
             </View>
             <View style={styles.cardBottom}>
               <View style={styles.avatarRow}>
-                {thread.member_preview.slice(0, 4).map((member) => (
-                  <View key={member.user_id} style={styles.avatar}>
-                    <Text style={styles.avatarText}>{member.initials}</Text>
-                  </View>
-                ))}
+                {thread.member_preview
+                  .filter((member) => member.user_id !== thread.host?.user_id)
+                  .slice(0, 4)
+                  .map((member) => (
+                    <UserAvatar
+                      key={member.user_id}
+                      name={member.name}
+                      initials={member.initials}
+                      profilePhotoUrl={member.profile_photo_url}
+                      style={styles.avatar}
+                      textStyle={styles.avatarText}
+                    />
+                  ))}
                 <Text style={styles.goingText}>{t("social.threads.goingCount", { count: thread.going_count })}</Text>
               </View>
+              {bucket === "active" && thread.is_host && (thread.pending_join_request_count ?? 0) > 0 ? (
+                <Text style={styles.pendingRequestText}>
+                  {t("social.threads.pendingRequestsLine", { count: thread.pending_join_request_count })}
+                </Text>
+              ) : null}
               {bucket === "invited" ? (
                 <View style={styles.inviteActions}>
                   <Pressable
@@ -219,6 +399,8 @@ export default function ThreadsScreen() {
                 </View>
               ) : null}
             </View>
+              </View>
+            )}
           </Pressable>
         ))
       )}
@@ -233,9 +415,13 @@ export default function ThreadsScreen() {
               stackMembers.map((member) => (
                 <View key={member.user.user_id} style={styles.stackMemberCard}>
                   <View style={styles.stackMemberHeader}>
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>{member.user.initials}</Text>
-                    </View>
+                    <UserAvatar
+                      name={member.user.name}
+                      initials={member.user.initials}
+                      profilePhotoUrl={member.user.profile_photo_url}
+                      style={styles.avatar}
+                      textStyle={styles.avatarText}
+                    />
                     <Text style={styles.stackMemberName}>{member.user.name}</Text>
                   </View>
                   {!member.shared ? (
@@ -300,6 +486,7 @@ const styles = StyleSheet.create({
   segmentActive: { backgroundColor: GREEN_LIGHT },
   segmentText: { color: MUTED, fontSize: 13, fontWeight: "800" },
   segmentTextActive: { color: GREEN },
+  disabled: { opacity: 0.55 },
   loadingWrap: { alignItems: "center", padding: 28 },
   emptyCard: {
     alignItems: "center",
@@ -319,7 +506,48 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 14,
   },
+  activeCard: {
+    overflow: "hidden",
+    padding: 0,
+  },
+  activeHostHeader: {
+    alignItems: "center",
+    backgroundColor: "#F7FBF8",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  activeBody: { padding: 14 },
+  hostIdentity: { alignItems: "center", flex: 1, flexDirection: "row", gap: 8, minWidth: 0 },
+  hostAvatar: {
+    alignItems: "center",
+    backgroundColor: WHITE,
+    borderColor: WHITE,
+    borderRadius: 14,
+    borderWidth: 2,
+    height: 28,
+    justifyContent: "center",
+    width: 28,
+  },
+  hostAvatarText: { color: GREEN, fontSize: 10, fontWeight: "900" },
+  hostingText: { color: MUTED, flex: 1, fontSize: 12, fontWeight: "800" },
+  hostingName: { color: TEXT, fontWeight: "900" },
+  hostBadge: {
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 999,
+    color: GREEN,
+    fontSize: 11,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
   cardTop: { flexDirection: "row", gap: 12, marginBottom: 14 },
+  discoverHeader: { alignItems: "flex-start", flexDirection: "row", gap: 10, marginBottom: 14 },
   cardText: { flex: 1, minWidth: 0 },
   threadTitle: { color: TEXT, fontSize: 17, fontWeight: "900", marginBottom: 4 },
   threadGym: { color: MUTED, fontSize: 13, fontWeight: "700", marginBottom: 3 },
@@ -380,6 +608,10 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: GREEN, fontSize: 10, fontWeight: "900" },
   goingText: { color: MUTED, fontSize: 12, fontWeight: "800", marginLeft: 12 },
+  visibilityBadge: { backgroundColor: GREEN_LIGHT, borderRadius: 999, color: GREEN, fontSize: 11, fontWeight: "900", overflow: "hidden", paddingHorizontal: 9, paddingVertical: 5 },
+  pendingRequestText: { color: ORANGE, fontSize: 12, fontWeight: "900" },
+  requestedPill: { backgroundColor: "#F2F1ED", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
+  requestedText: { color: MUTED, fontSize: 12, fontWeight: "900" },
   inviteActions: { flexDirection: "row", gap: 6 },
   primaryButton: { backgroundColor: GREEN, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   primaryText: { color: WHITE, fontSize: 12, fontWeight: "900" },

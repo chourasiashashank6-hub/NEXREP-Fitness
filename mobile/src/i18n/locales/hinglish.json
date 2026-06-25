@@ -514,7 +514,8 @@
       "tabs": {
         "active": "Active",
         "invited": "Invited",
-        "past": "Past"
+        "past": "Past",
+        "discover": "Discover"
       },
       "empty": {
         "active": {
@@ -528,6 +529,10 @@
         "past": {
           "title": "Past threads nahi hain",
           "body": "Completed aur cancelled threads yahan dikhेंगे."
+        },
+        "discover": {
+          "title": "Discover karne ke liye threads nahi hain",
+          "body": "Public threads aur friends ke private threads yahan dikhेंगे."
         }
       },
       "status": {
@@ -556,7 +561,10 @@
         "titleRequired": "Please thread title daalein.",
         "gymRequired": "Please gym select karein.",
         "create": "Thread create karein",
-        "save": "Changes save karein"
+        "save": "Changes save karein",
+        "privateSwitchWarning": "Private par switch karne se non-friend members aur pending public requests remove ho jayengi.",
+        "visibilityTitle": "Is thread ko kaun dekh sakta hai?",
+        "inactiveEditWarning": "Completed ya cancelled threads edit nahi kiye ja sakte."
       },
       "detail": {
         "edit": "Edit",
@@ -575,13 +583,24 @@
         "noInviteCandidates": "Invite karne ke liye aur friends nahi hain.",
         "sendInvites": "Invites bhejein",
         "chat": "Chat",
-        "chatPlaceholder": "Thread chat Phase 4 mein aayegi."
+        "chatPlaceholder": "Thread chat Phase 4 mein aayegi.",
+        "membersPreview": "Members going",
+        "hostedBy": "Hosted by {{name}}",
+        "requestSent": "Request sent",
+        "requestHelper": "Host ko notify kiya jayega aur woh request approve kar sakta hai.",
+        "joinRequests": "Join requests",
+        "newRequests": "{{count}} new",
+        "mutualFriends": "{{count}} mutual friends",
+        "noMutualFriends": "No mutual friends",
+        "approveRequest": "Approve",
+        "declineRequest": "Decline"
       },
       "alerts": {
         "loadFailed": "Threads abhi load nahi ho paaye.",
         "actionFailed": "Thread update nahi ho paaya. Phir try karein.",
         "saveFailed": "Thread save nahi ho paaya. Phir try karein.",
-        "inviteFailed": "Invites bhej nahi paaye. Check karein invitees friends hain aur thread mein room hai."
+        "inviteFailed": "Invites bhej nahi paaye. Check karein invitees friends hain aur thread mein room hai.",
+        "requestFailed": "Join request bhej nahi paaye."
       },
       "referral": {
         "title": "Thread referral",
@@ -601,7 +620,27 @@
         "sharedTitle": "Referral shared",
         "sharedBody": "Referral card thread chat mein post ho gaya.",
         "shareFailed": "Referral share nahi ho paaya."
-      }
+      },
+      "visibility": {
+        "public": {
+          "title": "Public",
+          "body": "Sabhi NexRep users ko visible. Koi bhi join request bhej sakta hai.",
+          "badge": "🌐 Public"
+        },
+        "private": {
+          "title": "Private",
+          "body": "Sirf aapke friends ko visible. Woh join request bhej sakte hain.",
+          "badge": "🔒 Private",
+          "friendBadge": "🔒 Private · friend"
+        }
+      },
+      "discover": {
+        "requestToJoin": "Request to join",
+        "requested": "Requested",
+        "requestClosed": "Request closed"
+      },
+      "pendingRequestsLine_one": "🔔 {{count}} pending request",
+      "pendingRequestsLine_other": "🔔 {{count}} pending requests"
     },
     "messages": {
       "eyebrow": "Direct messages",

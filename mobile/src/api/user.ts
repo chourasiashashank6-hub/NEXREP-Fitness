@@ -14,6 +14,8 @@ export type UserProfile = {
   disciplineScore: number;
   plan_id?: string;
   preferredLanguage?: string | null;
+  profilePhotoUrl?: string | null;
+  profile_photo_url?: string | null;
 };
 
 export const getProfile = async (): Promise<UserProfile> => {
@@ -30,6 +32,19 @@ export const updateProfile = async (payload: {
   difficulty: string;
 }) => {
   const { data } = await apiClient.put("/profile", payload);
+  return data;
+};
+
+export const uploadProfilePhoto = async (payload: { base64: string; mimeType: string }): Promise<UserProfile> => {
+  const { data } = await apiClient.post<UserProfile>("/profile/photo", {
+    base64: payload.base64,
+    mime_type: payload.mimeType,
+  });
+  return data;
+};
+
+export const removeProfilePhoto = async (): Promise<UserProfile> => {
+  const { data } = await apiClient.delete<UserProfile>("/profile/photo");
   return data;
 };
 

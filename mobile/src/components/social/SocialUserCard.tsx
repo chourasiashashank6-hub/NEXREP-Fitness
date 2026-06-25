@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { SocialUserProfile } from "../../api/social";
+import { UserAvatar } from "../UserAvatar";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -40,9 +41,13 @@ export default function SocialUserCard({
   return (
     <View style={styles.card}>
       <Pressable style={styles.profileArea} onPress={() => onOpenProfile(user)} accessibilityRole="button">
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{user.initials}</Text>
-        </View>
+        <UserAvatar
+          name={user.name}
+          initials={user.initials}
+          profilePhotoUrl={user.profile_photo_url}
+          style={styles.avatar}
+          textStyle={styles.avatarText}
+        />
         <View style={styles.userTextWrap}>
           <Text style={styles.name} numberOfLines={1}>
             {user.name}

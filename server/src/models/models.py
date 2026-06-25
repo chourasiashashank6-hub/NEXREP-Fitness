@@ -28,6 +28,7 @@ class User(Base):
     razorpay_subscription_id = Column(String(128), nullable=True, index=True)
     preferred_language = Column(String(32), nullable=True)
     stack_visibility = Column(Boolean, nullable=False, default=True)
+    profile_photo_url = Column(String(512), nullable=True)
 
     onboarding = relationship("UserOnboarding", back_populates="user", uselist=False)
 
@@ -177,6 +178,7 @@ class Thread(Base):
     gym_place_id = Column(String(255), nullable=True, index=True)
     scheduled_time = Column(DateTime, nullable=False, index=True)
     status = Column(String(16), nullable=False, default="active", index=True)
+    visibility = Column(String(16), nullable=False, default="private", index=True)
     max_members = Column(Integer, nullable=False, default=20)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     expires_at = Column(DateTime, nullable=False, index=True)
@@ -191,6 +193,7 @@ class Thread(Base):
 
     __table_args__ = (
         CheckConstraint("status IN ('active', 'completed', 'cancelled')", name="ck_threads_status"),
+        CheckConstraint("visibility IN ('public', 'private')", name="ck_threads_visibility"),
         CheckConstraint("max_members > 0", name="ck_threads_max_members_positive"),
     )
 
@@ -228,6 +231,25 @@ class ThreadMute(Base):
     user = relationship("User")
 
     __table_args__ = (UniqueConstraint("thread_id", "user_id", name="uq_thread_mutes_thread_user"),)
+
+
+class ThreadJoinRequest(Base):
+    __tablename__ = "thread_join_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    thread_id = Column(Integer, ForeignKey("threads.id", ondelete="CASCADE"), nullable=False, index=True)
+    requester_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(16), nullable=False, default="pending", index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    responded_at = Column(DateTime, nullable=True)
+
+    thread = relationship("Thread")
+    requester = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("thread_id", "requester_user_id", name="uq_thread_join_requests_thread_requester"),
+        CheckConstraint("status IN ('pending', 'approved', 'declined')", name="ck_thread_join_requests_status"),
+    )
 
 
 class DMConversation(Base):

@@ -8,6 +8,7 @@ export type SocialUserProfile = {
   user_id: number;
   name: string;
   initials: string;
+  profile_photo_url?: string | null;
   friendship_status: FriendshipStatus;
   mutual_friends_count: number;
 };

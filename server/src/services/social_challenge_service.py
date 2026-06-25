@@ -30,6 +30,7 @@ def public_user(user: User | None) -> dict[str, Any]:
         "user_id": user.id if user else 0,
         "name": name,
         "initials": initials(name),
+        "profile_photo_url": user.profile_photo_url if user else None,
     }
 
 

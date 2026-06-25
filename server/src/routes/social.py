@@ -9,7 +9,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from src.db.session import get_db
-from src.models.models import FriendRequestDailyCount, Friendship, User, UserReport
+from src.models.models import FriendRequestDailyCount, Friendship, Thread, ThreadMember, User, UserReport
 from src.services.notification_service import send_push_to_user
 from src.utils.auth import get_current_user
 
@@ -93,6 +93,7 @@ def _public_profile(db: Session, user: User, viewer_id: int) -> dict[str, Any]:
         "user_id": user.id,
         "name": user.name,
         "initials": _initials(user.name),
+        "profile_photo_url": user.profile_photo_url,
         "friendship_status": _friendship_status_for_viewer(row, viewer_id),
         "mutual_friends_count": _mutual_friends_count(db, viewer_id, user.id),
     }
@@ -174,6 +175,24 @@ def _send_friend_accept_notification(db: Session, accepter: User, requester: Use
             "screen": "SocialPendingRequests",
         },
     )
+
+
+def _remove_private_thread_memberships_after_unfriend(db: Session, left_id: int, right_id: int) -> None:
+    rows = (
+        db.query(ThreadMember)
+        .join(Thread, Thread.id == ThreadMember.thread_id)
+        .filter(
+            Thread.visibility == "private",
+            ThreadMember.status.in_(["invited", "joined"]),
+            or_(
+                and_(Thread.host_user_id == left_id, ThreadMember.user_id == right_id),
+                and_(Thread.host_user_id == right_id, ThreadMember.user_id == left_id),
+            ),
+        )
+        .all()
+    )
+    for row in rows:
+        db.delete(row)
 
 
 @router.get("/users/search")
@@ -317,6 +336,7 @@ def remove_friend(
     row = _relationship_between(db, current_user.id, friend_user_id)
     if not row or row.status != "accepted":
         raise HTTPException(status_code=404, detail="Friendship not found")
+    _remove_private_thread_memberships_after_unfriend(db, current_user.id, friend_user_id)
     db.delete(row)
     db.commit()
     return {"removed": True, "user_id": friend_user_id}

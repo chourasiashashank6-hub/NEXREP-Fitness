@@ -8,6 +8,7 @@ import { getFriends, type SocialUserProfile } from "../../api/social";
 import { listThreads, type GymThread } from "../../api/threads";
 import { getProfile, type UserProfile } from "../../api/user";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { UserAvatar } from "../../components/UserAvatar";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -185,9 +186,14 @@ export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
               <View style={styles.threadBottom}>
                 <View style={styles.avatarRow}>
                   {nextThread.member_preview.slice(0, 4).map((member) => (
-                    <View key={member.user_id} style={styles.smallAvatar}>
-                      <Text style={styles.smallAvatarText}>{member.initials}</Text>
-                    </View>
+                    <UserAvatar
+                      key={member.user_id}
+                      name={member.name}
+                      initials={member.initials}
+                      profilePhotoUrl={member.profile_photo_url}
+                      style={styles.smallAvatar}
+                      textStyle={styles.smallAvatarText}
+                    />
                   ))}
                   <Text style={styles.goingText}>{t("social.threads.goingCount", { count: nextThread.going_count })}</Text>
                 </View>
@@ -257,9 +263,13 @@ function FeedCard({
   return (
     <View style={styles.feedCard}>
       <View style={styles.feedHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{event.user.initials}</Text>
-        </View>
+        <UserAvatar
+          name={event.user.name}
+          initials={event.user.initials}
+          profilePhotoUrl={event.user.profile_photo_url}
+          style={styles.avatar}
+          textStyle={styles.avatarText}
+        />
         <View style={styles.feedHeaderText}>
           <Text style={styles.friendName}>{event.user.name}</Text>
           <Text style={styles.timestamp}>{formatTimestamp(event.created_at, t("social.home.time.now"))}</Text>

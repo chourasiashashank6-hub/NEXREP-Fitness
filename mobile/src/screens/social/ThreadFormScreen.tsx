@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { CommonActions, useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { getFriends, type SocialUserProfile } from "../../api/social";
-import { createThread, getThread, updateThread, type GymThread } from "../../api/threads";
+import { createThread, getThread, updateThread, type GymThread, type ThreadStatus, type ThreadVisibility } from "../../api/threads";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { UserAvatar } from "../../components/UserAvatar";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -32,7 +33,13 @@ export default function ThreadFormScreen({ mode }: { mode: Mode }) {
   const route = useRoute<any>();
   const threadId = Number(route.params?.threadId ?? 0);
   const [title, setTitle] = useState("");
+  const [initialTitle, setInitialTitle] = useState("");
   const [gymName, setGymName] = useState("");
+  const [initialGymName, setInitialGymName] = useState("");
+  const [visibility, setVisibility] = useState<ThreadVisibility>("private");
+  const [initialVisibility, setInitialVisibility] = useState<ThreadVisibility>("private");
+  const [threadStatus, setThreadStatus] = useState<ThreadStatus>("active");
+  const [dateChanged, setDateChanged] = useState(false);
   const [scheduledAt, setScheduledAt] = useState(() => {
     const next = new Date();
     next.setHours(next.getHours() + 2, 0, 0, 0);
@@ -56,8 +63,14 @@ export default function ThreadFormScreen({ mode }: { mode: Mode }) {
     getThread(threadId)
       .then((thread) => {
         setTitle(thread.title);
+        setInitialTitle(thread.title);
         setGymName(thread.gym_name);
+        setInitialGymName(thread.gym_name);
         setScheduledAt(new Date(thread.scheduled_time));
+        setVisibility(thread.visibility);
+        setInitialVisibility(thread.visibility);
+        setThreadStatus(thread.status);
+        setDateChanged(false);
       })
       .catch(() => Alert.alert(t("common.error"), t("social.threads.alerts.loadFailed")))
       .finally(() => setLoading(false));
@@ -79,7 +92,10 @@ export default function ThreadFormScreen({ mode }: { mode: Mode }) {
 
   const handleDateChange = (_event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS !== "ios") setShowPicker(false);
-    if (date) setScheduledAt(date);
+    if (date) {
+      setScheduledAt(date);
+      setDateChanged(true);
+    }
   };
 
   const openDatePicker = () => {
@@ -99,6 +115,7 @@ export default function ThreadFormScreen({ mode }: { mode: Mode }) {
               const next = new Date(nextDate);
               next.setHours(time.getHours(), time.getMinutes(), 0, 0);
               setScheduledAt(next);
+              setDateChanged(true);
             },
           });
         },
@@ -126,21 +143,62 @@ export default function ThreadFormScreen({ mode }: { mode: Mode }) {
           place_id: null,
         },
         scheduled_time: scheduledAt.toISOString(),
+        visibility,
       };
       const thread =
         mode === "edit"
-          ? await updateThread(threadId, payload)
+          ? await updateThread(threadId, {
+              ...(payload.title !== initialTitle ? { title: payload.title } : {}),
+              ...(payload.gym.name !== initialGymName ? { gym: payload.gym } : {}),
+              ...(dateChanged ? { scheduled_time: payload.scheduled_time } : {}),
+              ...(visibility !== initialVisibility ? { visibility } : {}),
+            })
           : await createThread({
               ...payload,
               invite_user_ids: Array.from(selectedFriendIds),
             });
-      navigation.navigate("SocialThreadDetail", { threadId: thread.id });
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 1,
+          routes: [
+            { name: "SocialThreads" },
+            { name: "SocialThreadDetail", params: { threadId: thread.id } },
+          ],
+        }),
+      );
     } catch {
       Alert.alert(t("common.error"), t("social.threads.alerts.saveFailed"));
     } finally {
       setSaving(false);
     }
-  }, [gymName, mode, navigation, scheduledAt, selectedFriendIds, t, threadId, title]);
+  }, [dateChanged, gymName, initialGymName, initialTitle, initialVisibility, mode, navigation, scheduledAt, selectedFriendIds, t, threadId, title, visibility]);
+
+  const showPrivateSwitchWarning = mode === "edit" && initialVisibility === "public" && visibility === "private";
+  const editingLocked = mode === "edit" && threadStatus !== "active";
+
+  const renderVisibilitySelector = () => (
+    <>
+      <Text style={styles.label}>{t("social.threads.form.visibilityTitle")}</Text>
+      {(["public", "private"] as ThreadVisibility[]).map((option) => {
+        const selected = visibility === option;
+        return (
+          <Pressable
+            key={option}
+            style={[styles.visibilityCard, selected ? styles.visibilityCardSelected : null]}
+            onPress={() => setVisibility(option)}
+          >
+            <View style={styles.radioOuter}>
+              {selected ? <View style={styles.radioInner} /> : null}
+            </View>
+            <View style={styles.visibilityTextWrap}>
+              <Text style={styles.visibilityTitle}>{t(`social.threads.visibility.${option}.title`)}</Text>
+              <Text style={styles.visibilityBody}>{t(`social.threads.visibility.${option}.body`)}</Text>
+            </View>
+          </Pressable>
+        );
+      })}
+    </>
+  );
 
   return (
     <ScreenContainer bg={BG}>
@@ -180,6 +238,8 @@ export default function ThreadFormScreen({ mode }: { mode: Mode }) {
           </Pressable>
           {showPicker ? <DateTimePicker value={scheduledAt} mode="datetime" onChange={handleDateChange} /> : null}
 
+          {renderVisibilitySelector()}
+
           {mode === "create" ? (
             <>
               <Text style={styles.label}>{t("social.threads.form.inviteFriends")}</Text>
@@ -192,9 +252,13 @@ export default function ThreadFormScreen({ mode }: { mode: Mode }) {
                     style={[styles.friendRow, selected ? styles.friendRowSelected : null]}
                     onPress={() => toggleFriend(friend.user_id)}
                   >
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>{friend.initials}</Text>
-                    </View>
+                    <UserAvatar
+                      name={friend.name}
+                      initials={friend.initials}
+                      profilePhotoUrl={friend.profile_photo_url}
+                      style={styles.avatar}
+                      textStyle={styles.avatarText}
+                    />
                     <Text style={styles.friendName}>{friend.name}</Text>
                     <Text style={styles.checkText}>{selected ? t("social.threads.form.selected") : t("social.threads.form.select")}</Text>
                   </Pressable>
@@ -208,7 +272,17 @@ export default function ThreadFormScreen({ mode }: { mode: Mode }) {
             </>
           ) : null}
 
-          <Pressable style={[styles.submitButton, saving ? styles.submitButtonDisabled : null]} disabled={saving} onPress={submit}>
+          {editingLocked ? (
+            <View style={styles.warningBanner}>
+              <Text style={styles.warningText}>{t("social.threads.form.inactiveEditWarning")}</Text>
+            </View>
+          ) : showPrivateSwitchWarning ? (
+            <View style={styles.warningBanner}>
+              <Text style={styles.warningText}>{t("social.threads.form.privateSwitchWarning")}</Text>
+            </View>
+          ) : null}
+
+          <Pressable style={[styles.submitButton, saving || editingLocked ? styles.submitButtonDisabled : null]} disabled={saving || editingLocked} onPress={submit}>
             <Text style={styles.submitText}>
               {saving ? t("common.saving") : mode === "edit" ? t("social.threads.form.save") : t("social.threads.form.create")}
             </Text>
@@ -246,6 +320,31 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   dateText: { color: TEXT, fontSize: 15, fontWeight: "700" },
+  visibilityCard: {
+    alignItems: "center",
+    backgroundColor: WHITE,
+    borderColor: BORDER,
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 8,
+    padding: 12,
+  },
+  visibilityCardSelected: { backgroundColor: GREEN_LIGHT, borderColor: GREEN },
+  radioOuter: {
+    alignItems: "center",
+    borderColor: GREEN,
+    borderRadius: 10,
+    borderWidth: 2,
+    height: 20,
+    justifyContent: "center",
+    width: 20,
+  },
+  radioInner: { backgroundColor: GREEN, borderRadius: 5, height: 10, width: 10 },
+  visibilityTextWrap: { flex: 1 },
+  visibilityTitle: { color: TEXT, fontSize: 14, fontWeight: "900", marginBottom: 2 },
+  visibilityBody: { color: MUTED, fontSize: 12, fontWeight: "700", lineHeight: 17 },
   emptyText: { color: MUTED, fontSize: 13, fontWeight: "700", marginBottom: 10 },
   friendRow: {
     alignItems: "center",
@@ -264,6 +363,16 @@ const styles = StyleSheet.create({
   friendName: { color: TEXT, flex: 1, fontSize: 14, fontWeight: "800" },
   checkText: { color: GREEN, fontSize: 12, fontWeight: "900" },
   selectedText: { color: MUTED, fontSize: 12, fontWeight: "800", marginTop: 4 },
+  warningBanner: {
+    backgroundColor: "#FFF7E8",
+    borderColor: "#E7A321",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  warningText: { color: "#7A4A00", fontSize: 12, fontWeight: "800", lineHeight: 17 },
   submitButton: { alignItems: "center", backgroundColor: GREEN, borderRadius: 16, marginTop: 18, paddingVertical: 14 },
   submitButtonDisabled: { opacity: 0.55 },
   submitText: { color: WHITE, fontSize: 14, fontWeight: "900" },
