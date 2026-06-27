@@ -39,6 +39,7 @@ class FoodLookupRequest(BaseModel):
     food_id: int | None = Field(default=None, gt=0)
     food_name: str | None = Field(default=None, min_length=1, max_length=200)
     quantity_g: Decimal = Field(..., gt=0)
+    language: str | None = Field(default=None, max_length=32)
 
 
 class FoodImageAnalyzeRequest(BaseModel):

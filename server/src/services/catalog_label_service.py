@@ -322,6 +322,8 @@ _CATEGORY_TRANSLATIONS: dict[str, dict[str, str]] = {
         "dairy": "Milchprodukte",
         "protein": "Protein",
         "snacks": "Snacks",
+        "fast food": "Fast Food",
+        "legume pulse": "Hülsenfrüchte",
         "strength": "Kraft",
         "cardio": "Cardio",
         "full body": "Ganzkörper",
@@ -482,6 +484,9 @@ _EXACT_LABEL_OVERRIDES: dict[str, dict[str, str]] = {
     },
     "de": {
         "smith machine bench press": "Bankdrücken an der Smith-Maschine",
+        "chicken burger (fast food)": "Hähnchenburger (Fast Food)",
+        "veggie burger": "Gemüseburger",
+        "lentil burger patty": "Linsen-Burger-Patty",
     },
 }
 

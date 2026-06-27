@@ -1612,11 +1612,12 @@ def patch_water(payload: WaterPatchRequest, current_user: User = Depends(get_cur
 def search_food_catalog(
     q: str = Query(..., min_length=1, max_length=100),
     limit: int = Query(default=20, ge=1, le=50),
+    language: str | None = Query(default=None, max_length=32),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    language = normalize_language_tag(current_user.preferred_language)
-    items = search_foods(db, q, limit, language=language)
+    catalog_language = normalize_language_tag(language or current_user.preferred_language).split("-", 1)[0]
+    items = search_foods(db, q, limit, language=catalog_language)
     return {"items": items}
 
 
@@ -1628,13 +1629,13 @@ def lookup_food_nutrition(
 ):
     if payload.food_id is None and not (payload.food_name or "").strip():
         raise HTTPException(status_code=422, detail="Provide food_id or food_name.")
-    language = normalize_language_tag(current_user.preferred_language)
+    catalog_language = normalize_language_tag(payload.language or current_user.preferred_language).split("-", 1)[0]
     found = lookup_food_scaled(
         db,
         food_id=payload.food_id,
         food_name=payload.food_name,
         quantity_g=payload.quantity_g,
-        language=language,
+        language=catalog_language,
     )
     if not found:
         raise HTTPException(status_code=404, detail="Food not found.")

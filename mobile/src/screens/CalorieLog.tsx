@@ -287,7 +287,8 @@ function formatLoadError(err: unknown): string {
 }
 
 export const CalorieLog = () => {
-  const { t } = useTranslation();
+  const { t, i18n: i18nInstance } = useTranslation();
+  const catalogLanguage = i18nInstance.resolvedLanguage || i18nInstance.language;
   const token = useAuthStore((s) => s.token);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -471,7 +472,7 @@ export const CalorieLog = () => {
     setFoodSearchLoading(true);
     const t = setTimeout(async () => {
       try {
-        const items = await searchFoodCatalog(q, 20);
+        const items = await searchFoodCatalog(q, 20, catalogLanguage);
         if (!cancelled) {
           setFoodResults(items);
           setFoodDropdownOpen(true);
@@ -488,7 +489,7 @@ export const CalorieLog = () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [foodQuery]);
+  }, [catalogLanguage, foodQuery]);
 
   useEffect(() => {
     if (!selectedPer100) return;
@@ -503,7 +504,7 @@ export const CalorieLog = () => {
     setFoodSearchLoading(true);
     try {
       const quantity = (parseFloat(qty) || 100) > 0 ? parseFloat(qty) || 100 : 100;
-      const detail = await lookupFoodNutrition({ food_id: item.food_id, quantity_g: quantity });
+      const detail = await lookupFoodNutrition({ food_id: item.food_id, quantity_g: quantity, language: catalogLanguage });
       setSelectedFoodId(item.food_id);
       setFoodName(detail.food_name);
       setFoodQuery(detail.food_name);

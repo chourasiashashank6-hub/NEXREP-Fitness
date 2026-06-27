@@ -277,16 +277,17 @@ export const patchCalorieWater = async (waterL: number, date?: string) => {
   });
 };
 
-export const searchFoodCatalog = async (query: string, limit: number = 20) => {
+export const searchFoodCatalog = async (query: string, limit: number = 20, language?: string | null) => {
   const q = encodeURIComponent(query);
   const lim = Math.max(1, Math.min(limit, 50));
-  return withCaloriesRoute(`/foods/search?q=${q}&limit=${lim}`, async (path) => {
+  const lang = language ? `&language=${encodeURIComponent(language)}` : "";
+  return withCaloriesRoute(`/foods/search?q=${q}&limit=${lim}${lang}`, async (path) => {
     const { data } = await apiClient.get<{ items: FoodSearchItem[] }>(path);
     return data.items ?? [];
   });
 };
 
-export const lookupFoodNutrition = async (payload: { food_id?: number; food_name?: string; quantity_g: number }) => {
+export const lookupFoodNutrition = async (payload: { food_id?: number; food_name?: string; quantity_g: number; language?: string | null }) => {
   return withCaloriesRoute("/foods/lookup", async (path) => {
     const { data } = await apiClient.post<FoodLookupPayload>(path, payload);
     return data;
