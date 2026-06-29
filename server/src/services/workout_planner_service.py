@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import random
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ from src.core.http_client import post_json
 from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.services.language_service import ai_language_instruction
 from src.models.meal_plan import DailyWorkoutPlanEntry, MonthlyWorkoutPlan
-from src.models.models import User, UserOnboarding
+from src.models.models import User, UserOnboarding, Workout
 from src.services.planner_common import (
     day_flags,
     days_chunks_from_range,
@@ -271,6 +271,64 @@ def _onboarding_context(db: Session, user_id: int) -> tuple[dict, dict]:
     onboarding = row.onboarding_json if row and isinstance(row.onboarding_json, dict) else {}
     targets = row.targets_json if row and isinstance(row.targets_json, dict) else {}
     return onboarding, targets
+
+
+def _resolve_focus_muscles(db: Session, user: User, requested: list[str] | None) -> list[str]:
+    """Explicit request wins; otherwise read onboarding goal focus."""
+    if requested is not None:
+        return [str(m).strip() for m in requested if m and str(m).strip()]
+    onboarding, _ = _onboarding_context(db, user.id)
+    goal = onboarding.get("goal") if isinstance(onboarding.get("goal"), dict) else {}
+    stored_list = goal.get("focus_muscles")
+    if isinstance(stored_list, list):
+        return [str(m).strip() for m in stored_list if m and str(m).strip()]
+    stored = goal.get("focus_muscle")
+    return [str(stored).strip()] if stored else []
+
+
+def _focus_key_from_list(muscles: list[str] | None) -> tuple[str, ...]:
+    """Order-insensitive, case-insensitive comparison key."""
+    return tuple(sorted({m.strip().lower() for m in (muscles or []) if m and m.strip()}))
+
+
+def _focus_key(plan: MonthlyWorkoutPlan) -> tuple[str, ...]:
+    return _focus_key_from_list(plan_get_focus_muscles(plan))
+
+
+def _has_logged_workout(db: Session, user: User, day_value: date | datetime) -> bool:
+    d = day_value.date() if isinstance(day_value, datetime) else day_value
+    # TODO: tz-aware once user timezone is stored. Client passes device-local date today.
+    start = datetime.combine(d, datetime.min.time())
+    end = start + timedelta(days=1)
+    return (
+        db.query(Workout.id)
+        .filter(
+            Workout.user_id == user.id,
+            Workout.date >= start,
+            Workout.date < end,
+        )
+        .first()
+        is not None
+    )
+
+
+def _regen_boundary_day(db: Session, user: User, today: date | datetime) -> int:
+    """Day-of-month from which to rebuild. Preserve today if already trained today."""
+    if _has_logged_workout(db, user, today):
+        return today.day + 1
+    return today.day
+
+
+def _build_daily_workout_entry(plan_id: int, day_data: dict[str, Any]) -> DailyWorkoutPlanEntry:
+    return DailyWorkoutPlanEntry(
+        plan_id=plan_id,
+        day=int(day_data["day"]),
+        is_rest_day=bool(day_data.get("is_rest_day")),
+        split_name=str(day_data.get("split_name") or "Rest Day"),
+        focus_muscles_json=safe_json_dumps(day_data.get("focus_muscles") or []),
+        exercises_json=safe_json_dumps(day_data.get("exercises") or []),
+        estimated_duration_min=int(day_data.get("estimated_duration_min") or 0),
+    )
 
 
 def _groq_workout_chunk(
@@ -727,11 +785,21 @@ def generate_workout_plan(
 ) -> MonthlyWorkoutPlan:
     today = parse_local_date(local_date)
     month, year = today.month, today.year
+    effective_focus = _resolve_focus_muscles(db, user, focus_muscles)
     existing = get_existing_workout_plan(db, user.id, month, year)
     if existing:
         db.refresh(existing)
         if existing.entries:
-            return existing
+            if _focus_key(existing) == _focus_key_from_list(effective_focus):
+                return existing
+            from_day = _regen_boundary_day(db, user, today)
+            return regenerate_remaining_workouts(
+                db,
+                user,
+                from_day=from_day,
+                focus_muscles=effective_focus,
+                local_date=local_date,
+            )
         logger.warning(
             "[WorkoutPlanner] user=%s: removing empty plan id=%s for %s-%s",
             user.id,
@@ -742,8 +810,7 @@ def generate_workout_plan(
         db.delete(existing)
         db.flush()
 
-    muscles = focus_muscles if focus_muscles is not None else []
-    ctx = _build_workout_ctx(db, user, focus_muscles=muscles)
+    ctx = _build_workout_ctx(db, user, focus_muscles=effective_focus)
     logger.info(
         "[WorkoutPlanner] user=%s: workouts_per_week=%s, exercises_per_session=%s, difficulty=%s, goal=%s, focus=%s",
         user.id,
@@ -776,17 +843,7 @@ def generate_workout_plan(
     db.flush()
 
     for d in all_days:
-        db.add(
-            DailyWorkoutPlanEntry(
-                plan_id=plan.id,
-                day=int(d["day"]),
-                is_rest_day=bool(d.get("is_rest_day")),
-                split_name=str(d.get("split_name") or "Rest Day"),
-                focus_muscles_json=safe_json_dumps(d.get("focus_muscles") or []),
-                exercises_json=safe_json_dumps(d.get("exercises") or []),
-                estimated_duration_min=int(d.get("estimated_duration_min") or 0),
-            )
-        )
+        db.add(_build_daily_workout_entry(plan.id, d))
     db.commit()
     db.refresh(plan)
     return plan
@@ -1234,35 +1291,24 @@ def regenerate_remaining_workouts(
         raise ValueError(
             f"Cannot regenerate past days. Earliest allowed is today (day {today.day})."
         )
-    if from_day > last_day:
-        raise ValueError("from_day exceeds month length")
 
     plan = get_existing_workout_plan(db, user.id, month, year)
-    if not plan:
-        raise LookupError("No plan exists for this month")
+    if not plan or not plan.entries:
+        return generate_workout_plan(db, user, focus_muscles=focus_muscles, local_date=local_date)
 
-    plan_set_focus_muscles(plan, focus_muscles)
+    if from_day > last_day:
+        plan_set_focus_muscles(plan, focus_muscles)
+        db.commit()
+        db.refresh(plan)
+        return plan
 
-    db.query(DailyWorkoutPlanEntry).filter(
-        DailyWorkoutPlanEntry.plan_id == plan.id,
-        DailyWorkoutPlanEntry.day >= from_day,
-    ).delete(synchronize_session=False)
-    db.flush()
-
-    last_training = (
-        db.query(DailyWorkoutPlanEntry)
-        .filter(
-            DailyWorkoutPlanEntry.plan_id == plan.id,
-            DailyWorkoutPlanEntry.day < from_day,
-            DailyWorkoutPlanEntry.is_rest_day.is_(False),
-        )
-        .order_by(DailyWorkoutPlanEntry.day.desc())
-        .first()
+    kept_prev = next(
+        (entry for entry in sorted(plan.entries, key=lambda entry: entry.day, reverse=True) if entry.day < from_day),
+        None,
     )
-    continue_from = last_training.split_name if last_training else None
+    split_cursor = kept_prev.split_name if kept_prev else None
 
-    effective_focus = plan_get_focus_muscles(plan)
-    ctx = _build_workout_ctx(db, user, focus_muscles=effective_focus)
+    ctx = _build_workout_ctx(db, user, focus_muscles=focus_muscles)
     logger.info(
         "[WorkoutPlanner] Regenerating user=%s from day %s: workouts_per_week=%s, exercises_per_session=%s, focus=%s",
         user.id,
@@ -1272,31 +1318,40 @@ def regenerate_remaining_workouts(
         ctx["focus_muscles"],
     )
 
-    chunks = days_chunks_from_range(from_day, last_day)
-    split_cursor = continue_from
-    for idx, chunk_days in enumerate(chunks):
-        new_days, _ = _generate_workout_chunk(
+    new_day_dicts: list[dict[str, Any]] = []
+    for idx, chunk_days in enumerate(days_chunks_from_range(from_day, last_day)):
+        new_days, chunk_source = _generate_workout_chunk(
             days=chunk_days,
             chunk_index=idx,
             ctx=ctx,
             continue_from_split=split_cursor,
+            user_id=user.id,
         )
-        for d in new_days:
-            db.add(
-                DailyWorkoutPlanEntry(
-                    plan_id=plan.id,
-                    day=int(d["day"]),
-                    is_rest_day=bool(d.get("is_rest_day")),
-                    split_name=str(d.get("split_name") or "Rest Day"),
-                    focus_muscles_json=safe_json_dumps(d.get("focus_muscles") or []),
-                    exercises_json=safe_json_dumps(d.get("exercises") or []),
-                    estimated_duration_min=int(d.get("estimated_duration_min") or 0),
-                )
+        if chunk_source == "fallback":
+            logger.warning(
+                "[WorkoutPlanner] Focus-forward regen kept existing plan because AI generation fell back for user=%s from day=%s",
+                user.id,
+                from_day,
             )
+            return plan
+        new_day_dicts.extend(new_days)
         non_rest = [d for d in reversed(new_days) if not d.get("is_rest_day")]
         if non_rest:
             split_cursor = str(non_rest[0].get("split_name"))
 
+    if not new_day_dicts:
+        return plan
+
+    db.query(DailyWorkoutPlanEntry).filter(
+        DailyWorkoutPlanEntry.plan_id == plan.id,
+        DailyWorkoutPlanEntry.day >= from_day,
+    ).delete(synchronize_session=False)
+    db.flush()
+
+    for day_data in new_day_dicts:
+        db.add(_build_daily_workout_entry(plan.id, day_data))
+
+    plan_set_focus_muscles(plan, focus_muscles)
     plan.generated_at = datetime.utcnow()
     db.add(plan)
     db.commit()

@@ -615,15 +615,6 @@ export default function MonthlyWorkoutPlannerScreen() {
     }
   };
 
-  const handleMuscleToggle = (muscle: string) => {
-    if (muscle === "Balanced") {
-      setSelectedMuscles([]);
-      return;
-    }
-    const m = muscle as FocusMuscle;
-    setSelectedMuscles((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]));
-  };
-
   const isMuscleSelected = (muscle: string): boolean => {
     if (muscle === "Balanced") return selectedMuscles.length === 0;
     return selectedMuscles.includes(muscle as FocusMuscle);
@@ -706,13 +697,12 @@ export default function MonthlyWorkoutPlannerScreen() {
               <Text style={styles.label}>{t("coach.workoutPlannerScreen.muscleFocus")}</Text>
               <View style={styles.pills}>
                 {MUSCLE_PILL_OPTIONS.map((muscle) => (
-                  <Pressable
+                  <View
                     key={muscle}
                     style={[styles.musclePill, isMuscleSelected(muscle) && styles.musclePillSelected]}
-                    onPress={() => handleMuscleToggle(muscle)}
                   >
                     <Text style={[styles.musclePillText, isMuscleSelected(muscle) && styles.musclePillTextSelected]}>{musclePillLabel(muscle)}</Text>
-                  </Pressable>
+                  </View>
                 ))}
               </View>
               <Text style={styles.muscleSelectionHint}>{muscleSelectionHint(selectedMuscles)}</Text>

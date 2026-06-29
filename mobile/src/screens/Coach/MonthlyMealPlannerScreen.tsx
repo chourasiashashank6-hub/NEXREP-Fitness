@@ -322,25 +322,33 @@ export default function MonthlyMealPlannerScreen() {
         setPlannerMode("weekly");
         syncRegenStats(current, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
         if (current.current_week) {
-          syncRegenStats(current.current_week, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-          setPlan(current.current_week);
+          const refreshedWeek = await generateWeekPlan(budget, current.current_week.week_start_day);
+          if (seq !== loadSeqRef.current) return;
+          syncRegenStats(refreshedWeek, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+          setPlan(refreshedWeek);
           setSelectedDay((prev) => {
-            const cw = current.current_week!;
+            const cw = refreshedWeek;
             if (cw.month_overview.some((d) => d.day === prev)) return prev;
             return cw.today?.day ?? cw.month_overview.find((d) => d.is_today)?.day ?? prev;
           });
           lastDayFetchRef.current = null;
         } else if (currentWeek?.is_generated) {
-          await loadWeekPlan(currentWeek.start_day, currentWeek);
+          const refreshedWeek = await generateWeekPlan(budget, currentWeek.start_day);
+          if (seq !== loadSeqRef.current) return;
+          setPlan(refreshedWeek);
+          syncRegenStats(refreshedWeek, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+          lastDayFetchRef.current = null;
         } else {
           setPlan(null);
           setDayDetail(null);
         }
       } else if (current) {
+        const refreshed = await generateMealPlan(budget);
+        if (seq !== loadSeqRef.current) return;
         setPlannerMode("monthly");
-        syncRegenStats(current, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-        setPlan(current);
-        setSelectedDay((prev) => current.today?.day ?? prev);
+        syncRegenStats(refreshed, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+        setPlan(refreshed);
+        setSelectedDay((prev) => refreshed.today?.day ?? prev);
         lastDayFetchRef.current = null;
       } else if (currentWeek) {
         setPlannerMode("weekly");
@@ -362,7 +370,7 @@ export default function MonthlyMealPlannerScreen() {
         setLoading(false);
       }
     }
-  }, [loadWeekPlan]);
+  }, [budget, loadWeekPlan]);
 
   useFocusEffect(
     useCallback(() => {

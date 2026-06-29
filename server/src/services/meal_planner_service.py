@@ -18,6 +18,7 @@ from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.services.language_service import ai_language_instruction
 from src.models.meal_plan import DailyMealPlanEntry, MonthlyMealPlan
 from src.models.models import User, UserOnboarding
+from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry
 from src.services.planner_common import (
     day_flags,
     days_chunks_from_range,
@@ -58,11 +59,11 @@ Generate a 7-day meal plan as a JSON object with key "days" containing an array 
 
 CRITICAL DIVERSITY RULES (MOST IMPORTANT):
 - You MUST use at least 35 DIFFERENT food items across the 7 days. Do NOT repeat the same food more than twice in the entire week.
-- Each day's breakfast MUST be a different dish (e.g. Day 1: Poha, Day 2: Idli-Sambar, Day 3: Paratha with curd, Day 4: Upma, Day 5: Dosa, Day 6: Besan chilla, Day 7: Oats with fruits).
-- Each day's lunch MUST have a different main dish (e.g. Day 1: Rajma chawal, Day 2: Chole with roti, Day 3: Dal tadka with rice, Day 4: Kadhi chawal, Day 5: Paneer curry with paratha, Day 6: Chicken curry with rice, Day 7: Egg curry with roti).
+- Each day's breakfast MUST be a different dish appropriate to the user's regional food style and diet type.
+- Each day's lunch MUST have a different main dish appropriate to the user's regional food style and diet type.
 - Each day's dinner MUST be a different combination from lunch.
 - Snacks must vary: rotate between fruits, dry fruits, sprouts, makhana, roasted chana, protein shake, buttermilk, peanut butter toast, etc.
-- Include regional variety: South Indian (dosa, idli, uttapam), North Indian (paratha, chole, rajma), West Indian (poha, dhokla, thepla), and common items (oats, eggs, salads).
+- Regional adherence is more important than generic Pan-Indian variety when the user selected a regional food style.
 
 Each day object has keys:
 - "day": integer (the day number provided)
@@ -174,7 +175,7 @@ A user targeting {target_kcal} kcal is likely bulking or very active — give th
 
 - Region: {region}. Use foods commonly available and affordable in this region.
 - Diet type: {diet_type}. Respect strictly.
-- Regional food styles: {regional_food_styles}. Prefer dishes from these styles when compatible with nutrition targets.
+{regional_food_styles_instruction}
 - Allergies: {allergies}. NEVER include these.
 - Budget level: {budget_level}.
 - Each meal MUST have 2-4 food items (a complete plate), NOT a single item. For example, breakfast should be "Poha (200g) + Chai (150ml) + Banana (1)" not just "Banana (150g)".
@@ -240,7 +241,7 @@ USER PROFILE (use all fields to personalize meals):
 - Goal: {goal} - if muscle_gain, maximize protein in every meal
 - Diet type: {diet_type} - strictly respect this, no exceptions
 - Region: {region} - only use locally available, culturally appropriate foods
-- Regional food styles: {regional_food_styles} - bias dish choices toward these preferences
+{regional_food_styles_instruction}
 - Allergies: {allergies} - NEVER include these ingredients
 - Activity: {activity_level}, Workouts: {workout_types}
   If workout_types includes strength_training, weight_training, or gym, ensure Post Workout
@@ -373,6 +374,66 @@ def _onboarding_context(db: Session, user_id: int) -> tuple[dict, dict]:
     onboarding = row.onboarding_json if row and isinstance(row.onboarding_json, dict) else {}
     targets = row.targets_json if row and isinstance(row.targets_json, dict) else {}
     return onboarding, targets
+
+
+def _meal_pref_key(regional_food_styles: list[str] | None, diet_type: str | None) -> tuple[tuple[str, ...], str]:
+    styles = tuple(sorted({s.strip().lower() for s in (regional_food_styles or []) if s and s.strip()}))
+    return styles, (diet_type or "").strip().lower()
+
+
+def _stored_meal_pref_key(plan: MonthlyMealPlan) -> tuple[tuple[str, ...], str]:
+    raw = getattr(plan, "regional_food_styles_json", None)
+    try:
+        styles = json.loads(raw) if raw else []
+    except (TypeError, ValueError):
+        styles = []
+    return _meal_pref_key(styles if isinstance(styles, list) else [], getattr(plan, "diet_type", None))
+
+
+def _ctx_meal_pref_key(ctx: dict[str, Any]) -> tuple[tuple[str, ...], str]:
+    return _meal_pref_key(ctx.get("regional_food_styles") or [], str(ctx.get("diet_type") or ""))
+
+
+def _store_meal_pref(plan: MonthlyMealPlan, ctx: dict[str, Any]) -> None:
+    plan.regional_food_styles_json = safe_json_dumps(ctx.get("regional_food_styles") or [])
+    plan.diet_type = str(ctx.get("diet_type") or "standard")
+
+
+def _has_logged_meal(db: Session, user: User, day_value: date | datetime) -> bool:
+    d = day_value.date() if isinstance(day_value, datetime) else day_value
+    return (
+        db.query(MealEntry.meal_id)
+        .join(DailyNutritionLog, MealEntry.log_id == DailyNutritionLog.log_id)
+        .filter(DailyNutritionLog.user_id == user.id, DailyNutritionLog.log_date == d)
+        .first()
+        is not None
+        or db.query(AIFoodMealEntry.ai_meal_id)
+        .filter(AIFoodMealEntry.user_id == user.id, AIFoodMealEntry.log_date == d)
+        .first()
+        is not None
+    )
+
+
+def _meal_regen_boundary_day(db: Session, user: User, today: date | datetime) -> int:
+    if _has_logged_meal(db, user, today):
+        return today.day + 1
+    return today.day
+
+
+def _build_daily_meal_entry(plan_id: int, day_data: dict[str, Any], ctx: dict[str, Any]) -> DailyMealPlanEntry:
+    meals_list = [m for m in (day_data.get("meals") or []) if isinstance(m, dict)]
+    day_totals = _totals_from_meals_list(meals_list)
+    return DailyMealPlanEntry(
+        plan_id=plan_id,
+        day=int(day_data["day"]),
+        is_cheat_day=bool(day_data.get("is_cheat_day")),
+        total_calories=day_totals["total_calories"],
+        total_protein_g=day_totals["total_protein_g"],
+        total_carbs_g=day_totals["total_carbs_g"],
+        total_fat_g=day_totals["total_fat_g"],
+        total_fiber_g=day_totals.get("total_fiber_g") or int(ctx["fiber_target"]),
+        meals_json=safe_json_dumps(meals_list),
+    )
 
 
 def get_user_nutrition_targets(db: Session, user: User) -> dict[str, int | float]:
@@ -1035,6 +1096,18 @@ def _build_meal_system_prompt(
 
     allergies = ctx.get("allergies") or []
     regional_food_styles = ctx.get("regional_food_styles") or []
+    selected_regional_styles = [str(s).strip() for s in regional_food_styles if s and str(s).strip() and str(s).strip() != "no_preference"]
+    if selected_regional_styles:
+        styles_str = ", ".join(selected_regional_styles)
+        regional_food_styles_instruction = (
+            f"- Regional food style: {styles_str}. This is a HARD REQUIREMENT, not a preference. "
+            f"At least 5 of the 7 days' breakfasts, lunches, AND dinners MUST be authentic {styles_str} dishes "
+            f"(not generic Indian/North Indian substitutes). Only deviate from {styles_str} when no compatible "
+            f"dish exists for a specific nutrition target, and even then prefer a {styles_str} dish with an added "
+            "side such as extra egg, paneer, sprouts, dal, or curd over switching cuisine."
+        )
+    else:
+        regional_food_styles_instruction = "- Regional food style: No preference. Use diverse Pan-Indian dishes across regions."
     meals_per_day = int(ctx["meals_per_day"])
     target_kcal = int(ctx["target_kcal"])
 
@@ -1049,7 +1122,7 @@ def _build_meal_system_prompt(
         calorie_allocation=build_calorie_allocation(target_kcal, meals_per_day),
         region=ctx["region"],
         diet_type=ctx["diet_type"],
-        regional_food_styles=", ".join(regional_food_styles) if regional_food_styles else "No preference / Pan-Indian",
+        regional_food_styles_instruction=regional_food_styles_instruction,
         allergies=", ".join(allergies) if allergies else "none",
         budget_level=ctx["budget_level"],
         goal=ctx.get("goal") or "maintain",
@@ -2112,6 +2185,97 @@ def get_weekly_plan_by_start_day(
     )
 
 
+def _regenerate_meal_plan_for_changed_preference(
+    db: Session,
+    user: User,
+    existing_plan: MonthlyMealPlan,
+    ctx: dict[str, Any],
+    local_date: str | None,
+) -> MonthlyMealPlan:
+    today = parse_local_date(local_date)
+    month, year = today.month, today.year
+    scope_start = int(existing_plan.week_start_day or 1)
+    scope_end = int(existing_plan.week_end_day or days_in_month(month, year))
+    from_day = max(scope_start, _meal_regen_boundary_day(db, user, today))
+
+    if from_day > scope_end:
+        _store_meal_pref(existing_plan, ctx)
+        existing_plan.target_kcal = int(ctx["target_kcal"])
+        existing_plan.target_protein_g = int(ctx["protein_target"])
+        existing_plan.target_carbs_g = int(ctx["carbs_target"])
+        existing_plan.target_fat_g = int(ctx["fat_target"])
+        existing_plan.target_fiber_g = int(ctx["fiber_target"])
+        db.add(existing_plan)
+        db.commit()
+        db.refresh(existing_plan)
+        return existing_plan
+
+    preserved = (
+        db.query(DailyMealPlanEntry)
+        .filter(DailyMealPlanEntry.plan_id == existing_plan.id, DailyMealPlanEntry.day < from_day)
+        .order_by(DailyMealPlanEntry.day.asc())
+        .all()
+    )
+    prev_breakfasts, prev_dinners = _diversity_from_entries(preserved)
+    new_day_dicts: list[dict[str, Any]] = []
+    source = "groq"
+    chunk_size = get_chunk_size_for_meals(int(ctx["meals_per_day"]))
+    regen_days = list(range(from_day, scope_end + 1))
+
+    for idx, chunk_days in enumerate([regen_days[i : i + chunk_size] for i in range(0, len(regen_days), chunk_size)]):
+        chunk, chunk_source = _generate_chunk_days(
+            db,
+            days=chunk_days,
+            chunk_index=idx,
+            ctx=ctx,
+            prev_breakfasts=prev_breakfasts or None,
+            prev_dinners=prev_dinners or None,
+            include_cheat_override=False,
+            day_offset=chunk_days[0] - 1 if chunk_days else 0,
+            has_prior_context=bool(prev_breakfasts or prev_dinners),
+            user_id=user.id,
+        )
+        if chunk_source == "fallback":
+            logger.warning(
+                "[MealPlanner] Preference-change regen kept existing plan because AI generation fell back for user=%s plan=%s",
+                user.id,
+                existing_plan.id,
+            )
+            return existing_plan
+        if chunk_source == "gemini" and source == "groq":
+            source = "gemini"
+        new_day_dicts.extend(chunk)
+        breakfasts, dinners = _extract_prev_week_meals(chunk)
+        prev_breakfasts.extend(breakfasts)
+        prev_dinners.extend(dinners)
+
+    if not new_day_dicts:
+        return existing_plan
+
+    db.query(DailyMealPlanEntry).filter(
+        DailyMealPlanEntry.plan_id == existing_plan.id,
+        DailyMealPlanEntry.day >= from_day,
+        DailyMealPlanEntry.day <= scope_end,
+    ).delete(synchronize_session=False)
+    db.flush()
+
+    for day_data in new_day_dicts:
+        db.add(_build_daily_meal_entry(existing_plan.id, day_data, ctx))
+
+    _store_meal_pref(existing_plan, ctx)
+    existing_plan.generated_at = datetime.utcnow()
+    existing_plan.source = source
+    existing_plan.target_kcal = int(ctx["target_kcal"])
+    existing_plan.target_protein_g = int(ctx["protein_target"])
+    existing_plan.target_carbs_g = int(ctx["carbs_target"])
+    existing_plan.target_fat_g = int(ctx["fat_target"])
+    existing_plan.target_fiber_g = int(ctx["fiber_target"])
+    db.add(existing_plan)
+    db.commit()
+    db.refresh(existing_plan)
+    return existing_plan
+
+
 def get_plan_for_day(db: Session, user_id: int, month: int, year: int, day: int) -> MonthlyMealPlan | None:
     weekly = (
         db.query(MonthlyMealPlan)
@@ -2292,12 +2456,15 @@ def generate_week_plan(
     if not target_week:
         raise ValueError(f"No week starting on day {week_start_day} in {month}/{year}")
 
-    existing = get_weekly_plan_by_start_day(db, user.id, month, year, week_start_day)
-    if existing:
-        return _build_week_response(existing, local_date, db=db, user=user)
-
     ctx = _build_meal_ctx(db, user)
     ctx["budget_level"] = budget_level
+    existing = get_weekly_plan_by_start_day(db, user.id, month, year, week_start_day)
+    if existing:
+        if _stored_meal_pref_key(existing) == _ctx_meal_pref_key(ctx):
+            return _build_week_response(existing, local_date, db=db, user=user)
+        regenerated = _regenerate_meal_plan_for_changed_preference(db, user, existing, ctx, local_date)
+        return _build_week_response(regenerated, local_date, db=db, user=user)
+
     logger.info(
         "[MealPlanner] generate_week_plan user %s week %s–%s: kcal=%s, P=%sg",
         user.id,
@@ -2367,25 +2534,12 @@ def generate_week_plan(
         target_fat_g=int(ctx["fat_target"]),
         target_fiber_g=int(ctx["fiber_target"]),
     )
+    _store_meal_pref(plan, ctx)
     db.add(plan)
     db.flush()
 
     for day_data in new_days:
-        meals_list = [m for m in (day_data.get("meals") or []) if isinstance(m, dict)]
-        day_totals = _totals_from_meals_list(meals_list)
-        db.add(
-            DailyMealPlanEntry(
-                plan_id=plan.id,
-                day=int(day_data["day"]),
-                is_cheat_day=bool(day_data.get("is_cheat_day")),
-                total_calories=day_totals["total_calories"],
-                total_protein_g=day_totals["total_protein_g"],
-                total_carbs_g=day_totals["total_carbs_g"],
-                total_fat_g=day_totals["total_fat_g"],
-                total_fiber_g=day_totals.get("total_fiber_g") or int(ctx["fiber_target"]),
-                meals_json=safe_json_dumps(meals_list),
-            )
-        )
+        db.add(_build_daily_meal_entry(plan.id, day_data, ctx))
 
     db.commit()
     db.refresh(plan)
@@ -2488,6 +2642,7 @@ def regenerate_week_plan(
         plan.target_carbs_g = int(ctx["carbs_target"])
         plan.target_fat_g = int(ctx["fat_target"])
         plan.target_fiber_g = int(ctx["fiber_target"])
+        _store_meal_pref(plan, ctx)
         db.add(plan)
         db.commit()
         db.refresh(plan)
@@ -2508,12 +2663,14 @@ def generate_meal_plan(
 ) -> MonthlyMealPlan:
     today = parse_local_date(local_date)
     month, year = today.month, today.year
-    existing = get_existing_monthly_meal_plan(db, user.id, month, year)
-    if existing:
-        return existing
-
     ctx = _build_meal_ctx(db, user)
     ctx["budget_level"] = budget_level
+    existing = get_existing_monthly_meal_plan(db, user.id, month, year)
+    if existing:
+        if _stored_meal_pref_key(existing) == _ctx_meal_pref_key(ctx):
+            return existing
+        return _regenerate_meal_plan_for_changed_preference(db, user, existing, ctx, local_date)
+
     logger.info(
         "[MealPlanner] Targets from Calorie Log source: kcal=%s, P=%sg, C=%sg, F=%sg, meals_per_day=%s",
         ctx["target_kcal"],
@@ -2564,25 +2721,12 @@ def generate_meal_plan(
         target_fat_g=int(ctx["fat_target"]),
         target_fiber_g=int(ctx["fiber_target"]),
     )
+    _store_meal_pref(plan, ctx)
     db.add(plan)
     db.flush()
 
     for d in all_days:
-        meals_list = [m for m in (d.get("meals") or []) if isinstance(m, dict)]
-        day_totals = _totals_from_meals_list(meals_list)
-        db.add(
-            DailyMealPlanEntry(
-                plan_id=plan.id,
-                day=int(d["day"]),
-                is_cheat_day=bool(d.get("is_cheat_day")),
-                total_calories=day_totals["total_calories"],
-                total_protein_g=day_totals["total_protein_g"],
-                total_carbs_g=day_totals["total_carbs_g"],
-                total_fat_g=day_totals["total_fat_g"],
-                total_fiber_g=day_totals.get("total_fiber_g") or int(ctx["fiber_target"]),
-                meals_json=safe_json_dumps(meals_list),
-            )
-        )
+        db.add(_build_daily_meal_entry(plan.id, d, ctx))
     db.commit()
     db.refresh(plan)
     return plan
@@ -2808,25 +2952,15 @@ def regenerate_single_day(
     if not new_days:
         raise RuntimeError("AI returned empty result. Your existing meals were not changed. Try again.")
 
-    day_data = new_days[0]
-    meals_list = [m for m in (day_data.get("meals") or []) if isinstance(m, dict)]
-    day_totals = _totals_from_meals_list(meals_list)
+    day_data = dict(new_days[0])
+    day_data["day"] = day
+    day_data["is_cheat_day"] = False
 
     try:
         db.delete(existing_entry)
         db.flush()
 
-        new_entry = DailyMealPlanEntry(
-            plan_id=plan.id,
-            day=day,
-            is_cheat_day=False,
-            total_calories=day_totals["total_calories"],
-            total_protein_g=day_totals["total_protein_g"],
-            total_carbs_g=day_totals["total_carbs_g"],
-            total_fat_g=day_totals["total_fat_g"],
-            total_fiber_g=day_totals.get("total_fiber_g") or int(ctx["fiber_target"]),
-            meals_json=safe_json_dumps(meals_list),
-        )
+        new_entry = _build_daily_meal_entry(plan.id, day_data, ctx)
         db.add(new_entry)
         if not test_user:
             plan.day_regens_used = int(plan.day_regens_used or 0) + 1
@@ -2835,6 +2969,7 @@ def regenerate_single_day(
         plan.target_carbs_g = int(ctx["carbs_target"])
         plan.target_fat_g = int(ctx["fat_target"])
         plan.target_fiber_g = int(ctx["fiber_target"])
+        _store_meal_pref(plan, ctx)
         db.commit()
         db.refresh(new_entry)
         db.refresh(plan)
@@ -2946,22 +3081,9 @@ def regenerate_remaining_meals(
         prev_dinners.extend(din)
 
     for day_num in sorted(days_by_num.keys()):
-        d = days_by_num[day_num]
-        meals_list = [m for m in (d.get("meals") or []) if isinstance(m, dict)]
-        day_totals = _totals_from_meals_list(meals_list)
-        db.add(
-            DailyMealPlanEntry(
-                plan_id=plan.id,
-                day=day_num,
-                is_cheat_day=bool(d.get("is_cheat_day")),
-                total_calories=day_totals["total_calories"],
-                total_protein_g=day_totals["total_protein_g"],
-                total_carbs_g=day_totals["total_carbs_g"],
-                total_fat_g=day_totals["total_fat_g"],
-                total_fiber_g=day_totals.get("total_fiber_g") or int(ctx["fiber_target"]),
-                meals_json=safe_json_dumps(meals_list),
-            )
-        )
+        d = dict(days_by_num[day_num])
+        d["day"] = day_num
+        db.add(_build_daily_meal_entry(plan.id, d, ctx))
 
     plan.generated_at = datetime.utcnow()
     plan.target_kcal = int(ctx["target_kcal"])
@@ -2969,6 +3091,7 @@ def regenerate_remaining_meals(
     plan.target_carbs_g = int(ctx["carbs_target"])
     plan.target_fat_g = int(ctx["fat_target"])
     plan.target_fiber_g = int(ctx["fiber_target"])
+    _store_meal_pref(plan, ctx)
     db.add(plan)
     db.commit()
     db.refresh(plan)

@@ -14,6 +14,8 @@ class MonthlyMealPlan(Base):
     month = Column(Integer, nullable=False)
     year = Column(Integer, nullable=False)
     budget_level = Column(String(32), nullable=False)
+    regional_food_styles_json = Column(Text, nullable=True)  # JSON list snapshot from onboarding
+    diet_type = Column(String(32), nullable=True)  # snapshot from onboarding
     generated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     source = Column(String(32), default="groq")
     target_kcal = Column(Integer, nullable=True)

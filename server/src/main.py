@@ -352,6 +352,8 @@ def apply_schema_updates() -> None:
             )
         )
         conn.execute(text("ALTER TABLE monthly_meal_plans DROP CONSTRAINT IF EXISTS uq_meal_plan_user_month"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS regional_food_styles_json TEXT"))
+        conn.execute(text("ALTER TABLE monthly_meal_plans ADD COLUMN IF NOT EXISTS diet_type VARCHAR(32)"))
         conn.execute(
             text(
                 """

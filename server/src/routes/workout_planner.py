@@ -77,7 +77,8 @@ def post_generate(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    focus_muscles = _normalize_focus_muscles(body.focus_muscles)
+    # Empty/missing selection means the service should resolve onboarding focus.
+    focus_muscles = _normalize_focus_muscles(body.focus_muscles) or None
     plan = generate_workout_plan(db, current_user, focus_muscles=focus_muscles, local_date=local_date)
     return workout_plan_current_response(plan, local_date, db=db, user=current_user)
 
@@ -92,6 +93,7 @@ def get_current(
     plan = get_existing_workout_plan(db, current_user.id, today.month, today.year)
     if not plan:
         raise HTTPException(status_code=404, detail="No workout plan for this month")
+    plan = generate_workout_plan(db, current_user, focus_muscles=None, local_date=local_date)
     return workout_plan_current_response(plan, local_date, db=db, user=current_user)
 
 
