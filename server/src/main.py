@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from src.db.session import Base, SessionLocal, engine, get_db
 from src.models import admin_models  # noqa: F401 — registers admin analytics tables
 from src.core.config import settings, validate_jwt_secret, warn_missing_razorpay_webhook_secret
-from src.models.models import Activity, GlobalExercise, Meal, MotivationalQuote, NotificationPreference, PushToken, StrengthLift, User, UserOnboarding, Workout, WorkoutCatalog
+from src.models.models import Activity, GlobalExercise, Meal, MotivationalQuote, NotificationPreference, PushToken, StrengthLift, User, UserOnboarding, Workout, WorkoutCatalog, WorkoutSession, WorkoutSessionSetLog
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog  # noqa: F401
 from src.models.meal_plan import (  # noqa: F401
     DailyMealPlanEntry,
@@ -88,6 +88,8 @@ from src.routes.messages import router as messages_router
 from src.routes.supplement_stacks import router as supplement_stacks_router
 from src.routes.feed import router as feed_router
 from src.routes.social_challenges import challenges_router, leaderboard_router
+from src.routers.body_types import router as body_types_router
+from src.routes.workout_sessions import router as workout_sessions_router
 from src.services.ai_logger import log_groq_call
 from src.utils.auth import decode_user_id_from_token
 from src.coach_targets import (
@@ -153,8 +155,10 @@ app.include_router(threads_router)
 app.include_router(messages_router)
 app.include_router(supplement_stacks_router)
 app.include_router(feed_router)
+app.include_router(body_types_router)
 app.include_router(leaderboard_router)
 app.include_router(challenges_router)
+app.include_router(workout_sessions_router)
 
 
 _ACTIVITY_SKIP_PATHS = {
@@ -1833,6 +1837,24 @@ def put_my_onboarding(
     _normalize_target_lifts(payload.onboarding, db)
     apply_onboarding_personal_to_user(current_user, payload.onboarding)
     row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
+
+    if row and isinstance(row.onboarding_json, dict):
+        existing_onboarding = row.onboarding_json
+        existing_started = existing_onboarding.get("goal_started_at")
+        old_goal_type = (existing_onboarding.get("goal") or {}).get("type")
+        new_goal_type = (payload.onboarding.get("goal") or {}).get("type")
+        goal_type_changed = (
+            bool(old_goal_type)
+            and bool(new_goal_type)
+            and old_goal_type != new_goal_type
+        )
+        if goal_type_changed or not existing_started:
+            payload.onboarding["goal_started_at"] = date.today().isoformat()
+        else:
+            payload.onboarding["goal_started_at"] = existing_started
+    else:
+        payload.onboarding["goal_started_at"] = date.today().isoformat()
+
     if row:
         row.onboarding_json = payload.onboarding
         row.targets_json = payload.targets
@@ -1847,6 +1869,31 @@ def put_my_onboarding(
     db.commit()
     db.refresh(row)
     return {"onboarding": row.onboarding_json, "targets": row.targets_json}
+
+
+@app.post("/api/goal/reset-journey")
+def reset_goal_journey(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Manually reset the journey start date to today."""
+    row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
+
+    if not row or not isinstance(row.onboarding_json, dict):
+        raise HTTPException(status_code=404, detail="Onboarding not found")
+
+    updated_onboarding = dict(row.onboarding_json)
+    updated_onboarding["goal_started_at"] = date.today().isoformat()
+
+    row.onboarding_json = updated_onboarding
+    db.add(row)
+    db.commit()
+
+    return {
+        "success": True,
+        "goal_started_at": updated_onboarding["goal_started_at"],
+        "message": "Journey start date reset to today.",
+    }
 
 
 @app.post("/api/strength/lift")

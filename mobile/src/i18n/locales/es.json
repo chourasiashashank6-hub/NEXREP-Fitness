@@ -71,6 +71,7 @@
     "strengthEmptyBody": "Agregue hasta 3 aumentos objetivo en la incorporación para ver su progreso estimado1RMaquí.",
     "strengthFooter": "{{weeks}}quedan semanas · promedio en{{count}}elevación{{plural}}",
     "eightWeekGoal": "🏆 Meta de 8 semanas",
+    "weekGoal": "🏆 Meta de {{weeks}} semanas",
     "goalFooter": "{{weeks}}quedan semanas ·{{pace}}",
     "logWeightTitle": "Registrar el peso de hoy",
     "lastLogged": "Último registro:{{weight}}kg"
@@ -1473,7 +1474,7 @@
       "noWorkoutYet": "Aún no hay entrenamiento"
     },
     "calorie": {
-      "title": "Entrenador de calorías de IA",
+      "title": "Entrenador de calorías",
       "emptyTitle": "Registre sus comidas primero para obtener información de la IA",
       "emptySubtitle": "Una vez que existan datos de nutrición para hoy, aparecerán tareas de entrenamiento y acción.",
       "card": {
@@ -1502,11 +1503,11 @@
         "left": "izquierda",
         "bodyImpact": "Cómo te afecta esto",
         "macroBreakdown": "Desglose macro",
-        "dietRecommendations": "🤖 Recomendaciones de dieta AI",
+        "dietRecommendations": "🥗 Recomendaciones de dieta",
         "basedOnGaps": "Basado en tus brechas",
         "allMacrosOnTrack": "✓ Todas las macros en marcha: ¡excelente trabajo hoy!",
         "macroGap": "Brecha{{macro}}",
-        "aiSuggests": "La IA sugiere esto ahora mismo:",
+        "aiSuggests": "Prueba esto para cerrar la brecha:",
         "placeholder": "Toque Actualizar para generar su plan de nutrición premium."
       },
       "defaults": {
@@ -1523,7 +1524,7 @@
       }
     },
     "actionPlan": {
-      "healthTips": "🌿 Consejos de salud de IA",
+      "healthTips": "🌿 Consejos de salud",
       "tipsSubtitle": "Según tu dieta de hoy · desplazarte →",
       "gutHealth": "Salud intestinal",
       "todaysActionPlan": "El plan de acción de hoy",
@@ -1600,7 +1601,7 @@
       "fallbackInsight": "{{message}}. Mostrando información alternativa.",
       "couldNotReachAi": "No se pudo alcanzar la IA. Mostrando información alternativa.",
       "previousSession": "De la sesión anterior",
-      "title": "Entrenador de entrenamiento de IA",
+      "title": "Entrenador de entrenamiento",
       "buildingPlan": "Construyendo tu plan de entrenamiento...",
       "recoveryMode": "Modo de recuperación · Tómalo con calma hoy",
       "setsDone": "conjuntos hechos",
@@ -1862,6 +1863,7 @@
       "completedSuffix": "— Completado",
       "dailySummary": "RESUMEN DIARIO",
       "remaining": "Restante",
+      "exceeded": "Excedido",
       "estimatedCost": "Est. costo: ₹{{cost}}",
       "prep": "Preparación: ~{{minutes}}mín.",
       "testNotice": "Cuenta de prueba: actualizaciones diarias ilimitadas, intercambios y regeneración completa",

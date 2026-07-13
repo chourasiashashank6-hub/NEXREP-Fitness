@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { BodyTypeSelectionModal } from "../../components/BodyTypeSelectionModal";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { TapCards } from "../../components/TapCards";
+import { BODY_DATA } from "../../data/bodyTypeData";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
 import { DIFFICULTY_OPTIONS, GOAL_OPTIONS, GOAL_PACE_OPTIONS, getImperialWeightOptions, getMetricWeightOptions } from "../../utils/onboardingOptions";
@@ -37,10 +38,9 @@ export default function Screen2Goal({ navigation }: any) {
   const { data, updateGoal } = useOnboardingContext();
   const { saveAndExit, saving } = useOnboardingSaveAndExit();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [warning, setWarning] = useState("");
   const [showCustomLift, setShowCustomLift] = useState(false);
   const [customLiftName, setCustomLiftName] = useState("");
+  const [showBodyTypeModal, setShowBodyTypeModal] = useState(false);
 
   const isPaceNeeded = data.goal.type === "fat_loss" || data.goal.type === "muscle_gain";
   const isStrengthGoal = data.goal.type === "strength";
@@ -49,7 +49,13 @@ export default function Screen2Goal({ navigation }: any) {
   const targetWeight = data.personal.unit_system === "metric" ? data.goal.target_weight_kg : data.goal.target_weight_lb;
   const targetLifts = data.goal.target_lifts ?? [];
 
-  const dateValue = useMemo(() => (data.goal.target_date ? new Date(data.goal.target_date) : new Date()), [data.goal.target_date]);
+  const bodyType = data.body_type;
+  const btGender = (bodyType?.gender ?? "male") as "male" | "female";
+  const curBTLabel =
+    BODY_DATA[btGender]?.current.find((x) => x.id === bodyType?.current_body_id)?.label ?? "";
+  const goalBTLabel =
+    BODY_DATA[btGender]?.goal.find((x) => x.id === bodyType?.goal_body_id)?.label ?? "";
+  const hasBodyType = Boolean(bodyType?.current_body_id && bodyType?.goal_body_id);
 
   const validate = () => {
     const next: Record<string, string> = {};
@@ -67,18 +73,6 @@ export default function Screen2Goal({ navigation }: any) {
     setErrors(next);
     if (Object.keys(next).length) return;
     navigation.navigate("Screen3Activity");
-  };
-
-  const onDateChange = (_: any, d?: Date) => {
-    if (!d) return;
-    setShowDatePicker(Platform.OS === "ios");
-    updateGoal({ target_date: d.toISOString().slice(0, 10) });
-    if (isPaceNeeded && targetWeight && currentWeight) {
-      const weeks = Math.max(1, Math.ceil((d.getTime() - Date.now()) / (7 * 24 * 3600 * 1000)));
-      const kgDiff = Math.abs((data.personal.unit_system === "metric" ? targetWeight : targetWeight / 2.20462) - (data.personal.unit_system === "metric" ? currentWeight : currentWeight / 2.20462));
-      if (kgDiff / weeks > 1) setWarning(t("onboarding.screen2.deadlineWarning"));
-      else setWarning("");
-    }
   };
 
   const setGoalType = (type: string) => {
@@ -219,14 +213,33 @@ export default function Screen2Goal({ navigation }: any) {
       ) : null}
 
       <View style={styles.block}>
-        <Text style={styles.label}>{t("onboarding.screen2.targetDate")}</Text>
-        <View style={styles.dateTrigger}>
-          <Text style={styles.dateText}>{data.goal.target_date || t("onboarding.screen2.selectDate")}</Text>
-          <Text style={styles.dateAction} onPress={() => setShowDatePicker(true)}>{t("onboarding.screen2.pick")}</Text>
-        </View>
-        {showDatePicker ? <DateTimePicker value={dateValue} mode="date" display="default" onChange={onDateChange} /> : null}
-        {warning ? <Text style={styles.error}>{warning}</Text> : null}
+        <Text style={styles.label}>Body type</Text>
+        <TouchableOpacity
+          style={styles.bodyTypeBtn}
+          onPress={() => setShowBodyTypeModal(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.bodyTypeBtnText}>
+            {hasBodyType ? `${curBTLabel} → ${goalBTLabel}` : "Select body type"}
+          </Text>
+          <Text style={styles.bodyTypeBtnAction}>{hasBodyType ? "Edit" : "Select →"}</Text>
+        </TouchableOpacity>
+
+        {hasBodyType ? (
+          <View style={styles.bodyTypeSummary}>
+            <Text style={styles.bodyTypeSummaryRow}>
+              ✓ {curBTLabel} → {goalBTLabel}
+            </Text>
+            {(bodyType?.problem_areas?.length ?? 0) > 0 ? (
+              <Text style={styles.bodyTypeAreas}>
+                Target areas: {bodyType!.problem_areas.join(" · ")}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
       </View>
+
+      <BodyTypeSelectionModal visible={showBodyTypeModal} onClose={() => setShowBodyTypeModal(false)} />
     </OnboardingLayout>
   );
 }
@@ -290,7 +303,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontWeight: "800",
   },
-  dateTrigger: { height: 48, borderRadius: 12, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: BG },
-  dateText: { color: TEXT, fontWeight: "700" },
-  dateAction: { color: GREEN, fontWeight: "900" },
+  bodyTypeBtn: {
+    height: 48,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: BG,
+  },
+  bodyTypeBtnText: {
+    color: TEXT,
+    fontWeight: "700",
+    fontSize: 14,
+    flex: 1,
+  },
+  bodyTypeBtnAction: {
+    color: GREEN,
+    fontWeight: "900",
+    fontSize: 14,
+  },
+  bodyTypeSummary: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: GREEN_LIGHT,
+    borderWidth: 1,
+    borderColor: "#C3E6D8",
+  },
+  bodyTypeSummaryRow: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#085041",
+  },
+  bodyTypeAreas: {
+    fontSize: 11,
+    color: "#6B7280",
+    marginTop: 4,
+    lineHeight: 16,
+  },
 });

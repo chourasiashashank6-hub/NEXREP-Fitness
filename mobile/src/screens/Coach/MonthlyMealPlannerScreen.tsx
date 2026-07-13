@@ -1022,7 +1022,11 @@ export default function MonthlyMealPlannerScreen() {
                         <Text style={styles.calorieTarget}>/ {dailyTargets.kcal} kcal</Text>
                       </View>
                       <View style={styles.remainingWrap}>
-                        <Text style={styles.remainingLabel}>{t("coach.mealPlannerScreen.remaining")}</Text>
+                        <Text style={styles.remainingLabel}>
+                          {dayDetail.total_calories > dailyTargets.kcal
+                            ? t("coach.mealPlannerScreen.exceeded")
+                            : t("coach.mealPlannerScreen.remaining")}
+                        </Text>
                         <Text style={[styles.remainingValue, dayDetail.total_calories > dailyTargets.kcal && styles.remainingValueOver]}>
                           {Math.abs(dailyTargets.kcal - dayDetail.total_calories)}
                         </Text>
@@ -1112,15 +1116,29 @@ export default function MonthlyMealPlannerScreen() {
                             </View>
                           ) : !isCollapsed ? (
                             <View style={styles.mealBody}>
-                              {meal.items.map((item, idx) => (
+                              {meal.items.map((item, idx) => {
+                                const unitsRounded =
+                                  item.units != null
+                                    ? Number(Number(item.units).toFixed(1)).toString().replace(/\.0$/, "")
+                                    : null;
+                                const servingLine =
+                                  unitsRounded != null && item.unit_label
+                                    ? `${unitsRounded} ${item.unit_label}${item.quantity_g ? ` (${item.quantity_g}g)` : ""}`
+                                    : item.quantity_g
+                                      ? `${item.quantity_g}g`
+                                      : "";
+                                return (
                                 <View key={idx} style={styles.foodRow}>
-                                  <Text style={styles.foodName}>{item.food}</Text>
+                                  <View style={styles.foodTextWrap}>
+                                    <Text style={styles.foodName}>{item.food}</Text>
+                                    {servingLine ? <Text style={styles.foodServing}>{servingLine}</Text> : null}
+                                  </View>
                                   <View style={styles.foodMeta}>
-                                    <Text style={styles.foodWeight}>{item.quantity_g}g</Text>
                                     <Text style={styles.foodKcal}>{item.calories} kcal</Text>
                                   </View>
                                 </View>
-                              ))}
+                                );
+                              })}
                               <View style={styles.mealTotalsBubble}>
                                 <Text style={styles.mealTotalsCalories}>{t("coach.mealPlannerScreen.mealTotal", { calories: meal.total_calories })}</Text>
                                 <Text style={styles.mealTotalsMacros}>{t("coach.mealPlannerScreen.mealMacros", { protein: meal.total_protein, carbs: meal.total_carbs, fat: meal.total_fat })}</Text>
@@ -1414,7 +1432,9 @@ const styles = StyleSheet.create({
   swapLoadingText: { color: MUTED, fontSize: 12, fontWeight: "700" },
   mealBody: { paddingHorizontal: 16, paddingVertical: 12 },
   foodRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: BORDER, gap: 10 },
-  foodName: { color: TEXT, flex: 1, fontSize: 12, fontWeight: "800" },
+  foodTextWrap: { flex: 1, gap: 2 },
+  foodName: { color: TEXT, fontSize: 14, fontWeight: "500" },
+  foodServing: { color: MUTED, fontSize: 12, fontWeight: "400" },
   foodMeta: { alignItems: "flex-end" },
   foodWeight: { color: MUTED, fontSize: 11 },
   foodKcal: { color: TEXT, fontSize: 11, fontWeight: "800", marginTop: 2 },

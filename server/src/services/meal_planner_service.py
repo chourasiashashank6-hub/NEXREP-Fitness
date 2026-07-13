@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from src.core.config import settings
 from src.core.http_client import ExternalHTTPError, post_json
 from src.services.ai_logger import log_gemini_call, log_groq_call
+from src.services.gemini_client import gemini_generate_content, has_gemini_key
 from src.services.language_service import ai_language_instruction
 from src.models.meal_plan import DailyMealPlanEntry, MonthlyMealPlan
 from src.models.models import User, UserOnboarding
@@ -46,6 +47,21 @@ from src.services.planner_test_users import (
     meal_planner_unlimited_regen_stats,
     planner_days_unlocked_flag,
 )
+from src.services.meal_food_catalog import (
+    MAX_UNITS_PER_FOOD,
+    MIN_POOL_SIZE,
+    MealCompositionError,
+    enforce_meal_composition,
+    fetch_food_candidate_pool,
+    food_by_id_map,
+    meal_composition_ok,
+    pick_fallback_items,
+    prompt_food_list,
+    recompute_item_from_units,
+    resolve_catalog_region,
+    resolve_meal_items,
+    scale_item_units,
+)
 
 class GroqRateLimitError(Exception):
     """Raised when Groq returns HTTP 429 rate limit."""
@@ -53,6 +69,35 @@ class GroqRateLimitError(Exception):
 
 
 MONTHLY_DAY_REGEN_LIMIT = 3
+
+# Human-readable labels for body type IDs stored in onboarding_json.body_type
+# Keys match current_body_id and goal_body_id values from the mobile app
+BODY_TYPE_LABELS: dict[str, str] = {
+    # Current body types (male + female share sk, sf, av, ow, ob)
+    "sk": "Skinny",
+    "sf": "Skinny fat",
+    "av": "Average",
+    "ow": "Overweight",
+    "ob": "Obese",
+    "mu": "Muscular",        # male current
+    "cv": "Curvy",           # female current only
+    # Goal body types (male)
+    "ln": "Lean & cut",
+    "at": "Athletic",
+    "bk": "Bulk & strong",
+    # Goal body types (female)
+    "to": "Toned",
+    "sc": "Strong & curvy",
+    # "at" and "ln" shared between male/female goals — already covered above
+}
+
+
+def _body_label(body_id: str | None) -> str:
+    """Convert a short body type ID to a human-readable label for AI prompts."""
+    if not body_id:
+        return "not specified"
+    return BODY_TYPE_LABELS.get(str(body_id).lower().strip(), str(body_id))
+
 
 MEAL_SYSTEM_PROMPT_BASE = """You are an expert Indian sports nutritionist who creates diverse, region-specific meal plans.
 Generate a 7-day meal plan as a JSON object with key "days" containing an array of 7 day objects.
@@ -73,7 +118,8 @@ Each day object has keys:
 Each meal object has keys:
 - "meal_type": one of "Breakfast", "Lunch", "Snack", "Dinner", "Pre_Workout", "Post_Workout"
 - "time": string (suggested time, e.g. "8:00 AM")
-- "items": array of food item objects (each meal should have 2-4 items, not just 1 lonely item)
+- "items": array of food item objects — EACH meal MUST have at least 2 and at most 5 distinct foods
+  (e.g. staple + protein/veg + optional side/beverage). Never a single-item meal.
 - "total_calories": number
 - "total_protein": number (grams)
 - "total_carbs": number (grams)
@@ -81,13 +127,15 @@ Each meal object has keys:
 - "prep_time_min": number
 - "estimated_cost_inr": number (realistic Indian prices: dal rice ~₹30-40, paratha ~₹15-20, chicken curry ~₹80-100, eggs ~₹10 each)
 
-Each food item object has keys:
-- "food": string (common Indian name, e.g. "Masoor dal" not "Red lentil soup")
-- "quantity_g": number
-- "calories": number
-- "protein": number (grams)
-- "carbs": number (grams)
-- "fat": number (grams)
+Each food item object has keys ONLY:
+- "food_id": integer — MUST be one of the food_id values from available_foods / food_dataset_sample
+- "units": number — serving-unit count (e.g. 1, 1.5, 2), NOT grams
+
+Do NOT invent food names. Do NOT output quantity_g, calories, protein, carbs, or fat —
+the system calculates those from food_id + units using the catalog.
+HARD UNIT LIMIT: units MUST be between 0.5 and 2.0 inclusive (never above 2).
+To hit calorie targets, add more distinct foods from available_foods — do NOT inflate
+one food past 2 units. Each meal must include at least 2 and at most 5 distinct foods.
 
 CHEAT DAY RULES (when is_cheat_day is true):
 - Cheat day meals MUST include genuinely fun, indulgent foods that people actually crave.
@@ -133,7 +181,8 @@ CALORIE DISTRIBUTION for {meals_per_day} meals:
 Apply this distribution — do NOT give snacks the same calories as main meals.
 
 Use the meal_type values: "Breakfast", "Mid-Morning Snack", "Lunch", "Afternoon Snack", "Post_Workout", "Evening Snack", "Dinner", "Snack", "Pre_Workout"
-Each meal MUST have 2-4 food items (not just 1 item).
+Each meal MUST include at least 2 and at most 5 distinct foods from available_foods
+(e.g. a staple + a protein/veg + optionally a side or beverage) — never a single item.
 
 The user message includes a "meal_slots" array that defines EXACTLY which meals to generate and their character.
 Generate meals in the exact order and meal_type values listed in meal_slots.
@@ -213,12 +262,12 @@ STRICT CALORIE AND MACRO RULES — NON-NEGOTIABLE:
     Dinner:            22-25%
   The percentages must sum to target_kcal +/- 5%. Adjust quantities,
   not meal types, to hit the split.
-- For each food item, calculate calories as:
-    (quantity_g / 100) x calories_per_100g
-  Use realistic calorie densities. Do NOT estimate loosely.
-- Before finalizing a day, mentally sum all meal calories. If the sum
-  exceeds target_kcal by more than 5%, reduce the highest-calorie item
-  in the largest meal. Never add extra items to compensate.
+- For each food item, choose units so that
+    units × kcal_per_unit (from available_foods) sums near the meal calorie target.
+  Do NOT invent calories or grams yourself.
+- Before finalizing a day, mentally sum meal calories from the catalog per-unit values.
+  If the sum exceeds target_kcal by more than 5%, reduce units on the highest-calorie
+  item in the largest meal. Never invent foods outside available_foods.
 
 STRICT DIVERSITY RULES:
 - No breakfast dish may repeat within the same week (7 days).
@@ -234,8 +283,10 @@ STRICT DIVERSITY RULES:
     rice -> roti -> rice -> roti (lunch/dinner alternating)
 - You MUST track what you have already generated in prior days of this
   chunk and explicitly avoid repeating main dishes.
-- The food_dataset_sample is a grounding reference only. Do NOT generate
-  the same items from it day after day. Use it to verify calorie density, not to pick meals.
+- available_foods / food_dataset_sample is the ONLY allowed food list.
+  Every food_id you output MUST appear in that list. Never invent, rename, or
+  substitute foods that are not listed — even if they seem more typical for the cuisine.
+  Use different foods across days for diversity, but stay inside the list.
 
 USER PROFILE (use all fields to personalize meals):
 - Goal: {goal} - if muscle_gain, maximize protein in every meal
@@ -258,6 +309,32 @@ The following dishes were used LAST WEEK. Do NOT repeat any of them this week, n
   Previous dinners: {previous_week_dinners}
 Treat this list as a strict exclusion list."""
 
+MEAL_BODY_TYPE_INSTRUCTION = """
+BODY COMPOSITION CONTEXT:
+Current physique: {current_body_type}
+Target physique: {goal_body_type}
+Problem areas: {problem_areas}
+
+Meal planning rules based on body type:
+- Overweight / obese current physique: keep meals high-volume, high-fibre, lower calorie-density.
+  Add at least one large vegetable serving per meal. Prioritise soups, salads, grilled proteins.
+- Skinny / skinny fat current physique: include calorie-dense foods (nuts, whole grains, legumes,
+  whole milk). Larger portion sizes. Avoid excessive salad-only meals.
+- Muscular / athletic target: ensure leucine-rich proteins at every meal.
+  Best sources (use only those matching the user's diet_type):
+  Non-veg: chicken breast, eggs, fish, Greek yogurt, paneer.
+  Vegetarian: paneer, eggs, Greek yogurt, dal, soy chunks, tofu.
+  Vegan: tofu, soy chunks, dal, edamame, peanut butter, tempeh.
+  Include a carb source pre-workout and protein source post-workout if meal timing is relevant.
+- "Belly fat" or "Love handles" in problem areas: avoid high-sugar snacks, include fibre at every meal,
+  add a probiotic food (curd/yogurt) daily.
+- "Flat glutes" or muscle-building problem areas: ensure protein >30g per main meal.
+- "Weak core / postpartum": include iron-rich foods (spinach, lentils), anti-inflammatory spices
+  (turmeric, ginger). Avoid excess sodium.
+- General: problem areas indicate body recomposition need — keep protein at the top of the priority
+  list regardless of calorie target.
+"""
+
 MEAL_SWAP_SYSTEM_PROMPT = """You are an expert Indian nutritionist. Replace one meal with a different option.
 Return ONLY a JSON object with key "meal" containing the replacement meal.
 
@@ -271,7 +348,8 @@ The replacement meal MUST:
 - Prefer dishes from regional food styles: {regional_food_styles}.
 - Include realistic estimated_cost_inr and prep_time_min.
 
-The meal object must have keys: meal_type, time, items (array of {{food, quantity_g, calories, protein, carbs, fat}}), total_calories, total_protein, total_carbs, total_fat, prep_time_min, estimated_cost_inr."""
+The meal object must have keys: meal_type, time, items (array of {{food_id, units}} only — food_id MUST be from available_foods), prep_time_min, estimated_cost_inr.
+Do NOT invent food names or output quantity_g/calories/macros — the system resolves those from the catalog."""
 
 
 MEAL_SLOTS_BY_COUNT: dict[int, list[str]] = {
@@ -546,35 +624,54 @@ def _plan_targets_dict(plan: MonthlyMealPlan, db: Session, user: User) -> dict[s
     }
 
 
-def _food_dataset_sample(db: Session, limit: int = 40) -> list[dict[str, Any]]:
-    try:
-        rows = (
-            db.execute(
-                text(
-                    """
-                    SELECT food_name, calories_per_100g, protein_g
-                    FROM food_items
-                    ORDER BY RANDOM()
-                    LIMIT :lim
-                    """
-                ),
-                {"lim": limit},
-            )
-            .mappings()
-            .all()
+def _food_dataset_sample(
+    db: Session,
+    *,
+    diet_type: str | None = None,
+    region: str | None = None,
+    exclude_food_ids: list[int] | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    """
+    Candidate pool for meal generation: seeded serving-unit foods only.
+    Hard filters: unit seeding, non-supplement, non-composite, region, diet.
+    Only category list broadens when thin — region/diet are never dropped.
+    """
+    pool = fetch_food_candidate_pool(
+        db,
+        diet_type=diet_type,
+        region=region,
+        exclude_food_ids=exclude_food_ids,
+        limit=limit,
+    )
+    if len(pool) < MIN_POOL_SIZE:
+        logger.warning(
+            "[MealPlanner] candidate pool still thin after progressive fallback: "
+            "size=%s diet=%s region=%s",
+            len(pool),
+            diet_type,
+            region,
         )
-        if rows:
-            return [
-                {
-                    "food": str(r["food_name"]),
-                    "cal_per_100g": float(r["calories_per_100g"] or 0),
-                    "protein_per_100g": float(r["protein_g"] or 0),
-                }
-                for r in rows
-            ]
-    except Exception:
-        pass
-    return BUDGET_FOODS
+    if pool:
+        return pool
+    # Last-resort hardcoded names if catalog units are not migrated yet.
+    return [
+        {
+            "food_id": -(i + 1),
+            "food_name": str(f["food"]),
+            "unit_label": "serving",
+            "unit_grams": 100.0,
+            "kcal_per_unit": float(f["cal_per_100g"]),
+            "protein_per_unit": float(f["protein_per_100g"]),
+            "carbs_per_unit": float(f.get("carbs_per_100g") or 0),
+            "fat_per_unit": float(f.get("fat_per_100g") or 0),
+            "is_vegetarian": True,
+            "is_vegan": False,
+            "region": "pan_indian",
+            "is_supplement": False,
+        }
+        for i, f in enumerate(BUDGET_FOODS)
+    ]
 
 
 def _meal_slots_for_count(meals_per_day: int) -> list[str]:
@@ -665,11 +762,7 @@ def _scale_meal_items(meal: dict[str, Any], factor: float) -> None:
     for item in meal.get("items") or []:
         if not isinstance(item, dict):
             continue
-        item["quantity_g"] = max(1, round(float(item.get("quantity_g") or 0) * factor))
-        item["calories"] = max(1, round(float(item.get("calories") or 0) * factor))
-        item["protein"] = round(float(item.get("protein") or 0) * factor, 1)
-        item["carbs"] = round(float(item.get("carbs") or 0) * factor, 1)
-        item["fat"] = round(float(item.get("fat") or 0) * factor, 1)
+        scale_item_units(item, factor)
     _recalc_meal_totals(meal)
 
 
@@ -758,11 +851,7 @@ def validate_and_scale_day(
                 item_cal = float(item.get("calories") or 0)
                 item_protein = float(item.get("protein") or 0)
                 if item_cal > 0 and (item_protein / item_cal) >= 0.05:
-                    item["quantity_g"] = max(1, round(float(item.get("quantity_g") or 0) * protein_factor))
-                    item["calories"] = max(1, round(float(item.get("calories") or 0) * protein_factor))
-                    item["protein"] = round(item_protein * protein_factor, 1)
-                    item["carbs"] = round(float(item.get("carbs") or 0) * protein_factor, 1)
-                    item["fat"] = round(float(item.get("fat") or 0) * protein_factor, 1)
+                    scale_item_units(item, protein_factor)
             _recalc_meal_totals(meal)
         _align_day_calories_to_target(meals, target_kcal=target_kcal, tolerance=0.03)
 
@@ -778,11 +867,7 @@ def validate_and_scale_day(
                 item_cal = float(item.get("calories") or 0)
                 item_carbs = float(item.get("carbs") or 0)
                 if item_cal > 0 and (item_carbs / item_cal) >= 0.08:
-                    item["quantity_g"] = max(1, round(float(item.get("quantity_g") or 0) * carb_factor))
-                    item["calories"] = max(1, round(float(item.get("calories") or 0) * carb_factor))
-                    item["protein"] = round(float(item.get("protein") or 0) * carb_factor, 1)
-                    item["carbs"] = round(item_carbs * carb_factor, 1)
-                    item["fat"] = round(float(item.get("fat") or 0) * carb_factor, 1)
+                    scale_item_units(item, carb_factor)
             _recalc_meal_totals(meal)
         _align_day_calories_to_target(meals, target_kcal=target_kcal, tolerance=0.03)
 
@@ -796,11 +881,7 @@ def validate_and_scale_day(
                 item_cal = float(item.get("calories") or 0)
                 item_fat = float(item.get("fat") or 0)
                 if item_cal > 0 and (item_fat / item_cal) >= 0.06:
-                    item["quantity_g"] = max(1, round(float(item.get("quantity_g") or 0) * fat_factor))
-                    item["calories"] = max(1, round(float(item.get("calories") or 0) * fat_factor))
-                    item["protein"] = round(float(item.get("protein") or 0) * fat_factor, 1)
-                    item["carbs"] = round(float(item.get("carbs") or 0) * fat_factor, 1)
-                    item["fat"] = round(item_fat * fat_factor, 1)
+                    scale_item_units(item, fat_factor)
             _recalc_meal_totals(meal)
         _align_day_calories_to_target(meals, target_kcal=target_kcal, tolerance=0.03)
 
@@ -968,10 +1049,16 @@ def _next_unique_fallback_item(
     return None
 
 
-def fix_day_meal_duplicates(day_data: dict[str, Any]) -> dict[str, Any]:
+def fix_day_meal_duplicates(
+    day_data: dict[str, Any],
+    *,
+    food_by_id: dict[int, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Remove duplicate food items across meals in the same day."""
     seen_foods: set[str] = set()
+    seen_ids: set[int] = set()
     day_num = int(day_data.get("day") or 1)
+    food_by_id = food_by_id or {}
 
     for meal in day_data.get("meals", []):
         if not isinstance(meal, dict):
@@ -982,21 +1069,35 @@ def fix_day_meal_duplicates(day_data: dict[str, Any]) -> dict[str, Any]:
             if not isinstance(item, dict):
                 continue
             food_name = str(item.get("food", "")).lower().strip()
-            if not food_name:
-                continue
-            if food_name not in seen_foods:
-                seen_foods.add(food_name)
+            food_id = item.get("food_id")
+            try:
+                fid = int(food_id) if food_id is not None else None
+            except (TypeError, ValueError):
+                fid = None
+            duplicate = (fid is not None and fid in seen_ids) or (food_name and food_name in seen_foods)
+            if not duplicate and (fid is not None or food_name):
+                if fid is not None:
+                    seen_ids.add(fid)
+                if food_name:
+                    seen_foods.add(food_name)
                 clean_items.append(item)
             else:
                 logger.warning(
                     "Duplicate food '%s' in %s on day %s — replacing",
-                    item.get("food"),
+                    item.get("food") or food_id,
                     meal_type,
                     day_data.get("day"),
                 )
-                replacement = _next_unique_fallback_item(meal_type, seen_foods, day_index=day_num)
+                replacement = None
+                if food_by_id:
+                    picks = pick_fallback_items(food_by_id, count=1, avoid_ids=seen_ids)
+                    replacement = picks[0] if picks else None
+                if replacement is None:
+                    replacement = _next_unique_fallback_item(meal_type, seen_foods, day_index=day_num)
                 if replacement:
-                    seen_foods.add(str(replacement["food"]).lower())
+                    if replacement.get("food_id") is not None:
+                        seen_ids.add(int(replacement["food_id"]))
+                    seen_foods.add(str(replacement.get("food") or "").lower())
                     clean_items.append(replacement)
 
         meal["items"] = clean_items
@@ -1011,12 +1112,18 @@ def fix_day_meal_duplicates(day_data: dict[str, Any]) -> dict[str, Any]:
     return day_data
 
 
-def ensure_complete_meal_slots(day_data: dict[str, Any], meals_per_day: int) -> dict[str, Any]:
+def ensure_complete_meal_slots(
+    day_data: dict[str, Any],
+    meals_per_day: int,
+    *,
+    food_by_id: dict[int, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Guarantee every required meal slot exists with at least one food item."""
     expected_slots = _meal_slots_for_count(meals_per_day)
     meals_raw = day_data.get("meals") or []
     by_type: dict[str, dict[str, Any]] = {}
     extras: list[dict[str, Any]] = []
+    food_by_id = food_by_id or {}
 
     for meal in meals_raw:
         if not isinstance(meal, dict):
@@ -1031,6 +1138,7 @@ def ensure_complete_meal_slots(day_data: dict[str, Any], meals_per_day: int) -> 
     day_num = int(day_data.get("day") or 1)
     completed: list[dict[str, Any]] = []
     global_seen: set[str] = set()
+    global_ids: set[int] = set()
 
     for slot in expected_slots:
         meal = by_type.get(slot)
@@ -1039,6 +1147,11 @@ def ensure_complete_meal_slots(day_data: dict[str, Any], meals_per_day: int) -> 
             for item in meal.get("items") or []:
                 if isinstance(item, dict):
                     global_seen.add(str(item.get("food", "")).lower().strip())
+                    if item.get("food_id") is not None:
+                        try:
+                            global_ids.add(int(item["food_id"]))
+                        except (TypeError, ValueError):
+                            pass
             continue
 
         if meal and not _meal_has_content(meal):
@@ -1049,11 +1162,17 @@ def ensure_complete_meal_slots(day_data: dict[str, Any], meals_per_day: int) -> 
             )
 
         items: list[dict[str, Any]] = []
-        for item in _fallback_items_for_meal_type(slot, day_index=day_num):
-            name = str(item.get("food", "")).lower().strip()
-            if name and name not in global_seen:
-                global_seen.add(name)
-                items.append(dict(item))
+        if food_by_id:
+            items = pick_fallback_items(food_by_id, count=2, avoid_ids=global_ids)
+            for item in items:
+                global_ids.add(int(item["food_id"]))
+                global_seen.add(str(item.get("food") or "").lower())
+        if not items:
+            for item in _fallback_items_for_meal_type(slot, day_index=day_num):
+                name = str(item.get("food", "")).lower().strip()
+                if name and name not in global_seen:
+                    global_seen.add(name)
+                    items.append(dict(item))
         if not items:
             single = _next_unique_fallback_item(slot, global_seen, day_index=day_num)
             if single:
@@ -1061,7 +1180,7 @@ def ensure_complete_meal_slots(day_data: dict[str, Any], meals_per_day: int) -> 
                 items.append(single)
 
         completed.append(
-            _build_meal_from_items(slot, MEAL_TIMES.get(slot, "1:00 PM"), items),
+            _build_meal_from_items(slot, (meal or {}).get("time") or MEAL_TIMES.get(slot, "1:00 PM"), items)
         )
 
     day_data["meals"] = completed
@@ -1131,6 +1250,13 @@ def _build_meal_system_prompt(
     )
 
     prompt = exclusion_prefix + base_prompt
+
+    if ctx.get("current_body_type") or ctx.get("problem_areas"):
+        prompt += "\n" + MEAL_BODY_TYPE_INSTRUCTION.format(
+            current_body_type=ctx.get("current_body_type") or "not specified",
+            goal_body_type=ctx.get("goal_body_type") or "not specified",
+            problem_areas=", ".join(ctx.get("problem_areas") or []) or "none",
+        )
 
     if chunk_index >= 1 or has_prior_context:
         prompt += MEAL_SYSTEM_PROMPT_CHUNK_FOLLOWUP.format(
@@ -1325,7 +1451,7 @@ def _gemini_meal_chunk(
     ai_feature: str = "meal_plan_generation",
     endpoint: str = "/api/meal-planner/generate",
 ) -> list[dict[str, Any]]:
-    if not settings.GEMINI_API_KEY:
+    if not has_gemini_key():
         raise RuntimeError("GEMINI_API_KEY missing")
     meals_per_day = int(user_message.get("meals_per_day") or 3)
     chunk_days = user_message.get("days")
@@ -1336,20 +1462,15 @@ def _gemini_meal_chunk(
         token_limit = 1500 if single_day else _meal_chunk_max_tokens(meals_per_day, chunk_size)
     temp = temperature if temperature is not None else (0.7 if single_day else 0.6)
     model = settings.GEMINI_MODEL or "gemini-2.0-flash"
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={settings.GEMINI_API_KEY}"
-    raw = post_json(
-        url,
-        headers={"Content-Type": "application/json"},
-        payload={
-            "contents": [{"role": "user", "parts": [{"text": system_prompt + "\n\n" + json.dumps(user_message)}]}],
-            "generationConfig": {
-                "temperature": temp,
-                "maxOutputTokens": token_limit,
-                "responseMimeType": "application/json",
-            },
+    request_payload = {
+        "contents": [{"role": "user", "parts": [{"text": system_prompt + "\n\n" + json.dumps(user_message)}]}],
+        "generationConfig": {
+            "temperature": temp,
+            "maxOutputTokens": token_limit,
+            "responseMimeType": "application/json",
         },
-        timeout=90,
-    )
+    }
+    raw, used_fallback_key = gemini_generate_content(model, request_payload, timeout=90)
     try:
         log_gemini_call(
             user_id=user_id,
@@ -1357,7 +1478,7 @@ def _gemini_meal_chunk(
             model=model,
             endpoint=endpoint,
             response_json=raw,
-            is_fallback=True,
+            is_fallback=used_fallback_key,
         )
     except Exception:
         pass
@@ -1371,8 +1492,10 @@ def _validate_parsed_chunk(
     days: list[int],
     scale_targets: dict[str, int],
     meals_per_day: int,
+    *,
+    food_by_id: dict[int, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]] | None:
-    validated = [_validate_meal_day(d, scale_targets=scale_targets) for d in raw_days]
+    validated = [_validate_meal_day(d, scale_targets=scale_targets, food_by_id=food_by_id) for d in raw_days]
     validated = [d for d in validated if d]
     if len(validated) < len(days):
         return None
@@ -1431,15 +1554,21 @@ def _validate_meal_day(
     day_obj: dict[str, Any],
     *,
     scale_targets: dict[str, int] | None = None,
+    food_by_id: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any] | None:
     if not isinstance(day_obj.get("day"), int):
         return None
     meals_raw = day_obj.get("meals")
     if not isinstance(meals_raw, list) or not meals_raw:
         return None
+    food_by_id = food_by_id or {}
+    if food_by_id:
+        for meal in meals_raw:
+            if isinstance(meal, dict):
+                resolve_meal_items(meal, food_by_id)
     meals_per_day = int(scale_targets.get("meals_per_day") or len(meals_raw)) if scale_targets else len(meals_raw)
-    day_obj = fix_day_meal_duplicates(day_obj)
-    day_obj = ensure_complete_meal_slots(day_obj, meals_per_day)
+    day_obj = fix_day_meal_duplicates(day_obj, food_by_id=food_by_id)
+    day_obj = ensure_complete_meal_slots(day_obj, meals_per_day, food_by_id=food_by_id)
     if scale_targets and not day_obj.get("is_cheat_day"):
         day_obj = validate_and_scale_day(
             day_obj,
@@ -1452,6 +1581,56 @@ def _validate_meal_day(
     meals = [_normalize_meal(m) for m in meals_raw if isinstance(m, dict)]
     if not meals:
         return None
+
+    # Sense-check: multi-item meals, unit cap, no single-food calorie dominance.
+    day_used: set[int] = set()
+    if food_by_id:
+        slot_fracs = _meal_slot_calorie_fractions(meals_per_day) if scale_targets else {}
+        day_kcal = int(scale_targets["target_kcal"]) if scale_targets else 0
+        for meal in meals:
+            clean = []
+            for item in meal.get("items") or []:
+                if not isinstance(item, dict):
+                    continue
+                try:
+                    fid = int(item.get("food_id"))
+                except (TypeError, ValueError):
+                    continue
+                if fid in food_by_id:
+                    # Re-cap units after scaling (scaling must never leave units > 2).
+                    item["units"] = min(float(item.get("units") or 1), MAX_UNITS_PER_FOOD)
+                    recompute_item_from_units(item)
+                    clean.append(item)
+            meal["items"] = clean
+            meal_type = str(meal.get("meal_type") or "")
+            meal_target = day_kcal * float(slot_fracs.get(meal_type, 1.0 / max(meals_per_day, 1))) if day_kcal else None
+            try:
+                enforce_meal_composition(
+                    meal,
+                    food_by_id,
+                    meal_kcal_target=meal_target,
+                    day_avoid_ids=day_used,
+                )
+            except MealCompositionError as exc:
+                logger.warning("[MealPlanner] day %s meal %s composition error: %s", day_obj.get("day"), meal_type, exc)
+                picks = pick_fallback_items(food_by_id, count=2, avoid_ids=day_used)
+                meal["items"] = picks
+            for item in meal.get("items") or []:
+                if isinstance(item, dict) and item.get("food_id") is not None:
+                    try:
+                        day_used.add(int(item["food_id"]))
+                    except (TypeError, ValueError):
+                        pass
+            ok, reason = meal_composition_ok(meal.get("items") or [])
+            if not ok:
+                logger.warning(
+                    "[MealPlanner] day %s meal %s still fails composition after repair: %s",
+                    day_obj.get("day"),
+                    meal_type,
+                    reason,
+                )
+            _recalc_meal_totals(meal)
+
     totals = _totals_from_meals_list(meals)
     return {
         "day": int(day_obj["day"]),
@@ -1622,6 +1801,9 @@ def _build_meal_ctx(db: Session, user: User) -> dict[str, Any]:
     assert protein_target is not None, "protein_target must be resolved before generation"
     meals_per_day = int(dietary.get("meals_per_day") or 3)
     assert meals_per_day >= 3, "meals_per_day must come from onboarding"
+    body_type_data = onboarding.get("body_type") or {}
+    if not isinstance(body_type_data, dict):
+        body_type_data = {}
     return {
         "target_kcal": int(target_kcal),
         "protein_target": int(protein_target),
@@ -1641,7 +1823,20 @@ def _build_meal_ctx(db: Session, user: User) -> dict[str, Any]:
         "activity_level": str(activity.get("level") or "moderately_active"),
         "workout_types": activity.get("workout_types") if isinstance(activity.get("workout_types"), list) else [],
         "water_target_l": float(nutrition["water_target_l"]),
-        "food_dataset_sample": _food_dataset_sample(db),
+        "food_dataset_sample": _food_dataset_sample(
+            db,
+            diet_type=str(dietary.get("diet_type") or "standard"),
+            region=resolve_catalog_region(
+                dietary.get("regional_food_styles") if isinstance(dietary.get("regional_food_styles"), list) else []
+            ),
+            limit=100,
+        ),
+        "catalog_region": resolve_catalog_region(
+            dietary.get("regional_food_styles") if isinstance(dietary.get("regional_food_styles"), list) else []
+        ),
+        "current_body_type": _body_label(body_type_data.get("current_body_id")),
+        "goal_body_type": _body_label(body_type_data.get("goal_body_id")),
+        "problem_areas": body_type_data.get("problem_areas", []),
     }
 
 
@@ -1839,6 +2034,11 @@ def _generate_chunk_days(
     meals_per_day = int(ctx["meals_per_day"])
     target_kcal = int(ctx["target_kcal"])
     protein_target = int(ctx["protein_target"])
+    food_pool = ctx.get("food_dataset_sample") or []
+    food_by_id = food_by_id_map(food_pool) if food_pool else {}
+    # Drop synthetic negative ids from emergency BUDGET_FOODS fallback for strict validation.
+    food_by_id = {fid: f for fid, f in food_by_id.items() if fid > 0}
+    available_foods = prompt_food_list(list(food_by_id.values()))
     user_msg: dict[str, Any] = {
         "days": days,
         "include_cheat_day": include_cheat,
@@ -1850,6 +2050,7 @@ def _generate_chunk_days(
         "meals_per_day": meals_per_day,
         "expected_meal_types": ctx["expected_meal_types"],
         "region": ctx["region"],
+        "catalog_region": ctx.get("catalog_region"),
         "diet_type": ctx["diet_type"],
         "regional_food_styles": ctx["regional_food_styles"],
         "allergies": ctx["allergies"],
@@ -1859,7 +2060,17 @@ def _generate_chunk_days(
         "activity_level": ctx["activity_level"],
         "workout_types": ctx["workout_types"],
         "water_target_l": ctx["water_target_l"],
-        "food_dataset_sample": ctx.get("food_dataset_sample", []),
+        "available_foods": available_foods,
+        "food_dataset_sample": available_foods,
+        "food_selection_rule": (
+            "Select ONLY food_id values from available_foods. "
+            "Each item must be {food_id, units}. Never invent foods or grams. "
+            "Never repeat a food_id across meals in the same day."
+        ),
+        "same_day_exclusion_rule": (
+            "Track food_ids used in earlier meals of the same day and do not reuse them. "
+            "Every meal must use distinct food_ids from other meals that day."
+        ),
         "meal_slots": get_meal_slots(meals_per_day),
         "rule": (
             "Generate meals in EXACTLY this order and slot sequence. "
@@ -1884,6 +2095,9 @@ def _generate_chunk_days(
         ),
         "exclude_foods": normalized_exclude_foods,
         "exclude_dishes_this_week": normalized_exclude_dishes,
+        "current_body_type": ctx.get("current_body_type", ""),
+        "goal_body_type": ctx.get("goal_body_type", ""),
+        "problem_areas": ctx.get("problem_areas", []),
     }
     if prev_breakfasts:
         user_msg["previous_week_breakfasts"] = prev_breakfasts
@@ -1942,7 +2156,7 @@ def _generate_chunk_days(
                     ai_feature=ai_feature,
                     endpoint=endpoint,
                 )
-                result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
+                result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day, food_by_id=food_by_id)
                 if result is not None:
                     if enable_post_validation:
                         fixed_result = list(result)
@@ -1995,7 +2209,7 @@ def _generate_chunk_days(
                     return result, "groq"
                 _, short_days = _days_have_correct_meal_count(
                     _align_chunk_days(
-                        [d for d in (_validate_meal_day(x, scale_targets=scale_targets) for x in raw_days) if d],
+                        [d for d in (_validate_meal_day(x, scale_targets=scale_targets, food_by_id=food_by_id) for x in raw_days) if d],
                         days,
                     )
                     if raw_days
@@ -2025,7 +2239,7 @@ def _generate_chunk_days(
                     ai_feature=ai_feature,
                     endpoint=endpoint,
                 )
-                result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
+                result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day, food_by_id=food_by_id)
                 if result is not None:
                     _log_meal_day_counts(result, meals_per_day)
                     return result, "groq"
@@ -2051,7 +2265,7 @@ def _generate_chunk_days(
                 ai_feature=ai_feature,
                 endpoint=endpoint,
             )
-            result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
+            result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day, food_by_id=food_by_id)
             if result is not None:
                 if enable_post_validation:
                     fixed_result = list(result)
@@ -2114,7 +2328,7 @@ def _generate_chunk_days(
                 ai_feature=ai_feature,
                 endpoint=endpoint,
             )
-            result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day)
+            result = _validate_parsed_chunk(raw_days, days, scale_targets, meals_per_day, food_by_id=food_by_id)
             if result is not None:
                 _log_meal_day_counts(result, meals_per_day)
                 return result, "gemini"
@@ -2145,7 +2359,7 @@ def _generate_chunk_days(
         )
     fallback: list[dict[str, Any]] = []
     for day_data in fallback_raw:
-        validated = _validate_meal_day(day_data, scale_targets=scale_targets)
+        validated = _validate_meal_day(day_data, scale_targets=scale_targets, food_by_id=food_by_id)
         fallback.append(validated if validated else day_data)
     _log_meal_day_counts(fallback, meals_per_day)
     return fallback, "fallback"
@@ -3296,6 +3510,13 @@ def swap_meal(
         regional_food_styles=", ".join(regional_food_styles) if regional_food_styles else "No preference / Pan-Indian",
         allergies=", ".join(allergies) if allergies else "none",
     ) + ai_language_instruction(user.preferred_language)
+    food_pool = _food_dataset_sample(
+        db,
+        diet_type=str(dietary.get("diet_type") or "standard"),
+        region=resolve_catalog_region(regional_food_styles),
+        limit=80,
+    )
+    food_by_id = {fid: f for fid, f in food_by_id_map(food_pool).items() if fid > 0}
     user_msg = {
         "original_meal": original,
         "reason": reason or "want_variety",
@@ -3307,6 +3528,8 @@ def swap_meal(
         "allergies": allergies,
         "budget_level": plan.budget_level,
         "other_meals_today": other_today,
+        "available_foods": prompt_food_list(list(food_by_id.values())),
+        "food_selection_rule": "Replacement items MUST use {food_id, units} from available_foods only.",
     }
 
     replacement: dict[str, Any] | None = None
@@ -3317,11 +3540,15 @@ def swap_meal(
         replacement = None
 
     if not replacement:
-        replacement = _get_fallback_swap(
-            meal_type,
-            int(original.get("total_calories") or 400),
-            int(original.get("total_protein") or 25),
-        )
+        picks = pick_fallback_items(food_by_id, count=2) if food_by_id else []
+        if picks:
+            replacement = _build_meal_from_items(meal_type, original.get("time") or "12:00 PM", picks)
+        else:
+            replacement = _get_fallback_swap(
+                meal_type,
+                int(original.get("total_calories") or 400),
+                int(original.get("total_protein") or 25),
+            )
     replacement["meal_type"] = meal_type
     replacement["time"] = replacement.get("time") or original.get("time") or "12:00 PM"
 
@@ -3332,7 +3559,10 @@ def swap_meal(
         else:
             new_meals.append(m)
 
-    validated = _validate_meal_day({"day": day, "is_cheat_day": entry.is_cheat_day, "meals": new_meals})
+    validated = _validate_meal_day(
+        {"day": day, "is_cheat_day": entry.is_cheat_day, "meals": new_meals},
+        food_by_id=food_by_id or None,
+    )
     if not validated:
         raise ValueError("Could not validate swapped meal")
 

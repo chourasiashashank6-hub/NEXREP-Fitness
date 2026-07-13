@@ -449,11 +449,6 @@ export default function MonthlyWorkoutPlannerScreen() {
       }
       applyPlan(created);
       await rescheduleWorkoutPlanNotifications(created).catch(() => undefined);
-      const refreshed = await fetchWorkoutPlanCurrent();
-      if (seq === loadSeqRef.current && refreshed) {
-        applyPlan(refreshed);
-        await rescheduleWorkoutPlanNotifications(refreshed).catch(() => undefined);
-      }
     } catch (e: unknown) {
       if (seq === loadSeqRef.current) {
         const msg =

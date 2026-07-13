@@ -4,6 +4,10 @@ export type FocusMuscle = "Chest" | "Back" | "Shoulders" | "Legs" | "Arms" | "Co
 
 export type MealFoodItem = {
   food: string;
+  food_id?: number;
+  units?: number;
+  unit_label?: string;
+  region?: string;
   quantity_g: number;
   calories: number;
   protein: number;

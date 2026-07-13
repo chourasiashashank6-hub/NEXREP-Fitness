@@ -56,6 +56,12 @@ export const DEFAULT_ONBOARDING_DATA: OnboardingData = {
     allergies: [],
     meals_per_day: 3,
   },
+  body_type: {
+    gender: "male",
+    current_body_id: "",
+    goal_body_id: "",
+    problem_areas: [],
+  },
   app_setup: {
     weigh_in_reminder_enabled: true,
     reminder_time: "7:00 AM",

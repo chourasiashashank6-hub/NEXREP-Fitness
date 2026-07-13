@@ -33,7 +33,7 @@ export default function Screen5BodyComp({ navigation }: any) {
       step={5}
       title={t("onboarding.screen5.title")}
       subtitle={t("onboarding.screen5.subtitle")}
-      onBack={() => navigation.goBack()}
+      onBack={() => navigation.navigate("Screen4Diet")}
       onNext={() => navigation.navigate("Screen6Setup")}
       onSaveExit={saveAndExit}
       saveLoading={saving}

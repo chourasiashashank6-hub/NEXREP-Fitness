@@ -15,8 +15,10 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCameraPermissions } from "expo-camera";
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
@@ -29,6 +31,7 @@ import {
   updateWorkout,
   type WorkoutHistoryItem,
 } from "../api/workout";
+import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { fetchOnboardingMe } from "../api/onboarding";
 import { deleteStrengthLift, logStrengthLift, updateStrengthLift } from "../api/strength";
 import { getProfile } from "../api/user";
@@ -36,6 +39,7 @@ import AllTimeHistoryModal from "../components/AllTimeHistoryModal";
 import { AppInput } from "../components/AppInput";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
 import MediaPipeGuidanceView from "../components/MediaPipeGuidanceView";
+import { SessionTypePickerModal } from "../components/SessionTypePickerModal";
 import type { GlobalExercise } from "../constants/GlobalExercisesData";
 import {
   EXERCISE_GUIDANCE,
@@ -43,8 +47,13 @@ import {
 } from "../constants/ExerciseGuidanceData";
 import { useLanguageStore } from "../i18n/languageStore";
 import type { MediaPipeGuidanceViewProps } from "../components/MediaPipeGuidanceView";
+import { useSubscriptionStore } from "../store/subscriptionStore";
+import { useAuthStore } from "../store/authStore";
+import type { WorkoutPlanCurrent } from "../types/planner";
 import { useAppTheme } from "../theme";
 import { formatDate } from "../utils/date";
+import { calcExerciseEstimateKcal } from "../utils/sessionCalories";
+import { navigationRef } from "../navigation/navigationRef";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -52,6 +61,8 @@ const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
 const PURPLE = "#534AB7";
 const PURPLE_LIGHT = "#F3F0FB";
+const PURPLE_BORDER = "#AFA9EC";
+const PURPLE_NUDGE = "#EEEDFE";
 const BG = "#F7F6F3";
 const WHITE = "#FFFFFF";
 const TEXT = "#1A1A18";
@@ -334,8 +345,14 @@ const EditModalInput = ({
 
 export const WorkoutScreen = () => {
   const { t } = useTranslation();
+  const navigation = useNavigation<any>();
   const language = useLanguageStore((s) => s.language);
   const { colors, radius } = useAppTheme();
+  const tier = useSubscriptionStore((s) => s.subscription?.tier);
+  const sessionUserId = useAuthStore((s) => s.sessionUserId);
+  const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
+  const [todayPlan, setTodayPlan] = useState<WorkoutPlanCurrent | null>(null);
+  const [userWeightKg, setUserWeightKg] = useState(70);
   const [catalog, setCatalog] = useState<WorkoutCatalogItem[]>([]);
   const [bodyPartOptions, setBodyPartOptions] = useState<string[]>([]);
   const [typeOptions, setTypeOptions] = useState<string[]>([]);
@@ -376,6 +393,7 @@ export const WorkoutScreen = () => {
   const [editTopSetReps, setEditTopSetReps] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [showSessionPicker, setShowSessionPicker] = useState(false);
   const [mediaPipeReady, setMediaPipeReady] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [estimateKcal, setEstimateKcal] = useState<number | null>(null);
@@ -545,6 +563,8 @@ export const WorkoutScreen = () => {
       setProfileGoalTag(resolvedGoalTag);
       setProfileDifficulty(resolvedDifficulty);
       setIsStrengthGoal(nextIsStrengthGoal);
+      const w = Number((profileData as any).weight ?? (profileData as any).weight_kg ?? 70);
+      if (Number.isFinite(w) && w > 0) setUserWeightKg(w);
       if (!nextIsStrengthGoal) {
         setTopSetWeightKg("");
         setTopSetReps("");
@@ -582,11 +602,24 @@ export const WorkoutScreen = () => {
     loadInitial();
   }, [language]);
 
+  useEffect(() => {
+    if (sessionUserId) void fetchSubscription(String(sessionUserId));
+  }, [sessionUserId, fetchSubscription]);
+
+  useEffect(() => {
+    fetchWorkoutPlanCurrent()
+      .then((plan) => setTodayPlan(plan))
+      .catch(() => setTodayPlan(null));
+  }, [language]);
+
   useFocusEffect(
     useCallback(() => {
       // Always show planner form when user returns to this tab.
       setShowHistory(false);
       loadInitial({ preservePlannerState: true });
+      fetchWorkoutPlanCurrent()
+        .then((plan) => setTodayPlan(plan))
+        .catch(() => setTodayPlan(null));
     }, [needsGoalTagInput, needsDifficultyInput, language]),
   );
 
@@ -1218,17 +1251,118 @@ export const WorkoutScreen = () => {
           <View style={styles.greetingLeft}>
             <Text style={styles.greetingTitle}>{t("workoutLog.title")}</Text>
           </View>
-          {canOpenCamera ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("workoutLog.openCamera")}
-              style={styles.headerCameraBtn}
-              onPress={() => void openCameraTracker()}
-            >
-              <Text style={styles.headerCameraEmoji}>📷</Text>
-            </Pressable>
-          ) : null}
         </View>
+
+        {/* Active session banner — Elite gated; manual log below unchanged */}
+        {(() => {
+          const isElite = tier === "ELITE";
+          const today = todayPlan?.today ?? null;
+          const hasActivePlan = Boolean(todayPlan && today && !today.is_rest_day);
+          const totalEstKcal = hasActivePlan
+            ? today!.exercises.reduce(
+                (sum, ex) => sum + calcExerciseEstimateKcal(ex.name, ex.sets, userWeightKg),
+                0,
+              )
+            : 0;
+
+          if (!isElite) {
+            return (
+              <View style={{ marginBottom: 14 }}>
+                <View style={[styles.sessionBanner, styles.sessionBannerLocked]}>
+                  <View style={styles.eliteLockPill}>
+                    <Text style={styles.eliteLockTxt}>🔒  Elite only</Text>
+                  </View>
+                  <Text style={styles.sessionBannerEyebrow}>TODAY'S PLAN</Text>
+                  <Text style={styles.sessionBannerTitle}>Guided workout session</Text>
+                  <Text style={styles.sessionBannerMeta}>Auto-advance · calories · streak lock-in</Text>
+                </View>
+                <View style={styles.upgradeNudge}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.upgradeTitle}>Unlock guided sessions</Text>
+                    <Text style={styles.upgradeSub}>Auto-advance · calorie tracking · streak lock-in</Text>
+                  </View>
+                  <Pressable
+                    style={styles.upgradeBtn}
+                    onPress={() => navigation.getParent()?.navigate("Profile", { screen: "Subscription" })}
+                  >
+                    <Text style={styles.upgradeBtnTxt}>Upgrade →</Text>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          }
+
+          if (hasActivePlan) {
+            return (
+              <View style={{ marginBottom: 14 }}>
+                <View style={styles.sessionBanner}>
+                  <View style={styles.sessionBannerTop}>
+                    <Text style={styles.sessionBannerEyebrow}>TODAY'S PLAN</Text>
+                    <Text style={styles.sessionPlay}>▶</Text>
+                  </View>
+                  <Text style={styles.sessionBannerTitle}>{today!.split_name}</Text>
+                  <Text style={styles.sessionBannerMeta}>
+                    {today!.exercises.length} exercises · ~{today!.estimated_duration_min} min · ~{totalEstKcal}{" "}
+                    kcal
+                  </Text>
+                  <Pressable
+                    style={styles.startSessionBtn}
+                    onPress={() => setShowSessionPicker(true)}
+                  >
+                    <Text style={styles.startSessionBtnTxt}>Start active session</Text>
+                  </Pressable>
+                </View>
+                <SessionTypePickerModal
+                  visible={showSessionPicker}
+                  dayTitle={today!.split_name}
+                  onDismiss={() => setShowSessionPicker(false)}
+                  onChoose={(type) => {
+                    setShowSessionPicker(false);
+                    const screen =
+                      type === "ai_camera" ? "AICameraWorkoutSession" : "ActiveWorkoutSession";
+                    navigationRef.navigate(screen as never, {
+                      planId: todayPlan!.plan_id,
+                    } as never);
+                  }}
+                />
+                <Text style={styles.orManual}>————————  or log manually  ————————</Text>
+              </View>
+            );
+          }
+
+          const isRest = Boolean(today?.is_rest_day);
+          const noPlanYet = todayPlan === null;
+          return (
+            <View style={{ marginBottom: 14 }}>
+              <View style={[styles.sessionBanner, styles.sessionBannerMuted]}>
+                <Text style={[styles.sessionBannerEyebrow, { color: MUTED }]}>TODAY'S PLAN</Text>
+                <Text style={styles.sessionBannerTitleMuted}>
+                  {isRest
+                    ? "Today is a rest day 🛌"
+                    : noPlanYet
+                      ? "No plan generated yet"
+                      : "No workout scheduled for today"}
+                </Text>
+                {isRest && today?.message ? (
+                  <Text style={[styles.sessionBannerMeta, { color: MUTED }]}>{today.message}</Text>
+                ) : null}
+                {!isRest ? (
+                  <Pressable
+                    style={[styles.startSessionBtn, { backgroundColor: GREEN }]}
+                    onPress={() =>
+                      navigation.getParent()?.navigate("Coach", {
+                        screen: "MonthlyWorkoutPlanner",
+                      })
+                    }
+                  >
+                    <Text style={[styles.startSessionBtnTxt, { color: "#fff" }]}>Generate plan</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              <Text style={styles.orManual}>————————  or log manually  ————————</Text>
+            </View>
+          );
+        })()}
 
         {todaySessionCount > 0 ? (
           <View style={styles.milestoneCard}>
@@ -1620,10 +1754,22 @@ export const WorkoutScreen = () => {
         ) : null}
         {estimateError ? <Text style={styles.inlineError}>{estimateError}</Text> : null}
 
-        <Pressable style={styles.logBtn} onPress={submit}>
-          <Text style={styles.logBtnTitle}>{t("workoutLog.logWorkout")}</Text>
-          <Text style={styles.logBtnSub}>{t("workoutLog.logWorkoutSub")}</Text>
-        </Pressable>
+        <View style={styles.logActionRow}>
+          {canOpenCamera ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("workoutLog.openCamera")}
+              style={styles.logCameraBtn}
+              onPress={() => void openCameraTracker()}
+            >
+              <Ionicons name="camera-outline" size={22} color={GREEN} />
+            </Pressable>
+          ) : null}
+          <Pressable style={styles.logBtn} onPress={submit}>
+            <Text style={styles.logBtnTitle}>{t("workoutLog.logWorkout")}</Text>
+            <Text style={styles.logBtnSub}>{t("workoutLog.logWorkoutSub")}</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.bgCard}>
           <View style={styles.historyHeader}>
@@ -1666,6 +1812,11 @@ export const WorkoutScreen = () => {
                       <Text style={styles.historySessionLine} numberOfLines={2}>
                         {sessionHistoryLabel(item)}
                       </Text>
+                      {String(item.notes || "").startsWith("active_session_partial") ? (
+                        <View style={styles.partialBadge}>
+                          <Text style={styles.partialBadgeText}>Partial</Text>
+                        </View>
+                      ) : null}
                       {item.strengthLift?.is_new_pr ? (
                         <View style={styles.newPrBadge}>
                           <Text style={styles.newPrBadgeText}>{t("workoutLog.newPr")}</Text>
@@ -1918,17 +2069,22 @@ const styles = StyleSheet.create({
   },
   greetingLeft: { flex: 1, paddingRight: 12 },
   greetingTitle: { fontSize: 25, fontWeight: "800", color: TEXT },
-  headerCameraBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: BG,
+  logActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  logCameraBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: GREEN,
+    backgroundColor: WHITE,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerCameraEmoji: { fontSize: 18 },
   kpiRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
   kpiPill: {
     flex: 1,
@@ -1965,6 +2121,68 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   burnFill: { height: 7, borderRadius: 100, backgroundColor: ORANGE },
+  sessionBanner: {
+    backgroundColor: GREEN,
+    borderRadius: 16,
+    padding: 16,
+  },
+  sessionBannerMuted: { backgroundColor: "#E5E7EB" },
+  sessionBannerLocked: { opacity: 0.35, pointerEvents: "none" as const },
+  sessionBannerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  sessionBannerEyebrow: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  sessionPlay: { color: "#fff", fontSize: 14 },
+  sessionBannerTitle: { color: "#fff", fontSize: 18, fontWeight: "800", marginBottom: 4 },
+  sessionBannerTitleMuted: { color: TEXT, fontSize: 16, fontWeight: "800", marginBottom: 4 },
+  sessionBannerMeta: { color: "rgba(255,255,255,0.85)", fontSize: 13, marginBottom: 12 },
+  startSessionBtn: {
+    backgroundColor: "#fff",
+    borderRadius: 999,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  startSessionBtnTxt: { color: GREEN, fontWeight: "800", fontSize: 14 },
+  orManual: {
+    textAlign: "center",
+    color: MUTED,
+    fontSize: 11,
+    marginTop: 10,
+    fontWeight: "600",
+  },
+  eliteLockPill: {
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 10,
+  },
+  eliteLockTxt: { color: "#fff", fontWeight: "800", fontSize: 12 },
+  upgradeNudge: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: PURPLE_BORDER,
+    backgroundColor: PURPLE_NUDGE,
+    borderRadius: 14,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  upgradeTitle: { color: PURPLE, fontWeight: "800", fontSize: 14 },
+  upgradeSub: { color: MUTED, fontSize: 11, marginTop: 2 },
+  upgradeBtn: {
+    backgroundColor: PURPLE,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  upgradeBtnTxt: { color: "#fff", fontWeight: "800", fontSize: 12 },
   milestoneCard: {
     backgroundColor: BG,
     borderRadius: 16,
@@ -2265,12 +2483,14 @@ const styles = StyleSheet.create({
   },
   estimatePillText: { fontSize: 12, fontWeight: "700", color: GREEN },
   logBtn: {
+    flex: 1,
+    height: 56,
     backgroundColor: GREEN,
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: 0,
     paddingHorizontal: 16,
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
   },
   logBtnTitle: { fontSize: 15, fontWeight: "700", color: WHITE },
   logBtnSub: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 4 },
@@ -2322,6 +2542,14 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   newPrBadgeText: { fontSize: 10, fontWeight: "900", color: "#9A5A00" },
+  partialBadge: {
+    backgroundColor: "#E5E7EB",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    flexShrink: 0,
+  },
+  partialBadgeText: { fontSize: 10, fontWeight: "800", color: "#6B7280" },
   historyActions: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 8, marginLeft: 6, flexShrink: 0 },
   editLogBtn: {
     minWidth: 52,

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from src.core.config import settings
 from src.core.http_client import post_json
 from src.services.ai_logger import log_gemini_call, log_groq_call
+from src.services.gemini_client import gemini_generate_content, has_gemini_key
 from src.services.language_service import ai_language_instruction
 from src.models.meal_plan import DailyWorkoutPlanEntry, MonthlyWorkoutPlan
 from src.models.models import User, UserOnboarding, Workout
@@ -45,6 +46,35 @@ from src.services.planner_test_users import (
 
 MONTHLY_WORKOUT_DAY_REGEN_LIMIT = 2
 MONTHLY_WORKOUT_MONTH_PLAN_REGEN_LIMIT = 2
+
+# Human-readable labels for body type IDs stored in onboarding_json.body_type
+# Keys match current_body_id and goal_body_id values from the mobile app
+BODY_TYPE_LABELS: dict[str, str] = {
+    # Current body types (male + female share sk, sf, av, ow, ob)
+    "sk": "Skinny",
+    "sf": "Skinny fat",
+    "av": "Average",
+    "ow": "Overweight",
+    "ob": "Obese",
+    "mu": "Muscular",        # male current
+    "cv": "Curvy",           # female current only
+    # Goal body types (male)
+    "ln": "Lean & cut",
+    "at": "Athletic",
+    "bk": "Bulk & strong",
+    # Goal body types (female)
+    "to": "Toned",
+    "sc": "Strong & curvy",
+    # "at" and "ln" shared between male/female goals — already covered above
+}
+
+
+def _body_label(body_id: str | None) -> str:
+    """Convert a short body type ID to a human-readable label for AI prompts."""
+    if not body_id:
+        return "not specified"
+    return BODY_TYPE_LABELS.get(str(body_id).lower().strip(), str(body_id))
+
 
 WORKOUT_SYSTEM_PROMPT = """You are an expert strength and conditioning coach.
 Generate a 7-day workout plan as a JSON array of 7 objects.
@@ -100,6 +130,29 @@ Difficulty adjustments:
 Activity level adjustments:
 - sedentary/lightly_active: keep volume conservative even if workouts_per_week is high
 - very_active/extremely_active: higher volume per session is appropriate
+"""
+
+WORKOUT_BODY_TYPE_INSTRUCTION = """
+BODY TYPE & PROBLEM AREA TARGETING:
+Current physique: {current_body_type}
+Target physique: {goal_body_type}
+Problem areas to address: {problem_areas}
+
+Rules:
+- Include at least 1-2 exercises per session that directly target the listed problem areas.
+- "Chest fat / man boobs" → include incline press, cable flyes or push-up variation every upper/push day.
+- "Belly fat" or "Love handles" → add core compound (plank, dead bug, cable woodchop) to EVERY training day.
+- "Skinny arms" → add direct bicep + tricep isolation every upper body day.
+- "Chicken legs" → add squat or lunge variation + leg press every leg day.
+- "Back fat" → add rowing movement (cable row, DB row, face pull) every pull/upper day.
+- "Rounded shoulders" → replace one pressing exercise with face pulls or band pull-aparts.
+- "Flat glutes" → include hip thrust or RDL every leg day.
+- "Arm flab (bat wings)" → add tricep pushdown or overhead extension every upper day.
+- "Inner thigh fat" → add sumo squat or adductor machine every leg day.
+- "Belly pooch" or "Weak core / postpartum" → add pelvic-floor-safe core (bird dog, dead bug, glute bridge) daily.
+- "Bra / back fat" → add lat pulldown or seated row every upper day.
+- If current physique is obese or overweight: prioritise compound movements and cardio notes.
+- If target physique is muscular or bulk: prioritise progressive overload cues in the note field.
 """
 
 PUSH_EXERCISES = [
@@ -263,6 +316,12 @@ def _build_workout_system_prompt(ctx: dict[str, Any], *, continue_from_split: bo
     prompt += _workout_focus_instruction(ctx.get("focus_muscles") or [])
     if continue_from_split:
         prompt += WORKOUT_REGEN_PROMPT_SUFFIX
+    if ctx.get("current_body_type") or ctx.get("problem_areas"):
+        prompt += "\n" + WORKOUT_BODY_TYPE_INSTRUCTION.format(
+            current_body_type=ctx.get("current_body_type") or "not specified",
+            goal_body_type=ctx.get("goal_body_type") or "not specified",
+            problem_areas=", ".join(ctx.get("problem_areas") or []) or "none",
+        )
     return prompt + ai_language_instruction(ctx.get("preferred_language"))
 
 
@@ -381,24 +440,19 @@ def _gemini_workout_chunk(
     user_id: int | None = None,
     endpoint: str = "/api/workout-planner/generate",
 ) -> list[dict[str, Any]]:
-    if not settings.GEMINI_API_KEY:
+    if not has_gemini_key():
         raise RuntimeError("GEMINI_API_KEY missing")
     prompt = system_prompt or WORKOUT_SYSTEM_PROMPT
     model = settings.GEMINI_MODEL or "gemini-2.0-flash"
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={settings.GEMINI_API_KEY}"
-    raw = post_json(
-        url,
-        headers={"Content-Type": "application/json"},
-        payload={
-            "contents": [{"role": "user", "parts": [{"text": prompt + "\n\n" + json.dumps(user_message)}]}],
-            "generationConfig": {
-                "temperature": 0.5,
-                "maxOutputTokens": _workout_chunk_max_tokens(int(user_message.get("exercises_per_session") or 5)),
-                "responseMimeType": "application/json",
-            },
+    request_payload = {
+        "contents": [{"role": "user", "parts": [{"text": prompt + "\n\n" + json.dumps(user_message)}]}],
+        "generationConfig": {
+            "temperature": 0.5,
+            "maxOutputTokens": _workout_chunk_max_tokens(int(user_message.get("exercises_per_session") or 5)),
+            "responseMimeType": "application/json",
         },
-        timeout=90,
-    )
+    }
+    raw, used_fallback_key = gemini_generate_content(model, request_payload, timeout=90)
     try:
         log_gemini_call(
             user_id=user_id,
@@ -406,7 +460,7 @@ def _gemini_workout_chunk(
             model=model,
             endpoint=endpoint,
             response_json=raw,
-            is_fallback=True,
+            is_fallback=used_fallback_key,
         )
     except Exception:
         pass
@@ -676,6 +730,10 @@ def _build_workout_ctx(
     workouts_per_week = int(activity.get("workouts_per_week") or 4)
     exercises_per_session = get_exercises_per_session(difficulty, activity_level, workouts_per_week)
 
+    body_type_data = onboarding.get("body_type") or {}
+    if not isinstance(body_type_data, dict):
+        body_type_data = {}
+
     return {
         "workouts_per_week": workouts_per_week,
         "exercises_per_session": exercises_per_session,
@@ -687,6 +745,9 @@ def _build_workout_ctx(
         "workout_types": activity.get("workout_types") if isinstance(activity.get("workout_types"), list) else ["strength"],
         "preferred_language": user.preferred_language,
         "user_weight_kg": float(personal.get("weight_kg") or user.weight or 70),
+        "current_body_type": _body_label(body_type_data.get("current_body_id")),
+        "goal_body_type": _body_label(body_type_data.get("goal_body_id")),
+        "problem_areas": body_type_data.get("problem_areas", []),
     }
 
 
@@ -711,6 +772,9 @@ def _generate_workout_chunk(
         "workout_types": ctx["workout_types"],
         "user_weight_kg": ctx["user_weight_kg"],
         "week_number": week_number,
+        "current_body_type": ctx.get("current_body_type", ""),
+        "goal_body_type": ctx.get("goal_body_type", ""),
+        "problem_areas": ctx.get("problem_areas", []),
     }
     if continue_from_split:
         user_msg["continue_from_split"] = continue_from_split

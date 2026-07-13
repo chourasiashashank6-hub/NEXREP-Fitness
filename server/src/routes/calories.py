@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 import json
-from urllib.parse import urlencode
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -29,6 +28,7 @@ from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.services.food_image_utils import prepare_food_image_for_vision
 from src.services.language_service import normalize_language_tag
 from src.services.ai_logger import log_gemini_call, log_groq_call
+from src.services.gemini_client import gemini_generate_content_models, has_gemini_key
 from src.services.activity_feed_service import emit_streak_milestone_if_needed
 from src.utils.auth import get_current_user
 
@@ -195,6 +195,12 @@ CALORIE_COACH_SYSTEM_PROMPT = (
     '   - "category": string, one of "gut", "protein", "digestion", "timing", "fat"\n'
     "   Tips must be specific to the user's logged intake and targets, not generic wellness advice.\n\n"
     "Rules:\n"
+    "- DIETARY COMPLIANCE IS MANDATORY: Read diet_type and allergies from the DATA object. "
+    "If diet_type is 'vegetarian', every single food item across insight, mealPlan items, "
+    "dietTips, and alerts MUST be vegetarian. No exceptions. "
+    "If diet_type is 'vegan', exclude all animal products. "
+    "Never suggest any food listed in allergies. "
+    "If regional_food_styles is set, prefer those cuisines in all suggestions.\n"
     "- Suggest only foods from the provided food_dataset_reference with approximate quantities.\n"
     '- No markdown, no bullets, no headings. Do not use emojis except in dietTips[].emoji.\n'
     "- All numbers must be realistic integers, not strings.\n"
@@ -230,18 +236,50 @@ def _user_coach_profile(db: Session, user: User) -> dict[str, Any]:
     weight = float(user.weight or 70)
     goal = "maintain"
     activity = "moderate"
+    diet_type = "none"
+    allergies: list[str] = []
+    regional_food_styles: list[str] = []
+
     ob = db.query(UserOnboarding).filter(UserOnboarding.user_id == user.id).first()
     if ob and isinstance(ob.onboarding_json, dict):
         oj = ob.onboarding_json
+
         g = oj.get("goal")
         if isinstance(g, dict):
             goal = str(g.get("primary") or g.get("type") or goal).lower().replace(" ", "_")
+
         act = oj.get("activity")
         if isinstance(act, dict):
             activity = str(act.get("level") or activity).lower().replace(" ", "_")
+
+        dietary = oj.get("dietary")
+        if isinstance(dietary, dict):
+            raw_diet = dietary.get("diet_type") or dietary.get("dietType") or "none"
+            diet_type = str(raw_diet).lower().strip()
+
+            raw_allergies = dietary.get("allergies") or dietary.get("food_allergies") or []
+            if isinstance(raw_allergies, list):
+                allergies = [str(a).lower().strip() for a in raw_allergies if a]
+
+            raw_styles = (
+                dietary.get("regional_food_styles")
+                or dietary.get("regionalFoodStyles")
+                or []
+            )
+            if isinstance(raw_styles, list):
+                regional_food_styles = [str(s).strip() for s in raw_styles if s]
+
     elif user.goal_tag:
         goal = str(user.goal_tag).lower().replace(" ", "_")
-    return {"user_weight_kg": round(weight, 1), "goal": goal, "activity_level": activity}
+
+    return {
+        "user_weight_kg": round(weight, 1),
+        "goal": goal,
+        "activity_level": activity,
+        "diet_type": diet_type,
+        "allergies": allergies,
+        "regional_food_styles": regional_food_styles,
+    }
 
 
 def _coach_macro_targets(log: dict[str, Any], profile_weight: float) -> dict[str, int]:
@@ -288,12 +326,21 @@ def _build_coach_user_msg(db: Session, user: User, day_payload: dict[str, Any]) 
 
     dataset_rows: list[dict[str, Any]] = []
     try:
+        diet_type = profile.get("diet_type", "none").lower().strip()
+        if diet_type == "vegan":
+            diet_where = "WHERE is_vegan = TRUE"
+        elif diet_type == "vegetarian":
+            diet_where = "WHERE is_vegetarian = TRUE"
+        else:
+            diet_where = ""
+
         refs = (
             db.execute(
                 text(
-                    """
+                    f"""
                     SELECT food_name, calories_per_100g, protein_g, carbs_g, fat_g
                     FROM food_items
+                    {diet_where}
                     ORDER BY food_id ASC
                     LIMIT 60
                     """
@@ -358,9 +405,25 @@ def _build_coach_user_msg(db: Session, user: User, day_payload: dict[str, Any]) 
         "user_weight_kg": profile["user_weight_kg"],
         "activity_level": profile["activity_level"],
         "goal": profile["goal"],
+        "diet_type": profile.get("diet_type", "none"),
+        "allergies": profile.get("allergies", []),
+        "regional_food_styles": profile.get("regional_food_styles", []),
         "food_dataset_reference": dataset_rows,
         "meals_eaten_today": meals_eaten,
         "rules": [
+            f"CRITICAL: User's diet_type is '{profile.get('diet_type', 'none')}'. "
+            "You MUST strictly follow this. "
+            "If diet_type is 'vegetarian': NEVER suggest meat, poultry, seafood, fish, "
+            "or any non-vegetarian ingredient in ANY field (insight, mealPlan, dietTips, alerts). "
+            "If diet_type is 'vegan': NEVER suggest any animal product including dairy or eggs. "
+            "If diet_type is 'keto': keep carbs under 30g total across mealPlan. "
+            "If diet_type is 'paleo': exclude grains, legumes, dairy, and processed foods.",
+            f"ALLERGIES: User is allergic to or intolerant of: "
+            f"{', '.join(profile.get('allergies', [])) or 'none'}. "
+            "NEVER suggest any food containing these allergens in any form.",
+            f"REGIONAL PREFERENCE: User prefers "
+            f"{', '.join(profile.get('regional_food_styles', [])) or 'Indian'} cuisine. "
+            "Prioritise dishes and ingredients from this cuisine style when filling macro gaps.",
             "If remaining_calories <= 0 suggest stopping intake or very light options.",
             "If no meals logged, suggest a full-day plan.",
             "Use approximate quantities.",
@@ -789,7 +852,7 @@ def _gemini_food_image_analysis(
     user_id: int | None = None,
     is_fallback: bool = False,
 ) -> dict[str, Any]:
-    if not settings.GEMINI_API_KEY:
+    if not has_gemini_key():
         raise RuntimeError("GEMINI_API_KEY missing on server")
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
     model_candidates = [
@@ -797,58 +860,41 @@ def _gemini_food_image_analysis(
         "gemini-1.5-flash-latest",
         "gemini-2.0-flash",
     ]
-    last_err: str | None = None
-    payload: dict[str, Any] | None = None
-    for model_name in model_candidates:
-        url = (
-            f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?"
-            + urlencode({"key": settings.GEMINI_API_KEY})
-        )
-        try:
-            payload = post_json(
-                url,
-                headers={"Content-Type": "application/json"},
-                payload={
-                    "contents": [
-                        {
-                            "parts": [
-                                {
-                                    "text": (
-                                        "Analyze this meal photo strictly. "
-                                        "Do NOT miss any visible food item. "
-                                        "You must include all detectable components (main dish, side items, toppings, sauces, oils, drinks if visible) "
-                                        "and compute combined totals for the entire image. "
-                                        "Return ONLY valid JSON with keys: "
-                                        "foodName, estimatedServingSize, calories, protein, carbs, fats, fibre, confidence. "
-                                        "foodName should summarize all detected items in one meal name. "
-                                        "estimatedServingSize must describe total serving for all items combined. "
-                                        "calories/protein/carbs/fats/fibre must be TOTALS for the full image. "
-                                        "confidence must be one of low|medium|high. "
-                                        'If no food is visible, return {"error":"No food detected"}. '
-                                        "No markdown, no extra text."
-                                    )
-                                },
-                                {"inline_data": {"mime_type": image_mime, "data": base64}},
-                            ]
-                        }
-                    ],
-                    "generationConfig": {
-                        "temperature": 0.1,
-                        "responseMimeType": "application/json",
-                        "maxOutputTokens": 400,
+    request_payload = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": (
+                            "Analyze this meal photo strictly. "
+                            "Do NOT miss any visible food item. "
+                            "You must include all detectable components (main dish, side items, toppings, sauces, oils, drinks if visible) "
+                            "and compute combined totals for the entire image. "
+                            "Return ONLY valid JSON with keys: "
+                            "foodName, estimatedServingSize, calories, protein, carbs, fats, fibre, confidence. "
+                            "foodName should summarize all detected items in one meal name. "
+                            "estimatedServingSize must describe total serving for all items combined. "
+                            "calories/protein/carbs/fats/fibre must be TOTALS for the full image. "
+                            "confidence must be one of low|medium|high. "
+                            'If no food is visible, return {"error":"No food detected"}. '
+                            "No markdown, no extra text."
+                        )
                     },
-                },
-                timeout=40,
-            )
-            break
-        except ExternalHTTPError as e:
-            if e.status_code == 404 and ("not found" in e.body.lower() or "not supported" in e.body.lower()):
-                last_err = f"{model_name}: unavailable"
-                continue
-            raise RuntimeError(f"Gemini HTTP {e.status_code}: {e.body[:260]}") from e
-
-    if payload is None:
-        raise RuntimeError(f"No compatible Gemini model available. Last tried: {last_err or 'unknown'}")
+                    {"inline_data": {"mime_type": image_mime, "data": base64}},
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.1,
+            "responseMimeType": "application/json",
+            "maxOutputTokens": 400,
+        },
+    }
+    payload, model_name, used_fallback_key = gemini_generate_content_models(
+        model_candidates,
+        request_payload,
+        timeout=40,
+    )
     try:
         log_gemini_call(
             user_id=user_id,
@@ -856,7 +902,7 @@ def _gemini_food_image_analysis(
             model=model_name,
             endpoint="/api/calories/foods/analyze-image",
             response_json=payload,
-            is_fallback=is_fallback,
+            is_fallback=is_fallback or used_fallback_key,
         )
     except Exception:
         pass
@@ -873,7 +919,7 @@ def _gemini_food_image_analysis(
 
 
 def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[str, Any]:
-    if not settings.GEMINI_API_KEY:
+    if not has_gemini_key():
         raise RuntimeError("GEMINI_API_KEY missing on server")
 
     user_msg = _build_coach_user_msg(db, user, day_payload)
@@ -892,38 +938,19 @@ def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[
     ]
     model_candidates = [m for i, m in enumerate(model_candidates) if m and m not in model_candidates[:i]]
 
-    payload: dict[str, Any] | None = None
-    last_err: str | None = None
-    used_model = model_candidates[0] if model_candidates else "gemini-2.0-flash"
-    for model_name in model_candidates:
-        url = (
-            f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?"
-            + urlencode({"key": settings.GEMINI_API_KEY})
-        )
-        try:
-            payload = post_json(
-                url,
-                headers={"Content-Type": "application/json"},
-                payload={
-                    "contents": [{"parts": [{"text": prompt_text}]}],
-                    "generationConfig": {
-                        "temperature": 0.3,
-                        "responseMimeType": "application/json",
-                        "maxOutputTokens": 1800,
-                    },
-                },
-                timeout=30,
-            )
-            used_model = model_name
-            break
-        except ExternalHTTPError as e:
-            if e.status_code == 404 and ("not found" in e.body.lower() or "not supported" in e.body.lower()):
-                last_err = f"{model_name}: not available"
-                continue
-            raise RuntimeError(f"Gemini HTTP {e.status_code}: {e.body[:260]}") from e
-
-    if payload is None:
-        raise RuntimeError(f"No compatible Gemini model available. Last tried: {last_err or 'unknown'}")
+    request_payload = {
+        "contents": [{"parts": [{"text": prompt_text}]}],
+        "generationConfig": {
+            "temperature": 0.3,
+            "responseMimeType": "application/json",
+            "maxOutputTokens": 1800,
+        },
+    }
+    payload, used_model, used_fallback_key = gemini_generate_content_models(
+        model_candidates,
+        request_payload,
+        timeout=30,
+    )
 
     try:
         log_gemini_call(
@@ -933,7 +960,7 @@ def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[
             model=used_model,
             endpoint="/api/calories/coach/insight",
             response_json=payload,
-            is_fallback=True,
+            is_fallback=used_fallback_key,
         )
     except Exception:
         pass
@@ -1744,7 +1771,7 @@ def coach_calorie_insight(
         return _groq_coach(db, day_payload, current_user)
     except Exception as e:
         err = str(e)
-        if settings.GEMINI_API_KEY and _ai_provider_fallback_error(err):
+        if has_gemini_key() and _ai_provider_fallback_error(err):
             try:
                 return _gemini_coach(db, day_payload, current_user)
             except Exception:
@@ -1852,6 +1879,29 @@ def get_goal_progress(
         weight_change_label = "No net change"
         total_change_kg = 0.0
 
+    journey_started_at: str | None = None
+
+    try:
+        goal_started_raw = onboarding_json.get("goal_started_at")
+        if goal_started_raw:
+            date.fromisoformat(str(goal_started_raw)[:10])
+            journey_started_at = str(goal_started_raw)[:10]
+    except Exception:
+        journey_started_at = None
+
+    if not journey_started_at:
+        try:
+            if first_log and first_log.log_date:
+                journey_started_at = str(first_log.log_date)[:10]
+        except Exception:
+            pass
+
+    if not journey_started_at and current_user.created_at:
+        try:
+            journey_started_at = current_user.created_at.date().isoformat()
+        except Exception:
+            pass
+
     return {
         "current_weight_kg": current_weight_kg,
         "target_weight_kg": target_weight_kg,
@@ -1868,6 +1918,7 @@ def get_goal_progress(
         "weight_change_label": weight_change_label,
         "days_since_weigh_in": days_since_weigh_in,
         "needs_weigh_in": days_since_weigh_in is None or days_since_weigh_in >= 7,
+        "journey_started_at": journey_started_at,
         "timeline": {
             **timeline,
             "weeks_to_goal": weeks_to_goal if weeks_to_goal is not None else timeline.get("weeks_to_goal"),

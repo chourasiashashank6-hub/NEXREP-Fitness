@@ -71,6 +71,7 @@
     "strengthEmptyBody": "Ajoutez jusqu'à 3 augmentations cibles lors de l'intégration pour voir votre progression estimée de 1RM ici.",
     "strengthFooter": "{{weeks}} semaines restantes · moyenne sur {{count}} lift{{plural}}",
     "eightWeekGoal": "🏆 Objectif sur 8 semaines",
+    "weekGoal": "🏆 Objectif sur {{weeks}} semaines",
     "goalFooter": "{{weeks}} semaines restantes · {{pace}}",
     "logWeightTitle": "Enregistrer aujourd'hui le poids s",
     "lastLogged": "Dernière connexion : {{weight}}kg"
@@ -1473,7 +1474,7 @@
       "noWorkoutYet": "Pas encore d'entraînement"
     },
     "calorie": {
-      "title": "Coach calorique IA",
+      "title": "Coach calorique",
       "emptyTitle": "Enregistrez d'abord vos repas pour obtenir des informations sur l'IA",
       "emptySubtitle": "Une fois que les données nutritionnelles d'aujourd'hui seront disponibles, les tâches de coaching et d'action apparaîtront.",
       "card": {
@@ -1502,11 +1503,11 @@
         "left": "gauche",
         "bodyImpact": "Comment cela vous affecte",
         "macroBreakdown": "Répartition des macros",
-        "dietRecommendations": "🤖 Recommandations diététiques de l'IA",
+        "dietRecommendations": "🥗 Recommandations alimentaires",
         "basedOnGaps": "En fonction de vos lacunes",
         "allMacrosOnTrack": "✓ Toutes les macros sont sur la bonne voie – excellent travail aujourd'hui !",
         "macroGap": "{{macro}} écart",
-        "aiSuggests": "AI suggère ceci dès maintenant :",
+        "aiSuggests": "Essayez ceci pour combler l'écart :",
         "placeholder": "Appuyez sur Actualiser pour générer votre plan nutritionnel premium."
       },
       "defaults": {
@@ -1523,7 +1524,7 @@
       }
     },
     "actionPlan": {
-      "healthTips": "🌿 Conseils de santé pour l'IA",
+      "healthTips": "🌿 Conseils santé",
       "tipsSubtitle": "En fonction de votre régime alimentaire d'aujourd'hui · faites défiler →",
       "gutHealth": "Santé intestinale",
       "todaysActionPlan": "Plan d'action d'aujourd'hui's",
@@ -1600,7 +1601,7 @@
       "fallbackInsight": "{{message}}. Affichage d'informations de secours.",
       "couldNotReachAi": "Impossible d'atteindre l'IA. Affichage d'informations de secours.",
       "previousSession": "De la séance précédente",
-      "title": "Entraîneur d'entraînement IA",
+      "title": "Coach entraînement",
       "buildingPlan": "Construire votre plan d'entraînement...",
       "recoveryMode": "Mode de récupération · Allez-y doucement aujourd'hui",
       "setsDone": "ensembles terminés",
@@ -1862,6 +1863,7 @@
       "completedSuffix": "— Terminé",
       "dailySummary": "RÉSUMÉ DU JOUR",
       "remaining": "Restant",
+      "exceeded": "Dépassé",
       "estimatedCost": "Est. coût : ₹{{cost}}",
       "prep": "Préparation : ~{{minutes}} min",
       "testNotice": "Compte test – actualisations quotidiennes illimitées, échanges et régénération complète",

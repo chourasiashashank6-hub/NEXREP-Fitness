@@ -1,10 +1,30 @@
 import type { PlanId } from "../constants/plans";
 
 export type RootStackParamList = {
-  Main: undefined;
+  Main: undefined | { screen?: string };
   AdminStack: undefined;
   Auth: undefined;
   Onboarding: undefined;
+  ActiveWorkoutSession: { planId: number };
+  AICameraWorkoutSession: { planId: number };
+  WorkoutCompletion: {
+    elapsedSec: number;
+    clientKcal: number;
+    serverKcal?: number;
+    volumeKg: number;
+    setsCompleted: number;
+    streakIncremented: boolean;
+  };
+};
+
+export type OnboardingStackParamList = {
+  Screen1Personal: undefined;
+  Screen2Goal: undefined;
+  Screen3Activity: undefined;
+  Screen4Diet: undefined;
+  Screen5BodyComp: undefined;
+  Screen6Setup: undefined;
+  Results: undefined;
 };
 
 export type MainTabParamList = {

@@ -71,6 +71,7 @@
     "strengthEmptyBody": "Füge beim Onboarding bis zu 3 Zielsteigerungen hinzu, um hier deinen geschätzten 1RM-Fortschritt zu sehen.",
     "strengthFooter": "Noch verbleibende {{weeks}}-Wochen · Durchschnitt über {{count}}-Lift{{plural}}",
     "eightWeekGoal": "🏆 8-Wochen-Ziel",
+    "weekGoal": "🏆 {{weeks}}-Wochen-Ziel",
     "goalFooter": "{{weeks}} verbleibende Wochen · {{pace}}",
     "logWeightTitle": "Logge das heutige Gewicht",
     "lastLogged": "Zuletzt angemeldet: {{weight}}kg"
@@ -1473,7 +1474,7 @@
       "noWorkoutYet": "Noch kein Training"
     },
     "calorie": {
-      "title": "KI-Kalorientrainer",
+      "title": "Kalorientrainer",
       "emptyTitle": "Logge zuerst deine Mahlzeiten, um KI-Einblicke zu erhalten",
       "emptySubtitle": "Sobald Ernährungsdaten für heute vorliegen, erscheinen Coaching- und Aktionsaufgaben.",
       "card": {
@@ -1502,11 +1503,11 @@
         "left": "links",
         "bodyImpact": "Wie sich das auf du auswirkt",
         "macroBreakdown": "Makroaufschlüsselung",
-        "dietRecommendations": "🤖 KI-Diätempfehlungen",
+        "dietRecommendations": "🥗 Ernährungsempfehlungen",
         "basedOnGaps": "Basierend auf deinen Lücken",
         "allMacrosOnTrack": "✓ Alle Makros auf Kurs – tolle Arbeit heute!",
         "macroGap": "{{macro}}-Lücke",
-        "aiSuggests": "AI schlägt derzeit Folgendes vor:",
+        "aiSuggests": "Diese helfen, die Lücke zu schließen:",
         "placeholder": "Tippe auf „Aktualisieren“, um deinen Premium-Ernährungsplan zu erstellen."
       },
       "defaults": {
@@ -1523,7 +1524,7 @@
       }
     },
     "actionPlan": {
-      "healthTips": "🌿 KI-Gesundheitstipps",
+      "healthTips": "🌿 Gesundheitstipps",
       "tipsSubtitle": "Basierend auf deiner heutigen Ernährung · scrollen du →",
       "gutHealth": "Darmgesundheit",
       "todaysActionPlan": "Der heutige Aktionsplan",
@@ -1600,7 +1601,7 @@
       "fallbackInsight": "{{message}}. Fallback-Einsicht wird angezeigt.",
       "couldNotReachAi": "AI konnte nicht erreicht werden. Fallback-Einsicht wird angezeigt.",
       "previousSession": "Aus der vorherigen Session",
-      "title": "KI-Trainingstrainer",
+      "title": "Trainingstrainer",
       "buildingPlan": "Erstelle deinen Trainingsplan...",
       "recoveryMode": "Wiederherstellungsmodus · Mach es sich noch heute gemütlich",
       "setsDone": "Sätze erledigt",
@@ -1862,6 +1863,7 @@
       "completedSuffix": "– Abgeschlossen",
       "dailySummary": "TÄGLICHE ZUSAMMENFASSUNG",
       "remaining": "Übrig",
+      "exceeded": "Überschritten",
       "estimatedCost": "Schätzung: Kosten: ₹{{cost}}",
       "prep": "Vorbereitung: ~{{minutes}} min",
       "testNotice": "Testkonto – unbegrenzte Tagesaktualisierungen, Swaps und vollständige Regeneration",

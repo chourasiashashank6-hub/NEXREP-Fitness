@@ -71,6 +71,7 @@
     "strengthEmptyBody": "यहां अपनी अनुमानित 1RM प्रगति देखने के लिए ऑनबोर्डिंग में 3 लक्ष्य लिफ्ट जोड़ें।",
     "strengthFooter": "{{weeks}} सप्ताह शेष · औसत {{count}} लिफ्ट{{plural}}",
     "eightWeekGoal": "🏆 8-सप्ताह का लक्ष्य",
+    "weekGoal": "🏆 {{weeks}}-सप्ताह का लक्ष्य",
     "goalFooter": "{{weeks}} सप्ताह शेष · {{pace}}",
     "logWeightTitle": "आज का वजन लॉग करें",
     "lastLogged": "अंतिम बार लॉग किया गया: {{weight}}kg"
@@ -1473,7 +1474,7 @@
       "noWorkoutYet": "अभी तक कोई workout नहीं"
     },
     "calorie": {
-      "title": "AI कैलोरी कोच",
+      "title": "कैलोरी कोच",
       "emptyTitle": "AI अंतर्दृष्टि प्राप्त करने के लिए पहले अपना भोजन लॉग करें",
       "emptySubtitle": "एक बार आज के लिए पोषण डेटा उपलब्ध हो जाने पर, कोचिंग और कार्रवाई कार्य दिखाई देंगे।",
       "card": {
@@ -1502,11 +1503,11 @@
         "left": "बायां",
         "bodyImpact": "इसका आप पर क्या प्रभाव पड़ता है",
         "macroBreakdown": "मैक्रो ब्रेकडाउन",
-        "dietRecommendations": "🤖AIआहार अनुशंसाएँ",
+        "dietRecommendations": "🥗 आहार सुझाव",
         "basedOnGaps": "आपके अंतराल के आधार पर",
         "allMacrosOnTrack": "✓ सभी मैक्रोज़ ट्रैक पर — आज बढ़िया काम!",
         "macroGap": "{{macro}} गैप",
-        "aiSuggests": "AI अभी ये सुझाव देता है:",
+        "aiSuggests": "इस अंतर को पूरा करने के लिए ये आज़माएँ:",
         "placeholder": "अपनी प्रीमियम पोषण योजना तैयार करने के लिए रीफ्रेश पर टैप करें।"
       },
       "defaults": {
@@ -1523,7 +1524,7 @@
       }
     },
     "actionPlan": {
-      "healthTips": "🌿 AI स्वास्थ्य युक्तियाँ",
+      "healthTips": "🌿 स्वास्थ्य सुझाव",
       "tipsSubtitle": "आपके आज के आहार के आधार पर · स्क्रॉल करें →",
       "gutHealth": "आंत का स्वास्थ्य",
       "todaysActionPlan": "आज की कार्ययोजना",
@@ -1600,7 +1601,7 @@
       "fallbackInsight": "{{message}}. फ़ॉलबैक अंतर्दृष्टि दिखा रहा है।",
       "couldNotReachAi": "AI तक नहीं पहुंच सका. फ़ॉलबैक अंतर्दृष्टि दिखा रहा है।",
       "previousSession": "पिछले सत्र से",
-      "title": "AI Workout कोच",
+      "title": "Workout कोच",
       "buildingPlan": "अपनी workout योजना का निर्माण...",
       "recoveryMode": "पुनर्प्राप्ति मोड · आज इसे आसान बनाएं",
       "setsDone": "सेट हो गए",
@@ -1862,6 +1863,7 @@
       "completedSuffix": "- पूरा हुआ",
       "dailySummary": "डेली समरी",
       "remaining": "शेष",
+      "exceeded": "अधिक",
       "estimatedCost": "स्था. लागत: ₹{{cost}}",
       "prep": "तैयारी: ~{{minutes}} मिनट",
       "testNotice": "परीक्षण खाता - असीमित दिन ताज़ा, स्वैप और पूर्ण पुनर्जनन",

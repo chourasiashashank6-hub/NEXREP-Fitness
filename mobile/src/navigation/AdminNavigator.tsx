@@ -8,6 +8,7 @@ import AdminUsersScreen from "../screens/admin/AdminUsersScreen";
 import AdminUserDetailScreen from "../screens/admin/AdminUserDetailScreen";
 import AdminAiUsageScreen from "../screens/admin/AdminAiUsageScreen";
 import AdminSubscriptionsScreen from "../screens/admin/AdminSubscriptionsScreen";
+import { AdminBodyTypesScreen } from "../screens/admin/AdminBodyTypesScreen";
 import { useAdminStore } from "../store/adminStore";
 import { COLORS } from "../screens/admin/adminTheme";
 
@@ -18,6 +19,7 @@ export type AdminStackParamList = {
   AdminUserDetail: { userId: number };
   AdminAiUsage: undefined;
   AdminSubscriptions: undefined;
+  AdminBodyTypes: undefined;
 };
 
 const Stack = createNativeStackNavigator<AdminStackParamList>();
@@ -92,6 +94,11 @@ export default function AdminNavigator() {
             name="AdminSubscriptions"
             component={AdminSubscriptionsScreen}
             options={{ title: "Subscriptions" }}
+          />
+          <Stack.Screen
+            name="AdminBodyTypes"
+            component={AdminBodyTypesScreen}
+            options={{ title: "Body Type Photos" }}
           />
         </>
       )}

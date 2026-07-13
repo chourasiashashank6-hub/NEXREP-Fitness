@@ -71,6 +71,7 @@
     "strengthEmptyBody": "Add up to 3 target lifts in onboarding to see your estimated 1RM progress here.",
     "strengthFooter": "{{weeks}} weeks left · avg across {{count}} lift{{plural}}",
     "eightWeekGoal": "🏆 8-week goal",
+    "weekGoal": "🏆 {{weeks}}-week goal",
     "goalFooter": "{{weeks}} weeks left · {{pace}}",
     "logWeightTitle": "Log Today's Weight",
     "lastLogged": "Last logged: {{weight}}kg"
@@ -1173,6 +1174,9 @@
       "apply": "Apply",
       "couponApplied": "Coupon applied — tap to remove",
       "chooseYourPlan": "CHOOSE YOUR PLAN",
+      "planOverviewSection": "YOUR CURRENT PLAN",
+      "historySection": "ACCOUNT & HISTORY",
+      "noPaymentsYet": "No payments yet — your receipts will appear here after your first billing.",
       "securePayment": "Secure Payment",
       "trial": "7-Day Trial",
       "athletes": "50K+ Athletes",
@@ -1473,7 +1477,7 @@
       "noWorkoutYet": "No workout yet"
     },
     "calorie": {
-      "title": "AI Calorie Coach",
+      "title": "Calorie Coach",
       "emptyTitle": "Log your meals first to get AI insights",
       "emptySubtitle": "Once nutrition data exists for today, coaching and action tasks will appear.",
       "card": {
@@ -1502,11 +1506,11 @@
         "left": "left",
         "bodyImpact": "How this affects you",
         "macroBreakdown": "Macro breakdown",
-        "dietRecommendations": "🤖 AI diet recommendations",
+        "dietRecommendations": "🥗 Diet recommendations",
         "basedOnGaps": "Based on your gaps",
         "allMacrosOnTrack": "✓ All macros on track — great work today!",
         "macroGap": "{{macro}} gap",
-        "aiSuggests": "AI suggests these right now:",
+        "aiSuggests": "Try these to close the gap:",
         "placeholder": "Tap Refresh to generate your premium nutrition plan."
       },
       "defaults": {
@@ -1523,7 +1527,7 @@
       }
     },
     "actionPlan": {
-      "healthTips": "🌿 AI health tips",
+      "healthTips": "🌿 Health tips",
       "tipsSubtitle": "Based on your diet today · scroll →",
       "gutHealth": "Gut health",
       "todaysActionPlan": "Today's action plan",
@@ -1600,7 +1604,7 @@
       "fallbackInsight": "{{message}}. Showing fallback insight.",
       "couldNotReachAi": "Could not reach AI. Showing fallback insight.",
       "previousSession": "From previous session",
-      "title": "AI Workout Coach",
+      "title": "Workout Coach",
       "buildingPlan": "Building your workout plan...",
       "recoveryMode": "Recovery mode · Take it easy today",
       "setsDone": "sets done",
@@ -1862,6 +1866,7 @@
       "completedSuffix": " — Completed",
       "dailySummary": "DAILY SUMMARY",
       "remaining": "Remaining",
+      "exceeded": "Exceeded",
       "estimatedCost": "Est. cost: ₹{{cost}}",
       "prep": "Prep: ~{{minutes}} min",
       "testNotice": "Test account — unlimited day refreshes, swaps, and full regeneration",

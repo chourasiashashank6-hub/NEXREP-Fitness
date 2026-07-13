@@ -505,7 +505,7 @@ class GlobalExercise(Base):
     equipment = Column(Text, nullable=False)
     muscles_primary = Column(ARRAY(Text), nullable=True)
     muscles_secondary = Column(ARRAY(Text), nullable=True)
-    met_value = Column(Float, nullable=True)
+    met_value = Column(Float, nullable=True, default=5.0)
     difficulty = Column(Text, nullable=True)
     is_compound = Column(Boolean, default=False)
     catalog_id = Column(BigInteger, ForeignKey("workout_catalog_v2.id"), nullable=True, index=True)
@@ -522,3 +522,41 @@ class GlobalExerciseLabel(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (UniqueConstraint("exercise_id", "language_tag", name="uq_global_exercise_label_language"),)
+
+
+class WorkoutSession(Base):
+    """Guided active workout session (Elite). Upserted by client session_id."""
+
+    __tablename__ = "workout_sessions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String(64), unique=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    plan_day_id = Column(String(64), nullable=False)
+    started_at = Column(DateTime, nullable=False)
+    ended_at = Column(DateTime, nullable=True)
+    status = Column(String(32), nullable=False)  # completed | abandoned
+    server_kcal_total = Column(Float, nullable=False, default=0)
+    streak_incremented = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User")
+    set_logs = relationship("WorkoutSessionSetLog", back_populates="session", cascade="all, delete-orphan")
+
+
+class WorkoutSessionSetLog(Base):
+    __tablename__ = "workout_session_set_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_pk = Column(Integer, ForeignKey("workout_sessions.id"), nullable=False, index=True)
+    exercise_name = Column(String(255), nullable=False)
+    set_number = Column(Integer, nullable=False)
+    reps = Column(Integer, nullable=False)
+    weight_kg = Column(Float, nullable=True)
+    started_at = Column(DateTime, nullable=False)
+    completed_at = Column(DateTime, nullable=False)
+    server_kcal = Column(Float, nullable=False, default=0)
+    tracking_method = Column(String(32), nullable=False, default="manual")  # manual | ai_camera
+
+    session = relationship("WorkoutSession", back_populates="set_logs")

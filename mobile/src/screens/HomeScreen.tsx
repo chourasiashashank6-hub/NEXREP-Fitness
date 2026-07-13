@@ -59,6 +59,7 @@ interface GoalProgressData {
   total_change_kg?: number | null;
   weight_change_label?: string | null;
   needs_weigh_in?: boolean;
+  journey_started_at?: string | null;
   timeline?: Record<string, unknown>;
 }
 
@@ -249,7 +250,7 @@ function CalorieRing({
         />
       </Svg>
       <View style={styles.ringCenterOverlay}>
-        <Text style={[styles.ringCenterLabel, { fontSize: labelSize }]}>{i18n.t("home.remaining")}</Text>
+        <Text style={[styles.ringCenterLabel, { fontSize: labelSize }]}>TO EAT</Text>
         <Text style={[styles.ringCenterValue, { fontSize: valueSize, lineHeight: valueSize + 4 }]}>
           {formatNum(remaining)}
         </Text>
@@ -486,10 +487,34 @@ export const HomeScreen = () => {
     (timelineTargets?.timeline as Record<string, unknown> | undefined) ??
     {};
   const weeksToGoalRaw = Number(goalProgress?.weeks_to_goal ?? timeline.weeks_to_goal);
-  const weeksToGoal = Number.isFinite(weeksToGoalRaw) ? Math.max(0, Math.round(weeksToGoalRaw)) : 12;
+  const weeksRemaining = Number.isFinite(weeksToGoalRaw) ? Math.max(0, Math.round(weeksToGoalRaw)) : 12;
+  const initialWeeksRaw = Number(
+    (timelineTargets?.timeline as Record<string, unknown> | undefined)?.weeks_to_goal ?? timeline.weeks_to_goal,
+  );
+  const totalGoalWeeks =
+    Number.isFinite(initialWeeksRaw) && initialWeeksRaw > 0
+      ? Math.round(initialWeeksRaw)
+      : weeksRemaining > 0
+        ? weeksRemaining
+        : 26;
+  const weeksToGoal = weeksRemaining;
   const weeklyChangeRaw = goalProgress?.weekly_change_kg ?? timeline.weekly_change_kg ?? timeline.weekly_delta_kg;
   const weeklyDelta = Number(weeklyChangeRaw);
   const paceLabel = Number.isFinite(weeklyDelta) ? t("home.pace", { value: Math.abs(weeklyDelta).toFixed(2) }) : t("home.defaultPace");
+  const journeyStartedAt: string | null = goalProgress?.journey_started_at ?? null;
+  const journeyStartedLabel: string | null = (() => {
+    if (!journeyStartedAt) return null;
+    try {
+      const d = new Date(`${journeyStartedAt}T12:00:00Z`);
+      return d.toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return null;
+    }
+  })();
   const dailyDelta = Number(goalProgress?.daily_delta_kcal ?? timeline.daily_delta_kcal);
   const deltaDisplay = Number.isFinite(dailyDelta) ? Math.round(Math.abs(dailyDelta)) : 200;
   const exerciseDelta = Number(goalProgress?.exercise_delta_kcal ?? timeline.exercise_delta_kcal);
@@ -506,7 +531,8 @@ export const HomeScreen = () => {
       : dailyDelta > 0
         ? t("home.surplus")
         : t("home.maintenance");
-  const goalWeeksProgress = clamp01((12 - Math.max(0, weeksToGoal)) / 12);
+  const goalWeeksProgress =
+    totalGoalWeeks > 0 ? clamp01((totalGoalWeeks - weeksRemaining) / totalGoalWeeks) : 0;
   const workoutShareAchieved = Math.min(caloriesBurnedSoFar, exerciseDeltaDisplay);
   const exerciseTargetRemaining = Math.max(0, exerciseDeltaDisplay - workoutShareAchieved);
   const workoutShareProgress = exerciseDeltaDisplay > 0 ? clamp01(workoutShareAchieved / exerciseDeltaDisplay) : 1;
@@ -549,6 +575,11 @@ export const HomeScreen = () => {
     log?.calories_remaining != null && Number.isFinite(Number(log.calories_remaining))
       ? Math.round(Number(log.calories_remaining))
       : Math.max(0, remainingCalories);
+
+  // Calories left to eat today, using the same dailyGoal as the "to eat" pill.
+  const ringToEatValue = Math.max(0, dailyGoal - eatenToday);
+
+  const ringFillPercent = Math.min(1, Math.max(0, eatenToday / Math.max(dailyGoal, 1)));
 
   const tdeeValue = burnPlan?.tdee ?? 1690;
   const milestonePct = Math.round(goalWeeksProgress * 100);
@@ -650,9 +681,9 @@ export const HomeScreen = () => {
         <Animated.View style={[styles.section, animatedStyle(2)]}>
           <View style={styles.heroRow}>
             <CalorieRing
-              eaten={eatenToday}
+              eaten={ringFillPercent * Math.max(dailyGoal, 1)}
               target={dailyGoal}
-              remaining={caloriesRemainingDisplay}
+              remaining={ringToEatValue}
               size={168}
             />
             <View style={styles.kpiColumn}>
@@ -747,13 +778,16 @@ export const HomeScreen = () => {
           ) : (
             <View style={styles.barCard}>
               <View style={styles.barHeader}>
-                <Text style={styles.barTitle}>{t("home.eightWeekGoal")}</Text>
+                <Text style={styles.barTitle}>{t("home.weekGoal", { weeks: totalGoalWeeks })}</Text>
                 <Text style={styles.milestonePct}>{milestonePct}%</Text>
               </View>
               <ProgressBar percent={goalWeeksProgress} color={GREEN} />
               <Text style={styles.goalFooter}>
                 {t("home.goalFooter", { weeks: weeksToGoal, pace: paceLabel })}
               </Text>
+              {journeyStartedLabel != null ? (
+                <Text style={styles.goalStartedLabel}>Started: {journeyStartedLabel}</Text>
+              ) : null}
             </View>
           )}
         </Animated.View>
@@ -1018,6 +1052,7 @@ const styles = StyleSheet.create({
   },
   progressFill: { height: 8, borderRadius: 100 },
   goalFooter: { fontSize: 11, color: TEXT_MUTED, marginTop: 10 },
+  goalStartedLabel: { fontSize: 12, color: "#9CA3AF", marginTop: 2 },
   strengthEmptyBox: { backgroundColor: CARD, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: TRACK },
   strengthEmptyTitle: { color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", marginBottom: 4 },
   strengthEmptyText: { color: TEXT_MUTED, fontSize: 11, lineHeight: 16 },

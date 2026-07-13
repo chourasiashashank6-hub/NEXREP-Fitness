@@ -192,6 +192,11 @@ export default function AdminDashboardScreen() {
             iconColor={COLORS.teal}
             onPress={() => navigation.navigate("AdminSubscriptions")}
           />
+          <NavButton
+            label="📷 Body Type Photos"
+            iconColor={COLORS.amber}
+            onPress={() => navigation.navigate("AdminBodyTypes")}
+          />
         </>
       ) : null}
     </ScrollView>

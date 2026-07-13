@@ -39,6 +39,7 @@ import { loadOnboardingWithFallback } from "../api/onboarding";
 import { resolveApiBaseUrl } from "../api/client";
 import AllTimeMealHistoryModal from "../components/AllTimeMealHistoryModal";
 import { FoodCameraButton } from "../components/FoodCameraButton";
+import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { useFoodRecognition } from "../hooks/useFoodRecognition";
 import type { FoodAnalysisResult } from "../services/foodRecognitionService";
 import { useAuthStore } from "../store/authStore";
@@ -286,10 +287,20 @@ function formatLoadError(err: unknown): string {
   return i18n.t("calorieLog.loadErrors.fallback");
 }
 
+const NON_VEG_LABELS = new Set(["Chicken breast", "Salmon"]);
+const VEGAN_EXCL_LABELS = new Set(["Chicken breast", "Salmon", "Whole egg"]);
+
 export const CalorieLog = () => {
   const { t, i18n: i18nInstance } = useTranslation();
   const catalogLanguage = i18nInstance.resolvedLanguage || i18nInstance.language;
   const token = useAuthStore((s) => s.token);
+  const { data: onboardingData } = useOnboardingContext();
+  const dietType = (onboardingData?.dietary?.diet_type ?? "none").toLowerCase().trim();
+  const visibleQuickFoods = QUICK_FOODS.filter((q) => {
+    if (dietType === "vegan") return !VEGAN_EXCL_LABELS.has(q.label);
+    if (dietType === "vegetarian") return !NON_VEG_LABELS.has(q.label);
+    return true;
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -1024,7 +1035,7 @@ export const CalorieLog = () => {
 
         <Text style={styles.quickAddLabel}>{t("calorieLog.quickAdd")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickAddRow}>
-          {QUICK_FOODS.map((q) => (
+          {visibleQuickFoods.map((q) => (
             <Pressable key={q.label} style={styles.quickChip} onPress={() => applyChip(q)}>
               <Text style={styles.quickChipText}>
                 {QUICK_FOOD_EMOJI[q.label] ?? "🍽️"} {q.label}

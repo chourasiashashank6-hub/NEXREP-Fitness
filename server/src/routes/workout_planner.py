@@ -89,11 +89,11 @@ def get_current(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Return the saved month plan only — never regenerate on read (matches meal planner)."""
     today = parse_local_date(local_date)
     plan = get_existing_workout_plan(db, current_user.id, today.month, today.year)
     if not plan:
         raise HTTPException(status_code=404, detail="No workout plan for this month")
-    plan = generate_workout_plan(db, current_user, focus_muscles=None, local_date=local_date)
     return workout_plan_current_response(plan, local_date, db=db, user=current_user)
 
 

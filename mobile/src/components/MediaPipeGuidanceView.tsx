@@ -4,11 +4,23 @@ import { WebView } from "react-native-webview";
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
 import i18n from "../i18n";
 
+export type MediaPipeTrackingUpdate = {
+  reps: number;
+  formOk: boolean;
+  correction: string;
+  phase: string;
+  bodyDetected: boolean;
+};
+
 export type MediaPipeGuidanceViewProps = {
   selectedExerciseName?: string;
   isActive?: boolean;
   onReady?: () => void;
   onError?: (message: string) => void;
+  /** Optional live rep / posture bridge for AI camera sessions. */
+  onTrackingUpdate?: (update: MediaPipeTrackingUpdate) => void;
+  /** Hide MediaPipe text chrome — parent renders its own HUD. */
+  sessionMode?: boolean;
 };
 
 const MP_TEXT = {
@@ -485,10 +497,12 @@ function buildHtmlSource(
   movementConfig: MovementConfig | null,
   trainerNote: string,
   isCardioOrMobility: boolean,
+  sessionMode = false,
 ): string {
   const ruleJson   = JSON.stringify(exerciseRule);
   const configJson = JSON.stringify(movementConfig);
   const noteJson   = JSON.stringify(trainerNote);
+  const chromeDisplay = sessionMode ? "none" : "block";
 
   return `<!doctype html>
 <html>
@@ -501,32 +515,36 @@ function buildHtmlSource(
       video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
       #badge{position:absolute;left:10px;top:10px;z-index:12;background:rgba(0,0,0,.65);
         color:#fff;border-radius:10px;padding:6px 10px;
-        font:800 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+        font:800 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:${chromeDisplay}}
       #posture{position:absolute;left:10px;top:40px;z-index:12;background:rgba(0,0,0,.65);
         color:#fff;border-radius:10px;padding:7px 10px;
-        font:700 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+        font:700 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:${chromeDisplay}}
       #notes{position:absolute;left:10px;top:70px;z-index:12;background:rgba(15,23,42,.78);
         color:#fff;border-radius:10px;padding:6px 10px;max-width:92%;
-        font:600 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+        font:600 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:${chromeDisplay}}
       #hint{position:absolute;left:12px;right:12px;bottom:12px;z-index:10;
         border-radius:10px;padding:8px 10px;text-align:center;color:#fff;
         background:rgba(0,0,0,.55);
-        font:700 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+        font:700 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:${chromeDisplay}}
       #cardio-banner{position:absolute;left:0;right:0;bottom:0;z-index:20;
         background:rgba(15,23,42,.85);color:#fff;padding:14px 16px;text-align:center;
         font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-        display:${isCardioOrMobility ? "block" : "none"}}
+        display:${isCardioOrMobility && !sessionMode ? "block" : "none"}}
     </style>
   </head>
   <body>
     <div id="root">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="overlay"></canvas>
-      <div id="badge">${MP_TEXT.exerciseDetecting}</div>
+      ${
+        sessionMode
+          ? ""
+          : `<div id="badge">${MP_TEXT.exerciseDetecting}</div>
       <div id="posture">${MP_TEXT.postureBlank}</div>
       <div id="notes"></div>
       <div id="hint">${MP_TEXT.alignBody}</div>
-      <div id="cardio-banner">${MP_TEXT.cardioBanner}</div>
+      <div id="cardio-banner">${MP_TEXT.cardioBanner}</div>`
+      }
     </div>
     <script type="module">
       import{FilesetResolver,PoseLandmarker}from"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
@@ -535,6 +553,7 @@ function buildHtmlSource(
       const MOVEMENT_CONFIG=${configJson};
       const TRAINER_NOTE=${noteJson};
       const IS_CARDIO=${isCardioOrMobility};
+      const SESSION_MODE=${sessionMode ? "true" : "false"};
 
       const badgeEl=document.getElementById("badge");
       const postureEl=document.getElementById("posture");
@@ -544,7 +563,10 @@ function buildHtmlSource(
       const canvas=document.getElementById("overlay");
       const ctx=canvas.getContext("2d");
 
-      notesEl.textContent=TRAINER_NOTE?"Notes: "+TRAINER_NOTE:"Notes: Maintain controlled movement";
+      if(notesEl)notesEl.textContent=TRAINER_NOTE?"Notes: "+TRAINER_NOTE:"Notes: Maintain controlled movement";
+
+      const setText=(el,text)=>{if(el)el.textContent=text};
+      const setBg=(el,bg)=>{if(el)el.style.background=bg};
 
       const post=(type,payload={})=>{
         try{window.ReactNativeWebView?.postMessage(JSON.stringify({type,...payload}))}catch{}
@@ -552,7 +574,15 @@ function buildHtmlSource(
 
       let poseLandmarker=null,rafId=null,stream=null,lastVideoTime=-1;
       let repCount=0,phase="idle",reachedDown=false,prevLandmarks=null;
+      let lastPostedReps=-1,lastPostedForm=null,lastPostedBody=null,lastTrackPostAt=0;
       const SMOOTH_ALPHA=0.55;
+      const emitTracking=(reps,formOk,correction,ph,bodyDetected)=>{
+        const now=Date.now();
+        const changed=reps!==lastPostedReps||formOk!==lastPostedForm||bodyDetected!==lastPostedBody;
+        if(!changed&&now-lastTrackPostAt<250)return;
+        lastPostedReps=reps;lastPostedForm=formOk;lastPostedBody=bodyDetected;lastTrackPostAt=now;
+        post("tracking",{reps,formOk,correction:correction||"",phase:ph||"idle",bodyDetected:!!bodyDetected});
+      };
 
       const POSE_CONNECTIONS=[[11,12],[11,13],[13,15],[12,14],[14,16],
         [11,23],[12,24],[23,24],[23,25],[25,27],[27,29],[24,26],[26,28],[28,30]];
@@ -741,11 +771,12 @@ function buildHtmlSource(
             drawFrame(centered);
             drawSkeleton(landmarks,centered);
             drawLandmarks(landmarks,centered);
-            badgeEl.textContent=${JSON.stringify(MP_TEXT.postureAwareness)};
-            postureEl.textContent=${JSON.stringify(MP_TEXT.posture)}+": "+(centered?${JSON.stringify(MP_TEXT.centred)}:${JSON.stringify(MP_TEXT.adjustPosition)});
-            postureEl.style.background=centered?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
-            hintEl.textContent=centered?${JSON.stringify(i18n.t("mediaPipe.keepBodyFrame"))}:${JSON.stringify(i18n.t("mediaPipe.centreBody"))};
-            hintEl.style.background=centered?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
+            setText(badgeEl,${JSON.stringify(MP_TEXT.postureAwareness)});
+            setText(postureEl,${JSON.stringify(MP_TEXT.posture)}+": "+(centered?${JSON.stringify(MP_TEXT.centred)}:${JSON.stringify(MP_TEXT.adjustPosition)}));
+            setBg(postureEl,centered?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)");
+            setText(hintEl,centered?${JSON.stringify(i18n.t("mediaPipe.keepBodyFrame"))}:${JSON.stringify(i18n.t("mediaPipe.centreBody"))});
+            setBg(hintEl,centered?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)");
+            emitTracking(0,centered,"", "idle", true);
           }else{
             const primaryAngle=getPrimaryAngle(landmarks);
             const movement=updateMovement(primaryAngle);
@@ -753,19 +784,21 @@ function buildHtmlSource(
             const lineIsGood=EXERCISE_RULE?posture.isCorrect&&movement.dynamicOk:centered;
             const label=EXERCISE_RULE?EXERCISE_RULE.label:${JSON.stringify(MP_TEXT.unknown)};
             drawFrame(lineIsGood);drawSkeleton(landmarks,lineIsGood);drawLandmarks(landmarks,lineIsGood);
-            badgeEl.textContent=${JSON.stringify(MP_TEXT.exercise)}+": "+label+" · "+${JSON.stringify(MP_TEXT.reps)}+": "+movement.reps;
-            postureEl.textContent=${JSON.stringify(MP_TEXT.posture)}+": "+posture.status+" · "+${JSON.stringify(MP_TEXT.phase)}+": "+movement.phase.toUpperCase()+
-              (primaryAngle?" · "+Math.round(primaryAngle)+"°":"");
-            postureEl.style.background=lineIsGood?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
-            hintEl.textContent=lineIsGood?${JSON.stringify(i18n.t("mediaPipe.rightPosture"))}:${JSON.stringify(i18n.t("mediaPipe.wrongPosture"))}+": "+(posture.correction||${JSON.stringify(i18n.t("mediaPipe.adjustPosture"))});
-            hintEl.style.background=lineIsGood?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)";
+            setText(badgeEl,${JSON.stringify(MP_TEXT.exercise)}+": "+label+" · "+${JSON.stringify(MP_TEXT.reps)}+": "+movement.reps);
+            setText(postureEl,${JSON.stringify(MP_TEXT.posture)}+": "+posture.status+" · "+${JSON.stringify(MP_TEXT.phase)}+": "+movement.phase.toUpperCase()+
+              (primaryAngle?" · "+Math.round(primaryAngle)+"°":""));
+            setBg(postureEl,lineIsGood?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)");
+            setText(hintEl,lineIsGood?${JSON.stringify(i18n.t("mediaPipe.rightPosture"))}:${JSON.stringify(i18n.t("mediaPipe.wrongPosture"))}+": "+(posture.correction||${JSON.stringify(i18n.t("mediaPipe.adjustPosture"))}));
+            setBg(hintEl,lineIsGood?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)");
+            emitTracking(movement.reps,lineIsGood,posture.correction||"",movement.phase,true);
           }
         }else{
           drawFrame(false);
-          badgeEl.textContent=${JSON.stringify(MP_TEXT.exercise)}+": "+(EXERCISE_RULE?EXERCISE_RULE.label:${JSON.stringify(MP_TEXT.unknown)});
-          postureEl.textContent=${JSON.stringify(i18n.t("mediaPipe.noBodyDetected"))};
-          hintEl.textContent=${JSON.stringify(i18n.t("mediaPipe.noFullBody"))};
-          hintEl.style.background="rgba(239,68,68,0.35)";
+          setText(badgeEl,${JSON.stringify(MP_TEXT.exercise)}+": "+(EXERCISE_RULE?EXERCISE_RULE.label:${JSON.stringify(MP_TEXT.unknown)}));
+          setText(postureEl,${JSON.stringify(i18n.t("mediaPipe.noBodyDetected"))});
+          setText(hintEl,${JSON.stringify(i18n.t("mediaPipe.noFullBody"))});
+          setBg(hintEl,"rgba(239,68,68,0.35)");
+          emitTracking(repCount,false,"No body detected",phase,false);
         }
         rafId=requestAnimationFrame(detectLoop);
       };
@@ -810,8 +843,21 @@ function buildHtmlSource(
 }
 
 
-function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady, onError }: MediaPipeGuidanceViewProps) {
+function MediaPipeGuidanceView({
+  selectedExerciseName,
+  isActive = true,
+  onReady,
+  onError,
+  onTrackingUpdate,
+  sessionMode = false,
+}: MediaPipeGuidanceViewProps) {
   const webHostRef = useRef<View | null>(null);
+  const onReadyRef = useRef(onReady);
+  const onErrorRef = useRef(onError);
+  const onTrackingUpdateRef = useRef(onTrackingUpdate);
+  onReadyRef.current = onReady;
+  onErrorRef.current = onError;
+  onTrackingUpdateRef.current = onTrackingUpdate;
 
   useEffect(() => {
     if (!isActive) return;
@@ -850,7 +896,7 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
     canvas.style.transform = "scaleX(-1)";
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      onError?.("Unable to initialize drawing context.");
+      onErrorRef.current?.("Unable to initialize drawing context.");
       return;
     }
 
@@ -916,7 +962,11 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
     host.innerHTML = "";
     host.style.position = "relative";
     host.style.overflow = "hidden";
-    host.append(video, canvas, exerciseBadge, posturePanel, notesPanel, hint);
+    if (sessionMode) {
+      host.append(video, canvas);
+    } else {
+      host.append(video, canvas, exerciseBadge, posturePanel, notesPanel, hint);
+    }
 
     const getVideoRect = () => {
       const cw = canvas.width || host.clientWidth || 720;
@@ -1433,6 +1483,13 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
           posturePanel.style.background = lineIsGood ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
           hint.textContent = lineIsGood ? i18n.t("mediaPipe.rightPosture") : `${i18n.t("mediaPipe.wrongPosture")}: ${posture.correction || i18n.t("mediaPipe.adjustPosture")}`;
           hint.style.background = lineIsGood ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)";
+          onTrackingUpdateRef.current?.({
+            reps: movement.reps,
+            formOk: lineIsGood,
+            correction: posture.correction || "",
+            phase: movement.phase,
+            bodyDetected: true,
+          });
         }
       } else {
         drawFrame(false);
@@ -1440,6 +1497,13 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
         posturePanel.textContent = `${MP_TEXT.posture}: ${i18n.t("mediaPipe.notDetected", { label: exerciseRule?.label || MP_TEXT.unknown })}`;
         hint.textContent = i18n.t("mediaPipe.noFullBody");
         hint.style.background = "rgba(239,68,68,0.35)";
+        onTrackingUpdateRef.current?.({
+          reps: repCount,
+          formOk: false,
+          correction: "No body detected",
+          phase,
+          bodyDetected: false,
+        });
       }
       rafId = requestAnimationFrame(loop);
     };
@@ -1474,11 +1538,11 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
           outputSegmentationMasks: false,
         });
         if (cancelled) return;
-        onReady?.();
+        onReadyRef.current?.();
         loop();
       } catch (error) {
         const msg = error instanceof Error ? error.message : "MediaPipe failed to start.";
-        onError?.(msg);
+        onErrorRef.current?.(msg);
       }
     })();
 
@@ -1488,7 +1552,7 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
       if (poseLandmarker) poseLandmarker.close();
       if (stream) stream.getTracks().forEach((t) => t.stop());
     };
-  }, [isActive, onError, onReady, selectedExerciseName]);
+  }, [isActive, selectedExerciseName, sessionMode]);
 
   const matchedRecordForWebView = findExerciseRecord(selectedExerciseName);
   const exerciseRuleForWebView = toExerciseRule(selectedExerciseName, matchedRecordForWebView);
@@ -1508,6 +1572,7 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
           movementConfigForWebView,
           trainerNoteForWebView,
           isCardioForWebView,
+          sessionMode,
         ) }}
         style={styles.webview}
         allowsInlineMediaPlayback
@@ -1516,9 +1581,26 @@ function MediaPipeGuidanceView({ selectedExerciseName, isActive = true, onReady,
         domStorageEnabled
         onMessage={(event) => {
           try {
-            const parsed = JSON.parse(event.nativeEvent.data || "{}") as { type?: string; message?: string };
+            const parsed = JSON.parse(event.nativeEvent.data || "{}") as {
+              type?: string;
+              message?: string;
+              reps?: number;
+              formOk?: boolean;
+              correction?: string;
+              phase?: string;
+              bodyDetected?: boolean;
+            };
             if (parsed.type === "ready") onReady?.();
             if (parsed.type === "error") onError?.(parsed.message || "MediaPipe failed to start.");
+            if (parsed.type === "tracking") {
+              onTrackingUpdate?.({
+                reps: Number(parsed.reps) || 0,
+                formOk: Boolean(parsed.formOk),
+                correction: String(parsed.correction || ""),
+                phase: String(parsed.phase || "idle"),
+                bodyDetected: parsed.bodyDetected === true,
+              });
+            }
           } catch {
             // ignore malformed bridge messages
           }

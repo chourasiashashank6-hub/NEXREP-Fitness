@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -20,6 +20,10 @@ import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold } from "@expo-g
 import { StatusBar } from "expo-status-bar";
 
 import { PlanCard } from "../components/PlanCard";
+import {
+  PlanOverviewCard,
+  SubscriptionHistorySection,
+} from "../components/subscription/SubscriptionOverviewUI";
 import { getOriginalPrice, getPrice, PLANS, type PlanId } from "../constants/plans";
 import { runCouponApply } from "../components/CouponInput";
 import type { ProfileStackParamList } from "../navigation/types";
@@ -59,8 +63,11 @@ export function PlanPickerScreen({
 }: PlanPickerScreenProps) {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList, "PlanPicker">>();
+  const userId = useAuthStore((s) => s.sessionUserId);
   const authPlanId = useAuthStore((s) => s.plan_id) ?? "free";
   const subscriptionTier = useSubscriptionStore((s) => s.subscription?.tier);
+  const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
+  const fetchPayments = useSubscriptionStore((s) => s.fetchPayments);
 
   const [fontsLoaded] = useFonts({ BebasNeue_400Regular, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold });
   const [isYearly, setIsYearly] = useState(false);
@@ -69,6 +76,12 @@ export function PlanPickerScreen({
   const [couponError, setCouponError] = useState("");
 
   const currentTier = String(subscriptionTier ?? authPlanId ?? "FREE").toUpperCase();
+
+  useEffect(() => {
+    if (!userId) return;
+    void fetchSubscription(userId);
+    void fetchPayments(userId);
+  }, [userId, fetchSubscription, fetchPayments]);
 
   const openTerms = useCallback(async () => {
     if (onPressTerms) {
@@ -110,7 +123,7 @@ export function PlanPickerScreen({
       navigation.goBack();
       return;
     }
-    navigation.navigate("Subscription");
+    navigation.navigate("ProfileMain");
   }, [navigation]);
 
   const handleSelectPlan = useCallback(
@@ -163,6 +176,8 @@ export function PlanPickerScreen({
           <Text style={styles.heroTitle}>{t("subscription.planPicker.heroTitle")}</Text>
           <Text style={styles.heroSubtitle}>{t("subscription.planPicker.heroSubtitle")}</Text>
         </View>
+
+        <PlanOverviewCard compact />
 
         <View style={styles.toggleWrap}>
           <Pressable style={[styles.toggleSide, !isYearly && styles.toggleSideActive]} onPress={() => setIsYearly(false)}>
@@ -223,6 +238,8 @@ export function PlanPickerScreen({
             isCurrentPlan={elitePlan.id === currentTier.toLowerCase()}
           />
         </View>
+
+        <SubscriptionHistorySection />
 
         <View style={styles.trustRow}>
           <TrustTile icon="shield-checkmark" label={t("subscription.planPicker.securePayment")} />

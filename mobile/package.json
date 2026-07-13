@@ -41,6 +41,7 @@
     "expo-notifications": "~0.32.17",
     "expo-secure-store": "^55.0.13",
     "expo-sharing": "^56.0.18",
+    "expo-speech": "~14.0.8",
     "expo-status-bar": "~3.0.9",
     "firebase": "^12.12.1",
     "i18next": "^26.3.1",

@@ -41,6 +41,7 @@ import { useSubscriptionStore } from "../store/subscriptionStore";
 import type { PlanTier } from "../types/subscription";
 import { logicalRow, textAlignStart } from "../utils/rtl";
 import { prepareFoodImagePayload } from "../utils/foodImagePayload";
+import { confirmUser, notifyUser } from "../utils/notify";
 
 type GoalTag = "Fat Loss" | "Muscle Gain" | "Strength";
 
@@ -236,6 +237,7 @@ export const ProfileScreen = () => {
   const [showWeighInModal, setShowWeighInModal] = useState(false);
   const [weighInValue, setWeighInValue] = useState("");
   const [isLoggingWeight, setIsLoggingWeight] = useState(false);
+  const [resettingJourney, setResettingJourney] = useState(false);
   const [paceKgPerWeek, setPaceKgPerWeek] = useState(0.5);
   const [age, setAge] = useState(25);
   const [stats, setStats] = useState({
@@ -403,6 +405,34 @@ export const ProfileScreen = () => {
       Alert.alert(t("profile.alerts.error"), t("profile.alerts.loadFailed"));
     }
   }, [t]);
+
+  const handleResetJourney = useCallback(() => {
+    void (async () => {
+      const confirmed = await confirmUser(
+        "Reset journey?",
+        "This sets your journey start date to today and restarts your 26-week progress tracking. Your weight history is not deleted.",
+        "Reset",
+      );
+      if (!confirmed || !token) return;
+
+      setResettingJourney(true);
+      try {
+        const res = await fetch(`${resolveApiBaseUrl()}/api/goal/reset-journey`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error("Reset failed");
+        await load();
+      } catch {
+        notifyUser("Error", "Could not reset journey. Please try again.");
+      } finally {
+        setResettingJourney(false);
+      }
+    })();
+  }, [load, token]);
 
   useEffect(() => {
     void load();
@@ -1103,6 +1133,17 @@ export const ProfileScreen = () => {
                 </Text>
               </Pressable>
             </View>
+            <TouchableOpacity
+              onPress={handleResetJourney}
+              disabled={resettingJourney}
+              style={styles.resetJourneyBtn}
+            >
+              {resettingJourney ? (
+                <ActivityIndicator size="small" color="#9CA3AF" />
+              ) : (
+                <Text style={styles.resetJourneyTxt}>↺ Reset journey start date</Text>
+              )}
+            </TouchableOpacity>
           </>
         )}
       </View>
@@ -1118,7 +1159,7 @@ export const ProfileScreen = () => {
       </View>
 
       {plan_id === "free" ? (
-        <Pressable onPress={() => navigation.navigate("Subscription")} style={styles.proCta}>
+        <Pressable onPress={() => navigation.navigate("PlanPicker")} style={styles.proCta}>
           <View style={styles.proCtaIcon}>
             <Text style={styles.proCtaEmoji}>✨</Text>
           </View>
@@ -1139,7 +1180,7 @@ export const ProfileScreen = () => {
               borderColor: subscriptionColors.cardBorder,
             },
           ]}
-          onPress={() => navigation.navigate("Subscription")}
+          onPress={() => navigation.navigate("PlanPicker")}
         >
           <View style={[styles.subscriptionsIconTile, { backgroundColor: subscriptionColors.badgeBg }]}>
             <Text style={{ fontSize: 18 }}>⭐</Text>
@@ -1652,6 +1693,8 @@ const styles = StyleSheet.create({
   weightFreshnessToday: { color: GREEN },
   weightLoader: { marginTop: 10 },
   logWeightTile: { flex: 1, backgroundColor: GREEN_LIGHT, borderRadius: 12, padding: 12, alignItems: "center", justifyContent: "center" },
+  resetJourneyBtn: { alignSelf: "center", marginTop: 12, paddingVertical: 6, paddingHorizontal: 12 },
+  resetJourneyTxt: { fontSize: 12, color: "#9CA3AF", textDecorationLine: "underline" },
   logWeightEmoji: { fontSize: 20, marginBottom: 4 },
   logWeightText: { color: GREEN, fontSize: 14, fontWeight: "900" },
   logWeightSub: { color: MUTED, fontSize: 11, marginTop: 3, fontWeight: "700" },

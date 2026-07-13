@@ -5,9 +5,14 @@ import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getProfile } from "../api/user";
+import { postSessionComplete } from "../api/workoutSessions";
 import { useLanguageStore } from "../i18n/languageStore";
 import { useAuthStore } from "../store/authStore";
+import { useWorkoutSessionStore } from "../store/workoutSessionStore";
 import { AuthScreen } from "../screens/AuthScreen";
+import ActiveWorkoutScreen from "../screens/ActiveWorkoutScreen";
+import AICameraWorkoutScreen from "../screens/AICameraWorkoutScreen";
+import WorkoutCompletionScreen from "../screens/WorkoutCompletionScreen";
 import CoachNavigator from "../screens/Coach/CoachNavigator";
 import { ProfileStackNavigator } from "./ProfileStackNavigator";
 import SocialNavigator from "./SocialNavigator";
@@ -22,6 +27,8 @@ import Screen6Setup from "../screens/onboarding/Screen6Setup";
 import ResultsScreen from "../screens/onboarding/ResultsScreen";
 import { useAppTheme } from "../theme";
 import { textAlignStart } from "../utils/rtl";
+import { navigationRef } from "./navigationRef";
+import { confirmUser } from "../utils/notify";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -168,6 +175,80 @@ export const RootNavigator = () => {
     bootstrap();
   }, [bootstrap]);
 
+  // Resume / auto-abandon stale active workout sessions
+  useEffect(() => {
+    if (!token || needsOnboarding) return;
+
+    const run = async () => {
+      const { session, abandonSession, clearSession } = useWorkoutSessionStore.getState();
+      if (!session) return;
+      if (session.status !== "active" && session.status !== "resting") return;
+
+      const ageMs = Date.now() - new Date(session.started_at).getTime();
+      let weightKg = 70;
+      try {
+        const profile = await getProfile();
+        const w = Number((profile as any)?.weight ?? (profile as any)?.weight_kg ?? 70);
+        if (Number.isFinite(w) && w > 0) weightKg = w;
+      } catch {
+        // keep default
+      }
+
+      const payload = {
+        session_id: session.session_id,
+        plan_day_id: session.plan_day_id,
+        started_at: session.started_at,
+        ended_at: new Date().toISOString(),
+        status: "abandoned" as const,
+        set_logs: session.set_logs.map(
+          ({
+            exercise_name,
+            set_number,
+            reps,
+            weight_kg,
+            started_at,
+            completed_at,
+            tracking_method,
+          }) => ({
+            exercise_name,
+            set_number,
+            reps,
+            weight_kg,
+            started_at,
+            completed_at,
+            tracking_method: tracking_method ?? "manual",
+          }),
+        ),
+        user_weight_kg: weightKg,
+      };
+
+      if (ageMs >= 3 * 60 * 60 * 1000) {
+        abandonSession();
+        postSessionComplete(payload).catch(() => undefined);
+        clearSession();
+        return;
+      }
+
+      const resume = await confirmUser("Resume workout?", "You have an active workout session. Resume?", "Resume");
+      if (resume) {
+        const planId = Number(session.plan_day_id);
+        if (Number.isFinite(planId) && navigationRef.isReady()) {
+          const screen =
+            session.session_type === "ai_camera"
+              ? "AICameraWorkoutSession"
+              : "ActiveWorkoutSession";
+          navigationRef.navigate(screen as never, { planId } as never);
+        }
+      } else {
+        abandonSession();
+        postSessionComplete(payload).catch(() => undefined);
+        clearSession();
+      }
+    };
+
+    void run();
+  }, [token, needsOnboarding]);
+
   if (!hydrated) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -200,12 +281,31 @@ export const RootNavigator = () => {
       ) : token ? (
         <>
           <Stack.Screen name="Main">
-            {() => <MainTabs initialRouteName={returnToProfileAfterOnboarding ? "Profile" : "Home"} />}
+            {() => (
+              <OnboardingProvider key={sessionUserId ?? token ?? "main"}>
+                <MainTabs initialRouteName={returnToProfileAfterOnboarding ? "Profile" : "Home"} />
+              </OnboardingProvider>
+            )}
           </Stack.Screen>
           <Stack.Screen
             name="AdminStack"
             component={AdminNavigator}
             options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="ActiveWorkoutSession"
+            component={ActiveWorkoutScreen}
+            options={{ headerShown: false, presentation: "modal", gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="AICameraWorkoutSession"
+            component={AICameraWorkoutScreen}
+            options={{ headerShown: false, presentation: "modal", gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="WorkoutCompletion"
+            component={WorkoutCompletionScreen}
+            options={{ headerShown: false, presentation: "modal", gestureEnabled: false }}
           />
         </>
       ) : (

@@ -249,6 +249,19 @@ async function scheduleOne({
   });
 }
 
+export async function scheduleRestEndNotification(
+  restEndsAt: Date,
+  nextExerciseName: string,
+): Promise<string | null> {
+  return scheduleOne({
+    title: "Rest over 💪",
+    body: `${nextExerciseName} is up — let's go!`,
+    date: restEndsAt,
+    category: "workout",
+    data: { kind: "rest_end" },
+  });
+}
+
 export async function rescheduleWorkoutPlanNotifications(plan: WorkoutPlanCurrent | null, workoutTime = DEFAULT_WORKOUT_TIME) {
   const groupKey = "workout-plan";
   await cancelGroup(groupKey);

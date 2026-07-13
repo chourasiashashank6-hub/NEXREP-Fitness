@@ -7,6 +7,13 @@ export type ActivityLevel = "sedentary" | "lightly_active" | "moderately_active"
 export type FocusMuscle = "Chest" | "Back" | "Shoulders" | "Legs" | "Arms" | "Core";
 export type TargetLift = { exercise_id?: number | null; exercise_name: string; target_weight_kg: number };
 
+export interface BodyTypeData {
+  gender: "male" | "female";
+  current_body_id: string;
+  goal_body_id: string;
+  problem_areas: string[];
+}
+
 export type OnboardingData = {
   personal: {
     name: string;
@@ -43,6 +50,7 @@ export type OnboardingData = {
     allergies: string[];
     meals_per_day: number;
   };
+  body_type?: BodyTypeData;
   app_setup: {
     weigh_in_reminder_enabled: boolean;
     reminder_time: string;

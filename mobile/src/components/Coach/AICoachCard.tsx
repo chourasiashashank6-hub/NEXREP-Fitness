@@ -10,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
+import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { getCalorieCoachInsight, hasOpenAiKey } from "../../services/aiCoachService";
 import type { AICoachResponse, MacroStatus, NutritionData } from "../../types/coach";
 
@@ -66,11 +67,22 @@ export type AICoachCardHandle = {
 
 type MacroKey = "protein" | "carbs" | "fat";
 
-const MACRO_FOODS: Record<MacroKey, string[]> = {
-  protein: ["🧀 Paneer 80g", "🥚 2 Eggs", "🍗 Chicken 120g", "🥛 Greek yogurt", "🐟 Tuna 100g"],
-  carbs: ["🍚 Brown rice", "🫓 2 Roti", "🥣 Oats 80g", "🍠 Sweet potato", "🍌 Banana"],
-  fat: ["🥜 Almonds", "🫒 Olive oil", "🥑 Avocado", "🥥 Coconut", "🧈 Peanut butter"],
-};
+function getMacroFoods(dietType: string): Record<MacroKey, string[]> {
+  const isVegan = dietType === "vegan";
+  const isVegetarian = dietType === "vegetarian" || isVegan;
+
+  const protein = isVegan
+    ? ["🥜 Almonds 30g", "🫘 Dal 150g", "🌱 Tofu 100g", "🥜 Peanut butter 2tbsp", "🫛 Edamame 100g"]
+    : isVegetarian
+      ? ["🧀 Paneer 80g", "🥚 2 Eggs", "🥛 Greek yogurt", "🫘 Dal 150g", "🥜 Almonds 30g"]
+      : ["🧀 Paneer 80g", "🥚 2 Eggs", "🍗 Chicken 120g", "🥛 Greek yogurt", "🐟 Tuna 100g"];
+
+  return {
+    protein,
+    carbs: ["🍚 Brown rice", "🫓 2 Roti", "🥣 Oats 80g", "🍠 Sweet potato", "🍌 Banana"],
+    fat: ["🥜 Almonds", "🫒 Olive oil", "🥑 Avocado", "🥥 Coconut", "🧈 Peanut butter"],
+  };
+}
 
 const MACRO_META: Record<MacroKey, { label: string; color: string; light: string; emoji: string; subtitle: string }> = {
   protein: { label: i18n.t("coach.calorie.card.protein"), color: BLUE, light: BLUE_LIGHT, emoji: "💪", subtitle: i18n.t("coach.calorie.card.proteinSubtitle") },
@@ -206,6 +218,9 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
   ref,
 ) {
   const { t } = useTranslation();
+  const { data: onboardingData } = useOnboardingContext();
+  const dietType = (onboardingData?.dietary?.diet_type ?? "none").toLowerCase().trim();
+  const MACRO_FOODS = getMacroFoods(dietType);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AICoachResponse | null>(null);
