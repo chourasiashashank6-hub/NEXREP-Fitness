@@ -45,6 +45,9 @@ module.exports = {
     plugins: [
       "@react-native-community/datetimepicker",
       "expo-image-picker",
+      "expo-font",
+      "expo-localization",
+      "expo-secure-store",
       [
         "expo-location",
         {

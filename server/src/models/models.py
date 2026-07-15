@@ -29,6 +29,7 @@ class User(Base):
     preferred_language = Column(String(32), nullable=True)
     stack_visibility = Column(Boolean, nullable=False, default=True)
     profile_photo_url = Column(String(512), nullable=True)
+    pose_calibration = Column(JSONB, nullable=True)
 
     onboarding = relationship("UserOnboarding", back_populates="user", uselist=False)
 
@@ -538,6 +539,7 @@ class WorkoutSession(Base):
     status = Column(String(32), nullable=False)  # completed | abandoned
     server_kcal_total = Column(Float, nullable=False, default=0)
     streak_incremented = Column(Boolean, nullable=False, default=False)
+    ai_tracking = Column(JSONB, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

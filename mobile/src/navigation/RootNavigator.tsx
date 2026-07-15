@@ -12,6 +12,7 @@ import { useWorkoutSessionStore } from "../store/workoutSessionStore";
 import { AuthScreen } from "../screens/AuthScreen";
 import ActiveWorkoutScreen from "../screens/ActiveWorkoutScreen";
 import AICameraWorkoutScreen from "../screens/AICameraWorkoutScreen";
+import AITrainerCalibrationScreen from "../screens/aiTrainer/AITrainerCalibrationScreen";
 import WorkoutCompletionScreen from "../screens/WorkoutCompletionScreen";
 import CoachNavigator from "../screens/Coach/CoachNavigator";
 import { ProfileStackNavigator } from "./ProfileStackNavigator";
@@ -301,6 +302,11 @@ export const RootNavigator = () => {
             name="AICameraWorkoutSession"
             component={AICameraWorkoutScreen}
             options={{ headerShown: false, presentation: "modal", gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="AITrainerCalibration"
+            component={AITrainerCalibrationScreen}
+            options={{ headerShown: false, presentation: "modal", gestureEnabled: true }}
           />
           <Stack.Screen
             name="WorkoutCompletion"

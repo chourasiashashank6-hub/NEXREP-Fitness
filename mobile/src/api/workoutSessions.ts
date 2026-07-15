@@ -16,6 +16,13 @@ export interface CompleteSessionPayload {
     tracking_method?: "manual" | "ai_camera";
   }>;
   user_weight_kg: number;
+  ai_tracking?: {
+    calibrated: boolean;
+    used_population_defaults: boolean;
+    sets: unknown[];
+    issues_histogram: Record<string, number>;
+    form_score_avg: number | null;
+  } | null;
 }
 
 export interface CompleteSessionResponse {

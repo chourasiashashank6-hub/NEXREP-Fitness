@@ -2757,6 +2757,8 @@ def _profile_payload(db: Session, user: User) -> dict[str, Any]:
         "preferredLanguage": user.preferred_language,
         "profilePhotoUrl": user.profile_photo_url,
         "profile_photo_url": user.profile_photo_url,
+        "pose_calibration": user.pose_calibration,
+        "poseCalibration": user.pose_calibration,
     }
 
 
@@ -2892,6 +2894,26 @@ def update_profile(
     db.commit()
     db.refresh(current_user)
     return _profile_payload(db, current_user)
+
+
+@app.put("/users/me/pose-calibration")
+def put_pose_calibration(
+    payload: dict[str, Any],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Persist MediaPipe body calibration blob (JSONB on users)."""
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="pose_calibration must be an object")
+    current_user.pose_calibration = payload
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return {
+        "ok": True,
+        "pose_calibration": current_user.pose_calibration,
+        "poseCalibration": current_user.pose_calibration,
+    }
 
 
 @app.post("/profile/photo")

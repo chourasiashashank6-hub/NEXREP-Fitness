@@ -42,6 +42,8 @@ import type { PlanTier } from "../types/subscription";
 import { logicalRow, textAlignStart } from "../utils/rtl";
 import { prepareFoodImagePayload } from "../utils/foodImagePayload";
 import { confirmUser, notifyUser } from "../utils/notify";
+import { navigationRef } from "../navigation/navigationRef";
+import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 
 type GoalTag = "Fat Loss" | "Muscle Gain" | "Strength";
 
@@ -1219,6 +1221,18 @@ export const ProfileScreen = () => {
             <Text style={styles.footerEmoji}>💊</Text>
           </View>
           <Text style={styles.footerLabel}>{t("social.stacks.open")}</Text>
+          <Text style={styles.footerChevron}>›</Text>
+        </Pressable>
+        <Pressable
+          style={styles.footerRow}
+          onPress={() => navigationRef.navigate("AITrainerCalibration" as never)}
+        >
+          <View style={styles.footerIconTile}>
+            <Text style={styles.footerEmoji}>🧍</Text>
+          </View>
+          <Text style={styles.footerLabel}>
+            {t("aiTrainer.calibrate_profile", { defaultValue: "AI trainer calibration" })}
+          </Text>
           <Text style={styles.footerChevron}>›</Text>
         </Pressable>
         <Pressable

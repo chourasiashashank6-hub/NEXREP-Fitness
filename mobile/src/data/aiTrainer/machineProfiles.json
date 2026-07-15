@@ -1,0 +1,539 @@
+{
+  "flat_bench": {
+    "displayName": "Flat bench",
+    "torsoBaselineDeg": 0,
+    "torsoBaselineTolerance": 12,
+    "cameraPlacement": {
+      "position": "front_45",
+      "distanceM": 2.0,
+      "heightHint": "chest height",
+      "instructionKey": "cam_flat_bench"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "head",
+      "hips"
+    ],
+    "occludedLandmarks": [
+      "back"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Re-zero torsoLean against vertical (0\u00b0)."
+  },
+  "incline_bench_30_45": {
+    "displayName": "Incline bench (30\u201345\u00b0)",
+    "torsoBaselineDeg": 37,
+    "torsoBaselineTolerance": 12,
+    "cameraPlacement": {
+      "position": "front_45",
+      "distanceM": 2.0,
+      "heightHint": "chest height",
+      "instructionKey": "cam_incline_bench"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "head"
+    ],
+    "occludedLandmarks": [
+      "hips_partial",
+      "back"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Re-zero torsoLean against torsoBaselineDeg, not vertical."
+  },
+  "decline_bench": {
+    "displayName": "Decline bench",
+    "torsoBaselineDeg": -20,
+    "torsoBaselineTolerance": 12,
+    "cameraPlacement": {
+      "position": "front_45",
+      "distanceM": 2.0,
+      "heightHint": "hip height",
+      "instructionKey": "cam_decline_bench"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "head"
+    ],
+    "occludedLandmarks": [
+      "hips_partial",
+      "back"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Negative baseline for decline torso."
+  },
+  "upright_bench_75_90": {
+    "displayName": "Upright bench (75\u201390\u00b0)",
+    "torsoBaselineDeg": 82,
+    "torsoBaselineTolerance": 12,
+    "cameraPlacement": {
+      "position": "front",
+      "distanceM": 2.0,
+      "heightHint": "chest height",
+      "instructionKey": "cam_upright_bench"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "head"
+    ],
+    "occludedLandmarks": [
+      "hips",
+      "legs"
+    ],
+    "disabledCheckIds": [
+      "lumbar_arch"
+    ],
+    "notes": "Seated; lower-body checks disabled."
+  },
+  "seated_chest_press": {
+    "displayName": "Seated chest press",
+    "torsoBaselineDeg": 80,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "front_45",
+      "distanceM": 1.8,
+      "heightHint": "chest height",
+      "instructionKey": "cam_seated_chest_press"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "head"
+    ],
+    "occludedLandmarks": [
+      "hips",
+      "legs",
+      "back"
+    ],
+    "disabledCheckIds": [
+      "asymmetry"
+    ],
+    "notes": "Machine path; seated lower body occluded."
+  },
+  "seated_shoulder_press": {
+    "displayName": "Seated shoulder press machine",
+    "torsoBaselineDeg": 85,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "front",
+      "distanceM": 1.8,
+      "heightHint": "chest height",
+      "instructionKey": "cam_seated_shoulder_press"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "head"
+    ],
+    "occludedLandmarks": [
+      "hips",
+      "legs"
+    ],
+    "disabledCheckIds": [
+      "lumbar_arch",
+      "asymmetry"
+    ],
+    "notes": "Machine guided path."
+  },
+  "pec_deck": {
+    "displayName": "Pec deck",
+    "torsoBaselineDeg": 80,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "front",
+      "distanceM": 1.8,
+      "heightHint": "chest height",
+      "instructionKey": "cam_pec_deck"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "head"
+    ],
+    "occludedLandmarks": [
+      "hips",
+      "legs",
+      "back"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Elbow bend constancy is primary check."
+  },
+  "lat_pulldown_station": {
+    "displayName": "Lat pulldown station",
+    "torsoBaselineDeg": 10,
+    "torsoBaselineTolerance": 15,
+    "cameraPlacement": {
+      "position": "front",
+      "distanceM": 2.0,
+      "heightHint": "waist height",
+      "instructionKey": "cam_lat_pulldown"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "head",
+      "hips"
+    ],
+    "occludedLandmarks": [
+      "legs_partial"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Cable bar may occlude wrists briefly."
+  },
+  "seated_row_station": {
+    "displayName": "Seated cable row",
+    "torsoBaselineDeg": 0,
+    "torsoBaselineTolerance": 15,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 2.2,
+      "heightHint": "hip height",
+      "instructionKey": "cam_seated_row"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "hips",
+      "head"
+    ],
+    "occludedLandmarks": [
+      "legs_partial"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Side view for torso heave detection."
+  },
+  "chest_supported_row": {
+    "displayName": "Chest-supported row",
+    "torsoBaselineDeg": 45,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 2.0,
+      "heightHint": "hip height",
+      "instructionKey": "cam_chest_supported_row"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "head"
+    ],
+    "occludedLandmarks": [
+      "hips",
+      "legs",
+      "chest"
+    ],
+    "disabledCheckIds": [
+      "torso_fixed"
+    ],
+    "notes": "Pad fixes torso."
+  },
+  "t_bar_platform": {
+    "displayName": "T-bar platform",
+    "torsoBaselineDeg": 45,
+    "torsoBaselineTolerance": 15,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 2.2,
+      "heightHint": "hip height",
+      "instructionKey": "cam_t_bar"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "hips",
+      "head"
+    ],
+    "occludedLandmarks": [],
+    "disabledCheckIds": [],
+    "notes": "Standard hinge-row side view."
+  },
+  "bench_support_row": {
+    "displayName": "One-arm row with bench support",
+    "torsoBaselineDeg": 0,
+    "torsoBaselineTolerance": 20,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 2.0,
+      "heightHint": "hip height",
+      "instructionKey": "cam_bench_support_row"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "hips"
+    ],
+    "occludedLandmarks": [
+      "far_side"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Track working side only."
+  },
+  "cable_station": {
+    "displayName": "Cable station",
+    "torsoBaselineDeg": 0,
+    "torsoBaselineTolerance": 15,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 2.0,
+      "heightHint": "chest height",
+      "instructionKey": "cam_cable_station"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists",
+      "hips",
+      "head"
+    ],
+    "occludedLandmarks": [],
+    "disabledCheckIds": [],
+    "notes": "Generic cable placements; use front_45 when specified by exercise."
+  },
+  "preacher_bench": {
+    "displayName": "Preacher bench",
+    "torsoBaselineDeg": 45,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 1.6,
+      "heightHint": "elbow height",
+      "instructionKey": "cam_preacher_bench"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "elbows",
+      "wrists"
+    ],
+    "occludedLandmarks": [
+      "hips",
+      "legs"
+    ],
+    "disabledCheckIds": [
+      "elbow_pin",
+      "torso_swing"
+    ],
+    "notes": "Pad braces upper arms."
+  },
+  "smith_rack": {
+    "displayName": "Smith machine",
+    "torsoBaselineDeg": 0,
+    "torsoBaselineTolerance": 12,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 2.5,
+      "heightHint": "hip height",
+      "instructionKey": "cam_smith_rack"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "hips",
+      "knees",
+      "ankles",
+      "head"
+    ],
+    "occludedLandmarks": [
+      "wrists_partial"
+    ],
+    "disabledCheckIds": [
+      "bar_drift"
+    ],
+    "notes": "Bar path fixed."
+  },
+  "hack_squat": {
+    "displayName": "Hack squat machine",
+    "torsoBaselineDeg": 45,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 2.2,
+      "heightHint": "hip height",
+      "instructionKey": "cam_hack_squat"
+    },
+    "reliableLandmarks": [
+      "hips",
+      "knees",
+      "ankles"
+    ],
+    "occludedLandmarks": [
+      "shoulders_partial",
+      "back"
+    ],
+    "disabledCheckIds": [
+      "torso_lean",
+      "heel_lift"
+    ],
+    "notes": "Back pad supports torso."
+  },
+  "leg_press_45": {
+    "displayName": "45\u00b0 leg press",
+    "torsoBaselineDeg": 45,
+    "torsoBaselineTolerance": 8,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 2.0,
+      "heightHint": "knee height",
+      "instructionKey": "cam_leg_press"
+    },
+    "reliableLandmarks": [
+      "hips",
+      "knees",
+      "ankles"
+    ],
+    "occludedLandmarks": [
+      "shoulders",
+      "head",
+      "torso"
+    ],
+    "disabledCheckIds": [
+      "torso_lean",
+      "knee_forward_drift",
+      "heel_lift"
+    ],
+    "notes": "Upper body largely occluded; never guess hidden joints."
+  },
+  "leg_extension_machine": {
+    "displayName": "Leg extension",
+    "torsoBaselineDeg": 85,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 1.8,
+      "heightHint": "knee height",
+      "instructionKey": "cam_leg_extension"
+    },
+    "reliableLandmarks": [
+      "hips",
+      "knees",
+      "ankles"
+    ],
+    "occludedLandmarks": [
+      "shoulders",
+      "arms"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Seated lower-body isolation."
+  },
+  "lying_leg_curl_machine": {
+    "displayName": "Lying leg curl",
+    "torsoBaselineDeg": 0,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 1.8,
+      "heightHint": "hip height",
+      "instructionKey": "cam_lying_leg_curl"
+    },
+    "reliableLandmarks": [
+      "hips",
+      "knees",
+      "ankles"
+    ],
+    "occludedLandmarks": [
+      "shoulders",
+      "arms"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Prone; track knee ROM."
+  },
+  "seated_leg_curl_machine": {
+    "displayName": "Seated leg curl",
+    "torsoBaselineDeg": 85,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 1.8,
+      "heightHint": "knee height",
+      "instructionKey": "cam_seated_leg_curl"
+    },
+    "reliableLandmarks": [
+      "hips",
+      "knees",
+      "ankles"
+    ],
+    "occludedLandmarks": [
+      "shoulders",
+      "arms"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Seated hamstring curl."
+  },
+  "standing_calf_machine": {
+    "displayName": "Standing calf raise",
+    "torsoBaselineDeg": 0,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 1.6,
+      "heightHint": "ankle height",
+      "instructionKey": "cam_standing_calf"
+    },
+    "reliableLandmarks": [
+      "hips",
+      "knees",
+      "ankles"
+    ],
+    "occludedLandmarks": [],
+    "disabledCheckIds": [],
+    "notes": "Frame ankles clearly."
+  },
+  "seated_calf_machine": {
+    "displayName": "Seated calf raise",
+    "torsoBaselineDeg": 85,
+    "torsoBaselineTolerance": 10,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 1.5,
+      "heightHint": "ankle height",
+      "instructionKey": "cam_seated_calf"
+    },
+    "reliableLandmarks": [
+      "knees",
+      "ankles"
+    ],
+    "occludedLandmarks": [
+      "hips_partial",
+      "shoulders"
+    ],
+    "disabledCheckIds": [],
+    "notes": "Knees held ~90\u00b0."
+  },
+  "bench_back_support": {
+    "displayName": "Bench back support (hip thrust)",
+    "torsoBaselineDeg": 0,
+    "torsoBaselineTolerance": 15,
+    "cameraPlacement": {
+      "position": "side",
+      "distanceM": 2.2,
+      "heightHint": "hip height",
+      "instructionKey": "cam_hip_thrust"
+    },
+    "reliableLandmarks": [
+      "shoulders",
+      "hips",
+      "knees",
+      "ankles",
+      "head"
+    ],
+    "occludedLandmarks": [],
+    "disabledCheckIds": [
+      "bar_drift"
+    ],
+    "notes": "Upper back on bench; side view for hip lockout."
+  }
+}

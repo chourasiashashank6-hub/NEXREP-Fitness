@@ -17,6 +17,7 @@ export type SessionType = "standard" | "ai_camera";
 export type TrackingMethod = "manual" | "ai_camera";
 export type AiCameraUiPhase = "tracking" | "rest" | "exercise_complete" | "manual_fallback";
 export type FormStatus = "good" | "correction" | "unknown";
+export type VoiceMode = "full" | "corrections_only" | "muted";
 
 // exercise_name is used as the identifier because WorkoutExercise has no id field
 export interface SetLog {
@@ -64,13 +65,21 @@ export interface WorkoutSession {
   form_status: FormStatus;
   last_correction: string | null;
   audio_guidance_enabled: boolean;
+  /** full → corrections_only → muted cycle */
+  voice_mode: VoiceMode;
   form_good_samples: number;
   form_total_samples: number;
   exercise_checkpoint_at: string | null;
+  /** Live form score for current set (spec algorithm). */
+  live_form_score: number;
+  /** Clean/flagged verdicts for current set. */
+  live_rep_verdicts: Array<"clean" | "flagged">;
 }
 
 interface WorkoutSessionStore {
   session: WorkoutSession | null;
+  /** Survives session clear — Voice button preference. */
+  preferredVoiceMode: VoiceMode;
   startSession: (
     planDayId: string,
     planDayNumber: number,
@@ -95,6 +104,9 @@ interface WorkoutSessionStore {
   resetRepTracking: () => void;
   updateFormTracking: (status: FormStatus, correction?: string | null) => void;
   setAudioGuidanceEnabled: (enabled: boolean) => void;
+  setVoiceMode: (mode: VoiceMode) => void;
+  cycleVoiceMode: () => void;
+  recordRepVerdict: (verdict: "clean" | "flagged", formScore: number) => void;
   markExerciseCheckpoint: () => void;
   clearExerciseCheckpoint: () => void;
 }
@@ -106,15 +118,19 @@ const defaultAiFields = (sessionType: SessionType) => ({
   form_status: "unknown" as FormStatus,
   last_correction: null as string | null,
   audio_guidance_enabled: true,
+  voice_mode: "full" as VoiceMode,
   form_good_samples: 0,
   form_total_samples: 0,
   exercise_checkpoint_at: null as string | null,
+  live_form_score: 100,
+  live_rep_verdicts: [] as Array<"clean" | "flagged">,
 });
 
 export const useWorkoutSessionStore = create<WorkoutSessionStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       session: null,
+      preferredVoiceMode: "full" as VoiceMode,
 
       startSession: (planDayId, planDayNumber, dayName, exercises, sessionType = "standard") =>
         set({
@@ -132,6 +148,8 @@ export const useWorkoutSessionStore = create<WorkoutSessionStore>()(
             exercises,
             set_logs: [],
             ...defaultAiFields(sessionType),
+            voice_mode: get().preferredVoiceMode,
+            audio_guidance_enabled: get().preferredVoiceMode !== "muted",
             ai_ui_phase: sessionType === "ai_camera" ? "tracking" : "tracking",
           },
         }),
@@ -281,6 +299,8 @@ export const useWorkoutSessionStore = create<WorkoutSessionStore>()(
                   last_correction: null,
                   form_good_samples: 0,
                   form_total_samples: 0,
+                  live_form_score: 100,
+                  live_rep_verdicts: [],
                 },
               }
             : state,
@@ -305,9 +325,57 @@ export const useWorkoutSessionStore = create<WorkoutSessionStore>()(
       setAudioGuidanceEnabled: (enabled) =>
         set((state) =>
           state.session
-            ? { session: { ...state.session, audio_guidance_enabled: enabled } }
+            ? {
+                session: {
+                  ...state.session,
+                  audio_guidance_enabled: enabled,
+                  voice_mode: enabled ? state.session.voice_mode === "muted" ? "full" : state.session.voice_mode : "muted",
+                },
+              }
             : state,
         ),
+
+      setVoiceMode: (mode) =>
+        set((state) => ({
+          preferredVoiceMode: mode,
+          session: state.session
+            ? {
+                ...state.session,
+                voice_mode: mode,
+                audio_guidance_enabled: mode !== "muted",
+              }
+            : state.session,
+        })),
+
+      cycleVoiceMode: () =>
+        set((state) => {
+          const cur = state.session?.voice_mode || state.preferredVoiceMode || "full";
+          const next = cur === "full" ? "corrections_only" : cur === "corrections_only" ? "muted" : "full";
+          return {
+            preferredVoiceMode: next,
+            session: state.session
+              ? {
+                  ...state.session,
+                  voice_mode: next,
+                  audio_guidance_enabled: next !== "muted",
+                }
+              : state.session,
+          };
+        }),
+
+      recordRepVerdict: (verdict, formScore) =>
+        set((state) => {
+          if (!state.session) return state;
+          return {
+            session: {
+              ...state.session,
+              live_rep_verdicts: [...state.session.live_rep_verdicts, verdict].slice(-32),
+              live_form_score: formScore,
+              form_good_samples: state.session.form_good_samples + (verdict === "clean" ? 1 : 0),
+              form_total_samples: state.session.form_total_samples + 1,
+            },
+          };
+        }),
 
       markExerciseCheckpoint: () =>
         set((state) =>
@@ -332,10 +400,15 @@ export const useWorkoutSessionStore = create<WorkoutSessionStore>()(
     {
       name: "workout-session-store",
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (s) => ({
+        session: s.session,
+        preferredVoiceMode: s.preferredVoiceMode,
+      }),
       merge: (persisted, current) => {
         const p = (persisted || {}) as Partial<WorkoutSessionStore>;
+        const preferredVoiceMode = p.preferredVoiceMode ?? current.preferredVoiceMode ?? "full";
         const raw = p.session as WorkoutSession | null | undefined;
-        if (!raw) return { ...current, ...p, session: null };
+        if (!raw) return { ...current, ...p, preferredVoiceMode, session: null };
         // Backfill fields for sessions persisted before AI camera extension
         const session: WorkoutSession = {
           ...raw,
@@ -344,17 +417,20 @@ export const useWorkoutSessionStore = create<WorkoutSessionStore>()(
           current_rep_count: raw.current_rep_count ?? 0,
           form_status: raw.form_status ?? "unknown",
           last_correction: raw.last_correction ?? null,
-          audio_guidance_enabled: raw.audio_guidance_enabled ?? true,
+          audio_guidance_enabled: raw.audio_guidance_enabled ?? preferredVoiceMode !== "muted",
+          voice_mode: raw.voice_mode ?? preferredVoiceMode,
           form_good_samples: raw.form_good_samples ?? 0,
           form_total_samples: raw.form_total_samples ?? 0,
           exercise_checkpoint_at: raw.exercise_checkpoint_at ?? null,
+          live_form_score: raw.live_form_score ?? 100,
+          live_rep_verdicts: raw.live_rep_verdicts ?? [],
           rest_ring_total_sec: raw.rest_ring_total_sec ?? null,
           set_logs: (raw.set_logs || []).map((l) => ({
             ...l,
             tracking_method: l.tracking_method ?? "manual",
           })),
         };
-        return { ...current, ...p, session };
+        return { ...current, ...p, preferredVoiceMode, session };
       },
     },
   ),

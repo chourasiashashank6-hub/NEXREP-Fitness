@@ -40,6 +40,7 @@ import { AppInput } from "../components/AppInput";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
 import MediaPipeGuidanceView from "../components/MediaPipeGuidanceView";
 import { SessionTypePickerModal } from "../components/SessionTypePickerModal";
+import { unlockWebSpeech } from "../services/aiTrainer/audioCoach";
 import type { GlobalExercise } from "../constants/GlobalExercisesData";
 import {
   EXERCISE_GUIDANCE,
@@ -49,6 +50,7 @@ import { useLanguageStore } from "../i18n/languageStore";
 import type { MediaPipeGuidanceViewProps } from "../components/MediaPipeGuidanceView";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import { useAuthStore } from "../store/authStore";
+import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 import type { WorkoutPlanCurrent } from "../types/planner";
 import { useAppTheme } from "../theme";
 import { formatDate } from "../utils/date";
@@ -1318,9 +1320,25 @@ export const WorkoutScreen = () => {
                   onDismiss={() => setShowSessionPicker(false)}
                   onChoose={(type) => {
                     setShowSessionPicker(false);
-                    const screen =
-                      type === "ai_camera" ? "AICameraWorkoutSession" : "ActiveWorkoutSession";
-                    navigationRef.navigate(screen as never, {
+                    if (type === "ai_camera") {
+                      // User gesture — unlock browser speechSynthesis for this page load
+                      unlockWebSpeech();
+                      const cal = usePoseCalibrationStore.getState();
+                      void cal.loadFromProfile().then(() => {
+                        const needsCal = !cal.hasCalibration() && !cal.skipped;
+                        if (needsCal) {
+                          navigationRef.navigate("AITrainerCalibration" as never, {
+                            planId: todayPlan!.plan_id,
+                          } as never);
+                        } else {
+                          navigationRef.navigate("AICameraWorkoutSession" as never, {
+                            planId: todayPlan!.plan_id,
+                          } as never);
+                        }
+                      });
+                      return;
+                    }
+                    navigationRef.navigate("ActiveWorkoutSession" as never, {
                       planId: todayPlan!.plan_id,
                     } as never);
                   }}

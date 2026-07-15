@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -58,6 +58,8 @@ class CompleteSessionRequest(BaseModel):
     status: Literal["completed", "abandoned"]
     set_logs: list[SetLogIn]
     user_weight_kg: float = Field(..., gt=0)
+    # Optional AI trainer block — stored, does not affect kcal / idempotency key
+    ai_tracking: dict[str, Any] | None = None
 
 
 class CompleteSessionResponse(BaseModel):
@@ -147,6 +149,7 @@ def complete_session(
             status=payload.status,
             server_kcal_total=total_kcal,
             streak_incremented=False,
+            ai_tracking=payload.ai_tracking,
         )
         db.add(session)
         db.flush()
@@ -157,6 +160,8 @@ def complete_session(
         session.ended_at = payload.ended_at
         session.status = payload.status
         session.server_kcal_total = total_kcal
+        if payload.ai_tracking is not None:
+            session.ai_tracking = payload.ai_tracking
         db.query(WorkoutSessionSetLog).filter(WorkoutSessionSetLog.session_pk == session.id).delete()
 
     for log, kcal in computed_logs:

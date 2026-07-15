@@ -58,6 +58,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; keep hips visible through full rollout range"
+      },
+      "poseSpec": {
+        "id": "ab_wheel_rollout",
+        "family": "core_hold"
       }
     },
     {
@@ -110,6 +114,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; keep hips visible through full rollout range"
+      },
+      "poseSpec": {
+        "id": "ab_wheel_rollout",
+        "family": "core_hold"
       }
     },
     {
@@ -247,6 +255,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Front-facing; watch elbow flare and full lockout overhead"
+      },
+      "poseSpec": {
+        "id": "arnold_press",
+        "family": "vertical_press",
+        "machineProfile": "upright_bench_75_90"
       }
     },
     {
@@ -472,6 +485,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; full depth squat; knees track over toes"
+      },
+      "poseSpec": {
+        "id": "barbell_back_squat",
+        "family": "squat_lunge"
       }
     },
     {
@@ -524,6 +541,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Lying on bench; camera front/overhead; full press extension"
+      },
+      "poseSpec": {
+        "id": "barbell_bench_press",
+        "family": "horizontal_press",
+        "machineProfile": "flat_bench"
       }
     },
     {
@@ -576,6 +598,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; torso ~45\u00b0 parallel; full elbow drive row"
+      },
+      "poseSpec": {
+        "id": "bent_over_barbell_row",
+        "family": "horizontal_pull"
       }
     },
     {
@@ -711,6 +737,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Front-facing; strict no-swing form"
+      },
+      "poseSpec": {
+        "id": "barbell_curl",
+        "family": "curl"
       }
     },
     {
@@ -763,6 +793,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; upright torso front squat"
+      },
+      "poseSpec": {
+        "id": "front_squat",
+        "family": "squat_lunge"
       }
     },
     {
@@ -919,6 +953,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; upper back on bench; drive hips to full extension"
+      },
+      "poseSpec": {
+        "id": "hip_thrust",
+        "family": "hip_hinge",
+        "machineProfile": "bench_back_support"
       }
     },
     {
@@ -971,6 +1010,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; lighter warm-up hip thrust; full glute drive"
+      },
+      "poseSpec": {
+        "id": "hip_thrust",
+        "family": "hip_hinge",
+        "machineProfile": "bench_back_support"
       }
     },
     {
@@ -1127,6 +1171,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; torso ~45\u00b0; full row ROM"
+      },
+      "poseSpec": {
+        "id": "bent_over_barbell_row",
+        "family": "horizontal_pull"
       }
     },
     {
@@ -1179,6 +1227,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; knees locked; plantarflex for peak contraction"
+      },
+      "poseSpec": {
+        "id": "standing_calf_raise",
+        "family": "calf_raise",
+        "machineProfile": "standing_calf_machine"
       }
     },
     {
@@ -1533,6 +1586,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Lying supine; alternate elbow-to-knee; shoulders off floor"
+      },
+      "poseSpec": {
+        "id": "bicycle_crunch",
+        "family": "core_flexion"
       }
     },
     {
@@ -1632,6 +1689,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; parallel or below parallel depth"
+      },
+      "poseSpec": {
+        "id": "bodyweight_squat",
+        "family": "squat_lunge"
       }
     },
     {
@@ -1955,6 +2016,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; rear foot elevated; front knee 90\u00b0 at bottom"
+      },
+      "poseSpec": {
+        "id": "bulgarian_split_squat",
+        "family": "squat_lunge"
       }
     },
     {
@@ -2215,6 +2280,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Kneeling; side-facing; crunch elbows to knees"
+      },
+      "poseSpec": {
+        "id": "cable_crunch",
+        "family": "core_flexion",
+        "machineProfile": "cable_station"
       }
     },
     {
@@ -2251,6 +2321,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Front-facing; strict curl, no body swing"
+      },
+      "poseSpec": {
+        "id": "cable_curl",
+        "family": "curl",
+        "machineProfile": "cable_station"
       }
     },
     {
@@ -2479,6 +2554,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; upper arm vertical; extend to full lockout"
+      },
+      "poseSpec": {
+        "id": "overhead_triceps_extension",
+        "family": "elbow_extension"
       }
     },
     {
@@ -2531,6 +2610,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; bent forward slightly; arms sweep rear"
+      },
+      "poseSpec": {
+        "id": "rear_delt_fly",
+        "family": "horizontal_pull"
       }
     },
     {
@@ -2583,6 +2666,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; straight arms; lat-dominant pulldown to thighs"
+      },
+      "poseSpec": {
+        "id": "straight_arm_pulldown",
+        "family": "vertical_pull",
+        "machineProfile": "cable_station"
       }
     },
     {
@@ -2709,6 +2797,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Chest on incline bench; side-facing; full elbow drive row"
+      },
+      "poseSpec": {
+        "id": "machine_row",
+        "family": "horizontal_pull",
+        "machineProfile": "chest_supported_row"
       }
     },
     {
@@ -2761,6 +2854,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; supinated grip; chin over bar"
+      },
+      "poseSpec": {
+        "id": "chin_up",
+        "family": "vertical_pull"
       }
     },
     {
@@ -2865,58 +2962,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front/lying; narrow grip; tricep-focused press"
-      }
-    },
-    {
-      "exerciseName": "Close-Grip Bench Press",
-      "movementFamily": "horizontal_push",
-      "bodyPosture": "stand_front_facing",
-      "exerciseRule": {
-        "label": "CLOSE-GRIP BENCH PRESS",
-        "joints": [
-          {
-            "label": "L Elbow",
-            "a": 11,
-            "b": 13,
-            "c": 15,
-            "min": 65,
-            "max": 170
-          },
-          {
-            "label": "R Elbow",
-            "a": 12,
-            "b": 14,
-            "c": 16,
-            "min": 65,
-            "max": 170
-          },
-          {
-            "label": "L Shoulder",
-            "a": 13,
-            "b": 11,
-            "c": 23,
-            "min": 45,
-            "max": 130
-          },
-          {
-            "label": "R Shoulder",
-            "a": 14,
-            "b": 12,
-            "c": 24,
-            "min": 45,
-            "max": 130
-          }
-        ]
       },
-      "movementConfig": {
-        "primaryJoint": "elbow",
-        "downThreshold": 75,
-        "upThreshold": 160,
-        "downWhenAngleIsLower": true
-      },
-      "trainerChecks": {
-        "strict": false,
-        "notes": "Front/lying; narrow grip; tricep-focused press"
+      "poseSpec": {
+        "id": "close_grip_bench_press",
+        "family": "horizontal_press",
+        "machineProfile": "flat_bench"
       }
     },
     {
@@ -2953,6 +3003,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Seated; elbow braced on inner thigh; strict curl"
+      },
+      "poseSpec": {
+        "id": "concentration_curl",
+        "family": "curl"
       }
     },
     {
@@ -3041,6 +3095,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Lying supine; camera front/top; shoulders curl off floor"
+      },
+      "poseSpec": {
+        "id": "crunch",
+        "family": "core_flexion"
       }
     },
     {
@@ -3140,6 +3198,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; bar over mid-foot; hip hinge, not a squat"
+      },
+      "poseSpec": {
+        "id": "conventional_deadlift",
+        "family": "hip_hinge"
       }
     },
     {
@@ -3192,6 +3254,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Decline bench; lower chest focus; full press extension"
+      },
+      "poseSpec": {
+        "id": "barbell_bench_press",
+        "family": "horizontal_press",
+        "machineProfile": "flat_bench"
       }
     },
     {
@@ -3504,6 +3571,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; chest dip forward lean"
+      },
+      "poseSpec": {
+        "id": "chest_dips",
+        "family": "horizontal_press"
       }
     },
     {
@@ -3660,6 +3731,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Lying; dumbbells allow greater ROM; full press extension"
+      },
+      "poseSpec": {
+        "id": "flat_dumbbell_press",
+        "family": "horizontal_press",
+        "machineProfile": "flat_bench"
       }
     },
     {
@@ -3951,6 +4027,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Front-facing; strict curl; no swing"
+      },
+      "poseSpec": {
+        "id": "alternating_dumbbell_curl",
+        "family": "curl"
       }
     },
     {
@@ -4102,6 +4182,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; slight elbow bend; raise to shoulder level"
+      },
+      "poseSpec": {
+        "id": "lateral_raise",
+        "family": "lateral_raise_family"
       }
     },
     {
@@ -4310,6 +4394,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; soft knees; hip hinge to hamstring stretch"
+      },
+      "poseSpec": {
+        "id": "romanian_deadlift",
+        "family": "hip_hinge"
       }
     },
     {
@@ -4362,6 +4450,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; knee on bench; full ROM row"
+      },
+      "poseSpec": {
+        "id": "single_arm_dumbbell_row",
+        "family": "horizontal_pull",
+        "machineProfile": "bench_support_row"
       }
     },
     {
@@ -4414,6 +4507,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Front-facing; press from ear height to lockout"
+      },
+      "poseSpec": {
+        "id": "seated_dumbbell_shoulder_press",
+        "family": "vertical_press",
+        "machineProfile": "upright_bench_75_90"
       }
     },
     {
@@ -4466,6 +4564,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; brace on bench; drive elbow to ceiling"
+      },
+      "poseSpec": {
+        "id": "single_arm_dumbbell_row",
+        "family": "horizontal_pull",
+        "machineProfile": "bench_support_row"
       }
     },
     {
@@ -4570,6 +4673,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; dumbbells in hands; plantarflex peak contraction"
+      },
+      "poseSpec": {
+        "id": "standing_calf_raise",
+        "family": "calf_raise",
+        "machineProfile": "standing_calf_machine"
       }
     },
     {
@@ -4976,6 +5084,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Front-facing; semi-supinated grip; strict form"
+      },
+      "poseSpec": {
+        "id": "barbell_curl",
+        "family": "curl"
       }
     },
     {
@@ -5028,6 +5140,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; rope to forehead; external rotation at end"
+      },
+      "poseSpec": {
+        "id": "face_pull",
+        "family": "horizontal_pull",
+        "machineProfile": "cable_station"
       }
     },
     {
@@ -5226,6 +5343,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; raise to shoulder height; straight arms"
+      },
+      "poseSpec": {
+        "id": "front_raise",
+        "family": "lateral_raise_family"
       }
     },
     {
@@ -5278,6 +5399,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; elbows up; upright torso; full depth"
+      },
+      "poseSpec": {
+        "id": "front_squat",
+        "family": "squat_lunge"
       }
     },
     {
@@ -5330,6 +5455,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; feet flat on floor; full hip extension at top"
+      },
+      "poseSpec": {
+        "id": "glute_bridge",
+        "family": "hip_hinge"
       }
     },
     {
@@ -5486,6 +5615,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; dumbbell/KB at chest; elbows track knees"
+      },
+      "poseSpec": {
+        "id": "goblet_squat",
+        "family": "squat_lunge"
       }
     },
     {
@@ -5538,6 +5671,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; feet forward; machine or barbell behind legs"
+      },
+      "poseSpec": {
+        "id": "hack_squat_machine",
+        "family": "squat_lunge",
+        "machineProfile": "hack_squat"
       }
     },
     {
@@ -5574,6 +5712,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Front-facing; neutral grip; no swing"
+      },
+      "poseSpec": {
+        "id": "hammer_curl",
+        "family": "curl"
       }
     },
     {
@@ -5678,6 +5820,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; hanging; raise legs to parallel or above"
+      },
+      "poseSpec": {
+        "id": "hanging_leg_raise",
+        "family": "core_flexion"
       }
     },
     {
@@ -5955,6 +6101,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; upper back on bench; full glute drive"
+      },
+      "poseSpec": {
+        "id": "hip_thrust",
+        "family": "hip_hinge",
+        "machineProfile": "bench_back_support"
       }
     },
     {
@@ -6029,6 +6180,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Incline bench; upper chest focus; full press extension"
+      },
+      "poseSpec": {
+        "id": "barbell_bench_press",
+        "family": "horizontal_press",
+        "machineProfile": "flat_bench"
       }
     },
     {
@@ -6081,6 +6237,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Incline bench; upper chest focus; full press extension"
+      },
+      "poseSpec": {
+        "id": "incline_barbell_bench",
+        "family": "horizontal_press",
+        "machineProfile": "incline_bench_30_45"
       }
     },
     {
@@ -6169,6 +6330,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Seated incline; arms hang behind body; full stretch"
+      },
+      "poseSpec": {
+        "id": "incline_dumbbell_curl",
+        "family": "curl",
+        "machineProfile": "incline_bench_30_45"
       }
     },
     {
@@ -6575,6 +6741,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; hip snap is the driver; arms passive"
+      },
+      "poseSpec": {
+        "id": "kettlebell_swing",
+        "family": "hip_hinge"
       }
     },
     {
@@ -6679,6 +6849,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Seated; pull bar to upper chest; squeeze lats"
+      },
+      "poseSpec": {
+        "id": "lat_pulldown",
+        "family": "vertical_pull",
+        "machineProfile": "lat_pulldown_station"
       }
     },
     {
@@ -6794,6 +6969,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; slight elbow bend; raise to shoulder level"
+      },
+      "poseSpec": {
+        "id": "lateral_raise",
+        "family": "lateral_raise_family"
       }
     },
     {
@@ -6841,6 +7020,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Seated/prone; leg curl machine; full ROM hamstring flex"
+      },
+      "poseSpec": {
+        "id": "lying_leg_curl",
+        "family": "leg_isolation",
+        "machineProfile": "lying_leg_curl_machine"
       }
     },
     {
@@ -6877,6 +7061,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Seated on machine; extend to near-lockout; controlled eccentric"
+      },
+      "poseSpec": {
+        "id": "leg_extension",
+        "family": "leg_isolation",
+        "machineProfile": "leg_extension_machine"
       }
     },
     {
@@ -6929,6 +7118,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Seated; feet on platform; do not lock out knees"
+      },
+      "poseSpec": {
+        "id": "leg_press",
+        "family": "squat_lunge",
+        "machineProfile": "leg_press_45"
       }
     },
     {
@@ -7200,6 +7394,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Seated; machine press; full extension"
+      },
+      "poseSpec": {
+        "id": "chest_press_machine",
+        "family": "horizontal_press",
+        "machineProfile": "seated_chest_press"
       }
     },
     {
@@ -7252,6 +7451,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Seated; chest pad; full row ROM"
+      },
+      "poseSpec": {
+        "id": "machine_row",
+        "family": "horizontal_pull",
+        "machineProfile": "chest_supported_row"
       }
     },
     {
@@ -7304,6 +7508,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Seated; machine press; overhead lockout"
+      },
+      "poseSpec": {
+        "id": "machine_shoulder_press",
+        "family": "vertical_press",
+        "machineProfile": "seated_shoulder_press"
       }
     },
     {
@@ -7356,6 +7565,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Standing under pads; knees locked; full plantarflexion"
+      },
+      "poseSpec": {
+        "id": "standing_calf_raise",
+        "family": "calf_raise",
+        "machineProfile": "standing_calf_machine"
       }
     },
     {
@@ -7753,6 +7967,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Front-facing; bar from clavicle to overhead lockout"
+      },
+      "poseSpec": {
+        "id": "overhead_press_barbell",
+        "family": "vertical_press"
       }
     },
     {
@@ -8148,6 +8366,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; body straight; no hip sag or pike"
+      },
+      "poseSpec": {
+        "id": "plank",
+        "family": "core_hold"
       }
     },
     {
@@ -8403,6 +8625,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Seated; arms braced on pad; full ROM curl"
+      },
+      "poseSpec": {
+        "id": "preacher_curl",
+        "family": "curl",
+        "machineProfile": "preacher_bench"
       }
     },
     {
@@ -8455,6 +8682,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; dead hang to chin over bar"
+      },
+      "poseSpec": {
+        "id": "pull_up",
+        "family": "vertical_pull"
       }
     },
     {
@@ -8559,6 +8790,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; rigid plank body; full ROM"
+      },
+      "poseSpec": {
+        "id": "push_up",
+        "family": "horizontal_press"
       }
     },
     {
@@ -8726,6 +8961,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Bent forward; arms sweep rear; squeeze shoulder blades"
+      },
+      "poseSpec": {
+        "id": "rear_delt_fly",
+        "family": "horizontal_pull"
       }
     },
     {
@@ -9121,6 +9360,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; soft knees; hip hinge; bar close to legs"
+      },
+      "poseSpec": {
+        "id": "romanian_deadlift",
+        "family": "hip_hinge"
       }
     },
     {
@@ -9226,6 +9469,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Seated V-sit; rotate torso side to side; feet off floor optional"
+      },
+      "poseSpec": {
+        "id": "russian_twist",
+        "family": "core_flexion"
       }
     },
     {
@@ -9393,6 +9640,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Seated; cable row to lower chest; upright torso"
+      },
+      "poseSpec": {
+        "id": "seated_cable_row",
+        "family": "horizontal_pull",
+        "machineProfile": "seated_row_station"
       }
     },
     {
@@ -9445,6 +9697,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Seated; pads on knees; soleus-dominant; full plantarflex"
+      },
+      "poseSpec": {
+        "id": "seated_calf_raise",
+        "family": "calf_raise",
+        "machineProfile": "seated_calf_machine"
       }
     },
     {
@@ -9497,6 +9754,11 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Seated; press from ear height to lockout; no arch"
+      },
+      "poseSpec": {
+        "id": "seated_dumbbell_shoulder_press",
+        "family": "vertical_press",
+        "machineProfile": "upright_bench_75_90"
       }
     },
     {
@@ -9722,6 +9984,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Lying; bar lowers to forehead; elbows stationary"
+      },
+      "poseSpec": {
+        "id": "skull_crusher",
+        "family": "elbow_extension",
+        "machineProfile": "flat_bench"
       }
     },
     {
@@ -10208,6 +10475,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; knees locked; plantarflex at peak"
+      },
+      "poseSpec": {
+        "id": "standing_calf_raise",
+        "family": "calf_raise",
+        "machineProfile": "standing_calf_machine"
       }
     },
     {
@@ -10323,6 +10595,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; step fully up; full hip extension at top"
+      },
+      "poseSpec": {
+        "id": "step_up",
+        "family": "squat_lunge"
       }
     },
     {
@@ -10479,6 +10755,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Front-facing (shows wide stance); hip hinge with vertical torso"
+      },
+      "poseSpec": {
+        "id": "sumo_deadlift",
+        "family": "hip_hinge"
       }
     },
     {
@@ -10630,6 +10910,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; straddling bar; full elbow drive row"
+      },
+      "poseSpec": {
+        "id": "t_bar_row",
+        "family": "horizontal_pull",
+        "machineProfile": "t_bar_platform"
       }
     },
     {
@@ -10998,6 +11283,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Side-facing; upper arm parallel to floor; extend and squeeze"
+      },
+      "poseSpec": {
+        "id": "triceps_kickback",
+        "family": "elbow_extension"
       }
     },
     {
@@ -11034,6 +11323,10 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; elbow position fixed; extend to lockout"
+      },
+      "poseSpec": {
+        "id": "overhead_triceps_extension",
+        "family": "elbow_extension"
       }
     },
     {
@@ -11070,6 +11363,11 @@
       "trainerChecks": {
         "strict": false,
         "notes": "Front-facing; elbow position fixed; extend to lockout"
+      },
+      "poseSpec": {
+        "id": "triceps_rope_pushdown",
+        "family": "elbow_extension",
+        "machineProfile": "cable_station"
       }
     },
     {
@@ -11289,6 +11587,10 @@
       "trainerChecks": {
         "strict": true,
         "notes": "Side-facing; alternate legs; front knee 90\u00b0 at bottom"
+      },
+      "poseSpec": {
+        "id": "walking_lunge",
+        "family": "squat_lunge"
       }
     },
     {
@@ -11947,5 +12249,6 @@
         "notes": "Side-facing; bar in elbow crooks; upright torso; full depth"
       }
     }
-  ]
+  ],
+  "poseSpecCoverage": 79
 }

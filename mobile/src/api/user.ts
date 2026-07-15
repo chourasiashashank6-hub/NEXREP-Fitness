@@ -16,6 +16,8 @@ export type UserProfile = {
   preferredLanguage?: string | null;
   profilePhotoUrl?: string | null;
   profile_photo_url?: string | null;
+  pose_calibration?: Record<string, unknown> | null;
+  poseCalibration?: Record<string, unknown> | null;
 };
 
 export const getProfile = async (): Promise<UserProfile> => {
@@ -53,6 +55,15 @@ export const updatePreferredLanguage = async (preferredLanguage: string | null) 
     "/profile/language",
     { preferredLanguage },
   );
+  return data;
+};
+
+export const putPoseCalibration = async (poseCalibration: Record<string, unknown>) => {
+  const { data } = await apiClient.put<{
+    ok: boolean;
+    pose_calibration: Record<string, unknown>;
+    poseCalibration: Record<string, unknown>;
+  }>("/users/me/pose-calibration", poseCalibration);
   return data;
 };
 

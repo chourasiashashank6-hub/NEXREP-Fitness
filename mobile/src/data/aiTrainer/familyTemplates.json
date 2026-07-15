@@ -1,0 +1,424 @@
+{
+  "squat_lunge": {
+    "view": "side",
+    "repJoint": "knee",
+    "repRule": {
+      "topAngle": 160,
+      "bottomAngle": 95,
+      "minRepDurationSec": 1.2
+    },
+    "checks": [
+      {
+        "id": "depth",
+        "severity": "critical",
+        "rule": "kneeAngle at bottom <= depthTarget (calibrated, default 95)",
+        "cue": "cue_go_deeper",
+        "calibrated": true
+      },
+      {
+        "id": "torso_lean",
+        "severity": "critical",
+        "rule": "torsoLean <= 45 during descent/ascent",
+        "cue": "cue_chest_up"
+      },
+      {
+        "id": "knee_forward_drift",
+        "severity": "minor",
+        "rule": "knee.x - toe.x <= 0.12 * torsoLen",
+        "cue": "cue_sit_back"
+      },
+      {
+        "id": "heel_lift",
+        "severity": "minor",
+        "rule": "ankle y stable within 0.03 * torsoLen",
+        "cue": "cue_heels_down"
+      },
+      {
+        "id": "knee_valgus",
+        "severity": "critical",
+        "view": "front",
+        "rule": "knee.x stays between hip.x and ankle.x \u00b1 0.06 * torsoLen",
+        "cue": "cue_knees_out",
+        "safety": true
+      },
+      {
+        "id": "tempo",
+        "severity": "minor",
+        "rule": "eccentric >= 1.0s",
+        "cue": "cue_slow_down"
+      }
+    ]
+  },
+  "hip_hinge": {
+    "view": "side",
+    "repJoint": "hip",
+    "repRule": {
+      "topAngle": 168,
+      "bottomAngle": 95,
+      "minRepDurationSec": 1.2
+    },
+    "checks": [
+      {
+        "id": "spine_neutral",
+        "severity": "critical",
+        "rule": "shoulder\u2013hip\u2013knee angle change during rep <= 12 (no rounding)",
+        "cue": "cue_flat_back",
+        "safety": true
+      },
+      {
+        "id": "knee_bend_cap",
+        "severity": "minor",
+        "rule": "kneeAngle >= kneeCap (per exercise)",
+        "cue": "cue_soft_knees"
+      },
+      {
+        "id": "lockout",
+        "severity": "minor",
+        "rule": "hipAngle >= 168 at top, <= 185 (no lean-back)",
+        "cue": "cue_squeeze_glutes"
+      },
+      {
+        "id": "bar_drift",
+        "severity": "minor",
+        "rule": "wrist.x within 0.10 * torsoLen of ankle.x",
+        "cue": "cue_bar_close"
+      }
+    ]
+  },
+  "horizontal_press": {
+    "view": "front_45",
+    "repJoint": "elbow",
+    "repRule": {
+      "topAngle": 160,
+      "bottomAngle": 85,
+      "minRepDurationSec": 1.0
+    },
+    "checks": [
+      {
+        "id": "rom_bottom",
+        "severity": "critical",
+        "rule": "elbowAngle at bottom <= 90",
+        "cue": "cue_full_range"
+      },
+      {
+        "id": "lockout",
+        "severity": "minor",
+        "rule": "elbowAngle at top >= 160",
+        "cue": "cue_press_lockout"
+      },
+      {
+        "id": "elbow_flare",
+        "severity": "critical",
+        "rule": "upperArm-to-torso angle 45\u201370",
+        "cue": "cue_tuck_elbows"
+      },
+      {
+        "id": "asymmetry",
+        "severity": "minor",
+        "rule": "left/right elbowAngle diff <= 15",
+        "cue": "cue_even_press"
+      },
+      {
+        "id": "tempo",
+        "severity": "minor",
+        "rule": "eccentric >= 1.0s",
+        "cue": "cue_slow_down"
+      }
+    ]
+  },
+  "vertical_press": {
+    "view": "front",
+    "repJoint": "elbow",
+    "repRule": {
+      "topAngle": 165,
+      "bottomAngle": 85,
+      "minRepDurationSec": 1.0
+    },
+    "checks": [
+      {
+        "id": "lockout_overhead",
+        "severity": "critical",
+        "rule": "elbowAngle >= 165 AND upperArm-to-torso >= 160 at top",
+        "cue": "cue_lockout_overhead"
+      },
+      {
+        "id": "lumbar_arch",
+        "severity": "critical",
+        "view": "side",
+        "rule": "torsoLean <= 15",
+        "cue": "cue_ribs_down",
+        "safety": true
+      },
+      {
+        "id": "rom_bottom",
+        "severity": "minor",
+        "rule": "elbowAngle at bottom <= 90",
+        "cue": "cue_full_range"
+      },
+      {
+        "id": "asymmetry",
+        "severity": "minor",
+        "rule": "left/right elbowAngle diff <= 15",
+        "cue": "cue_even_press"
+      }
+    ]
+  },
+  "horizontal_pull": {
+    "view": "side",
+    "repJoint": "elbow",
+    "repRule": {
+      "topAngle": 160,
+      "bottomAngle": 75,
+      "minRepDurationSec": 0.9
+    },
+    "checks": [
+      {
+        "id": "torso_fixed",
+        "severity": "critical",
+        "rule": "torsoLean variance during rep <= 10 (no heaving)",
+        "cue": "cue_no_swing"
+      },
+      {
+        "id": "pull_depth",
+        "severity": "critical",
+        "rule": "elbow.x passes behind torso line at contraction",
+        "cue": "cue_pull_back"
+      },
+      {
+        "id": "full_stretch",
+        "severity": "minor",
+        "rule": "elbowAngle >= 160 at extension",
+        "cue": "cue_full_stretch"
+      },
+      {
+        "id": "shrug",
+        "severity": "minor",
+        "rule": "shoulder.y rise <= 0.04 * torsoLen",
+        "cue": "cue_shoulders_down"
+      }
+    ]
+  },
+  "vertical_pull": {
+    "view": "front",
+    "repJoint": "elbow",
+    "repRule": {
+      "topAngle": 160,
+      "bottomAngle": 70,
+      "minRepDurationSec": 1.0
+    },
+    "checks": [
+      {
+        "id": "full_hang",
+        "severity": "critical",
+        "rule": "elbowAngle >= 160 at bottom",
+        "cue": "cue_full_hang"
+      },
+      {
+        "id": "pull_height",
+        "severity": "critical",
+        "rule": "chin above wrist.y (pull-up) OR wrist.y <= chin.y (pulldown to upper chest)",
+        "cue": "cue_pull_higher"
+      },
+      {
+        "id": "kipping",
+        "severity": "minor",
+        "rule": "hip.x variance <= 0.10 * torsoLen",
+        "cue": "cue_no_kipping"
+      }
+    ]
+  },
+  "curl": {
+    "view": "front_45",
+    "repJoint": "elbow",
+    "repRule": {
+      "topAngle": 60,
+      "bottomAngle": 150,
+      "direction": "inverted",
+      "minRepDurationSec": 0.9
+    },
+    "checks": [
+      {
+        "id": "elbow_pin",
+        "severity": "critical",
+        "rule": "elbow.x displacement <= 0.07 * torsoLen",
+        "cue": "cue_pin_elbows"
+      },
+      {
+        "id": "torso_swing",
+        "severity": "critical",
+        "rule": "torsoLean <= 10",
+        "cue": "cue_no_swing"
+      },
+      {
+        "id": "full_extension",
+        "severity": "minor",
+        "rule": "elbowAngle >= 150 at bottom",
+        "cue": "cue_full_stretch"
+      },
+      {
+        "id": "shrug",
+        "severity": "minor",
+        "rule": "shoulder.y rise <= 0.04 * torsoLen",
+        "cue": "cue_shoulders_down"
+      }
+    ]
+  },
+  "elbow_extension": {
+    "view": "side",
+    "repJoint": "elbow",
+    "repRule": {
+      "topAngle": 160,
+      "bottomAngle": 90,
+      "minRepDurationSec": 0.9
+    },
+    "checks": [
+      {
+        "id": "upper_arm_fixed",
+        "severity": "critical",
+        "rule": "shoulder\u2013elbow segment angle variance <= 10",
+        "cue": "cue_lock_upper_arm"
+      },
+      {
+        "id": "lockout",
+        "severity": "minor",
+        "rule": "elbowAngle >= 160 at extension",
+        "cue": "cue_full_lockout"
+      },
+      {
+        "id": "elbow_flare",
+        "severity": "minor",
+        "view": "front",
+        "rule": "elbows within shoulder width + 0.05 * torsoLen",
+        "cue": "cue_tuck_elbows"
+      }
+    ]
+  },
+  "lateral_raise_family": {
+    "view": "front",
+    "repJoint": "shoulder_abduction",
+    "repRule": {
+      "topRule": "wrist.y within 0.05*torsoLen of shoulder.y",
+      "bottomRule": "arm at side",
+      "minRepDurationSec": 0.9
+    },
+    "checks": [
+      {
+        "id": "raise_height",
+        "severity": "critical",
+        "rule": "wrist reaches shoulder height, not above ear",
+        "cue": "cue_to_shoulder_height"
+      },
+      {
+        "id": "shrug",
+        "severity": "critical",
+        "rule": "shoulder.y rise <= 0.04 * torsoLen",
+        "cue": "cue_shoulders_down"
+      },
+      {
+        "id": "swing",
+        "severity": "minor",
+        "rule": "torsoLean <= 8",
+        "cue": "cue_no_swing"
+      },
+      {
+        "id": "elbow_bend",
+        "severity": "minor",
+        "rule": "elbowAngle 150\u2013175 held constant",
+        "cue": "cue_soft_elbows"
+      }
+    ]
+  },
+  "leg_isolation": {
+    "view": "side",
+    "repJoint": "knee",
+    "repRule": {
+      "perExercise": true,
+      "minRepDurationSec": 0.9
+    },
+    "checks": [
+      {
+        "id": "full_rom",
+        "severity": "critical",
+        "rule": "per-exercise ROM reached",
+        "cue": "cue_full_range"
+      },
+      {
+        "id": "hips_planted",
+        "severity": "critical",
+        "rule": "hip.y displacement <= 0.05 * torsoLen",
+        "cue": "cue_hips_down"
+      },
+      {
+        "id": "tempo",
+        "severity": "minor",
+        "rule": "eccentric >= 1.0s",
+        "cue": "cue_control_negative"
+      }
+    ]
+  },
+  "calf_raise": {
+    "view": "side",
+    "repJoint": "ankle",
+    "repRule": {
+      "rule": "heel.y travel >= 0.06 * torsoLen up from baseline, return",
+      "minRepDurationSec": 0.8
+    },
+    "checks": [
+      {
+        "id": "full_stretch",
+        "severity": "minor",
+        "rule": "heel returns to/below baseline",
+        "cue": "cue_full_stretch"
+      },
+      {
+        "id": "knee_state",
+        "severity": "critical",
+        "rule": "standing: kneeAngle >= 165 held; seated: 85\u2013100 held",
+        "cue": "cue_knee_position"
+      }
+    ]
+  },
+  "core_hold": {
+    "view": "side",
+    "repJoint": null,
+    "repRule": {
+      "type": "timed_hold"
+    },
+    "checks": [
+      {
+        "id": "body_line",
+        "severity": "critical",
+        "rule": "shoulder\u2013hip\u2013ankle angle 170\u2013185 (no sag, no pike)",
+        "cue": "cue_hips_level"
+      },
+      {
+        "id": "head_neutral",
+        "severity": "minor",
+        "rule": "ear roughly on shoulder\u2013hip line",
+        "cue": "cue_neck_neutral"
+      }
+    ]
+  },
+  "core_flexion": {
+    "view": "side",
+    "repJoint": "hip_or_trunk",
+    "repRule": {
+      "perExercise": true,
+      "minRepDurationSec": 0.8
+    },
+    "checks": [
+      {
+        "id": "rom",
+        "severity": "critical",
+        "rule": "per-exercise ROM reached",
+        "cue": "cue_full_range"
+      },
+      {
+        "id": "momentum",
+        "severity": "minor",
+        "rule": "concentric >= 0.6s (no flinging)",
+        "cue": "cue_slow_down"
+      }
+    ]
+  }
+}

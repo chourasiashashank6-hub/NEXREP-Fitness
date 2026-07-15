@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -22,13 +23,38 @@ import { EndEarlySheet } from "../components/EndEarlySheet";
 import MediaPipeGuidanceView, {
   type MediaPipeTrackingUpdate,
 } from "../components/MediaPipeGuidanceView";
+import { DepthRomGauge } from "../components/aiTrainer/DepthRomGauge";
+import { GlassPanel } from "../components/aiTrainer/GlassPanel";
+import { WaveformBars } from "../components/aiTrainer/WaveformBars";
+import { AI_C } from "../components/aiTrainer/aiTrainerTokens";
 import { getExerciseTrackingConfig } from "../constants/exerciseTrackingConfig";
+import { scoreSetFromReps } from "../data/aiTrainer/formScore";
+import {
+  hasPoseSpec,
+  remapSpecWithCalibration,
+  resolvePoseSpec,
+} from "../data/aiTrainer/resolvePoseSpec";
+import type { AiRepEvent } from "../data/aiTrainer/types";
+import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
+import {
+  sharedAudioCoach,
+  speakTestUtterance,
+  speechLocaleForAppLang,
+  unlockWebSpeech,
+  isWebSpeechUnlocked,
+  onWebSpeechUnlockChange,
+  voiceModeLabel,
+  type CoachPriority,
+  type VoiceMode,
+} from "../services/aiTrainer/audioCoach";
 import { scheduleRestEndNotification } from "../services/notificationService";
+import { useTranslation } from "react-i18next";
 import {
   type SessionExercise,
   useWorkoutSessionStore,
 } from "../store/workoutSessionStore";
 import type { RootStackParamList } from "../navigation/types";
+import { navigationRef } from "../navigation/navigationRef";
 import {
   calcExerciseEstimateKcal,
   calcSetKcal,
@@ -48,7 +74,6 @@ const MUTED = "#6B7280";
 const BORDER = "#E5E7EB";
 const RED = "#E24B4A";
 const CHECKPOINT_AUTO_MS = 5000;
-const SPEECH_THROTTLE_MS = 4000;
 
 const CAMERA_CANCEL_COPY = {
   title: "Cancel this session?",
@@ -58,17 +83,6 @@ const CAMERA_CANCEL_COPY = {
 } as const;
 
 type LiveTrackingStatus = "tracking_good" | "tracking_correction" | "no_body";
-
-function toShortCue(raw: string, fallback: string): string {
-  const cleaned = (raw || "")
-    .replace(/[:·].*$/, "")
-    .replace(/\([^)]*\)/g, "")
-    .replace(/\d+°?/g, "")
-    .trim();
-  const words = cleaned.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return fallback;
-  return words.slice(0, 4).join(" ");
-}
 
 function formatElapsed(sec: number): string {
   const s = Math.max(0, Math.floor(sec));
@@ -131,6 +145,9 @@ export default function AICameraWorkoutScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, "AICameraWorkoutSession">>();
   const planId = route.params?.planId;
+  const { t, i18n } = useTranslation();
+  const i18nLang = i18n.language;
+  const needsCalBanner = usePoseCalibrationStore((s) => s.skipped && !s.hasCalibration());
 
   const session = useWorkoutSessionStore((s) => s.session);
   const startSession = useWorkoutSessionStore((s) => s.startSession);
@@ -146,9 +163,11 @@ export default function AICameraWorkoutScreen() {
   const setCurrentRepCount = useWorkoutSessionStore((s) => s.setCurrentRepCount);
   const resetRepTracking = useWorkoutSessionStore((s) => s.resetRepTracking);
   const updateFormTracking = useWorkoutSessionStore((s) => s.updateFormTracking);
-  const setAudioGuidanceEnabled = useWorkoutSessionStore((s) => s.setAudioGuidanceEnabled);
+  const cycleVoiceMode = useWorkoutSessionStore((s) => s.cycleVoiceMode);
+  const recordRepVerdict = useWorkoutSessionStore((s) => s.recordRepVerdict);
   const markExerciseCheckpoint = useWorkoutSessionStore((s) => s.markExerciseCheckpoint);
   const clearExerciseCheckpoint = useWorkoutSessionStore((s) => s.clearExerciseCheckpoint);
+  const poseCalibration = usePoseCalibrationStore((s) => s.calibration);
 
   const [, tick] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -156,23 +175,88 @@ export default function AICameraWorkoutScreen() {
   const [weightInput, setWeightInput] = useState("");
   const [manualReps, setManualReps] = useState("");
   const [setStartedAt, setSetStartedAt] = useState(() => new Date());
+  const [pausedAccumMs, setPausedAccumMs] = useState(0);
   const [showEndSheet, setShowEndSheet] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [forceManual, setForceManual] = useState(false);
   const [liveStatus, setLiveStatus] = useState<LiveTrackingStatus>("no_body");
   const [liveCorrection, setLiveCorrection] = useState("Step back into frame");
+  const [sessionPaused, setSessionPaused] = useState(false);
+  const [countingPaused, setCountingPaused] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [liveRom01, setLiveRom01] = useState(0);
+  const [liveInZone, setLiveInZone] = useState(false);
+  const [zoneStart01, setZoneStart01] = useState(0.74);
+  const [zoneEnd01, setZoneEnd01] = useState(0.96);
+  const [orientationOk, setOrientationOk] = useState(true);
+  const [ttsSpeaking, setTtsSpeaking] = useState(false);
+  const [webAudioReady, setWebAudioReady] = useState(() =>
+    Platform.OS !== "web" ? true : isWebSpeechUnlocked(),
+  );
+  const [bannerCue, setBannerCue] = useState<{
+    text: string;
+    priority: CoachPriority | "idle";
+  } | null>(null);
+  const pauseStartedAt = useRef<number | null>(null);
+  const flipStabilizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setRepEvents = useRef<AiRepEvent[]>([]);
+  const lastSpokenCueRef = useRef<string | null>(null);
+  const pausedForCalibrate = useRef(false);
   const bootstrapped = useRef(false);
   const completingRef = useRef(false);
   const restFinishLock = useRef(false);
-  const lastSpeechAt = useRef(0);
-  const lastSpeechText = useRef("");
   const checkpointTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => tick((n) => n + 1), 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // Reset set-local live state whenever rep tracking resets for a new set.
+  useEffect(() => {
+    if (!session) return;
+    if (session.current_rep_count === 0) {
+      setRepEvents.current = [];
+      setSessionPaused(false);
+      setCountingPaused(false);
+      setPausedAccumMs(0);
+      pauseStartedAt.current = null;
+      setLiveRom01(0);
+      setLiveInZone(false);
+      setBannerCue(null);
+    }
+  }, [session?.current_rep_count, session?.current_set, session?.current_exercise_index]);
+
+  // Sync TTS queue with voice mode + app locale.
+  useEffect(() => {
+    const mode = (session?.voice_mode || "full") as VoiceMode;
+    sharedAudioCoach.configure({
+      voiceMode: mode,
+      lang: speechLocaleForAppLang(i18nLang),
+    });
+  }, [session?.voice_mode, i18nLang]);
+
+  useEffect(() => {
+    const unsub = sharedAudioCoach.onSpeakingChange((speaking, cueKey, priority) => {
+      setTtsSpeaking(speaking);
+      if (cueKey && priority) {
+        const text = t(`aiTrainer.${cueKey}`, {
+          defaultValue: t(cueKey, { defaultValue: cueKey.replace(/^cue_/, "").replace(/_/g, " ") }),
+        });
+        setBannerCue({ text: String(text), priority });
+      }
+    });
+    return () => {
+      unsub();
+    };
+  }, [t]);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    setWebAudioReady(isWebSpeechUnlocked());
+    return onWebSpeechUnlockChange(setWebAudioReady);
   }, []);
 
   useEffect(() => {
@@ -244,9 +328,21 @@ export default function AICameraWorkoutScreen() {
     () => (currentExercise ? getExerciseTrackingConfig(currentExercise.exercise_name) : null),
     [currentExercise],
   );
-  const trackable = Boolean(trackingConfig);
+  // Part 0: only the 71 poseSpec exercises get full AI tracking; others → manual fallback
+  const trackable = Boolean(
+    currentExercise && hasPoseSpec(currentExercise.exercise_name) && trackingConfig,
+  );
   const poseExerciseName =
     trackingConfig?.mediaPipeName || currentExercise?.exercise_name || "";
+  const calibrationPayload = useMemo(
+    () => usePoseCalibrationStore.getState().effectiveCalibration(),
+    [poseCalibration, needsCalBanner],
+  );
+  const livePoseSpec = useMemo(() => {
+    const raw = resolvePoseSpec(poseExerciseName || currentExercise?.exercise_name);
+    if (!raw) return null;
+    return remapSpecWithCalibration(raw, calibrationPayload);
+  }, [poseExerciseName, currentExercise?.exercise_name, calibrationPayload]);
   const cameraActive =
     Boolean(session) &&
     session?.session_type === "ai_camera" &&
@@ -357,6 +453,16 @@ export default function AICameraWorkoutScreen() {
   const blockLeave = Boolean(session && (session.status === "active" || session.status === "resting"));
   useFocusEffect(
     useCallback(() => {
+      if (pausedForCalibrate.current) {
+        pausedForCalibrate.current = false;
+        if (pauseStartedAt.current != null) {
+          setPausedAccumMs((ms) => ms + (Date.now() - pauseStartedAt.current!));
+          pauseStartedAt.current = null;
+        }
+        setSessionPaused(false);
+        setCountingPaused(false);
+      }
+
       const sub = BackHandler.addEventListener("hardwareBackPress", () => {
         if (blockLeave) {
           setShowEndSheet(true);
@@ -402,6 +508,14 @@ export default function AICameraWorkoutScreen() {
   const buildCompletePayload = (status: "completed" | "abandoned") => {
     const s = useWorkoutSessionStore.getState().session;
     if (!s) return null;
+    const calStore = usePoseCalibrationStore.getState();
+    const formScores = s.set_logs
+      .map((l) => l.form_quality_pct)
+      .filter((n): n is number => typeof n === "number");
+    const formAvg =
+      formScores.length > 0
+        ? Math.round((formScores.reduce((a, b) => a + b, 0) / formScores.length) * 10) / 10
+        : null;
     return {
       session_id: s.session_id,
       plan_day_id: s.plan_day_id,
@@ -420,6 +534,13 @@ export default function AICameraWorkoutScreen() {
         }),
       ),
       user_weight_kg: userWeightKg,
+      ai_tracking: {
+        calibrated: calStore.hasCalibration(),
+        used_population_defaults: !calStore.hasCalibration(),
+        sets: [],
+        issues_histogram: {},
+        form_score_avg: formAvg,
+      },
     };
   };
 
@@ -460,7 +581,12 @@ export default function AICameraWorkoutScreen() {
         : weightInput.trim()
           ? Number(weightInput)
           : null;
-    const setDurationSec = Math.floor((now.getTime() - setStartedAt.getTime()) / 1000);
+    const pauseExtra =
+      pausedAccumMs + (pauseStartedAt.current != null ? now.getTime() - pauseStartedAt.current : 0);
+    const setDurationSec = Math.max(
+      1,
+      Math.floor((now.getTime() - setStartedAt.getTime() - pauseExtra) / 1000),
+    );
     const kcal = calcSetKcal({
       exerciseName: currentExercise.exercise_name,
       userWeightKg,
@@ -468,8 +594,8 @@ export default function AICameraWorkoutScreen() {
       restDurationSec: currentExercise.rest_seconds,
     });
     const quality =
-      opts.method === "ai_camera" && session.form_total_samples > 0
-        ? Math.round((session.form_good_samples / session.form_total_samples) * 100)
+      opts.method === "ai_camera"
+        ? Math.round(session.live_form_score)
         : null;
 
     logSet({
@@ -523,52 +649,91 @@ export default function AICameraWorkoutScreen() {
     setSetStartedAt(new Date());
   };
 
-  const maybeSpeakCorrection = useCallback(
-    (correction: string) => {
-      const s = useWorkoutSessionStore.getState().session;
-      if (!s?.audio_guidance_enabled) return;
-      const text = (correction || "").trim();
-      if (!text) return;
-      const now = Date.now();
-      if (text === lastSpeechText.current && now - lastSpeechAt.current < SPEECH_THROTTLE_MS) return;
-      if (now - lastSpeechAt.current < SPEECH_THROTTLE_MS) return;
-      lastSpeechAt.current = now;
-      lastSpeechText.current = text;
-      Speech.stop();
-      Speech.speak(text, { rate: 1.0, pitch: 1.0 });
-    },
-    [],
-  );
-
   const handleTrackingUpdate = useCallback(
     (update: MediaPipeTrackingUpdate) => {
       const s = useWorkoutSessionStore.getState().session;
       if (!s || s.ai_ui_phase !== "tracking" || s.status !== "active") return;
+      if (sessionPaused) return;
       const ex = s.exercises[s.current_exercise_index];
       if (!ex) return;
 
+      if (update.rom01 != null) setLiveRom01(update.rom01);
+      if (update.zoneStart01 != null) setZoneStart01(update.zoneStart01);
+      if (update.zoneEnd01 != null) setZoneEnd01(update.zoneEnd01);
+      if (update.inDepthZone != null) setLiveInZone(update.inDepthZone);
+      setOrientationOk(update.orientationOk !== false);
+
       if (!update.bodyDetected) {
         setLiveStatus("no_body");
-        setLiveCorrection("Step back into frame");
+        setLiveCorrection(t("aiTrainer.step_into_frame", { defaultValue: "Step back into frame" }));
         return;
       }
 
       if (update.reps !== s.current_rep_count) {
         setCurrentRepCount(update.reps);
+        sharedAudioCoach.setRepIndex(update.reps);
       }
-      updateFormTracking(update.formOk ? "good" : "correction", update.correction);
 
-      if (update.formOk) {
-        setLiveStatus("tracking_good");
-      } else {
-        const cfg = getExerciseTrackingConfig(ex.exercise_name);
-        const cue = toShortCue(
-          update.correction || cfg?.correctionCue || "",
-          "Adjust your form",
-        );
+      if (update.repCompleted && update.repVerdict) {
+        const failed = update.failedChecksThisRep || [];
+        const event: AiRepEvent = {
+          repIndex: update.reps,
+          verdict: update.repVerdict,
+          failedChecks: failed,
+          tempo: { eccentricSec: 0, concentricSec: 0 },
+          peakAngles: update.primaryAngle != null ? { primary: update.primaryAngle } : {},
+        };
+        setRepEvents.current = [...setRepEvents.current, event];
+        const sev: Record<string, "critical" | "minor"> = {};
+        for (const c of livePoseSpec?.checks || []) sev[c.id] = c.severity;
+        const score = scoreSetFromReps(setRepEvents.current, sev);
+        recordRepVerdict(update.repVerdict, score);
+        if (update.repVerdict === "clean") {
+          sharedAudioCoach.speakKey("cue_clean_rep", "encouragement", "encourage_clean", update.reps);
+        }
+      }
+
+      updateFormTracking(
+        update.formOk && update.orientationOk !== false ? "good" : "correction",
+        update.cueKey || update.correction || null,
+      );
+
+      if (update.orientationOk === false) {
         setLiveStatus("tracking_correction");
-        setLiveCorrection(cue);
-        if (update.correction) maybeSpeakCorrection(cue);
+        const orientKey =
+          update.requiredView === "side" ? "cue_turn_side" : "cue_turn_front";
+        const orientText = t(`aiTrainer.${orientKey}`, {
+          defaultValue: update.requiredView === "side" ? "Turn to your side" : "Face the camera",
+        });
+        setLiveCorrection(String(orientText));
+        setBannerCue({ text: String(orientText), priority: "safety" });
+        if (lastSpokenCueRef.current !== orientKey) {
+          lastSpokenCueRef.current = orientKey;
+          sharedAudioCoach.speakKey(orientKey, "safety", orientKey, update.reps);
+        }
+      } else if (update.cueKey) {
+        setLiveStatus("tracking_correction");
+        const cueText = t(`aiTrainer.${update.cueKey}`, {
+          defaultValue: update.cueKey.replace(/^cue_/, "").replace(/_/g, " "),
+        });
+        setLiveCorrection(String(cueText));
+        if (!ttsSpeaking) {
+          setBannerCue({ text: String(cueText), priority: update.cuePriority || "correction" });
+        }
+        const speakId = `${update.cueKey}:${update.reps}`;
+        if (lastSpokenCueRef.current !== speakId) {
+          lastSpokenCueRef.current = speakId;
+          sharedAudioCoach.speakKey(
+            update.cueKey,
+            update.cuePriority === "safety" ? "safety" : "correction",
+            update.cueKey,
+            update.reps,
+          );
+        }
+      } else if (update.formOk) {
+        setLiveStatus("tracking_good");
+        setLiveCorrection(t("aiTrainer.clean_rep", { defaultValue: "Clean rep — great form" }));
+        lastSpokenCueRef.current = null;
       }
 
       if (update.reps >= ex.reps && !completingRef.current) {
@@ -576,8 +741,43 @@ export default function AICameraWorkoutScreen() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [maybeSpeakCorrection, setCurrentRepCount, updateFormTracking],
+    [sessionPaused, setCurrentRepCount, updateFormTracking, recordRepVerdict, t, ttsSpeaking, livePoseSpec],
   );
+
+  const handlePauseToggle = useCallback(() => {
+    if (Platform.OS === "web") unlockWebSpeech();
+    if (sessionPaused) {
+      if (pauseStartedAt.current != null) {
+        setPausedAccumMs((ms) => ms + (Date.now() - pauseStartedAt.current!));
+        pauseStartedAt.current = null;
+      }
+      setSessionPaused(false);
+      setCountingPaused(false);
+      return;
+    }
+    pauseStartedAt.current = Date.now();
+    setSessionPaused(true);
+    setCountingPaused(true);
+    sharedAudioCoach.clear();
+  }, [sessionPaused]);
+
+  const handleFlipCam = useCallback(() => {
+    setCountingPaused(true);
+    setFacingMode((f) => (f === "user" ? "environment" : "user"));
+    if (flipStabilizeTimer.current) clearTimeout(flipStabilizeTimer.current);
+    flipStabilizeTimer.current = setTimeout(() => {
+      if (!pauseStartedAt.current) setCountingPaused(false);
+    }, 1000);
+  }, []);
+
+  const handleCalibratePress = useCallback(() => {
+    pauseStartedAt.current = Date.now();
+    pausedForCalibrate.current = true;
+    setSessionPaused(true);
+    setCountingPaused(true);
+    sharedAudioCoach.clear();
+    navigationRef.navigate("AITrainerCalibration" as never, { planId } as never);
+  }, [planId]);
 
   const handleManualSetDone = () => {
     if (!currentExercise) return;
@@ -864,20 +1064,38 @@ export default function AICameraWorkoutScreen() {
   }
 
   // —— Live tracking ——
-  const upNextStrip =
-    nextExercise != null
-      ? `${nextExercise.exercise_name} · ${nextExercise.sets}x${nextExercise.reps}`
-      : "Workout complete";
+  const formScore = Math.round(session.live_form_score ?? 100);
+  const verdicts = session.live_rep_verdicts || [];
+  const cleanCount = verdicts.filter((v) => v === "clean").length;
+  const flaggedCount = verdicts.filter((v) => v === "flagged").length;
+  const voiceMode = (session.voice_mode || "full") as VoiceMode;
+  const coachWarn =
+    bannerCue?.priority === "correction" ||
+    bannerCue?.priority === "safety" ||
+    liveStatus === "no_body" ||
+    !orientationOk;
+  const coachText =
+    bannerCue?.text ||
+    liveCorrection ||
+    t("aiTrainer.tracking_ready", { defaultValue: "Tracking locked — start when ready" });
+  const coachOnLabel =
+    voiceMode === "muted" ? "COACH OFF" : voiceMode === "corrections_only" ? "COACH FIXES" : "COACH ON";
+  const trackingRunning = cameraActive && !sessionPaused && !countingPaused;
 
   return (
     <SafeAreaView style={styles.safeDark} edges={["top", "left", "right"]}>
       <View style={styles.cameraShell}>
         {cameraActive ? (
           <MediaPipeGuidanceView
-            key={`pose-${poseExerciseName}-${session.current_exercise_index}-${session.current_set}`}
+            key={`pose-${poseExerciseName}-${session.current_exercise_index}-${session.current_set}-${facingMode}`}
             selectedExerciseName={poseExerciseName || currentExercise.exercise_name}
-            isActive={cameraActive}
+            isActive
             sessionMode
+            facingMode={facingMode}
+            poseSpec={livePoseSpec}
+            calibration={calibrationPayload}
+            seedRepCount={session.current_rep_count}
+            countingPaused={countingPaused || sessionPaused}
             onReady={() => setCameraError(null)}
             onError={(m) => setCameraError(m)}
             onTrackingUpdate={handleTrackingUpdate}
@@ -888,88 +1106,190 @@ export default function AICameraWorkoutScreen() {
           </View>
         )}
 
+        {cameraError ? (
+          <View style={styles.cameraErrorBanner}>
+            <Text style={styles.cameraErrorTxt}>{cameraError}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.hud} pointerEvents="box-none">
-          {/* Row 1 — cancel · live pill · mute */}
-          <View style={styles.topRow}>
+          {needsCalBanner ? (
+            <Pressable style={styles.calBanner} onPress={handleCalibratePress}>
+              <Text style={styles.calBannerTxt}>
+                {t("aiTrainer.calibrate_banner", { defaultValue: "Calibrate for accuracy" })}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {/* Top bar — exercise + COACH ON + close */}
+          <View style={styles.liveTopBar}>
+            <GlassPanel style={styles.topGlass}>
+              <View style={[styles.livePulse, !trackingRunning && styles.livePulseIdle]} />
+              <View style={styles.topCopy}>
+                <Text style={styles.topExName} numberOfLines={1}>
+                  {currentExercise.exercise_name}
+                </Text>
+                <Text style={styles.topExSub} numberOfLines={1}>
+                  Set {session.current_set} of {currentExercise.sets} · {session.day_name}
+                </Text>
+              </View>
+              <View style={styles.coachOn}>
+                <WaveformBars active={ttsSpeaking} />
+                <Text style={styles.coachOnLbl}>{coachOnLabel}</Text>
+              </View>
+            </GlassPanel>
             <Pressable
-              style={styles.circleBtn}
+              style={styles.closeGlass}
               onPress={() => setShowEndSheet(true)}
               accessibilityLabel="Cancel session"
             >
-              <Ionicons name="close" size={20} color="#fff" />
-            </Pressable>
-
-            <View style={styles.livePill}>
-              <View style={styles.liveDot} />
-              <Text style={styles.livePillTxt}>{formatElapsed(elapsedSec)}</Text>
-            </View>
-
-            <Pressable
-              style={styles.circleBtn}
-              onPress={() => setAudioGuidanceEnabled(!session.audio_guidance_enabled)}
-              accessibilityLabel="Toggle audio guidance"
-            >
-              <Ionicons
-                name={session.audio_guidance_enabled ? "volume-high" : "volume-mute"}
-                size={18}
-                color="#fff"
-              />
+              <Text style={styles.closeX}>✕</Text>
             </Pressable>
           </View>
 
-          {/* Row 2 — single exercise label */}
-          <Text style={styles.exLine} numberOfLines={1}>
-            {currentExercise.exercise_name} · Set {session.current_set} of {currentExercise.sets}
-          </Text>
+          {/* Left column — clean reps + form score */}
+          <View style={styles.leftCol} pointerEvents="none">
+            <GlassPanel style={styles.repCard}>
+              <Text style={styles.repBig}>
+                {session.current_rep_count}
+                <Text style={styles.repSlash}>/{currentExercise.reps}</Text>
+              </Text>
+              <Text style={styles.cleanLbl}>CLEAN REPS</Text>
+              <Text style={styles.cleanSub}>
+                {cleanCount} perfect · {flaggedCount} flagged
+              </Text>
+            </GlassPanel>
+            <GlassPanel style={styles.scoreCard}>
+              <Text style={[styles.scoreBig, { color: formScore >= 89 ? AI_C.mint : AI_C.orange }]}>
+                {formScore}
+              </Text>
+              <Text style={styles.scoreLbl}>FORM SCORE</Text>
+            </GlassPanel>
+          </View>
 
-          {/* Row 3 — exactly one status banner */}
-          {liveStatus === "tracking_good" ? (
-            <View key="status-good" style={[styles.statusPill, styles.statusGood]}>
-              <Ionicons name="checkmark-circle" size={16} color="#fff" />
-              <Text style={styles.statusTxt}>Good form</Text>
+          {/* Right — depth gauge */}
+          <View style={styles.depthCol} pointerEvents="none">
+            <DepthRomGauge
+              progress01={liveStatus === "no_body" ? 0 : liveRom01}
+              inZone={liveInZone && orientationOk && liveStatus !== "no_body"}
+              zoneStart01={zoneStart01}
+              zoneEnd01={zoneEnd01}
+            />
+          </View>
+
+          {/* Rep quality dots */}
+          <View style={styles.dotsRow} pointerEvents="none">
+            {verdicts.slice(-12).map((v, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  {
+                    backgroundColor: v === "clean" ? AI_C.mint : AI_C.orange,
+                    opacity: 0.5 + 0.5 * (i / 12),
+                  },
+                ]}
+              />
+            ))}
+          </View>
+
+          {/* Coach banner */}
+          <GlassPanel
+            style={[
+              styles.coachBanner,
+              {
+                borderColor: coachWarn ? "rgba(255,122,69,0.55)" : "rgba(139,92,246,0.45)",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.coachIcon,
+                {
+                  backgroundColor: coachWarn ? "rgba(255,122,69,0.18)" : "rgba(139,92,246,0.2)",
+                },
+              ]}
+            >
+              <Text style={{ fontSize: 18 }}>{coachWarn ? "⚠️" : "🎧"}</Text>
             </View>
-          ) : liveStatus === "tracking_correction" ? (
-            <View key="status-correction" style={[styles.statusPill, styles.statusAmber]}>
-              <Ionicons name="alert-circle" size={16} color="#fff" />
-              <Text style={styles.statusTxt} numberOfLines={1}>
-                {liveCorrection}
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[styles.coachKicker, { color: coachWarn ? AI_C.orange : AI_C.purple }]}>
+                {coachWarn ? "AUDIO CUE · CORRECTION" : "AUDIO CUE · COACH"}
+              </Text>
+              <Text style={styles.coachBody} numberOfLines={2}>
+                {coachText}
               </Text>
             </View>
-          ) : (
-            <View key="status-nobody" style={[styles.statusPill, styles.statusAmber]}>
-              <Ionicons name="warning" size={16} color="#fff" />
-              <Text style={styles.statusTxt}>Step back into frame</Text>
+            <WaveformBars
+              active={ttsSpeaking}
+              color={coachWarn ? AI_C.orange : AI_C.purple}
+            />
+          </GlassPanel>
+
+          {sessionPaused ? (
+            <View style={styles.pauseOverlay}>
+              <Text style={styles.pauseTitle}>Paused</Text>
+              <Text style={styles.pauseSub}>Rep counting and audio are frozen</Text>
+              <Pressable style={styles.resumeBtn} onPress={handlePauseToggle}>
+                <Text style={styles.resumeBtnTxt}>▶ Resume</Text>
+              </Pressable>
             </View>
-          )}
+          ) : null}
 
-          {/* Rep counter — only while tracking */}
-          {liveStatus !== "no_body" ? (
-            <View key="reps" style={styles.repBlock}>
-              <Text style={styles.repCount}>{session.current_rep_count}</Text>
-              <Text style={styles.repTarget}>/ {currentExercise.reps} reps</Text>
+          {!sessionPaused && !orientationOk && liveStatus !== "no_body" ? (
+            <View style={styles.orientOverlay} pointerEvents="none">
+              <Text style={styles.orientTxt}>{liveCorrection}</Text>
             </View>
-          ) : (
-            <View style={styles.repSpacer} />
-          )}
+          ) : null}
 
-          <Pressable
-            onPress={() => {
-              setForceManual(true);
-              setAiUiPhase("manual_fallback");
-              Speech.stop();
-            }}
-          >
-            <Text style={styles.manualLink}>Log this set manually</Text>
-          </Pressable>
-
-          <View style={styles.upNextDivider} />
-          <View style={styles.upNextStrip}>
-            <Text style={styles.upNextStripLbl}>Up next</Text>
-            <Ionicons name="arrow-forward" size={12} color="rgba(255,255,255,0.7)" />
-            <Text style={styles.upNextStripVal} numberOfLines={1}>
-              {upNextStrip}
-            </Text>
+          {/* Bottom controls */}
+          <View style={styles.bottomControls}>
+            <Pressable style={styles.ctrlBtn} onPress={handlePauseToggle}>
+              <Text style={styles.ctrlTxt}>{sessionPaused ? "▶ Resume" : "⏸ Pause"}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.ctrlBtn, voiceMode !== "muted" && styles.ctrlBtnActive]}
+              onPress={() => {
+                if (Platform.OS === "web") unlockWebSpeech();
+                cycleVoiceMode();
+              }}
+            >
+              <Text
+                style={[styles.ctrlTxt, voiceMode !== "muted" && { color: AI_C.purple }]}
+              >
+                {voiceModeLabel(voiceMode)}
+              </Text>
+            </Pressable>
+            <Pressable style={styles.ctrlBtn} onPress={handleFlipCam}>
+              <Text style={styles.ctrlTxt}>↻ Flip cam</Text>
+            </Pressable>
           </View>
+
+          {Platform.OS === "web" && !webAudioReady ? (
+            <Pressable
+              style={styles.enableAudioBanner}
+              onPress={() => {
+                unlockWebSpeech();
+                speakTestUtterance("Coach audio is on");
+              }}
+            >
+              <Text style={styles.enableAudioTxt}>
+                🔊 Tap to enable coach audio (browser requires a click)
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {Platform.OS === "web" ? (
+            <Pressable
+              style={styles.testAudioBtn}
+              onPress={() => {
+                unlockWebSpeech();
+                speakTestUtterance("Test audio one two three");
+              }}
+            >
+              <Text style={styles.testAudioTxt}>Test Audio</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
 
@@ -992,17 +1312,236 @@ export default function AICameraWorkoutScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#fff" },
   safeCream: { flex: 1, backgroundColor: CREAM },
-  safeDark: { flex: 1, backgroundColor: "#050b16" },
+  safeDark: { flex: 1, backgroundColor: AI_C.bg },
   loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
   loadingTxt: { color: MUTED },
   cameraShell: { flex: 1 },
-  cameraPlaceholder: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#050b16" },
+  cameraPlaceholder: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: AI_C.bg },
+  cameraErrorBanner: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    top: "42%",
+    zIndex: 30,
+    backgroundColor: "rgba(127,29,29,0.92)",
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(248,113,113,0.5)",
+  },
+  cameraErrorTxt: { color: "#fecaca", fontWeight: "700", textAlign: "center", fontSize: 15 },
   hud: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "flex-start",
-    padding: 16,
-    paddingBottom: 20,
+    padding: 14,
+    paddingBottom: 12,
   },
+  calBanner: {
+    alignSelf: "center",
+    backgroundColor: AI_C.glass,
+    borderWidth: 1,
+    borderColor: "rgba(139,92,246,0.55)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    marginBottom: 10,
+  },
+  calBannerTxt: { color: AI_C.txt, fontWeight: "700", fontSize: 13 },
+  liveTopBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  topGlass: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 18,
+  },
+  livePulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: AI_C.mint,
+    shadowColor: AI_C.mint,
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+  },
+  livePulseIdle: {
+    backgroundColor: AI_C.dim,
+    shadowOpacity: 0,
+  },
+  pauseOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(5,11,22,0.72)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    zIndex: 20,
+  },
+  pauseTitle: { color: AI_C.txt, fontSize: 28, fontWeight: "800" },
+  pauseSub: { color: AI_C.dim, fontSize: 14, marginBottom: 8 },
+  resumeBtn: {
+    backgroundColor: AI_C.mint,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  resumeBtnTxt: { color: "#042f2e", fontWeight: "800", fontSize: 16 },
+  orientOverlay: {
+    alignSelf: "center",
+    marginTop: 8,
+    backgroundColor: "rgba(255,122,69,0.18)",
+    borderColor: "rgba(255,122,69,0.55)",
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    maxWidth: "92%",
+  },
+  orientTxt: { color: AI_C.orange, fontWeight: "700", textAlign: "center", fontSize: 14 },
+  testAudioBtn: {
+    alignSelf: "center",
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: AI_C.line,
+  },
+  testAudioTxt: { color: AI_C.dim, fontWeight: "700", fontSize: 12 },
+  enableAudioBanner: {
+    alignSelf: "center",
+    marginBottom: 8,
+    marginTop: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: "rgba(139,92,246,0.92)",
+    borderWidth: 1,
+    borderColor: AI_C.purple,
+    maxWidth: "94%",
+  },
+  enableAudioTxt: { color: "#fff", fontWeight: "700", fontSize: 13, textAlign: "center" },
+  topCopy: { flex: 1, minWidth: 0 },
+  topExName: { color: AI_C.txt, fontSize: 15, fontWeight: "700" },
+  topExSub: { color: AI_C.dim, fontSize: 11, marginTop: 2 },
+  coachOn: { alignItems: "flex-end", gap: 4 },
+  coachOnLbl: { color: AI_C.purple, fontSize: 10, fontWeight: "700" },
+  closeGlass: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: AI_C.glass,
+    borderWidth: 1,
+    borderColor: AI_C.line,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeX: { color: AI_C.dim, fontSize: 16, fontWeight: "600" },
+  leftCol: {
+    position: "absolute",
+    top: 88,
+    left: 14,
+    gap: 8,
+    zIndex: 2,
+  },
+  repCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: "center",
+    minWidth: 92,
+  },
+  repBig: { color: AI_C.txt, fontSize: 40, fontWeight: "700", lineHeight: 42 },
+  repSlash: { fontSize: 16, color: AI_C.dim, fontWeight: "600" },
+  cleanLbl: {
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: AI_C.mint,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  cleanSub: { fontSize: 10, color: AI_C.dim, marginTop: 2 },
+  scoreCard: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+  scoreBig: { fontSize: 22, fontWeight: "700" },
+  scoreLbl: {
+    fontSize: 9,
+    letterSpacing: 1.5,
+    color: AI_C.dim,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  depthCol: {
+    position: "absolute",
+    top: 96,
+    right: 16,
+    bottom: 170,
+    width: 34,
+    zIndex: 2,
+  },
+  dotsRow: {
+    position: "absolute",
+    bottom: 128,
+    left: 14,
+    right: 60,
+    flexDirection: "row",
+    gap: 5,
+    zIndex: 2,
+  },
+  dot: { width: 14, height: 5, borderRadius: 3 },
+  coachBanner: {
+    position: "absolute",
+    bottom: 62,
+    left: 14,
+    right: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 20,
+    zIndex: 3,
+  },
+  coachIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  coachKicker: { fontSize: 10, letterSpacing: 1.4, fontWeight: "700" },
+  coachBody: { color: AI_C.txt, fontSize: 13.5, fontWeight: "500", marginTop: 2 },
+  bottomControls: {
+    position: "absolute",
+    bottom: 12,
+    left: 14,
+    right: 14,
+    flexDirection: "row",
+    gap: 8,
+    zIndex: 3,
+  },
+  ctrlBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 14,
+    backgroundColor: AI_C.glass,
+    borderWidth: 1,
+    borderColor: AI_C.line,
+  },
+  ctrlBtnActive: { borderColor: "rgba(139,92,246,0.5)" },
+  ctrlTxt: { color: AI_C.dim, fontSize: 12, fontWeight: "600" },
   topRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1026,73 +1565,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: RED },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: AI_C.mint },
   livePillTxt: { color: "#fff", fontSize: 13, fontWeight: "800" },
-  exLine: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 10,
-  },
-  statusPill: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    maxWidth: "100%",
-  },
-  statusGood: { backgroundColor: "rgba(15,110,86,0.92)" },
-  statusAmber: { backgroundColor: "rgba(186,117,23,0.94)" },
-  statusTxt: { color: "#fff", fontWeight: "700", fontSize: 13, flexShrink: 1 },
-  repBlock: {
-    marginTop: "auto",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  repSpacer: { flex: 1 },
-  repCount: { color: "#fff", fontSize: 72, fontWeight: "800", lineHeight: 78 },
-  repTarget: { color: "rgba(255,255,255,0.75)", fontSize: 16, fontWeight: "700" },
-  manualLink: {
-    textAlign: "center",
-    color: "rgba(255,255,255,0.9)",
-    textDecorationLine: "underline",
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  upNextDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "rgba(255,255,255,0.28)",
-    marginBottom: 10,
-  },
-  upNextStrip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  upNextStripLbl: {
-    color: "rgba(255,255,255,0.65)",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  upNextStripVal: {
-    flex: 1,
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  liveTopBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 12,
-  },
-  liveDotRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
-  liveTxt: { color: "#fff", fontSize: 12, fontWeight: "700" },
-  liveTimer: { color: "#fff", fontSize: 13, fontWeight: "800" },
   restHud: { backgroundColor: "rgba(5,11,22,0.35)" },
   restBodyOverlay: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
   restBody: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20, gap: 10 },

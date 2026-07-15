@@ -1,0 +1,1120 @@
+[
+  {
+    "id": "barbell_back_squat",
+    "family": "squat_lunge",
+    "overrides": {},
+    "aliases": [
+      "barbell back squat",
+      "back squat",
+      "barbell squat"
+    ]
+  },
+  {
+    "id": "front_squat",
+    "family": "squat_lunge",
+    "overrides": {
+      "torso_lean.rule": "torsoLean <= 20"
+    },
+    "aliases": [
+      "front squat",
+      "barbell front squat"
+    ]
+  },
+  {
+    "id": "goblet_squat",
+    "family": "squat_lunge",
+    "overrides": {
+      "torso_lean.rule": "torsoLean <= 30"
+    },
+    "aliases": [
+      "goblet squat"
+    ]
+  },
+  {
+    "id": "bodyweight_squat",
+    "family": "squat_lunge",
+    "overrides": {},
+    "aliases": [
+      "bodyweight squat",
+      "air squat",
+      "squat"
+    ]
+  },
+  {
+    "id": "smith_machine_squat",
+    "family": "squat_lunge",
+    "machineProfile": "smith_rack",
+    "overrides": {
+      "disable": [
+        "bar_drift"
+      ]
+    },
+    "aliases": [
+      "smith machine squat",
+      "smith squat"
+    ]
+  },
+  {
+    "id": "hack_squat_machine",
+    "family": "squat_lunge",
+    "machineProfile": "hack_squat",
+    "overrides": {
+      "disable": [
+        "torso_lean",
+        "heel_lift"
+      ]
+    },
+    "aliases": [
+      "hack squat",
+      "hack squat machine"
+    ]
+  },
+  {
+    "id": "leg_press",
+    "family": "squat_lunge",
+    "machineProfile": "leg_press_45",
+    "overrides": {
+      "repRule": {
+        "topAngle": 160,
+        "bottomAngle": 90
+      },
+      "disable": [
+        "torso_lean",
+        "knee_forward_drift",
+        "heel_lift"
+      ],
+      "add": [
+        {
+          "id": "lockout_soft",
+          "severity": "critical",
+          "rule": "kneeAngle at top <= 172 (never slam lockout)",
+          "cue": "cue_soft_lockout"
+        }
+      ]
+    },
+    "aliases": [
+      "leg press",
+      "45 degree leg press"
+    ]
+  },
+  {
+    "id": "bulgarian_split_squat",
+    "family": "squat_lunge",
+    "overrides": {
+      "repJoint": "front_knee",
+      "add": [
+        {
+          "id": "front_shin_vertical",
+          "severity": "minor",
+          "rule": "front knee.x - toe.x <= 0.10 * torsoLen",
+          "cue": "cue_sit_back"
+        }
+      ]
+    },
+    "aliases": [
+      "bulgarian split squat",
+      "rear foot elevated split squat"
+    ]
+  },
+  {
+    "id": "forward_lunge",
+    "family": "squat_lunge",
+    "overrides": {
+      "repJoint": "front_knee",
+      "add": [
+        {
+          "id": "back_knee_depth",
+          "severity": "minor",
+          "rule": "back knee.y within 0.12*torsoLen of ankle.y at bottom",
+          "cue": "cue_drop_back_knee"
+        }
+      ]
+    },
+    "aliases": [
+      "forward lunge",
+      "lunge",
+      "walking lunge forward"
+    ]
+  },
+  {
+    "id": "reverse_lunge",
+    "family": "squat_lunge",
+    "overrides": {
+      "repJoint": "front_knee"
+    },
+    "aliases": [
+      "reverse lunge"
+    ]
+  },
+  {
+    "id": "walking_lunge",
+    "family": "squat_lunge",
+    "overrides": {
+      "repJoint": "front_knee",
+      "note": "alternating; re-detect lead leg each rep"
+    },
+    "aliases": [
+      "walking lunge"
+    ]
+  },
+  {
+    "id": "step_up",
+    "family": "squat_lunge",
+    "overrides": {
+      "repJoint": "lead_knee",
+      "add": [
+        {
+          "id": "no_push_off",
+          "severity": "minor",
+          "rule": "trailing ankle leaves ground after lead knee passes 120",
+          "cue": "cue_drive_lead_leg"
+        }
+      ]
+    },
+    "aliases": [
+      "step up",
+      "box step up"
+    ]
+  },
+  {
+    "id": "conventional_deadlift",
+    "family": "hip_hinge",
+    "overrides": {
+      "kneeCap": 70,
+      "repRule": {
+        "bottomAngle": 80
+      }
+    },
+    "aliases": [
+      "conventional deadlift",
+      "deadlift",
+      "barbell deadlift"
+    ]
+  },
+  {
+    "id": "sumo_deadlift",
+    "family": "hip_hinge",
+    "overrides": {
+      "kneeCap": 80,
+      "view": "front_45",
+      "add": [
+        {
+          "id": "knees_out",
+          "severity": "critical",
+          "rule": "knees track over toes (front)",
+          "cue": "cue_knees_out"
+        }
+      ]
+    },
+    "aliases": [
+      "sumo deadlift"
+    ]
+  },
+  {
+    "id": "romanian_deadlift",
+    "family": "hip_hinge",
+    "overrides": {
+      "kneeCap": 150,
+      "repRule": {
+        "bottomAngle": 100
+      },
+      "note": "knees soft-fixed; depth limited by calibrated hamstring range"
+    },
+    "aliases": [
+      "romanian deadlift",
+      "rdl",
+      "dumbbell romanian deadlift"
+    ]
+  },
+  {
+    "id": "hip_thrust",
+    "family": "hip_hinge",
+    "machineProfile": "bench_back_support",
+    "overrides": {
+      "repRule": {
+        "topAngle": 170,
+        "bottomAngle": 110
+      },
+      "disable": [
+        "bar_drift"
+      ],
+      "add": [
+        {
+          "id": "chin_tucked",
+          "severity": "minor",
+          "rule": "head neutral (no neck extension)",
+          "cue": "cue_chin_tuck"
+        }
+      ]
+    },
+    "aliases": [
+      "hip thrust",
+      "barbell hip thrust"
+    ]
+  },
+  {
+    "id": "glute_bridge",
+    "family": "hip_hinge",
+    "overrides": {
+      "repRule": {
+        "topAngle": 170,
+        "bottomAngle": 120
+      },
+      "disable": [
+        "bar_drift",
+        "knee_bend_cap"
+      ]
+    },
+    "aliases": [
+      "glute bridge"
+    ]
+  },
+  {
+    "id": "good_morning",
+    "family": "hip_hinge",
+    "overrides": {
+      "kneeCap": 155,
+      "repRule": {
+        "bottomAngle": 100
+      }
+    },
+    "aliases": [
+      "good morning"
+    ]
+  },
+  {
+    "id": "kettlebell_swing",
+    "family": "hip_hinge",
+    "overrides": {
+      "repRule": {
+        "minRepDurationSec": 0.6
+      },
+      "add": [
+        {
+          "id": "snap_not_squat",
+          "severity": "minor",
+          "rule": "kneeAngle stays >= 110 (hinge, not squat)",
+          "cue": "cue_hinge_not_squat"
+        }
+      ]
+    },
+    "aliases": [
+      "kettlebell swing",
+      "kb swing"
+    ]
+  },
+  {
+    "id": "cable_pull_through",
+    "family": "hip_hinge",
+    "machineProfile": "cable_station",
+    "overrides": {
+      "kneeCap": 140
+    },
+    "aliases": [
+      "cable pull through",
+      "pull through"
+    ]
+  },
+  {
+    "id": "barbell_bench_press",
+    "family": "horizontal_press",
+    "machineProfile": "flat_bench",
+    "overrides": {},
+    "aliases": [
+      "barbell bench press",
+      "bench press",
+      "flat bench press"
+    ]
+  },
+  {
+    "id": "incline_barbell_bench",
+    "family": "horizontal_press",
+    "machineProfile": "incline_bench_30_45",
+    "overrides": {},
+    "aliases": [
+      "incline barbell bench",
+      "incline bench press",
+      "incline barbell press"
+    ]
+  },
+  {
+    "id": "decline_barbell_bench",
+    "family": "horizontal_press",
+    "machineProfile": "decline_bench",
+    "overrides": {},
+    "aliases": [
+      "decline barbell bench",
+      "decline bench press"
+    ]
+  },
+  {
+    "id": "flat_dumbbell_press",
+    "family": "horizontal_press",
+    "machineProfile": "flat_bench",
+    "overrides": {
+      "add": [
+        {
+          "id": "db_path",
+          "severity": "minor",
+          "rule": "wrists converge slightly at top",
+          "cue": "cue_press_together"
+        }
+      ]
+    },
+    "aliases": [
+      "flat dumbbell press",
+      "dumbbell bench press",
+      "dumbbell press"
+    ]
+  },
+  {
+    "id": "incline_dumbbell_press",
+    "family": "horizontal_press",
+    "machineProfile": "incline_bench_30_45",
+    "overrides": {},
+    "aliases": [
+      "incline dumbbell press"
+    ]
+  },
+  {
+    "id": "chest_press_machine",
+    "family": "horizontal_press",
+    "machineProfile": "seated_chest_press",
+    "overrides": {
+      "disable": [
+        "asymmetry"
+      ]
+    },
+    "aliases": [
+      "chest press machine",
+      "machine chest press",
+      "seated chest press"
+    ]
+  },
+  {
+    "id": "push_up",
+    "family": "horizontal_press",
+    "overrides": {
+      "view": "side",
+      "add": [
+        {
+          "id": "body_line",
+          "severity": "critical",
+          "rule": "shoulder\u2013hip\u2013ankle 170\u2013185 throughout",
+          "cue": "cue_hips_level"
+        },
+        {
+          "id": "depth",
+          "severity": "critical",
+          "rule": "elbowAngle at bottom <= 90",
+          "cue": "cue_chest_to_floor"
+        }
+      ]
+    },
+    "aliases": [
+      "push up",
+      "push-up",
+      "pushup"
+    ]
+  },
+  {
+    "id": "chest_dips",
+    "family": "horizontal_press",
+    "overrides": {
+      "view": "side",
+      "repRule": {
+        "bottomAngle": 90
+      },
+      "disable": [
+        "elbow_flare"
+      ],
+      "add": [
+        {
+          "id": "forward_lean",
+          "severity": "minor",
+          "rule": "torsoLean 15\u201330 (chest emphasis)",
+          "cue": "cue_lean_forward"
+        }
+      ]
+    },
+    "aliases": [
+      "chest dips",
+      "dips",
+      "parallel bar dip"
+    ]
+  },
+  {
+    "id": "pec_deck_fly",
+    "family": "horizontal_press",
+    "machineProfile": "pec_deck",
+    "overrides": {
+      "repJoint": "shoulder_horizontal_adduction",
+      "repRule": {
+        "type": "wrist_convergence"
+      },
+      "disable": [
+        "rom_bottom",
+        "lockout",
+        "elbow_flare"
+      ],
+      "add": [
+        {
+          "id": "elbow_fixed_bend",
+          "severity": "critical",
+          "rule": "elbowAngle 140\u2013165 held constant",
+          "cue": "cue_soft_elbows"
+        }
+      ]
+    },
+    "aliases": [
+      "pec deck",
+      "pec deck fly",
+      "machine fly"
+    ]
+  },
+  {
+    "id": "overhead_press_barbell",
+    "family": "vertical_press",
+    "overrides": {},
+    "aliases": [
+      "overhead press",
+      "barbell overhead press",
+      "military press",
+      "shoulder press"
+    ]
+  },
+  {
+    "id": "seated_dumbbell_shoulder_press",
+    "family": "vertical_press",
+    "machineProfile": "upright_bench_75_90",
+    "overrides": {
+      "disable": [
+        "lumbar_arch"
+      ]
+    },
+    "aliases": [
+      "seated dumbbell shoulder press",
+      "dumbbell shoulder press",
+      "seated shoulder press"
+    ]
+  },
+  {
+    "id": "arnold_press",
+    "family": "vertical_press",
+    "machineProfile": "upright_bench_75_90",
+    "overrides": {
+      "disable": [
+        "lumbar_arch"
+      ],
+      "note": "rotation makes flare unreliable \u2014 ROM + lockout only"
+    },
+    "aliases": [
+      "arnold press"
+    ]
+  },
+  {
+    "id": "machine_shoulder_press",
+    "family": "vertical_press",
+    "machineProfile": "seated_shoulder_press",
+    "overrides": {
+      "disable": [
+        "lumbar_arch",
+        "asymmetry"
+      ]
+    },
+    "aliases": [
+      "machine shoulder press",
+      "shoulder press machine"
+    ]
+  },
+  {
+    "id": "lateral_raise",
+    "family": "lateral_raise_family",
+    "overrides": {},
+    "aliases": [
+      "lateral raise",
+      "dumbbell lateral raise",
+      "side raise"
+    ]
+  },
+  {
+    "id": "front_raise",
+    "family": "lateral_raise_family",
+    "overrides": {
+      "view": "side",
+      "note": "raise_height judged in sagittal plane"
+    },
+    "aliases": [
+      "front raise",
+      "dumbbell front raise"
+    ]
+  },
+  {
+    "id": "bent_over_barbell_row",
+    "family": "horizontal_pull",
+    "overrides": {
+      "add": [
+        {
+          "id": "torso_angle_setup",
+          "severity": "critical",
+          "rule": "torsoLean 30\u201360 held",
+          "cue": "cue_hold_hinge"
+        }
+      ]
+    },
+    "aliases": [
+      "bent over barbell row",
+      "barbell row",
+      "bent over row"
+    ]
+  },
+  {
+    "id": "single_arm_dumbbell_row",
+    "family": "horizontal_pull",
+    "machineProfile": "bench_support_row",
+    "overrides": {
+      "note": "track working side only"
+    },
+    "aliases": [
+      "single arm dumbbell row",
+      "dumbbell row",
+      "one arm row"
+    ]
+  },
+  {
+    "id": "seated_cable_row",
+    "family": "horizontal_pull",
+    "machineProfile": "seated_row_station",
+    "overrides": {
+      "add": [
+        {
+          "id": "torso_upright",
+          "severity": "critical",
+          "rule": "torsoLean within \u00b115 of vertical at contraction",
+          "cue": "cue_sit_tall"
+        }
+      ]
+    },
+    "aliases": [
+      "seated cable row",
+      "cable row",
+      "seated row"
+    ]
+  },
+  {
+    "id": "t_bar_row",
+    "family": "horizontal_pull",
+    "machineProfile": "t_bar_platform",
+    "overrides": {},
+    "aliases": [
+      "t bar row",
+      "t-bar row"
+    ]
+  },
+  {
+    "id": "machine_row",
+    "family": "horizontal_pull",
+    "machineProfile": "chest_supported_row",
+    "overrides": {
+      "disable": [
+        "torso_fixed"
+      ],
+      "note": "chest pad fixes torso"
+    },
+    "aliases": [
+      "machine row",
+      "chest supported row"
+    ]
+  },
+  {
+    "id": "face_pull",
+    "family": "horizontal_pull",
+    "machineProfile": "cable_station",
+    "overrides": {
+      "view": "front_45",
+      "repRule": {
+        "bottomAngle": 80
+      },
+      "add": [
+        {
+          "id": "high_elbows",
+          "severity": "critical",
+          "rule": "elbows at/above shoulder height at contraction",
+          "cue": "cue_elbows_high"
+        }
+      ]
+    },
+    "aliases": [
+      "face pull",
+      "facepull"
+    ]
+  },
+  {
+    "id": "rear_delt_fly",
+    "family": "horizontal_pull",
+    "overrides": {
+      "repJoint": "shoulder_horizontal_abduction",
+      "repRule": {
+        "type": "wrist_divergence"
+      },
+      "disable": [
+        "pull_depth"
+      ],
+      "add": [
+        {
+          "id": "elbow_fixed_bend",
+          "severity": "minor",
+          "rule": "elbowAngle 140\u2013165 held",
+          "cue": "cue_soft_elbows"
+        }
+      ]
+    },
+    "aliases": [
+      "rear delt fly",
+      "reverse fly",
+      "bent over reverse fly"
+    ]
+  },
+  {
+    "id": "pull_up",
+    "family": "vertical_pull",
+    "overrides": {},
+    "aliases": [
+      "pull up",
+      "pull-up",
+      "pullups"
+    ]
+  },
+  {
+    "id": "chin_up",
+    "family": "vertical_pull",
+    "overrides": {},
+    "aliases": [
+      "chin up",
+      "chin-up"
+    ]
+  },
+  {
+    "id": "lat_pulldown",
+    "family": "vertical_pull",
+    "machineProfile": "lat_pulldown_station",
+    "overrides": {
+      "add": [
+        {
+          "id": "no_lean_back",
+          "severity": "minor",
+          "rule": "torsoLean <= 20",
+          "cue": "cue_sit_tall"
+        }
+      ]
+    },
+    "aliases": [
+      "lat pulldown",
+      "lat pull down",
+      "pulldown"
+    ]
+  },
+  {
+    "id": "straight_arm_pulldown",
+    "family": "vertical_pull",
+    "machineProfile": "cable_station",
+    "overrides": {
+      "repJoint": "shoulder_extension",
+      "repRule": {
+        "type": "wrist_arc_hip_to_overhead"
+      },
+      "add": [
+        {
+          "id": "elbows_locked_soft",
+          "severity": "critical",
+          "rule": "elbowAngle 150\u2013175 held",
+          "cue": "cue_arms_straight"
+        }
+      ]
+    },
+    "aliases": [
+      "straight arm pulldown",
+      "straight-arm pulldown"
+    ]
+  },
+  {
+    "id": "barbell_shrug",
+    "family": "vertical_pull",
+    "overrides": {
+      "repJoint": "shoulder_elevation",
+      "repRule": {
+        "rule": "shoulder.y rise >= 0.05 * torsoLen, return"
+      },
+      "disable": [
+        "full_hang",
+        "pull_height",
+        "kipping"
+      ],
+      "add": [
+        {
+          "id": "no_roll",
+          "severity": "minor",
+          "rule": "shoulder.x displacement <= 0.03 * torsoLen",
+          "cue": "cue_straight_up"
+        }
+      ]
+    },
+    "aliases": [
+      "barbell shrug",
+      "shrug",
+      "dumbbell shrug"
+    ]
+  },
+  {
+    "id": "barbell_curl",
+    "family": "curl",
+    "overrides": {},
+    "aliases": [
+      "barbell curl",
+      "bicep curl",
+      "biceps curl",
+      "ez bar curl"
+    ]
+  },
+  {
+    "id": "alternating_dumbbell_curl",
+    "family": "curl",
+    "overrides": {
+      "note": "track sides independently"
+    },
+    "aliases": [
+      "alternating dumbbell curl",
+      "dumbbell curl",
+      "alt curl"
+    ]
+  },
+  {
+    "id": "hammer_curl",
+    "family": "curl",
+    "overrides": {},
+    "aliases": [
+      "hammer curl",
+      "dumbbell hammer curl"
+    ]
+  },
+  {
+    "id": "preacher_curl",
+    "family": "curl",
+    "machineProfile": "preacher_bench",
+    "overrides": {
+      "disable": [
+        "elbow_pin",
+        "torso_swing"
+      ],
+      "add": [
+        {
+          "id": "full_extension_preacher",
+          "severity": "critical",
+          "rule": "elbowAngle >= 155 at bottom",
+          "cue": "cue_full_stretch"
+        }
+      ]
+    },
+    "aliases": [
+      "preacher curl"
+    ]
+  },
+  {
+    "id": "cable_curl",
+    "family": "curl",
+    "machineProfile": "cable_station",
+    "overrides": {},
+    "aliases": [
+      "cable curl"
+    ]
+  },
+  {
+    "id": "incline_dumbbell_curl",
+    "family": "curl",
+    "machineProfile": "incline_bench_30_45",
+    "overrides": {
+      "disable": [
+        "torso_swing"
+      ]
+    },
+    "aliases": [
+      "incline dumbbell curl",
+      "incline curl"
+    ]
+  },
+  {
+    "id": "concentration_curl",
+    "family": "curl",
+    "overrides": {
+      "disable": [
+        "torso_swing"
+      ],
+      "note": "seated, elbow braced on thigh"
+    },
+    "aliases": [
+      "concentration curl"
+    ]
+  },
+  {
+    "id": "triceps_rope_pushdown",
+    "family": "elbow_extension",
+    "machineProfile": "cable_station",
+    "overrides": {},
+    "aliases": [
+      "triceps rope pushdown",
+      "tricep pushdown",
+      "cable pushdown",
+      "rope pushdown"
+    ]
+  },
+  {
+    "id": "overhead_triceps_extension",
+    "family": "elbow_extension",
+    "overrides": {
+      "repRule": {
+        "bottomAngle": 70
+      },
+      "note": "upper-arm-vertical baseline"
+    },
+    "aliases": [
+      "overhead triceps extension",
+      "overhead tricep extension",
+      "french press"
+    ]
+  },
+  {
+    "id": "skull_crusher",
+    "family": "elbow_extension",
+    "machineProfile": "flat_bench",
+    "overrides": {
+      "repRule": {
+        "bottomAngle": 80
+      }
+    },
+    "aliases": [
+      "skull crusher",
+      "lying tricep extension"
+    ]
+  },
+  {
+    "id": "close_grip_bench_press",
+    "family": "horizontal_press",
+    "machineProfile": "flat_bench",
+    "overrides": {
+      "elbow_flare.rule": "upperArm-to-torso angle 20\u201345 (tucked)"
+    },
+    "aliases": [
+      "close grip bench press",
+      "close-grip bench press"
+    ]
+  },
+  {
+    "id": "bench_dip",
+    "family": "elbow_extension",
+    "overrides": {
+      "view": "side",
+      "repRule": {
+        "bottomAngle": 90
+      },
+      "add": [
+        {
+          "id": "shoulder_safety",
+          "severity": "critical",
+          "rule": "elbowAngle never < 80 (shoulder strain)",
+          "cue": "cue_dont_go_lower",
+          "safety": true
+        }
+      ]
+    },
+    "aliases": [
+      "bench dip",
+      "bench dips"
+    ]
+  },
+  {
+    "id": "triceps_kickback",
+    "family": "elbow_extension",
+    "overrides": {
+      "add": [
+        {
+          "id": "upper_arm_parallel",
+          "severity": "critical",
+          "rule": "upper arm parallel to floor \u00b115 held",
+          "cue": "cue_upper_arm_level"
+        }
+      ]
+    },
+    "aliases": [
+      "triceps kickback",
+      "tricep kickback"
+    ]
+  },
+  {
+    "id": "leg_extension",
+    "family": "leg_isolation",
+    "machineProfile": "leg_extension_machine",
+    "overrides": {
+      "repRule": {
+        "topAngle": 170,
+        "bottomAngle": 95
+      }
+    },
+    "aliases": [
+      "leg extension"
+    ]
+  },
+  {
+    "id": "lying_leg_curl",
+    "family": "leg_isolation",
+    "machineProfile": "lying_leg_curl_machine",
+    "overrides": {
+      "repRule": {
+        "topAngle": 165,
+        "bottomAngle": 70,
+        "direction": "inverted"
+      }
+    },
+    "aliases": [
+      "lying leg curl",
+      "leg curl"
+    ]
+  },
+  {
+    "id": "seated_leg_curl",
+    "family": "leg_isolation",
+    "machineProfile": "seated_leg_curl_machine",
+    "overrides": {
+      "repRule": {
+        "topAngle": 160,
+        "bottomAngle": 75,
+        "direction": "inverted"
+      }
+    },
+    "aliases": [
+      "seated leg curl"
+    ]
+  },
+  {
+    "id": "standing_calf_raise",
+    "family": "calf_raise",
+    "machineProfile": "standing_calf_machine",
+    "overrides": {},
+    "aliases": [
+      "standing calf raise",
+      "calf raise"
+    ]
+  },
+  {
+    "id": "seated_calf_raise",
+    "family": "calf_raise",
+    "machineProfile": "seated_calf_machine",
+    "overrides": {},
+    "aliases": [
+      "seated calf raise"
+    ]
+  },
+  {
+    "id": "plank",
+    "family": "core_hold",
+    "overrides": {},
+    "aliases": [
+      "plank",
+      "front plank"
+    ]
+  },
+  {
+    "id": "crunch",
+    "family": "core_flexion",
+    "overrides": {
+      "repRule": {
+        "rule": "shoulder.y lifts >= 0.08 * torsoLen from floor baseline, return"
+      }
+    },
+    "aliases": [
+      "crunch",
+      "abdominal crunch"
+    ]
+  },
+  {
+    "id": "bicycle_crunch",
+    "family": "core_flexion",
+    "overrides": {
+      "repRule": {
+        "rule": "opposite elbow\u2013knee convergence <= 0.15 * torsoLen, alternate"
+      }
+    },
+    "aliases": [
+      "bicycle crunch"
+    ]
+  },
+  {
+    "id": "hanging_leg_raise",
+    "family": "core_flexion",
+    "overrides": {
+      "repRule": {
+        "rule": "hipAngle from ~175 to <= 100, return"
+      },
+      "add": [
+        {
+          "id": "no_swing",
+          "severity": "critical",
+          "rule": "shoulder.x variance <= 0.06 * torsoLen",
+          "cue": "cue_no_swing"
+        }
+      ]
+    },
+    "aliases": [
+      "hanging leg raise",
+      "hanging knee raise"
+    ]
+  },
+  {
+    "id": "cable_crunch",
+    "family": "core_flexion",
+    "machineProfile": "cable_station",
+    "overrides": {
+      "repRule": {
+        "rule": "shoulder\u2013hip vertical distance shortens >= 20%"
+      }
+    },
+    "aliases": [
+      "cable crunch"
+    ]
+  },
+  {
+    "id": "russian_twist",
+    "family": "core_flexion",
+    "overrides": {
+      "view": "front",
+      "repRule": {
+        "rule": "wrist crosses body midline L/R, pair = 1 rep"
+      }
+    },
+    "aliases": [
+      "russian twist"
+    ]
+  },
+  {
+    "id": "ab_wheel_rollout",
+    "family": "core_hold",
+    "overrides": {
+      "repRule": {
+        "type": "rep",
+        "rule": "wrist.x travel >= 0.5 * torsoLen forward and back"
+      },
+      "add": [
+        {
+          "id": "no_hip_sag",
+          "severity": "critical",
+          "rule": "hip never drops below shoulder\u2013knee line",
+          "cue": "cue_brace_core"
+        }
+      ]
+    },
+    "aliases": [
+      "ab wheel rollout",
+      "ab wheel",
+      "ab rollout"
+    ]
+  }
+]
