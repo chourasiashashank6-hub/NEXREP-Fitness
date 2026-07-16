@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     # Comma-separated emails allowed to use /dev/subscription-toggle (development only)
     DEV_TIER_TOGGLE_EMAILS: str = "shashank1@gmail.com"
     DEV_TOGGLE_SECRET: str = "nexrep-dev-toggle-2026"
+    # Gym-protein recipe engine (complete dishes). When false, legacy LLM/composition planner runs.
+    MEAL_ENGINE_V3: bool = True
 
     class Config:
         env_file = str(ENV_FILE)

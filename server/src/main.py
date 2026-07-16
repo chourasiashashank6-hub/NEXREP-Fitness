@@ -28,6 +28,7 @@ from src.models.meal_plan import (  # noqa: F401
     MonthlyMealPlan,
     MonthlyWorkoutPlan,
 )
+from src.models.recipes import Recipe, UserMealPlan  # noqa: F401
 from src.models.weight_log import WeightLog  # noqa: F401
 from src.routes.meal_planner import router as meal_planner_router
 from src.routes.workout_planner import router as workout_planner_router

@@ -1800,7 +1800,7 @@ def _build_meal_ctx(db: Session, user: User) -> dict[str, Any]:
     assert target_kcal is not None, "target_kcal must be resolved before generation"
     assert protein_target is not None, "protein_target must be resolved before generation"
     meals_per_day = int(dietary.get("meals_per_day") or 3)
-    assert meals_per_day >= 3, "meals_per_day must come from onboarding"
+    meals_per_day = max(2, min(6, meals_per_day))
     body_type_data = onboarding.get("body_type") or {}
     if not isinstance(body_type_data, dict):
         body_type_data = {}
@@ -2662,6 +2662,19 @@ def generate_week_plan(
     week_start_day: int,
     local_date: str | None,
 ) -> dict[str, Any]:
+    from src.services.meal_engine_v3 import meal_engine_v3_enabled
+    from src.services.meal_engine_v3_bridge import generate_or_refresh_week_v3
+
+    if meal_engine_v3_enabled():
+        plan = generate_or_refresh_week_v3(
+            db,
+            user,
+            budget_level=budget_level,
+            week_start_day=week_start_day,
+            local_date=local_date,
+        )
+        return _build_week_response(plan, local_date, db=db, user=user)
+
     today = parse_local_date(local_date)
     month, year = today.month, today.year
 
@@ -2770,6 +2783,20 @@ def regenerate_week_plan(
     exclude_foods: list[str] | None = None,
     exclude_dishes: list[dict[str, Any] | str] | None = None,
 ) -> dict[str, Any]:
+    from src.services.meal_engine_v3 import meal_engine_v3_enabled
+    from src.services.meal_engine_v3_bridge import generate_or_refresh_week_v3
+
+    if meal_engine_v3_enabled():
+        plan = generate_or_refresh_week_v3(
+            db,
+            user,
+            budget_level="budget",
+            week_start_day=week_start_day,
+            local_date=local_date,
+            force=True,
+        )
+        return _build_week_response(plan, local_date, db=db, user=user)
+
     today = parse_local_date(local_date)
     month, year = today.month, today.year
 
@@ -3073,6 +3100,9 @@ def regenerate_single_day(
     exclude_foods: list[str] | None = None,
     exclude_dishes: list[dict[str, Any] | str] | None = None,
 ) -> dict[str, Any]:
+    from src.services.meal_engine_v3 import meal_engine_v3_enabled
+    from src.services.meal_engine_v3_bridge import regenerate_day_v3
+
     today = parse_local_date(local_date)
     month, year = today.month, today.year
     local = today.isoformat()
@@ -3110,6 +3140,25 @@ def regenerate_single_day(
     )
     if not existing_entry:
         raise LookupError("Day not found")
+
+    if meal_engine_v3_enabled():
+        try:
+            new_entry = regenerate_day_v3(db, user, plan=plan, day=day)
+        except Exception as gen_exc:
+            db.rollback()
+            logger.exception("[MealPlanner] regenerate_day_v3 failed for day %s: %s", day, gen_exc)
+            raise RuntimeError(
+                "Failed to regenerate this day. Your existing meals were not changed. Try again."
+            ) from gen_exc
+
+        if not test_user:
+            plan.day_regens_used = int(plan.day_regens_used or 0) + 1
+            db.commit()
+            db.refresh(plan)
+
+        targets = _plan_targets_dict(plan, db, user)
+        result = _entry_to_day_dict(new_entry, plan=plan, targets=targets)
+        return _attach_day_regen_stats(result, _monthly_day_regen_stats(db, user.id, month, year, user=user))
 
     ctx = _build_meal_ctx(db, user)
     ctx["budget_level"] = plan.budget_level
@@ -3471,6 +3520,9 @@ def swap_meal(
     reason: str | None,
     local_date: str | None,
 ) -> dict[str, Any]:
+    from src.services.meal_engine_v3 import meal_engine_v3_enabled
+    from src.services.meal_engine_v3_bridge import swap_meal_v3
+
     local = parse_local_date(local_date).isoformat()
     if not is_meal_planner_test_user(user) and not check_swap_allowed(user.id, "meal", local):
         raise SwapLimitExceeded("You've used all your swaps for today. Try again tomorrow.")
@@ -3478,6 +3530,27 @@ def swap_meal(
     plan = db.query(MonthlyMealPlan).filter(MonthlyMealPlan.id == plan_id, MonthlyMealPlan.user_id == user.id).first()
     if not plan:
         raise LookupError("Plan not found")
+
+    if meal_engine_v3_enabled():
+        try:
+            entry = swap_meal_v3(db, user, plan=plan, day=day, meal_type=meal_type)
+        except ValueError as e:
+            # Non B/L/D slots (snacks) — fall through to legacy if present
+            if "Unsupported meal slot" not in str(e):
+                raise
+            entry = None
+        else:
+            if not is_meal_planner_test_user(user):
+                increment_swap(user.id, "meal", local)
+            targets = _plan_targets_dict(plan, db, user)
+            result = _entry_to_day_dict(entry, plan=plan, targets=targets)
+            if is_meal_planner_test_user(user):
+                result["swaps_used_today"] = 0
+                result["swaps_limit"] = 999
+            else:
+                result["swaps_used_today"] = get_swap_count(user.id, "meal", local)
+                result["swaps_limit"] = SWAP_LIMIT_PER_DAY
+            return result
 
     entry = next((e for e in plan.entries if e.day == day), None)
     if not entry:

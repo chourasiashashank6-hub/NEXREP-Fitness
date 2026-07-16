@@ -27,10 +27,15 @@ import {
   generateMealPlan,
   generateWeekPlan,
   regenerateMealPlanDay,
-  regenerateRemainingMeals,
-  regenerateWeek,
   swapMealPlanMeal,
 } from "../../api/mealPlanner";
+import {
+  deleteCalorieMeal,
+  getDailyCalorieLog,
+  postCalorieMeal,
+  type CalorieDayPayload,
+  type MealType,
+} from "../../api/caloriesLog";
 import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
 import { MEAL_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
@@ -50,6 +55,7 @@ import type {
   MealPlanCurrent,
   ProteinSuggestion,
   ProteinSuggestionIcon,
+  MealPlanMeal,
   SupplementIcon,
   SupplementRecommendation,
   WeekTab,
@@ -81,6 +87,9 @@ const MEAL_ACCENT: Record<string, { bg: string; text: string; btn: string; strip
   Lunch:         { bg: GREEN_LIGHT,  text: GREEN,      btn: GREEN,   strip: GREEN_LIGHT },
   Dinner:        { bg: BLUE_LIGHT,   text: BLUE,       btn: BLUE,    strip: BLUE_LIGHT  },
   Snack:         { bg: PURPLE_LIGHT, text: PURPLE,     btn: PURPLE,  strip: PURPLE_LIGHT},
+  "Mid-Morning Snack": { bg: PURPLE_LIGHT, text: PURPLE, btn: PURPLE, strip: PURPLE_LIGHT },
+  "Afternoon Snack":   { bg: PURPLE_LIGHT, text: PURPLE, btn: PURPLE, strip: PURPLE_LIGHT },
+  "Evening Snack":     { bg: ORANGE_LIGHT, text: ORANGE, btn: ORANGE, strip: ORANGE_LIGHT },
   Pre_Workout:   { bg: ORANGE_LIGHT, text: ORANGE,     btn: ORANGE,  strip: ORANGE_LIGHT},
   Post_Workout:  { bg: GREEN_LIGHT,  text: GREEN,      btn: GREEN,   strip: GREEN_LIGHT },
 };
@@ -127,10 +136,49 @@ const MEAL_EMOJI: Record<string, string> = {
   Breakfast: "🌅",
   Lunch: "🍛",
   Snack: "🥜",
+  "Mid-Morning Snack": "🍎",
+  "Afternoon Snack": "🍌",
+  "Evening Snack": "🥛",
   Dinner: "🌙",
   Pre_Workout: "⚡",
   Post_Workout: "💪",
 };
+
+function toCalorieMealType(mealType: string): MealType {
+  const key = mealType.toLowerCase().replace(/-/g, "_").replace(/\s+/g, "_");
+  if (key.includes("breakfast")) return "Breakfast";
+  if (key.includes("lunch")) return "Lunch";
+  if (key.includes("dinner")) return "Dinner";
+  if (key.includes("pre_workout") || key.includes("preworkout")) return "Pre_Workout";
+  if (key.includes("post_workout") || key.includes("postworkout")) return "Post_Workout";
+  return "Snack";
+}
+
+function mealLogKey(meal: MealPlanMeal): string {
+  if (meal.recipe_id != null) return `r:${meal.recipe_id}`;
+  const name = meal.recipe_name || meal.items[0]?.food || meal.meal_type;
+  return `n:${meal.slot_order ?? 0}:${name}`;
+}
+
+function mealServingGrams(meal: MealPlanMeal): number {
+  if (meal.serving_grams != null && meal.serving_grams > 0) return meal.serving_grams;
+  const fromItems = meal.items.reduce((sum, item) => sum + (Number(item.quantity_g) || 0), 0);
+  return Math.max(1, fromItems || 100);
+}
+
+function per100FromTotal(total: number, grams: number): number {
+  return grams > 0 ? (total / grams) * 100 : 0;
+}
+
+function findPlannerLogEntry(dayMeals: CalorieDayPayload["meals"], meal: MealPlanMeal) {
+  const dishName = meal.recipe_name || meal.items[0]?.food || meal.meal_type;
+  return dayMeals.find((entry) => {
+    if (entry.source_type !== "meal_planner") return false;
+    if (meal.recipe_id != null && entry.food_id === meal.recipe_id) return true;
+    if (meal.recipe_id == null && entry.food_name === dishName) return true;
+    return false;
+  });
+}
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -226,9 +274,7 @@ export default function MonthlyMealPlannerScreen() {
   const [onboardingPreview, setOnboardingPreview] = useState({ meals: 3, kcal: 2200 });
   const [plannerLimitsExempt, setPlannerLimitsExempt] = useState(false);
   const [plannerDaysUnlocked, setPlannerDaysUnlocked] = useState(false);
-  const [showRegenerateSheet, setShowRegenerateSheet] = useState(false);
   const [showRegenerateDaySheet, setShowRegenerateDaySheet] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
   const [regenerateDayTarget, setRegenerateDayTarget] = useState<number | null>(null);
   const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
   const [showSwapSheet, setShowSwapSheet] = useState(false);
@@ -245,6 +291,9 @@ export default function MonthlyMealPlannerScreen() {
   const [loadingSupplements, setLoadingSupplements] = useState(false);
   const [supplementsLoaded, setSupplementsLoaded] = useState(false);
   const [supplementsCardExpanded, setSupplementsCardExpanded] = useState(false);
+  const [recipeSheetMeal, setRecipeSheetMeal] = useState<MealPlanMeal | null>(null);
+  const [loggedMealIds, setLoggedMealIds] = useState<Record<string, number>>({});
+  const [loggingMealKey, setLoggingMealKey] = useState<string | null>(null);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const signedInEmail = String(auth.currentUser?.email || "")
     .trim()
@@ -321,23 +370,33 @@ export default function MonthlyMealPlannerScreen() {
       if (current && isWeeklyPlannerCurrent(current)) {
         setPlannerMode("weekly");
         syncRegenStats(current, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-        if (current.current_week) {
-          const refreshedWeek = await generateWeekPlan(budget, current.current_week.week_start_day);
-          if (seq !== loadSeqRef.current) return;
-          syncRegenStats(refreshedWeek, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-          setPlan(refreshedWeek);
-          setSelectedDay((prev) => {
-            const cw = refreshedWeek;
-            if (cw.month_overview.some((d) => d.day === prev)) return prev;
-            return cw.today?.day ?? cw.month_overview.find((d) => d.is_today)?.day ?? prev;
-          });
-          lastDayFetchRef.current = null;
-        } else if (currentWeek?.is_generated) {
-          const refreshedWeek = await generateWeekPlan(budget, currentWeek.start_day);
-          if (seq !== loadSeqRef.current) return;
-          setPlan(refreshedWeek);
-          syncRegenStats(refreshedWeek, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-          lastDayFetchRef.current = null;
+        const weekStart =
+          current.current_week?.week_start_day ??
+          (currentWeek?.is_generated ? currentWeek.start_day : null);
+        if (weekStart != null) {
+          try {
+            const refreshedWeek = await generateWeekPlan(budget, weekStart);
+            if (seq !== loadSeqRef.current) return;
+            syncRegenStats(refreshedWeek, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+            setPlan(refreshedWeek);
+            setSelectedDay((prev) => {
+              if (refreshedWeek.month_overview.some((d) => d.day === prev)) return prev;
+              return refreshedWeek.today?.day ?? refreshedWeek.month_overview.find((d) => d.is_today)?.day ?? prev;
+            });
+            lastDayFetchRef.current = null;
+          } catch {
+            // Keep an already-generated week visible if refresh/migration fails.
+            if (seq !== loadSeqRef.current) return;
+            if (current.current_week) {
+              setPlan(current.current_week);
+              lastDayFetchRef.current = null;
+            } else if (currentWeek?.is_generated) {
+              await loadWeekPlan(currentWeek.start_day, currentWeek);
+            } else {
+              setPlan(null);
+              setDayDetail(null);
+            }
+          }
         } else {
           setPlan(null);
           setDayDetail(null);
@@ -452,6 +511,60 @@ export default function MonthlyMealPlannerScreen() {
     };
   }, [plan, selectedDay, month, year, canViewFutureDays, t]);
 
+  const selectedLogDate = useMemo(() => {
+    const y = plan?.year ?? year;
+    const m = plan?.month ?? month;
+    return `${y}-${String(m).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
+  }, [plan?.year, plan?.month, year, month, selectedDay]);
+
+  const syncLoggedMeals = useCallback((dayPayload: CalorieDayPayload, meals: MealPlanMeal[]) => {
+    const next: Record<string, number> = {};
+    for (const meal of meals) {
+      const entry = findPlannerLogEntry(dayPayload.meals, meal);
+      if (entry) next[mealLogKey(meal)] = entry.meal_id;
+    }
+    setLoggedMealIds(next);
+  }, []);
+
+  useEffect(() => {
+    if (!dayDetail?.meals?.length) {
+      setLoggedMealIds({});
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const dayPayload = await getDailyCalorieLog(selectedLogDate);
+        if (cancelled) return;
+        syncLoggedMeals(dayPayload, dayDetail.meals);
+      } catch {
+        if (!cancelled) setLoggedMealIds({});
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dayDetail, selectedLogDate, syncLoggedMeals]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!dayDetail?.meals?.length) return;
+      let cancelled = false;
+      void (async () => {
+        try {
+          const dayPayload = await getDailyCalorieLog(selectedLogDate);
+          if (cancelled) return;
+          syncLoggedMeals(dayPayload, dayDetail.meals);
+        } catch {
+          /* keep previous logged state */
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [dayDetail, selectedLogDate, syncLoggedMeals]),
+  );
+
   const loadDayExtras = useCallback(
     async (dayData: MealDayPlan) => {
       if (dayData.locked || !plan) {
@@ -465,7 +578,7 @@ export default function MonthlyMealPlannerScreen() {
       const gap = Math.max(0, target - consumed);
       setProteinGap(gap);
 
-      if (gap > 10) {
+      if (gap > 5) {
         setLoadingProteinSuggestions(true);
         try {
           const res = await fetchProteinSuggestions(plan.plan_id, selectedDay);
@@ -564,26 +677,36 @@ export default function MonthlyMealPlannerScreen() {
     }
   };
 
-  const handleSelectWeek = (week: WeekTab) => {
+  const handleSelectWeek = (week: WeekTab, day?: number) => {
     if (week.start_day === selectedWeekStart) return;
 
     setSelectedWeekStart(week.start_day);
     lastDayFetchRef.current = null;
+
+    const pickDay = () => {
+      if (day != null && day >= week.start_day && day <= week.end_day) return day;
+      return week.is_current ? now.getDate() : week.start_day;
+    };
 
     if (week.is_generated) {
       const sameWeekPlan = plan?.week_start_day === week.start_day;
       if (!sameWeekPlan) {
         void loadWeekPlan(week.start_day, week);
       }
-      setSelectedDay((prev) => {
-        if (week.start_day <= prev && prev <= week.end_day) return prev;
-        return week.is_current ? now.getDate() : week.start_day;
-      });
+      setSelectedDay(pickDay());
     } else {
       setPlan(null);
       setDayDetail(null);
-      setSelectedDay(week.is_current ? now.getDate() : week.start_day);
+      setSelectedDay(pickDay());
     }
+  };
+
+  const handleSelectDay = (day: number) => {
+    setSelectedDay(day);
+    if (plannerMode !== "weekly" || weeks.length === 0) return;
+    const weekForDay = weeks.find((w) => day >= w.start_day && day <= w.end_day);
+    if (!weekForDay || weekForDay.start_day === selectedWeekStart) return;
+    handleSelectWeek(weekForDay, day);
   };
 
   const handleSwapPress = (day: number, mealType: string) => {
@@ -596,6 +719,39 @@ export default function MonthlyMealPlannerScreen() {
     }
     setSwapTarget({ day, mealType });
     setShowSwapSheet(true);
+  };
+
+  const handleToggleLogMeal = async (meal: MealPlanMeal) => {
+    const key = mealLogKey(meal);
+    const existingId = loggedMealIds[key];
+    setLoggingMealKey(key);
+    try {
+      if (existingId) {
+        const dayPayload = await deleteCalorieMeal(existingId);
+        syncLoggedMeals(dayPayload, dayDetail?.meals ?? [meal]);
+        return;
+      }
+      const grams = mealServingGrams(meal);
+      const dishName = meal.recipe_name || meal.items[0]?.food || meal.meal_type;
+      const dayPayload = await postCalorieMeal({
+        log_date: selectedLogDate,
+        meal_type: toCalorieMealType(meal.meal_type),
+        source_type: "meal_planner",
+        food_id: meal.recipe_id ?? meal.items[0]?.food_id ?? null,
+        food_name: dishName,
+        quantity_g: grams,
+        calories_per_100g: per100FromTotal(meal.total_calories, grams),
+        protein_per_100g: per100FromTotal(meal.total_protein, grams),
+        carbs_per_100g: per100FromTotal(meal.total_carbs, grams),
+        fat_per_100g: per100FromTotal(meal.total_fat, grams),
+        fiber_per_100g: 0,
+      });
+      syncLoggedMeals(dayPayload, dayDetail?.meals ?? [meal]);
+    } catch {
+      notifyUser(t("coach.mealPlannerScreen.alerts.error"), t("coach.mealPlannerScreen.alerts.logMealFailed"));
+    } finally {
+      setLoggingMealKey(null);
+    }
   };
 
   const handleSwapConfirm = async (reason?: string) => {
@@ -664,17 +820,9 @@ export default function MonthlyMealPlannerScreen() {
     setRegenerateDayTarget(null);
     setIsRegeneratingDay(true);
     try {
-      const existingMealNames =
-        dayDetail?.meals?.flatMap((meal) => meal.items.map((item) => item.food)) ?? [];
       const updated = await regenerateMealPlanDay({
         plan_id: plan.plan_id,
         day,
-        exclude_foods: [...new Set(existingMealNames)],
-        exclude_dishes:
-          dayDetail?.meals?.map((m) => ({
-            meal_type: m.meal_type,
-            foods: m.items.map((i) => i.food),
-          })) ?? [],
       });
       setDayDetail(updated);
       syncRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
@@ -698,102 +846,6 @@ export default function MonthlyMealPlannerScreen() {
     }
   };
 
-  const handleRegeneratePress = () => {
-    setShowRegenerateSheet(true);
-  };
-
-  const handleRegenerateConfirm = async () => {
-    setShowRegenerateSheet(false);
-    setIsRegenerating(true);
-    const currentDay = now.getDate();
-    const monthName = now.toLocaleString(undefined, { month: "long" });
-    const lastDayOfMonth = new Date(year, month, 0).getDate();
-    const weekEndDay = selectedWeekMeta?.end_day ?? lastDayOfMonth;
-    try {
-      if (plannerMode === "weekly" && selectedWeekStart != null) {
-        const currentWeekFoods =
-          (plan as MealPlanCurrent & { days?: MealDayPlan[] }).days?.flatMap(
-            (day) => day.meals?.flatMap((meal) => meal.items.map((item) => item.food)) ?? [],
-          ) ?? [];
-
-        const currentWeekDishes =
-          (plan as MealPlanCurrent & { days?: MealDayPlan[] }).days?.flatMap(
-            (day) =>
-              day.meals?.map((meal) => ({
-                meal_type: meal.meal_type,
-                foods: meal.items.map((i) => i.food),
-              })) ?? [],
-          ) ?? [];
-
-        const updated = await regenerateWeek(selectedWeekStart, currentDay, {
-          exclude_foods: [...new Set(currentWeekFoods)],
-          exclude_dishes: currentWeekDishes,
-        });
-        lastDayFetchRef.current = null;
-        syncRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-        setPlan(updated);
-        await rescheduleMealNotifications(updated).catch(() => undefined);
-        const viewDay = selectedDay >= currentDay ? selectedDay : currentDay;
-        const selectedDayInUpdatedPlan = updated.month_overview.some((d) => d.day === viewDay) ? viewDay : currentDay;
-        setSelectedDay(selectedDayInUpdatedPlan);
-        const updatedDays = (updated as MealPlanCurrent & { days?: MealDayPlan[] }).days;
-        const embeddedDay = updatedDays?.find((d) => d.day === selectedDayInUpdatedPlan);
-        if (embeddedDay?.meals?.length) {
-          lastDayFetchRef.current = { planId: updated.plan_id, day: selectedDayInUpdatedPlan };
-          setDayDetail(embeddedDay);
-          if (typeof embeddedDay.swaps_used_today === "number") setMealSwapsUsed(embeddedDay.swaps_used_today);
-        } else {
-          const dayData = await fetchMealPlanDay(selectedDayInUpdatedPlan);
-          lastDayFetchRef.current = { planId: updated.plan_id, day: selectedDayInUpdatedPlan };
-          setDayDetail(dayData);
-          if (typeof dayData.swaps_used_today === "number") setMealSwapsUsed(dayData.swaps_used_today);
-        }
-        notifyUser(t("coach.mealPlannerScreen.alerts.done"), t("coach.mealPlannerScreen.alerts.weekRegenerated"));
-      } else {
-        const currentWeekFoods =
-          (plan as MealPlanCurrent & { days?: MealDayPlan[] }).days?.flatMap(
-            (day) => day.meals?.flatMap((meal) => meal.items.map((item) => item.food)) ?? [],
-          ) ?? [];
-        const currentWeekDishes =
-          (plan as MealPlanCurrent & { days?: MealDayPlan[] }).days?.flatMap(
-            (day) =>
-              day.meals?.map((meal) => ({
-                meal_type: meal.meal_type,
-                foods: meal.items.map((i) => i.food),
-              })) ?? [],
-          ) ?? [];
-        const updated = await regenerateRemainingMeals(currentDay, {
-          exclude_foods: [...new Set(currentWeekFoods)],
-          exclude_dishes: currentWeekDishes,
-        });
-        lastDayFetchRef.current = null;
-        syncRegenStats(updated, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-        setPlan(updated);
-        await rescheduleMealNotifications(updated).catch(() => undefined);
-        const viewDay = selectedDay >= currentDay ? selectedDay : currentDay;
-        const selectedDayInUpdatedPlan = updated.month_overview.some((d) => d.day === viewDay) ? viewDay : currentDay;
-        setSelectedDay(selectedDayInUpdatedPlan);
-        const updatedDays = (updated as MealPlanCurrent & { days?: MealDayPlan[] }).days;
-        const embeddedDay = updatedDays?.find((d) => d.day === selectedDayInUpdatedPlan);
-        if (embeddedDay?.meals?.length) {
-          lastDayFetchRef.current = { planId: updated.plan_id, day: selectedDayInUpdatedPlan };
-          setDayDetail(embeddedDay);
-          if (typeof embeddedDay.swaps_used_today === "number") setMealSwapsUsed(embeddedDay.swaps_used_today);
-        } else {
-          const dayData = await fetchMealPlanDay(selectedDayInUpdatedPlan);
-          lastDayFetchRef.current = { planId: updated.plan_id, day: selectedDayInUpdatedPlan };
-          setDayDetail(dayData);
-          if (typeof dayData.swaps_used_today === "number") setMealSwapsUsed(dayData.swaps_used_today);
-        }
-        notifyUser(t("coach.mealPlannerScreen.alerts.done"), t("coach.mealPlannerScreen.alerts.regeneratedFrom", { month: monthName, day: currentDay }));
-      }
-    } catch (e: unknown) {
-      Alert.alert(t("coach.mealPlannerScreen.alerts.error"), apiErrorMessage(e, t("coach.mealPlannerScreen.alerts.regenerateFailed")));
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-
   const selectedWeekMeta = useMemo(
     () => weeks.find((w) => w.start_day === selectedWeekStart) ?? null,
     [weeks, selectedWeekStart],
@@ -801,25 +853,34 @@ export default function MonthlyMealPlannerScreen() {
 
   const calendarDays = useMemo(() => {
     const source = plan?.month_overview ?? [];
-    if (plannerMode === "weekly" && selectedWeekMeta) {
-      return source
-        .filter((d) => d.day >= selectedWeekMeta.start_day && d.day <= selectedWeekMeta.end_day)
-        .map((d) => ({
-          day: d.day,
-          is_past: d.is_past,
-          is_today: d.is_today,
-          is_future: d.is_future,
-          is_cheat_day: d.is_cheat_day,
-        }));
+    // Full-month strip (week tabs removed) — fill gaps for days outside the loaded week.
+    const byDay = new Map(source.map((d) => [d.day, d]));
+    const last = new Date(year, month, 0).getDate();
+    const out = [];
+    for (let day = 1; day <= last; day++) {
+      const existing = byDay.get(day);
+      if (existing) {
+        out.push({
+          day: existing.day,
+          is_past: existing.is_past,
+          is_today: existing.is_today,
+          is_future: existing.is_future,
+          is_cheat_day: existing.is_cheat_day,
+        });
+        continue;
+      }
+      const isToday = day === now.getDate() && month === now.getMonth() + 1 && year === now.getFullYear();
+      const isPast = year < now.getFullYear() || (year === now.getFullYear() && (month < now.getMonth() + 1 || (month === now.getMonth() + 1 && day < now.getDate())));
+      out.push({
+        day,
+        is_past: isPast && !isToday,
+        is_today: isToday,
+        is_future: !isPast && !isToday,
+        is_cheat_day: false,
+      });
     }
-    return source.map((d) => ({
-      day: d.day,
-      is_past: d.is_past,
-      is_today: d.is_today,
-      is_future: d.is_future,
-      is_cheat_day: d.is_cheat_day,
-    }));
-  }, [plan, plannerMode, selectedWeekMeta]);
+    return out;
+  }, [plan, month, year, now]);
 
   const totalCost = useMemo(() => {
     if (!dayDetail?.meals) return 0;
@@ -831,18 +892,21 @@ export default function MonthlyMealPlannerScreen() {
     return dayDetail.meals.reduce((s, m) => s + (m.prep_time_min || 0), 0);
   }, [dayDetail]);
 
+  const isV3Day = Boolean(dayDetail?.meals?.some((m) => m.engine === "v3"));
+  const showCost = !isV3Day && totalCost > 0;
+
   const headerTitle = monthYearLabel(month, year);
-  const currentDay = now.getDate();
-  const lastDayOfMonth = new Date(year, month, 0).getDate();
-  const monthName = now.toLocaleString(undefined, { month: "long" });
-  const weekEndDay = selectedWeekMeta?.end_day ?? lastDayOfMonth;
-  const shouldShowRegenerate = effectiveLimitsExempt && Boolean(plan) && currentDay <= weekEndDay;
-  const regenRangeLabel =
-    plannerMode === "weekly"
-      ? t("coach.mealPlannerScreen.regenRange", { startMonth: monthName, startDay: currentDay, endMonth: monthName, endDay: weekEndDay })
-      : t("coach.mealPlannerScreen.regenRange", { startMonth: monthName, startDay: currentDay, endMonth: monthName, endDay: lastDayOfMonth });
-  const showWeekGeneratePanel = plannerMode === "weekly" && !plan && !generating && selectedWeekMeta?.can_generate;
+  const shouldShowWeekGenerate =
+    plannerMode === "weekly" &&
+    Boolean(selectedWeekMeta) &&
+    !selectedWeekMeta?.is_generated &&
+    !generating;
+  const showWeekGeneratePanel =
+    plannerMode === "weekly" && !plan && !generating && Boolean(selectedWeekMeta) &&
+    (selectedWeekMeta?.can_generate || !selectedWeekMeta?.is_generated || selectedWeekMeta?.is_current);
   const showMonthlyGeneratePanel = plannerMode === "monthly" && !plan && !generating;
+  const showWeekEmptyFallback =
+    plannerMode === "weekly" && !plan && !generating && !showWeekGeneratePanel && Boolean(selectedWeekMeta);
 
   if (loading) {
     return (
@@ -885,8 +949,8 @@ export default function MonthlyMealPlannerScreen() {
               )}
             </Pressable>
           ) : null}
-          {dayDetail && !dayDetail.locked && shouldShowRegenerate ? (
-            <Pressable disabled={isRegenerating} onPress={handleRegeneratePress} style={[styles.regenerateWeekButton, isRegenerating && styles.regenBtnDisabled]}>
+          {shouldShowWeekGenerate ? (
+            <Pressable disabled={generating} onPress={() => void startGenerateWeek()} style={[styles.regenerateWeekButton, generating && styles.regenBtnDisabled]}>
               <Ionicons name="refresh-circle-outline" size={14} color={WHITE} />
               <Text style={styles.regenerateWeekButtonText}>{t("coach.mealPlannerScreen.week")}</Text>
             </Pressable>
@@ -928,6 +992,16 @@ export default function MonthlyMealPlannerScreen() {
             </View>
           ) : null}
 
+          {showWeekEmptyFallback ? (
+            <View style={styles.panel}>
+              <Text style={styles.panelTitle}>{t("coach.mealPlannerScreen.generateWeekTitle", { week: selectedWeekMeta?.label ?? "" })}</Text>
+              <Text style={styles.bullet}>{t("coach.mealPlannerScreen.alerts.couldNotGenerateMonth")}</Text>
+              <Pressable style={styles.genBtn} onPress={() => void startGenerate()}>
+                <Text style={styles.genBtnText}>{t("coach.mealPlannerScreen.generateWeek")}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           {generating ? (
             <View style={styles.panel}>
               <Text style={styles.panelTitle}>
@@ -948,42 +1022,14 @@ export default function MonthlyMealPlannerScreen() {
             </View>
           ) : null}
 
-          {plannerMode === "weekly" && weeks.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.weekTabsScroll} contentContainerStyle={styles.weekTabsContent}>
-              {weeks.map((w) => {
-                const selected = w.start_day === selectedWeekStart;
-                return (
-                  <Pressable
-                    key={w.start_day}
-                    onPress={() => handleSelectWeek(w)}
-                    style={[styles.weekTab, selected ? styles.weekTabActive : w.is_generated ? styles.weekTabGenerated : styles.weekTabEmpty]}
-                  >
-                    <Text style={[styles.weekTabLabel, selected ? styles.weekTabLabelActive : w.is_generated ? styles.weekTabLabelGenerated : styles.weekTabLabelEmpty]}>
-                      {t("coach.mealPlannerScreen.weekTab", { week: w.week_number, suffix: w.is_generated && !selected ? " ✓" : "" })}
-                    </Text>
-                    <Text style={[styles.weekTabDate, selected && styles.weekTabDateActive]}>
-                      {new Date(year, month - 1, w.start_day).toLocaleString(undefined, { month: "short" })} {w.start_day}–{w.end_day}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          ) : null}
-
           {plan && !generating ? (
             <>
-              <Text style={styles.weekLabel}>
-                {t("coach.mealPlannerScreen.weekLabel", {
-                  week: selectedWeekMeta?.week_number ?? plan.week_number ?? "",
-                  range: `${new Date(plan.year, plan.month - 1, selectedWeekMeta?.start_day ?? plan.week_start_day ?? selectedDay).toLocaleString(undefined, { month: "short" })} ${selectedWeekMeta?.start_day ?? plan.week_start_day ?? selectedDay}–${selectedWeekMeta?.end_day ?? plan.week_end_day ?? selectedDay}`,
-                })}
-              </Text>
               <PlannerMonthCalendar
                 month={plan.month}
                 year={plan.year}
                 days={calendarDays}
                 selectedDay={selectedDay}
-                onSelectDay={setSelectedDay}
+                onSelectDay={handleSelectDay}
                 mode="meal"
                 allowFutureSelection={canViewFutureDays}
               />
@@ -1052,10 +1098,12 @@ export default function MonthlyMealPlannerScreen() {
                       </View>
                     ) : null}
                     <View style={styles.summaryFooter}>
-                      <View style={styles.summaryFooterItem}>
-                        <Ionicons name="cash-outline" size={14} color={MUTED} />
-                        <Text style={styles.summaryFooterText}>{t("coach.mealPlannerScreen.estimatedCost", { cost: totalCost })}</Text>
-                      </View>
+                      {showCost ? (
+                        <View style={styles.summaryFooterItem}>
+                          <Ionicons name="cash-outline" size={14} color={MUTED} />
+                          <Text style={styles.summaryFooterText}>{t("coach.mealPlannerScreen.estimatedCost", { cost: totalCost })}</Text>
+                        </View>
+                      ) : null}
                       <View style={styles.summaryFooterItem}>
                         <Ionicons name="time-outline" size={14} color={MUTED} />
                         <Text style={styles.summaryFooterText}>{t("coach.mealPlannerScreen.prep", { minutes: totalPrep })}</Text>
@@ -1083,31 +1131,84 @@ export default function MonthlyMealPlannerScreen() {
                     </View>
                   ) : (
                     dayDetail.meals.map((meal) => {
-                      const key = `${dayDetail.day}-${meal.meal_type}`;
+                      const key = `${dayDetail.day}-${meal.slot_order ?? meal.slot ?? meal.meal_type}`;
+                      const logKey = mealLogKey(meal);
+                      const isLogged = loggedMealIds[logKey] != null;
+                      const isLogging = loggingMealKey === logKey;
                       const isCollapsed = collapsed[key];
                       const isSwapping = swappingMeal === meal.meal_type;
                       const accent = MEAL_ACCENT[meal.meal_type] ?? defaultAccent;
+                      const isV3Meal = meal.engine === "v3";
+                      const dishName = meal.recipe_name || meal.items[0]?.food || meal.meal_type;
+                      const mealLabel = meal.meal_type.replace(/_/g, " ");
+                      const mult = meal.multiplier ?? meal.items[0]?.units ?? 1;
+                      const grams = meal.serving_grams ?? meal.items[0]?.quantity_g ?? 0;
+                      const p = meal.total_protein || 0;
+                      const c = meal.total_carbs || 0;
+                      const f = meal.total_fat || 0;
+                      const macroSum = p + c + f;
                       return (
-                        <View key={key} style={styles.mealCard}>
+                        <View key={key} style={[styles.mealCard, isLogged && styles.mealCardLogged]}>
                           <View style={[styles.mealAccentStrip, { backgroundColor: accent.strip }]}>
                             <Pressable style={styles.mealHeaderPressable} onPress={() => setCollapsed((c) => ({ ...c, [key]: !c[key] }))}>
-                              <Text style={[styles.mealTitle, { color: accent.text }]}>
-                                {MEAL_EMOJI[meal.meal_type] ?? "🍽"} {meal.meal_type.replace("_", " ")}
-                              </Text>
+                              <View style={styles.mealTitleRow}>
+                                <Text style={[styles.mealTitle, { color: accent.text }]}>
+                                  {MEAL_EMOJI[meal.meal_type] ?? "🍽"} {mealLabel}
+                                </Text>
+                                {isLogged ? (
+                                  <View style={styles.loggedBadge}>
+                                    <Ionicons name="checkmark" size={10} color={WHITE} />
+                                    <Text style={styles.loggedBadgeText}>{t("coach.mealPlannerScreen.loggedBadge")}</Text>
+                                  </View>
+                                ) : null}
+                              </View>
                               <View style={styles.mealMetaRow}>
                                 <Ionicons name="time-outline" size={11} color={accent.text} />
-                                <Text style={[styles.mealMetaText, { color: accent.text }]}>{t("coach.mealPlannerScreen.mealPrepCost", { minutes: meal.prep_time_min, cost: meal.estimated_cost_inr })}</Text>
+                                <Text style={[styles.mealMetaText, { color: accent.text }]}>
+                                  {isV3Meal || meal.estimated_cost_inr == null
+                                    ? t("coach.mealPlannerScreen.prep", { minutes: meal.prep_time_min })
+                                    : t("coach.mealPlannerScreen.mealPrepCost", { minutes: meal.prep_time_min, cost: meal.estimated_cost_inr })}
+                                </Text>
                               </View>
                             </Pressable>
-                            {canSwapMeals && swapsRemaining > 0 ? (
+                            <View style={styles.mealHeaderActions}>
                               <Pressable
-                                style={[styles.swapButton, { backgroundColor: accent.btn }]}
-                                onPress={() => handleSwapPress(dayDetail.day, meal.meal_type)}
+                                style={[styles.logButton, isLogged ? styles.logButtonLogged : styles.logButtonIdle]}
+                                onPress={() => void handleToggleLogMeal(meal)}
+                                disabled={isLogging}
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                accessibilityLabel={
+                                  isLogged
+                                    ? t("coach.mealPlannerScreen.unlogMeal")
+                                    : t("coach.mealPlannerScreen.logMeal")
+                                }
                               >
-                                <Ionicons name="refresh" size={16} color={WHITE} />
+                                {isLogging ? (
+                                  <ActivityIndicator size="small" color={isLogged ? WHITE : GREEN} />
+                                ) : (
+                                  <Ionicons name="checkmark" size={16} color={isLogged ? WHITE : GREEN} />
+                                )}
                               </Pressable>
-                            ) : null}
+                              {canSwapMeals && swapsRemaining > 0 ? (
+                                <Pressable
+                                  style={[styles.swapButton, { backgroundColor: isLogged ? MUTED : accent.btn }]}
+                                  onPress={() => {
+                                    if (isLogged) {
+                                      notifyUser(
+                                        t("coach.mealPlannerScreen.alerts.swapLockedTitle"),
+                                        t("coach.mealPlannerScreen.alerts.swapLockedBody"),
+                                      );
+                                      return;
+                                    }
+                                    handleSwapPress(dayDetail.day, meal.meal_type);
+                                  }}
+                                  disabled={isLogged}
+                                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                  <Ionicons name={isLogged ? "lock-closed" : "refresh"} size={16} color={WHITE} />
+                                </Pressable>
+                              ) : null}
+                            </View>
                           </View>
                           {isSwapping ? (
                             <View style={styles.swapLoadingContainer}>
@@ -1116,33 +1217,70 @@ export default function MonthlyMealPlannerScreen() {
                             </View>
                           ) : !isCollapsed ? (
                             <View style={styles.mealBody}>
-                              {meal.items.map((item, idx) => {
-                                const unitsRounded =
-                                  item.units != null
-                                    ? Number(Number(item.units).toFixed(1)).toString().replace(/\.0$/, "")
-                                    : null;
-                                const servingLine =
-                                  unitsRounded != null && item.unit_label
-                                    ? `${unitsRounded} ${item.unit_label}${item.quantity_g ? ` (${item.quantity_g}g)` : ""}`
-                                    : item.quantity_g
-                                      ? `${item.quantity_g}g`
-                                      : "";
-                                return (
-                                <View key={idx} style={styles.foodRow}>
-                                  <View style={styles.foodTextWrap}>
-                                    <Text style={styles.foodName}>{item.food}</Text>
-                                    {servingLine ? <Text style={styles.foodServing}>{servingLine}</Text> : null}
+                              {isV3Meal ? (
+                                <>
+                                  <Text style={styles.foodName}>{dishName}</Text>
+                                  <Text style={styles.foodServing}>
+                                    {`${Number(mult)}× serving · ${grams}g${meal.recipe_category ? ` · ${meal.recipe_category}` : ""}`}
+                                  </Text>
+                                  <Pressable onPress={() => setRecipeSheetMeal(meal)} hitSlop={6}>
+                                    <Text style={styles.viewRecipeLink}>{t("coach.mealPlannerScreen.viewRecipe")}</Text>
+                                  </Pressable>
+                                  <View style={styles.mealTotalsBubble}>
+                                    <Text style={styles.mealTotalsLine}>
+                                      {t("coach.mealPlannerScreen.mealTotalsLine", {
+                                        calories: meal.total_calories,
+                                        protein: p,
+                                        carbs: c,
+                                        fat: f,
+                                      })}
+                                    </Text>
                                   </View>
-                                  <View style={styles.foodMeta}>
-                                    <Text style={styles.foodKcal}>{item.calories} kcal</Text>
+                                  {macroSum > 0 ? (
+                                    <View style={styles.macroBarTrack}>
+                                      <View style={[styles.macroBarSeg, styles.macroBarProtein, { flex: Math.max(p, 0.01) }]} />
+                                      <View style={[styles.macroBarSeg, styles.macroBarCarbs, { flex: Math.max(c, 0.01) }]} />
+                                      <View style={[styles.macroBarSeg, styles.macroBarFat, { flex: Math.max(f, 0.01) }]} />
+                                    </View>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <>
+                                  {meal.items.map((item, idx) => {
+                                    const unitsRounded =
+                                      item.units != null
+                                        ? Number(Number(item.units).toFixed(1)).toString().replace(/\.0$/, "")
+                                        : null;
+                                    const servingLine =
+                                      unitsRounded != null && item.unit_label
+                                        ? `${unitsRounded} ${item.unit_label}${item.quantity_g ? ` (${item.quantity_g}g)` : ""}`
+                                        : item.quantity_g
+                                          ? `${item.quantity_g}g`
+                                          : "";
+                                    return (
+                                    <View key={idx} style={styles.foodRow}>
+                                      <View style={styles.foodTextWrap}>
+                                        <Text style={styles.foodName}>{item.food}</Text>
+                                        {servingLine ? <Text style={styles.foodServing}>{servingLine}</Text> : null}
+                                      </View>
+                                      <View style={styles.foodMeta}>
+                                        <Text style={styles.foodKcal}>{item.calories} kcal</Text>
+                                      </View>
+                                    </View>
+                                    );
+                                  })}
+                                  <View style={styles.mealTotalsBubble}>
+                                    <Text style={styles.mealTotalsLine}>
+                                      {t("coach.mealPlannerScreen.mealTotalsLine", {
+                                        calories: meal.total_calories,
+                                        protein: meal.total_protein,
+                                        carbs: meal.total_carbs,
+                                        fat: meal.total_fat,
+                                      })}
+                                    </Text>
                                   </View>
-                                </View>
-                                );
-                              })}
-                              <View style={styles.mealTotalsBubble}>
-                                <Text style={styles.mealTotalsCalories}>{t("coach.mealPlannerScreen.mealTotal", { calories: meal.total_calories })}</Text>
-                                <Text style={styles.mealTotalsMacros}>{t("coach.mealPlannerScreen.mealMacros", { protein: meal.total_protein, carbs: meal.total_carbs, fat: meal.total_fat })}</Text>
-                              </View>
+                                </>
+                              )}
                             </View>
                           ) : null}
                         </View>
@@ -1150,7 +1288,7 @@ export default function MonthlyMealPlannerScreen() {
                     })
                   )}
 
-                  {proteinGap > 10 ? (
+                  {proteinGap > 5 ? (
                     <View style={styles.suggestionCard}>
                       <View style={styles.suggestionHeader}>
                         <View style={styles.suggestionHeaderLeft}>
@@ -1183,13 +1321,16 @@ export default function MonthlyMealPlannerScreen() {
                                   <View key={`${s.title}-${columnIndex}-${i}`} style={styles.suggestionItem}>
                                     <View style={styles.suggestionItemIcon}>{renderProteinIcon(s.icon)}</View>
                                     <View style={styles.suggestionItemContent}>
-                                      <Text style={styles.suggestionItemTitle} numberOfLines={1}>{s.title}</Text>
-                                      <Text style={styles.suggestionItemDesc} numberOfLines={2}>{s.description}</Text>
-                                      <Text style={styles.suggestionItemTime} numberOfLines={1}>{s.time_suggestion}</Text>
+                                      <Text style={styles.suggestionItemTitle} numberOfLines={2}>{s.title}</Text>
+                                      {s.description ? (
+                                        <Text style={styles.suggestionItemDesc} numberOfLines={1}>{s.description}</Text>
+                                      ) : null}
                                     </View>
                                     <View style={styles.suggestionRight}>
                                       <Text style={styles.suggestionItemProtein}>+{s.protein_g}g</Text>
-                                      <Text style={styles.suggestionItemCost}>≈₹{s.estimated_cost_inr}</Text>
+                                      {s.estimated_cost_inr != null && s.estimated_cost_inr > 0 ? (
+                                        <Text style={styles.suggestionItemCost}>≈₹{s.estimated_cost_inr}</Text>
+                                      ) : null}
                                     </View>
                                   </View>
                                 ))}
@@ -1258,36 +1399,7 @@ export default function MonthlyMealPlannerScreen() {
           ) : null}
         </ScrollView>
 
-        {isRegenerating ? (
-          <View style={styles.regeneratingOverlay}>
-            <ActivityIndicator size="large" color={GREEN} />
-            <Text style={styles.regeneratingText}>{LOADING_MSGS[genStep % LOADING_MSGS.length]}</Text>
-          </View>
-        ) : null}
       </View>
-
-      <Modal visible={showRegenerateSheet} transparent animationType="slide" onRequestClose={() => setShowRegenerateSheet(false)}>
-        <View style={styles.regenSheetBackdrop}>
-          <Pressable style={styles.regenSheetBackdropTap} onPress={() => setShowRegenerateSheet(false)} />
-          <View style={styles.regenSheet}>
-            <Text style={styles.regenSheetTitle}>{t("coach.mealPlannerScreen.regenUpcomingTitle")}</Text>
-            <Text style={styles.regenSheetSubtitle}>{regenRangeLabel}</Text>
-            <Text style={styles.regenSheetBody}>
-              {plannerMode === "weekly"
-                ? t("coach.mealPlannerScreen.regenWeekBody", { month: monthName, day: weekEndDay })
-                : t("coach.mealPlannerScreen.regenMonthBody", { month: monthName, day: lastDayOfMonth })}
-            </Text>
-            <View style={styles.regenSheetActions}>
-              <Pressable style={styles.regenSheetCancel} onPress={() => setShowRegenerateSheet(false)}>
-                <Text style={styles.regenSheetCancelText}>{t("coach.mealPlannerScreen.cancel")}</Text>
-              </Pressable>
-              <Pressable style={styles.regenSheetConfirm} onPress={() => void handleRegenerateConfirm()}>
-                <Text style={styles.regenSheetConfirmText}>{t("coach.mealPlannerScreen.regenerate")}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <Modal
         visible={showRegenerateDaySheet}
@@ -1328,6 +1440,40 @@ export default function MonthlyMealPlannerScreen() {
                 <Text style={styles.regenSheetConfirmText}>{t("coach.mealPlannerScreen.regenerateLeft", { count: dayRegensRemaining })}</Text>
               </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={Boolean(recipeSheetMeal)}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setRecipeSheetMeal(null)}
+      >
+        <View style={styles.regenSheetBackdrop}>
+          <Pressable style={styles.regenSheetBackdropTap} onPress={() => setRecipeSheetMeal(null)} />
+          <View style={styles.recipeSheet}>
+            <Text style={styles.recipeSheetTitle}>{recipeSheetMeal?.recipe_name || recipeSheetMeal?.items[0]?.food}</Text>
+            {recipeSheetMeal?.recipe_category ? (
+              <Text style={styles.recipeSheetMeta}>{recipeSheetMeal.recipe_category}</Text>
+            ) : null}
+            <ScrollView style={styles.recipeSheetScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.recipeSectionLabel}>Ingredients</Text>
+              {(recipeSheetMeal?.recipe_items || []).map((ing, idx) => (
+                <Text key={`${ing.key || ing.label}-${idx}`} style={styles.recipeIngredient}>
+                  {ing.label} — {ing.grams}g
+                </Text>
+              ))}
+              <Text style={[styles.recipeSectionLabel, { marginTop: 14 }]}>Method</Text>
+              {(recipeSheetMeal?.recipe_steps || []).map((step, idx) => (
+                <Text key={`step-${idx}`} style={styles.recipeStep}>
+                  {idx + 1}. {step}
+                </Text>
+              ))}
+            </ScrollView>
+            <Pressable style={styles.recipeSheetClose} onPress={() => setRecipeSheetMeal(null)}>
+              <Text style={styles.recipeSheetCloseText}>Close</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -1382,19 +1528,6 @@ const styles = StyleSheet.create({
   progressMeta: { color: MUTED, fontSize: 11, marginTop: 8 },
   progressStep: { color: MUTED, fontSize: 12, marginTop: 12 },
   generatingSpinner: { marginTop: 16 },
-  weekTabsScroll: { marginBottom: 10, maxHeight: 54 },
-  weekTabsContent: { gap: 6, paddingRight: 4 },
-  weekTab: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, minWidth: 76, alignItems: "center" },
-  weekTabActive: { backgroundColor: BLUE },
-  weekTabGenerated: { backgroundColor: BG },
-  weekTabEmpty: { backgroundColor: BG },
-  weekTabLabel: { fontSize: 11, fontWeight: "800" },
-  weekTabLabelActive: { color: WHITE },
-  weekTabLabelGenerated: { color: BLUE },
-  weekTabLabelEmpty: { color: MUTED },
-  weekTabDate: { color: MUTED, fontSize: 9, marginTop: 2 },
-  weekTabDateActive: { color: "rgba(255,255,255,0.6)" },
-  weekLabel: { color: MUTED, marginBottom: 8, fontSize: 11, fontWeight: "600" },
   locked: { backgroundColor: BG, borderRadius: 18, padding: 28, alignItems: "center", marginVertical: 16 },
   lockedText: { color: MUTED, fontSize: 13, fontWeight: "800", marginTop: 8 },
   lockedMessage: { color: MUTED, fontSize: 11, marginTop: 4, textAlign: "center" },
@@ -1422,25 +1555,63 @@ const styles = StyleSheet.create({
   dayRegeneratingOverlay: { backgroundColor: "rgba(255,255,255,0.82)", borderRadius: 18, padding: 40, alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 },
   dayRegeneratingText: { color: MUTED, fontSize: 13, fontWeight: "700", textAlign: "center" },
   mealCard: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 18, overflow: "hidden", marginBottom: 10 },
+  mealCardLogged: { borderColor: GREEN, borderWidth: 1.5, shadowColor: GREEN, shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 0 }, elevation: 2 },
   mealAccentStrip: { paddingHorizontal: 16, paddingVertical: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  mealHeaderPressable: { flex: 1 },
+  mealHeaderPressable: { flex: 1, paddingRight: 8 },
+  mealTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   mealTitle: { fontSize: 13, fontWeight: "800" },
+  loggedBadge: { backgroundColor: GREEN, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, flexDirection: "row", alignItems: "center", gap: 3 },
+  loggedBadgeText: { color: WHITE, fontSize: 10, fontWeight: "700" },
+  mealHeaderActions: { flexDirection: "row", alignItems: "center", gap: 7 },
+  logButton: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+  logButtonIdle: { backgroundColor: WHITE, borderWidth: 1.5, borderColor: GREEN },
+  logButtonLogged: { backgroundColor: GREEN, borderWidth: 0 },
   mealMetaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 5, opacity: 0.72 },
   mealMetaText: { fontSize: 10, fontWeight: "700" },
-  swapButton: { width: 30, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center", marginLeft: 10 },
+  swapButton: { width: 30, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   swapLoadingContainer: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 14 },
   swapLoadingText: { color: MUTED, fontSize: 12, fontWeight: "700" },
   mealBody: { paddingHorizontal: 16, paddingVertical: 12 },
   foodRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: BORDER, gap: 10 },
   foodTextWrap: { flex: 1, gap: 2 },
   foodName: { color: TEXT, fontSize: 14, fontWeight: "500" },
+  viewRecipeLink: { color: BLUE, fontSize: 12, fontWeight: "700", marginTop: 4, marginBottom: 2 },
   foodServing: { color: MUTED, fontSize: 12, fontWeight: "400" },
   foodMeta: { alignItems: "flex-end" },
   foodWeight: { color: MUTED, fontSize: 11 },
   foodKcal: { color: TEXT, fontSize: 11, fontWeight: "800", marginTop: 2 },
   mealTotalsBubble: { backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginTop: 4 },
+  mealTotalsLine: { color: TEXT, fontSize: 11, fontWeight: "600" },
   mealTotalsCalories: { color: TEXT, fontSize: 11, fontWeight: "800" },
   mealTotalsMacros: { color: MUTED, fontSize: 10, marginTop: 2 },
+  macroBarTrack: { flexDirection: "row", height: 6, borderRadius: 99, overflow: "hidden", marginTop: 8, backgroundColor: TRACK },
+  macroBarSeg: { height: 6 },
+  macroBarProtein: { backgroundColor: BLUE },
+  macroBarCarbs: { backgroundColor: GREEN },
+  macroBarFat: { backgroundColor: AMBER_TEXT },
+  recipeSheet: {
+    backgroundColor: WHITE,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 24,
+    maxHeight: "78%",
+  },
+  recipeSheetTitle: { color: TEXT, fontSize: 16, fontWeight: "800" },
+  recipeSheetMeta: { color: MUTED, fontSize: 12, marginTop: 4, marginBottom: 10 },
+  recipeSheetScroll: { maxHeight: 420 },
+  recipeSectionLabel: { color: TEXT, fontSize: 13, fontWeight: "800", marginBottom: 6 },
+  recipeIngredient: { color: TEXT, fontSize: 12, lineHeight: 18, marginBottom: 2 },
+  recipeStep: { color: TEXT, fontSize: 12, lineHeight: 18, marginBottom: 6 },
+  recipeSheetClose: {
+    marginTop: 12,
+    backgroundColor: BLUE,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  recipeSheetCloseText: { color: WHITE, fontSize: 13, fontWeight: "800" },
   summaryTitle: { color: MUTED, fontWeight: "800", fontSize: 10, letterSpacing: 0.8 },
   calorieSummaryRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 8 },
   calorieValue: { color: TEXT, fontSize: 22, fontWeight: "900" },
@@ -1469,12 +1640,11 @@ const styles = StyleSheet.create({
   suggestionLoadingText: { color: MUTED, fontSize: 11, fontWeight: "700" },
   suggestionScrollerContent: { gap: 10, padding: 12 },
   suggestionColumn: { gap: 10 },
-  suggestionItem: { width: 268, height: 80, flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderWidth: 1, borderColor: BG, borderRadius: 14, backgroundColor: WHITE },
+  suggestionItem: { width: 268, minHeight: 80, flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderWidth: 1, borderColor: BG, borderRadius: 14, backgroundColor: WHITE },
   suggestionItemIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: BLUE_LIGHT, alignItems: "center", justifyContent: "center" },
   suggestionItemContent: { flex: 1, minWidth: 0 },
   suggestionItemTitle: { color: TEXT, fontSize: 12, fontWeight: "800" },
   suggestionItemDesc: { color: MUTED, fontSize: 10, marginTop: 2 },
-  suggestionItemTime: { color: MUTED, fontSize: 10, marginTop: 2 },
   suggestionRight: { alignItems: "flex-end" },
   suggestionItemProtein: { color: BLUE, fontSize: 12, fontWeight: "800" },
   suggestionItemCost: { color: MUTED, fontSize: 10, marginTop: 2 },
@@ -1503,8 +1673,6 @@ const styles = StyleSheet.create({
   benefitTagText: { color: PURPLE, fontSize: 10, fontWeight: "800" },
   supplementBenefit: { color: MUTED, fontSize: 11, lineHeight: 16, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: BORDER },
   regenBtnDisabled: { opacity: 0.5 },
-  regeneratingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(255,255,255,0.82)", justifyContent: "center", alignItems: "center", zIndex: 100 },
-  regeneratingText: { color: MUTED, fontSize: 13, fontWeight: "700", marginTop: 12, textAlign: "center" },
   regenSheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "flex-end" },
   regenSheetBackdropTap: { ...StyleSheet.absoluteFillObject },
   regenSheet: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, padding: 20, paddingBottom: 32, borderTopLeftRadius: 20, borderTopRightRadius: 20 },

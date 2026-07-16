@@ -1517,8 +1517,22 @@ def add_meal_entry(payload: MealCreateRequest, current_user: User = Depends(get_
     total_fat_g = (f100 / Decimal("100")) * q
     total_fiber_g = (fi100 / Decimal("100")) * q
 
-    source_type = payload.source_type if payload.source_type in {"database", "camera_ai"} else "database"
-    food_id = int(payload.food_id) if source_type == "database" and payload.food_id is not None else None
+    source_type = payload.source_type if payload.source_type in {"database", "camera_ai", "meal_planner"} else "database"
+    food_id = int(payload.food_id) if source_type in {"database", "meal_planner"} and payload.food_id is not None else None
+
+    # Idempotent planner logs: one entry per recipe (or name) for the day.
+    if source_type == "meal_planner":
+        existing_q = db.query(MealEntry).filter(
+            MealEntry.user_id == current_user.id,
+            MealEntry.log_id == log.log_id,
+            MealEntry.source_type == "meal_planner",
+        )
+        if food_id is not None:
+            existing = existing_q.filter(MealEntry.food_id == food_id).first()
+        else:
+            existing = existing_q.filter(MealEntry.food_name == payload.food_name.strip()[:200]).first()
+        if existing:
+            return _serialize_day(db, current_user, log_date)
 
     entry = MealEntry(
         log_id=log.log_id,
@@ -1593,6 +1607,8 @@ def update_meal_entry(
     meal = db.query(MealEntry).filter(MealEntry.meal_id == meal_id, MealEntry.user_id == current_user.id).first()
     if not meal:
         raise HTTPException(status_code=404, detail="Meal not found")
+    if (meal.source_type or "") == "meal_planner":
+        raise HTTPException(status_code=400, detail="Planner meals can't be edited — remove the log instead.")
     log = db.query(DailyNutritionLog).filter(DailyNutritionLog.log_id == meal.log_id).first()
     if not log:
         raise HTTPException(status_code=404, detail="Daily log missing")

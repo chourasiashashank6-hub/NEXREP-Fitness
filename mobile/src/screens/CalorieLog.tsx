@@ -43,6 +43,66 @@ import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { useFoodRecognition } from "../hooks/useFoodRecognition";
 import type { FoodAnalysisResult } from "../services/foodRecognitionService";
 import { useAuthStore } from "../store/authStore";
+import { computeUserCaloriePlan } from "../utils/calorieEngine";
+
+type BurnProfile = {
+  name: string;
+  gender: "male" | "female";
+  age: number;
+  height_cm: number;
+  current_weight_kg: number;
+  target_weight_kg: number;
+  goal_tag: "Fat Loss" | "Muscle Gain" | "Strength";
+  goal_pace: "slow" | "moderate" | "fast";
+  activity_level: "sedentary" | "light" | "moderate" | "active" | "very_active";
+};
+
+/** Same profile mapping Home uses so Calorie Log shares the live intake target. */
+function toBurnProfile(onboarding: any): BurnProfile | null {
+  if (!onboarding || typeof onboarding !== "object") return null;
+  const personal = onboarding.personal || {};
+  const goal = onboarding.goal || {};
+  const activity = onboarding.activity || {};
+  const name = typeof personal.name === "string" ? personal.name.trim() : "";
+  const age = Number(personal.age);
+  const heightCm = Number(personal.height_cm);
+  const weightKg = Number(personal.weight_kg);
+  const targetKg = Number(goal.target_weight_kg || personal.weight_kg);
+  if (!name || !Number.isFinite(age) || !Number.isFinite(heightCm) || !Number.isFinite(weightKg)) return null;
+
+  const goalTypeMap: Record<string, BurnProfile["goal_tag"]> = {
+    fat_loss: "Fat Loss",
+    muscle_gain: "Muscle Gain",
+    strength: "Strength",
+  };
+  const paceMap: Record<string, BurnProfile["goal_pace"]> = {
+    slow: "slow",
+    moderate: "moderate",
+    aggressive: "fast",
+    fast: "fast",
+  };
+  const activityMap: Record<string, BurnProfile["activity_level"]> = {
+    sedentary: "sedentary",
+    lightly_active: "light",
+    moderate: "moderate",
+    moderately_active: "moderate",
+    very_active: "active",
+    extremely_active: "very_active",
+    active: "active",
+  };
+
+  return {
+    name,
+    gender: personal.sex === "male" ? "male" : "female",
+    age,
+    height_cm: heightCm,
+    current_weight_kg: weightKg,
+    target_weight_kg: Number.isFinite(targetKg) ? targetKg : weightKg,
+    goal_tag: goalTypeMap[String(goal.type || "").toLowerCase()] || "Fat Loss",
+    goal_pace: paceMap[String(goal.pace || "").toLowerCase()] || "moderate",
+    activity_level: activityMap[String(activity.level || "").toLowerCase()] || "moderate",
+  };
+}
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -310,6 +370,8 @@ export const CalorieLog = () => {
   const [allTimeMealHistoryOpen, setAllTimeMealHistoryOpen] = useState(false);
   const [logDate] = useState(() => todayLocal());
   const [targets, setTargets] = useState<any>(null);
+  const [burnProfile, setBurnProfile] = useState<BurnProfile | null>(null);
+  const [latestWeightKg, setLatestWeightKg] = useState<number | null>(null);
 
   const [foodName, setFoodName] = useState("");
   const [foodQuery, setFoodQuery] = useState("");
@@ -350,13 +412,27 @@ export const CalorieLog = () => {
   const loadTargets = useCallback(async () => {
     if (!token) {
       setTargets(null);
+      setBurnProfile(null);
+      setLatestWeightKg(null);
       return;
     }
     try {
-      const { targets: t } = await loadOnboardingWithFallback(token);
+      const [{ profile, targets: t }, weightLatest] = await Promise.all([
+        loadOnboardingWithFallback(token),
+        fetch(`${resolveApiBaseUrl()}/api/weight/latest`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
+      ]);
       setTargets(t);
+      setBurnProfile(toBurnProfile(profile));
+      const kg = Number(weightLatest?.weight_kg);
+      setLatestWeightKg(Number.isFinite(kg) && kg > 0 ? kg : null);
     } catch {
       setTargets(null);
+      setBurnProfile(null);
+      setLatestWeightKg(null);
     }
   }, [token]);
 
@@ -689,7 +765,7 @@ export const CalorieLog = () => {
     ]);
   }, [foodRecognitionError, t]);
 
-  const onDeleteMeal = async (mealId: number, sourceType?: "database" | "camera_ai") => {
+  const onDeleteMeal = async (mealId: number, sourceType?: "database" | "camera_ai" | "meal_planner") => {
     try {
       setSaving(true);
       const d = sourceType === "camera_ai" ? await deleteAIFoodMeal(Math.abs(mealId)) : await deleteCalorieMeal(mealId);
@@ -763,10 +839,21 @@ export const CalorieLog = () => {
   const { log, macro_split_label } = day;
   const fiberConsumed = Number((log as Record<string, unknown>).total_fiber_g ?? 0);
   const fiberTarget = Number((log as Record<string, unknown>).target_fiber_g ?? targets?.macros?.fiber_g ?? 0);
-  const remaining = log.calories_remaining;
+  // Match Home: live Mifflin plan overrides the persisted calorie-log target.
+  const burnPlan = burnProfile
+    ? computeUserCaloriePlan({
+        ...burnProfile,
+        current_weight_kg: latestWeightKg ?? burnProfile.current_weight_kg,
+      })
+    : null;
+  const dailyGoal = Math.max(
+    1,
+    Math.round(Number(burnPlan?.dailyCalorieTarget ?? log.target_calories) || 1800),
+  );
+  const eatenToday = Number(log.total_calories) || 0;
+  const remaining = dailyGoal - eatenToday;
   const remainingColor = remaining > 0 ? GREEN : remaining < 0 ? ORANGE : MUTED;
-  const caloriePct =
-    log.target_calories > 0 ? clamp(log.total_calories / log.target_calories, 0, 1) * 100 : 0;
+  const caloriePct = dailyGoal > 0 ? clamp(eatenToday / dailyGoal, 0, 1) * 100 : 0;
   const macroSplit = parseMacroSplit(macro_split_label);
   const totalGlasses = Math.round(log.target_water_l / 0.25);
 
@@ -786,8 +873,8 @@ export const CalorieLog = () => {
             <View style={styles.calorieHeroLeft}>
               <Text style={styles.cardLabel}>{t("calorieLog.caloriesToday")}</Text>
               <View style={styles.calorieValueRow}>
-                <Text style={styles.calorieBig}>{fmt1(log.total_calories)}</Text>
-                <Text style={styles.calorieTarget}> / {fmt1(log.target_calories)} kcal</Text>
+                <Text style={styles.calorieBig}>{fmt1(eatenToday)}</Text>
+                <Text style={styles.calorieTarget}> / {fmt1(dailyGoal)} kcal</Text>
               </View>
             </View>
             <View style={styles.calorieHeroRight}>
@@ -1078,9 +1165,16 @@ export const CalorieLog = () => {
               {day.meals.map((m, idx) => (
                 <View key={m.meal_id} style={[styles.mealRow, idx > 0 && styles.mealRowDivider]}>
                   <View style={styles.mealRowLeft}>
-                    <Text style={styles.mealName}>
-                      {MEAL_TYPE_EMOJI[m.meal_type]} {m.food_name}
-                    </Text>
+                    <View style={styles.mealNameRow}>
+                      <Text style={styles.mealName}>
+                        {MEAL_TYPE_EMOJI[m.meal_type]} {m.food_name}
+                      </Text>
+                      {m.source_type === "meal_planner" ? (
+                        <View style={styles.plannerBadge}>
+                          <Text style={styles.plannerBadgeText}>{t("calorieLog.fromMealPlanner")}</Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Text style={styles.mealSubMeta}>
                       {mealRowLabel(m.meal_type)} · {m.source_type === "camera_ai" ? `${fmt1(m.quantity_g)} Qty` : `${fmt1(m.quantity_g)}g`}
                     </Text>
@@ -1090,7 +1184,7 @@ export const CalorieLog = () => {
                     </Text>
                   </View>
                   <View style={styles.mealActions}>
-                    {m.source_type !== "camera_ai" ? (
+                    {m.source_type !== "camera_ai" && m.source_type !== "meal_planner" ? (
                       <Pressable
                         style={[styles.editPill, saving && styles.btnDisabled]}
                         onPress={() => openEditMeal(m.meal_id, m.quantity_g)}
@@ -1446,7 +1540,10 @@ const styles = StyleSheet.create({
   mealRow: { flexDirection: "row", alignItems: "flex-start", paddingVertical: 10, gap: 8 },
   mealRowDivider: { borderTopWidth: 1, borderTopColor: BORDER },
   mealRowLeft: { flex: 1 },
+  mealNameRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   mealName: { color: TEXT, fontWeight: "700", fontSize: 13 },
+  plannerBadge: { backgroundColor: "#EAF5F1", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  plannerBadgeText: { color: GREEN, fontSize: 9.5, fontWeight: "700" },
   mealSubMeta: { color: MUTED, fontSize: 11, marginTop: 2 },
   mealMacroMeta: { color: MUTED, fontSize: 11, marginTop: 2 },
   mealKcal: { color: TEXT, fontWeight: "700" },

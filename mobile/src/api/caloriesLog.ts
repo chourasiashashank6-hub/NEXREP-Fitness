@@ -30,7 +30,7 @@ export interface CalorieDayPayload {
     meal_id: number;
     log_id: number | null;
     meal_type: MealType;
-    source_type?: "database" | "camera_ai";
+    source_type?: "database" | "camera_ai" | "meal_planner";
     food_id?: number | null;
     food_name: string;
     quantity_g: number;
@@ -230,7 +230,7 @@ export const getCalorieMealHistory = async (params: {
 export const postCalorieMeal = async (payload: {
   log_date?: string;
   meal_type: MealType;
-  source_type?: "database" | "camera_ai";
+  source_type?: "database" | "camera_ai" | "meal_planner";
   food_id?: number | null;
   food_name: string;
   quantity_g: number;

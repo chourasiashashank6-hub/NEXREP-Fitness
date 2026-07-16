@@ -15,6 +15,14 @@ export type MealFoodItem = {
   fat: number;
 };
 
+export type RecipeIngredient = {
+  key?: string;
+  label: string;
+  grams: number;
+  food?: string;
+  quantity_g?: number;
+};
+
 export type MealPlanMeal = {
   meal_type: string;
   time: string;
@@ -24,7 +32,18 @@ export type MealPlanMeal = {
   total_carbs: number;
   total_fat: number;
   prep_time_min: number;
-  estimated_cost_inr: number;
+  estimated_cost_inr?: number | null;
+  /** Meal engine v3 fields */
+  engine?: string;
+  recipe_id?: number;
+  recipe_name?: string;
+  recipe_category?: string;
+  slot?: string;
+  slot_order?: number;
+  multiplier?: number;
+  serving_grams?: number;
+  recipe_items?: RecipeIngredient[];
+  recipe_steps?: string[];
 };
 
 export type MealPlanTargets = {
@@ -80,7 +99,9 @@ export type ProteinSuggestion = {
   description: string;
   protein_g: number;
   time_suggestion: string;
-  estimated_cost_inr: number;
+  estimated_cost_inr?: number | null;
+  category?: string;
+  recipe_id?: number;
 };
 
 export type ProteinSuggestionsResponse = {

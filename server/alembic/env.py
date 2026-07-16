@@ -14,6 +14,7 @@ import src.models.admin_models  # noqa: F401
 import src.models.nutrition_calories  # noqa: F401
 import src.models.meal_plan  # noqa: F401
 import src.models.weight_log  # noqa: F401
+import src.models.recipes  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

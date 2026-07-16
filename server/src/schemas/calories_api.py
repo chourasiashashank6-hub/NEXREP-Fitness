@@ -15,7 +15,7 @@ class DailyLogEnsureRequest(BaseModel):
 class MealCreateRequest(BaseModel):
     log_date: str | None = None
     meal_type: MealTypeLiteral
-    source_type: Literal["database", "camera_ai"] = "database"
+    source_type: Literal["database", "camera_ai", "meal_planner"] = "database"
     food_id: int | None = Field(default=None, gt=0)
     food_name: str = Field(..., min_length=1, max_length=200)
     quantity_g: Decimal = Field(..., gt=0)

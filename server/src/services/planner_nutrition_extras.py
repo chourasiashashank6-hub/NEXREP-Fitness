@@ -538,10 +538,17 @@ def protein_suggestions_response(
     plan_id: int | None,
     local_date: str | None,
 ) -> dict[str, Any]:
+    from src.services.meal_engine_v3 import meal_engine_v3_enabled
+    from src.services.meal_engine_v3_bridge import protein_gap_v3
     from src.services.meal_planner_service import _build_meal_ctx, _plan_targets_dict
 
     today = parse_local_date(local_date)
     local_key = today.isoformat()
+
+    if meal_engine_v3_enabled():
+        result = protein_gap_v3(db, user, day=day, year=today.year, month=today.month)
+        _set_cached_protein(user.id, day, local_key, result)
+        return result
 
     cached = _get_cached_protein(user.id, day, local_key)
     if cached:
