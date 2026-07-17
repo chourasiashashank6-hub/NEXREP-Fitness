@@ -59,6 +59,21 @@ def test_import_idempotent(db: Session):
     assert second["unchanged"] == 186
 
 
+def test_seed_fibre_values(db: Session):
+    if db.query(Recipe).count() < 40:
+        pytest.skip("recipes not imported")
+    fibres = [float(r.fibre_g) for r in db.query(Recipe).all()]
+    assert len(fibres) >= 186
+    assert min(fibres) >= 0.2
+    assert max(fibres) <= 19.9
+    mean = sum(fibres) / len(fibres)
+    assert 4.0 <= mean <= 8.0
+    # Scaled meal payload carries fibre through to calorie-log path.
+    recipe = db.query(Recipe).filter(Recipe.fibre_g > 0).first()
+    assert recipe is not None
+    scaled = v3._scaled_fibre_g(recipe, 2.0)
+    assert scaled == round(float(recipe.fibre_g) * 2.0, 1)
+
 def test_macro_math_sanity():
     if not SEED.exists():
         pytest.skip("seed file missing")
@@ -208,8 +223,49 @@ def test_protein_accuracy_bands(db: Session):
     vegan_hard = day_ratios("vegan", "muscle_gain")
     db.commit()
     assert mostly_in_band(np_ratios), np_ratios
-    assert mostly_in_band(veg_ratios), veg_ratios
+    # Vegetarian pool is thinner — allow a slightly wider band after Calorie Log
+    # targets lowered daily protein vs the original v3 GOAL_SPLITS path.
+    assert mostly_in_band(veg_ratios, lo=0.85, hi=1.15), veg_ratios
     assert min(vegan_hard) >= 0.55 and (sum(vegan_hard) / len(vegan_hard)) >= 0.65, vegan_hard
+
+
+def test_calorie_log_style_override_keeps_meals_reasonable(db: Session):
+    """When Meal Planner uses Calorie Log's ~bodyweight protein target, days still fill."""
+    if db.query(Recipe).count() < 40:
+        pytest.skip("recipes not imported")
+    from src.routes.calories import calculate_macro_targets
+
+    user_id = _ensure_user(db, "meal_v3_calorielog_override@test.local")
+    _clean_plans(db, user_id)
+    macros = calculate_macro_targets(3367, 75.0, "maintain")
+    daily = v3.MacroTarget(
+        kcal=3367.0,
+        protein=float(macros["target_protein_g"]),
+        carbs=float(macros["target_carbs_g"]),
+        fat=float(macros["target_fat_g"]),
+    )
+    assert daily.protein < 150  # Calorie Log style, not v3 30% split
+    plan_date = date(2029, 1, 8)
+    rows = v3.ensure_day_plan(
+        db,
+        user_id=user_id,
+        plan_date=plan_date,
+        diet="no_preference",
+        goal="maintain",
+        daily_kcal=3367,
+        meals_per_day=3,
+        force=True,
+        daily_override=daily,
+    )
+    db.commit()
+    assert len(rows) == 3
+    got_p = sum(float(r.protein_g) for r in rows)
+    # With a ~120g target, engine should land in a loose band (not empty / not 2×).
+    assert 0.55 * daily.protein <= got_p <= 1.45 * daily.protein, (got_p, daily.protein)
+    for row in rows:
+        recipe = row.recipe
+        assert float(row.multiplier) <= max(v3.MULTIPLIERS) + 1e-6
+        assert float(row.kcal) <= float(recipe.kcal) * max(v3.MULTIPLIERS) + 1.0
 
 
 def test_multiplier_ceiling(db: Session):

@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
 import type { CalorieDayPayload } from "../api/caloriesLog";
@@ -24,9 +23,15 @@ import { fetchOnboardingMe } from "../api/onboarding";
 import { getStrengthProgress, type StrengthProgress } from "../api/strength";
 import { getWorkoutHistory } from "../api/workout";
 import { DailyQuoteCard } from "../components/DailyQuoteCard";
+import { MilestoneBoxes } from "../components/MilestoneBoxes";
+import { TodaysGoalRing } from "../components/TodaysGoalRing";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "../store/authStore";
+import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
+import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
+import { fillMealSlots } from "../utils/mealSlotSchedule";
+import { fillSessionSlots } from "../utils/sessionMilestoneSlots";
 import {
   computeCombinedStreak,
   getLast7DaysMeta,
@@ -34,6 +39,7 @@ import {
   listPastDateKeys,
   type DayMeta,
 } from "../utils/streakEngine";
+import type { WorkoutPlanCurrent } from "../types/planner";
 
 interface LatestWeightData {
   weight_kg: number;
@@ -74,10 +80,6 @@ const TEXT_MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
 const BEST_STREAK_KEY = "nexrep_best_streak";
 const STREAK_LOOKBACK_DAYS = 60;
-
-const RING_SIZE = 200;
-const RING_STROKE = 18;
-const RING_CIRCUMFERENCE = 628;
 
 type BurnProfile = {
   name: string;
@@ -206,65 +208,13 @@ function ProgressBar({ percent, color }: { percent: number; color: string }) {
   );
 }
 
-function CalorieRing({
-  eaten,
-  target,
-  remaining,
-  size = RING_SIZE,
-}: {
-  eaten: number;
-  target: number;
-  remaining: number;
-  size?: number;
-}) {
-  const ringCircumference = Math.round((size / RING_SIZE) * RING_CIRCUMFERENCE);
-  const fillLength = target > 0 ? clamp01(eaten / target) * ringCircumference : 0;
-  const radius = (size - RING_STROKE) / 2;
-  const center = size / 2;
-  const valueSize = size >= RING_SIZE ? 36 : 28;
-  const unitSize = size >= RING_SIZE ? 12 : 10;
-  const labelSize = size >= RING_SIZE ? 10 : 9;
-
-  return (
-    <View style={[styles.ringContainer, { width: size, height: size }]}>
-      <Svg width={size} height={size}>
-        <Circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={TRACK}
-          strokeWidth={RING_STROKE}
-          fill="none"
-        />
-        <Circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={GREEN}
-          strokeWidth={RING_STROKE}
-          fill="none"
-          strokeDasharray={`${fillLength} ${ringCircumference}`}
-          strokeLinecap="round"
-          rotation={-90}
-          origin={`${center}, ${center}`}
-        />
-      </Svg>
-      <View style={styles.ringCenterOverlay}>
-        <Text style={[styles.ringCenterLabel, { fontSize: labelSize }]}>TO EAT</Text>
-        <Text style={[styles.ringCenterValue, { fontSize: valueSize, lineHeight: valueSize + 4 }]}>
-          {formatNum(remaining)}
-        </Text>
-        <Text style={[styles.ringCenterUnit, { fontSize: unitSize }]}>{i18n.t("home.kcal")}</Text>
-      </View>
-    </View>
-  );
-}
-
 export const HomeScreen = () => {
   const { t } = useTranslation();
   const token = useAuthStore((s) => s.token);
   const [calorieDay, setCalorieDay] = useState<CalorieDayPayload | null>(null);
   const [burnProfile, setBurnProfile] = useState<BurnProfile | null>(null);
+  const [mealsPerDay, setMealsPerDay] = useState(3);
+  const [todayWorkoutPlan, setTodayWorkoutPlan] = useState<WorkoutPlanCurrent | null>(null);
   const [totalWorkoutBurn, setTotalWorkoutBurn] = useState(0);
   const [timelineTargets, setTimelineTargets] = useState<Record<string, unknown> | null>(null);
   const [latestWeight, setLatestWeight] = useState<LatestWeightData | null>(null);
@@ -274,7 +224,9 @@ export const HomeScreen = () => {
   const [showWeighInModal, setShowWeighInModal] = useState(false);
   const [weighInValue, setWeighInValue] = useState("");
   const [isLoggingWeight, setIsLoggingWeight] = useState(false);
-  const [workoutHistory, setWorkoutHistory] = useState<{ date: string; caloriesBurned: number }[]>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<
+    { date: string; caloriesBurned: number; exerciseName?: string }[]
+  >([]);
   const [streakCalorieLogs, setStreakCalorieLogs] = useState<{ date: string; total_calories: number }[]>([]);
   const [personalBestStreak, setPersonalBestStreak] = useState(0);
 
@@ -303,6 +255,8 @@ export const HomeScreen = () => {
     if (!token) {
       setCalorieDay(null);
       setBurnProfile(null);
+      setMealsPerDay(3);
+      setTodayWorkoutPlan(null);
       setTotalWorkoutBurn(0);
       setTimelineTargets(null);
       setLatestWeight(null);
@@ -317,7 +271,7 @@ export const HomeScreen = () => {
     const apiBase = resolveApiBaseUrl();
     const authHeaders = { Authorization: `Bearer ${token}` };
     try {
-      const [dayRes, onboardingRes, historyRes, weightLatestRes, weightHistoryRes, goalProgressRes, strengthProgressRes] =
+      const [dayRes, onboardingRes, historyRes, weightLatestRes, weightHistoryRes, goalProgressRes, strengthProgressRes, workoutPlanRes] =
         await Promise.all([
           getDailyCalorieLog(todayLocal()).catch(() => null),
           fetchOnboardingMe().catch(() => null),
@@ -332,6 +286,7 @@ export const HomeScreen = () => {
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
           getStrengthProgress().catch(() => null),
+          fetchWorkoutPlanCurrent().catch(() => null),
         ]);
       const today = new Date();
       const todayWorkoutBurn = (historyRes.items ?? []).reduce((sum, item) => {
@@ -340,6 +295,8 @@ export const HomeScreen = () => {
       }, 0);
       setCalorieDay(dayRes);
       setBurnProfile(toBurnProfile(onboardingRes?.onboarding));
+      setMealsPerDay(Number(onboardingRes?.onboarding?.dietary?.meals_per_day ?? 3) || 3);
+      setTodayWorkoutPlan(workoutPlanRes);
       setTotalWorkoutBurn(Math.max(0, Math.round(todayWorkoutBurn)));
       setTimelineTargets((onboardingRes?.targets as Record<string, unknown>) ?? null);
       setLatestWeight(weightLatestRes);
@@ -368,6 +325,7 @@ export const HomeScreen = () => {
       const workoutItems = (streakWorkoutRes.items ?? []).map((item) => ({
         date: item.date,
         caloriesBurned: Number(item.caloriesBurned) || 0,
+        exerciseName: String(item.exerciseName || ""),
       }));
 
       // Merge the 7-day history fetch so today's workouts always match the burn bar.
@@ -376,6 +334,7 @@ export const HomeScreen = () => {
         workoutItems.push({
           date: item.date,
           caloriesBurned: Number(item.caloriesBurned) || 0,
+          exerciseName: String(item.exerciseName || ""),
         });
       }
 
@@ -481,7 +440,6 @@ export const HomeScreen = () => {
   const summaryTargetLabel = needsBurnFromExercise ? t("home.stillToBurn") : t("home.remainingIntake");
   const summaryTargetValue = needsBurnFromExercise ? remainingBurnTarget : remainingIntakeToGoal;
   const summaryTargetPercent = dailyGoal > 0 ? clamp01(summaryTargetValue / dailyGoal) : 0;
-  const intakePercent = dailyGoal > 0 ? clamp01(eatenToday / dailyGoal) : 0;
   const timeline =
     (goalProgress?.timeline as Record<string, unknown> | undefined) ??
     (timelineTargets?.timeline as Record<string, unknown> | undefined) ??
@@ -517,10 +475,13 @@ export const HomeScreen = () => {
   })();
   const dailyDelta = Number(goalProgress?.daily_delta_kcal ?? timeline.daily_delta_kcal);
   const deltaDisplay = Number.isFinite(dailyDelta) ? Math.round(Math.abs(dailyDelta)) : 200;
-  const exerciseDelta = Number(goalProgress?.exercise_delta_kcal ?? timeline.exercise_delta_kcal);
   const exerciseShare = Number(goalProgress?.exercise_share ?? timeline.exercise_share);
   const dietShare = Number(goalProgress?.diet_share ?? timeline.diet_share);
-  const exerciseDeltaDisplay = Number.isFinite(exerciseDelta) ? Math.round(Math.abs(exerciseDelta)) : Math.round(deltaDisplay * 0.2);
+  const exerciseDeltaDisplay = resolveDailyBurnTarget({
+    exercise_delta_kcal: goalProgress?.exercise_delta_kcal,
+    daily_delta_kcal: goalProgress?.daily_delta_kcal,
+    timeline: timeline as Record<string, unknown>,
+  });
   const dietDeltaDisplay = Math.max(0, deltaDisplay - exerciseDeltaDisplay);
   const exerciseSharePct = Number.isFinite(exerciseShare) ? clamp01(exerciseShare) : 0.2;
   const dietSharePct = Number.isFinite(dietShare) ? clamp01(dietShare) : 0.8;
@@ -577,13 +538,27 @@ export const HomeScreen = () => {
       : Math.max(0, remainingCalories);
 
   // Calories left to eat today, using the same dailyGoal as the "to eat" pill.
-  const ringToEatValue = Math.max(0, dailyGoal - eatenToday);
-
-  const ringFillPercent = Math.min(1, Math.max(0, eatenToday / Math.max(dailyGoal, 1)));
-
   const tdeeValue = burnPlan?.tdee ?? 1690;
   const milestonePct = Math.round(goalWeeksProgress * 100);
-  const burnedProgress = exerciseDeltaDisplay > 0 ? clamp01(caloriesBurnedSoFar / exerciseDeltaDisplay) : 0;
+
+  const mealMilestoneItems = useMemo(
+    () => fillMealSlots(mealsPerDay, calorieDay?.meals ?? []),
+    [mealsPerDay, calorieDay?.meals],
+  );
+
+  const sessionMilestoneItems = useMemo(() => {
+    const today = new Date();
+    const todayPlanDay = todayWorkoutPlan?.today ?? null;
+    const planned =
+      todayPlanDay && !todayPlanDay.is_rest_day ? todayPlanDay.exercises ?? [] : [];
+    const loggedNames = workoutHistory
+      .filter((item) => item?.date && item.exerciseName && isSameLocalDay(item.date, today))
+      .map((item) => String(item.exerciseName));
+    return fillSessionSlots(planned, loggedNames);
+  }, [todayWorkoutPlan, workoutHistory]);
+
+  const sessionsRestMessage =
+    sessionMilestoneItems.length === 0 ? t("home.restDayNoSession") : null;
 
   const openWeighInModal = () => {
     setWeighInValue(String(latestWeight?.weight_kg || ""));
@@ -680,10 +655,11 @@ export const HomeScreen = () => {
 
         <Animated.View style={[styles.section, animatedStyle(2)]}>
           <View style={styles.heroRow}>
-            <CalorieRing
-              eaten={ringFillPercent * Math.max(dailyGoal, 1)}
-              target={dailyGoal}
-              remaining={ringToEatValue}
+            <TodaysGoalRing
+              caloriesEatenToday={eatenToday}
+              dailyCalorieTarget={dailyGoal}
+              caloriesBurnedToday={caloriesBurnedSoFar}
+              dailyBurnTarget={exerciseDeltaDisplay}
               size={168}
             />
             <View style={styles.kpiColumn}>
@@ -730,26 +706,17 @@ export const HomeScreen = () => {
             </View>
           </View>
 
-          <View style={styles.barCard}>
-            <View style={styles.barHeader}>
-              <Text style={styles.barTitle}>{t("home.caloriesEaten")}</Text>
-              <Text style={styles.barMeta}>
-                {formatNum(eatenToday)} / {formatNum(dailyGoal)} kcal
-              </Text>
-            </View>
-            <ProgressBar percent={intakePercent} color={GREEN} />
-          </View>
-
-          <View style={styles.barCard}>
-            <View style={styles.barHeader}>
-              <Text style={styles.barTitle}>{t("home.caloriesBurnt")}</Text>
-              <Text style={styles.barMeta}>
-                <Text style={styles.burnedOrange}>{formatNum(caloriesBurnedSoFar)}</Text>
-                {` / ${formatNum(exerciseDeltaDisplay)} kcal`}
-              </Text>
-            </View>
-            <ProgressBar percent={burnedProgress} color={ORANGE} />
-          </View>
+          <MilestoneBoxes
+            title={t("home.mealsLoggedToday")}
+            items={mealMilestoneItems}
+            accent="green"
+          />
+          <MilestoneBoxes
+            title={t("home.sessionsDoneToday")}
+            items={sessionMilestoneItems}
+            accent="orange"
+            emptyMessage={sessionsRestMessage}
+          />
         </Animated.View>
 
         <Animated.View style={[styles.section, animatedStyle(4)]}>
@@ -952,29 +919,6 @@ const styles = StyleSheet.create({
   weighInEmoji: { fontSize: 20 },
   weighInPromptText: { flex: 1, fontSize: 13, color: TEXT_PRIMARY, lineHeight: 18 },
   weighInPromptAction: { fontSize: 13, fontWeight: "700", color: GREEN },
-  ringContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ringCenterOverlay: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ringCenterLabel: {
-    fontSize: 10,
-    letterSpacing: 1.2,
-    color: TEXT_MUTED,
-    textTransform: "uppercase",
-    marginBottom: 4,
-  },
-  ringCenterValue: {
-    fontSize: 36,
-    fontWeight: "800",
-    color: TEXT_PRIMARY,
-    lineHeight: 40,
-  },
-  ringCenterUnit: { fontSize: 12, color: TEXT_MUTED, marginTop: 2 },
   heroRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -994,11 +938,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: TRACK,
   },
-  kpiPillLeft: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  kpiPillLeft: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1, flex: 1 },
   kpiEmoji: { fontSize: 16 },
-  kpiValue: { fontSize: 17, fontWeight: "700", color: TEXT_PRIMARY },
+  kpiValue: { fontSize: 17, fontWeight: "700", color: TEXT_PRIMARY, flexShrink: 0 },
   kpiValueOrange: { color: ORANGE },
-  kpiLabel: { fontSize: 11, color: TEXT_MUTED, textTransform: "lowercase" },
+  kpiLabel: { fontSize: 11, color: TEXT_MUTED, textTransform: "lowercase", flexShrink: 1 },
   tdeeCard: {
     backgroundColor: GREEN,
     borderRadius: 16,

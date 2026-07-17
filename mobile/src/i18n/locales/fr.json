@@ -74,7 +74,13 @@
     "weekGoal": "🏆 Objectif sur {{weeks}} semaines",
     "goalFooter": "{{weeks}} semaines restantes · {{pace}}",
     "logWeightTitle": "Enregistrer aujourd'hui le poids s",
-    "lastLogged": "Dernière connexion : {{weight}}kg"
+    "lastLogged": "Dernière connexion : {{weight}}kg",
+    "todaysGoal": "OBJECTIF DU JOUR",
+    "goalComplete": "Objectif atteint !",
+    "mealsLoggedToday": "🍽️ Repas enregistrés aujourd'hui",
+    "sessionsDoneToday": "🔥 Séances d'aujourd'hui",
+    "sessionBoxLabel": "Séance",
+    "restDayNoSession": "Aujourd'hui c'est un jour de repos 🛌 — aucune séance prévue"
   },
   "profile": {
     "alerts": {
@@ -182,15 +188,15 @@
     "selectChoice": "Sélectionner un choix",
     "title": "Journal d'entraînement 🏋️",
     "openCamera": "Ouvrir le suivi de la caméra",
-    "sessionMilestone": "JALON DE SÉANCE",
-    "lastSession": "Dernière session · {{kcal}} kcal",
-    "sessionsDenom": "/ 6 séances",
-    "goalSessions": "Objectif : 6 séances",
+    "sessionMilestone": "JALON D'EXERCICE",
+    "lastSession": "Dernier exercice · {{kcal}} kcal",
+    "sessionsDenom": "/ 6 exercices",
+    "goalSessions": "Objectif : 6 exercices",
     "goalCrushed": "🎉 Objectif écrasé ! +{{count}} bonus",
     "goalReached": "✓ Objectif atteint !",
     "moreToGo": "{{count}} il reste encore à faire",
     "kcalBurned": "kcal brûlé",
-    "sessions": "séances",
+    "sessions": "exercices",
     "target": "cible",
     "burnProgress": "🔥 Progression de la gravure",
     "done": "Terminé ✓",
@@ -376,7 +382,9 @@
     "retry": "Réessayer",
     "loading": "Chargement...",
     "required": "Obligatoire",
-    "close": "Fermer"
+    "close": "Fermer",
+    "viewLog": "Journal",
+    "viewPlanner": "Planificateur"
   },
   "social": {
     "nav": {

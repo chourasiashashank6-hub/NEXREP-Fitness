@@ -74,7 +74,13 @@
     "weekGoal": "🏆 {{weeks}}-Wochen-Ziel",
     "goalFooter": "{{weeks}} verbleibende Wochen · {{pace}}",
     "logWeightTitle": "Logge das heutige Gewicht",
-    "lastLogged": "Zuletzt angemeldet: {{weight}}kg"
+    "lastLogged": "Zuletzt angemeldet: {{weight}}kg",
+    "todaysGoal": "HEUTIGES ZIEL",
+    "goalComplete": "Ziel erreicht!",
+    "mealsLoggedToday": "🍽️ Heute geloggte Mahlzeiten",
+    "sessionsDoneToday": "🔥 Heutige Einheiten",
+    "sessionBoxLabel": "Einheit",
+    "restDayNoSession": "Heute ist Ruhetag 🛌 — keine Einheit geplant"
   },
   "profile": {
     "alerts": {
@@ -182,15 +188,15 @@
     "selectChoice": "Auswahl auswählen",
     "title": "Trainingsprotokoll 🏋️",
     "openCamera": "Öffne den Kamera-Tracker",
-    "sessionMilestone": "MEILENSTEIN DER SITZUNG",
-    "lastSession": "Letzte Session · {{kcal}} kcal",
-    "sessionsDenom": "/ 6 Sessionen",
-    "goalSessions": "Ziel: 6 Sessionen",
+    "sessionMilestone": "ÜBUNGS-MEILENSTEIN",
+    "lastSession": "Letzte Übung · {{kcal}} kcal",
+    "sessionsDenom": "/ 6 Übungen",
+    "goalSessions": "Ziel: 6 Übungen",
     "goalCrushed": "🎉 Ziel gescheitert! +{{count}}-Bonus",
     "goalReached": "✓ Ziel erreicht!",
     "moreToGo": "{{count}} mehr zu gehen",
     "kcalBurned": "Kalorien verbrannt",
-    "sessions": "Sessionen",
+    "sessions": "Übungen",
     "target": "Ziel",
     "burnProgress": "🔥 Brennfortschritt",
     "done": "Fertig ✓",
@@ -376,7 +382,9 @@
     "retry": "Erneut versuchen",
     "loading": "Laden...",
     "required": "Erforderlich",
-    "close": "Schließen"
+    "close": "Schließen",
+    "viewLog": "Log",
+    "viewPlanner": "Planer"
   },
   "social": {
     "nav": {

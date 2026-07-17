@@ -34,6 +34,7 @@ def upgrade() -> None:
               protein_g FLOAT NOT NULL,
               fat_g FLOAT NOT NULL,
               carbs_g FLOAT NOT NULL,
+              fibre_g FLOAT NOT NULL DEFAULT 0,
               protein_pct_kcal FLOAT NOT NULL,
               prep_min INTEGER NOT NULL,
               items JSONB NOT NULL,

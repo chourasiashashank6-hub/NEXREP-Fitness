@@ -533,8 +533,9 @@ def ensure_day_plan(
     daily_kcal: float,
     meals_per_day: int = 3,
     force: bool = False,
+    daily_override: MacroTarget | None = None,
 ) -> list[UserMealPlan]:
-    daily = daily_targets(daily_kcal, goal)
+    daily = daily_override or daily_targets(daily_kcal, goal)
     schedule = slot_schedule(meals_per_day)
     existing_rows = (
         db.query(UserMealPlan)
@@ -612,8 +613,9 @@ def swap_slot(
     slot_order: int | None = None,
     exclude_recipe_ids: set[int] | None = None,
     match_current_macros: bool = True,
+    daily_override: MacroTarget | None = None,
 ) -> UserMealPlan:
-    daily = daily_targets(daily_kcal, goal)
+    daily = daily_override or daily_targets(daily_kcal, goal)
     q = db.query(UserMealPlan).filter(
         UserMealPlan.user_id == user_id,
         UserMealPlan.plan_date == plan_date,
@@ -685,8 +687,9 @@ def protein_gap_suggestions(
     diet: DietFilter,
     goal: GoalType,
     daily_kcal: float,
+    daily_override: MacroTarget | None = None,
 ) -> dict[str, Any]:
-    daily = daily_targets(daily_kcal, goal)
+    daily = daily_override or daily_targets(daily_kcal, goal)
     rows = (
         db.query(UserMealPlan)
         .options(joinedload(UserMealPlan.recipe))
@@ -765,10 +768,15 @@ def _scaled_items(recipe: Recipe, multiplier: float) -> list[dict[str, Any]]:
     return out
 
 
+def _scaled_fibre_g(recipe: Recipe, multiplier: float) -> float:
+    return round(float(getattr(recipe, "fibre_g", 0) or 0) * float(multiplier), 1)
+
+
 def assignment_to_meal(row: UserMealPlan) -> dict[str, Any]:
     recipe = row.recipe
     mult = float(row.multiplier)
     grams = round(float(recipe.serving_grams) * mult)
+    fibre = _scaled_fibre_g(recipe, mult)
     meal_type = MEAL_TYPE_FOR_SLOT.get(row.slot) or str(row.slot).replace("_", " ").title()
     time_map = {spec.slot: spec.time for specs in MEAL_SLOT_SCHEDULES.values() for spec in specs}
     return {
@@ -787,12 +795,14 @@ def assignment_to_meal(row: UserMealPlan) -> dict[str, Any]:
                 "protein": round(float(row.protein_g)),
                 "carbs": round(float(row.carbs_g)),
                 "fat": round(float(row.fat_g)),
+                "fiber": round(fibre),
             }
         ],
         "total_calories": round(float(row.kcal)),
         "total_protein": round(float(row.protein_g)),
         "total_carbs": round(float(row.carbs_g)),
         "total_fat": round(float(row.fat_g)),
+        "total_fiber": round(fibre),
         "prep_time_min": int(recipe.prep_min),
         "estimated_cost_inr": None,
         # v3 extensions for UI
@@ -811,10 +821,13 @@ def day_payload_from_assignments(
     plan_date: date,
     rows: list[UserMealPlan],
     daily: MacroTarget,
+    *,
+    fibre_target_g: int | None = None,
 ) -> dict[str, Any]:
     meal_rows = [r for r in rows if _is_meal_assignment(r)]
     ordered = sorted(meal_rows, key=lambda x: int(getattr(x, "slot_order", 0) or 0))
     meals = [assignment_to_meal(r) for r in ordered]
+    total_fiber = sum(_scaled_fibre_g(r.recipe, float(r.multiplier)) for r in meal_rows if r.recipe is not None)
     return {
         "day": plan_date.day,
         "is_cheat_day": False,
@@ -822,12 +835,12 @@ def day_payload_from_assignments(
         "total_protein_g": round(sum(float(r.protein_g) for r in meal_rows)),
         "total_carbs_g": round(sum(float(r.carbs_g) for r in meal_rows)),
         "total_fat_g": round(sum(float(r.fat_g) for r in meal_rows)),
-        "total_fiber_g": 0,
+        "total_fiber_g": round(total_fiber),
         "target_kcal": round(daily.kcal),
         "target_protein_g": round(daily.protein),
         "target_carbs_g": round(daily.carbs),
         "target_fat_g": round(daily.fat),
-        "target_fiber_g": 0,
+        "target_fiber_g": int(fibre_target_g) if fibre_target_g is not None else 0,
         "meals": meals,
         "meals_per_day": len(ordered),
         "engine": "v3",

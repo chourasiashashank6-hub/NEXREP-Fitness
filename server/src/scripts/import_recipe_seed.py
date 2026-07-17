@@ -91,6 +91,7 @@ def upsert_recipes(db: Session, rows: list[dict[str, Any]]) -> dict[str, Any]:
             "protein_g": float(row["protein_g"]),
             "fat_g": float(row["fat_g"]),
             "carbs_g": float(row["carbs_g"]),
+            "fibre_g": float(row.get("fibre_g") or 0),
             "protein_pct_kcal": float(row["protein_pct_kcal"]),
             "prep_min": int(row["prep_min"]),
             "items": row["items"],

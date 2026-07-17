@@ -13,6 +13,7 @@ export type MealFoodItem = {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
 };
 
 export type RecipeIngredient = {
@@ -31,6 +32,7 @@ export type MealPlanMeal = {
   total_protein: number;
   total_carbs: number;
   total_fat: number;
+  total_fiber?: number;
   prep_time_min: number;
   estimated_cost_inr?: number | null;
   /** Meal engine v3 fields */

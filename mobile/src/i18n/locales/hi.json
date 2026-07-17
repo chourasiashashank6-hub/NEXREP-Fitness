@@ -74,7 +74,13 @@
     "weekGoal": "🏆 {{weeks}}-सप्ताह का लक्ष्य",
     "goalFooter": "{{weeks}} सप्ताह शेष · {{pace}}",
     "logWeightTitle": "आज का वजन लॉग करें",
-    "lastLogged": "अंतिम बार लॉग किया गया: {{weight}}kg"
+    "lastLogged": "अंतिम बार लॉग किया गया: {{weight}}kg",
+    "todaysGoal": "आज का लक्ष्य",
+    "goalComplete": "लक्ष्य पूरा!",
+    "mealsLoggedToday": "🍽️ आज लॉग किए गए भोजन",
+    "sessionsDoneToday": "🔥 आज के सेशन",
+    "sessionBoxLabel": "सेशन",
+    "restDayNoSession": "आज रेस्ट डे है 🛌 — कोई सेशन शेड्यूल नहीं"
   },
   "profile": {
     "alerts": {
@@ -182,15 +188,15 @@
     "selectChoice": "विकल्प चुनें",
     "title": "Workout लॉग 🏋️",
     "openCamera": "कैमरा ट्रैकर खोलें",
-    "sessionMilestone": "सेशन माइलस्टोन",
-    "lastSession": "पिछला सत्र · {{kcal}} kcal",
-    "sessionsDenom": "/ 6 सत्र",
-    "goalSessions": "लक्ष्य: 6 सत्र",
+    "sessionMilestone": "एक्सरसाइज़ माइलस्टोन",
+    "lastSession": "पिछला एक्सरसाइज़ · {{kcal}} kcal",
+    "sessionsDenom": "/ 6 एक्सरसाइज़",
+    "goalSessions": "लक्ष्य: 6 एक्सरसाइज़",
     "goalCrushed": "🎉 लक्ष्य कुचला गया! +{{count}} बोनस",
     "goalReached": "✓ लक्ष्य पूरा हो गया!",
     "moreToGo": "{{count}} अभी और जाना है",
     "kcalBurned": "kcal जल गया",
-    "sessions": "सत्र",
+    "sessions": "एक्सरसाइज़",
     "target": "लक्ष्य",
     "burnProgress": "🔥 प्रगति जलाओ",
     "done": "हो गया ✓",
@@ -376,7 +382,9 @@
     "retry": "पुनः प्रयास करें",
     "loading": "लोड हो रहा है...",
     "required": "आवश्यक",
-    "close": "बंद करें"
+    "close": "बंद करें",
+    "viewLog": "लॉग",
+    "viewPlanner": "प्लानर"
   },
   "social": {
     "nav": {

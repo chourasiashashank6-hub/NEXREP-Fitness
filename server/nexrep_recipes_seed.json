@@ -10,6 +10,7 @@
     "protein_g": 36.3,
     "fat_g": 14.0,
     "carbs_g": 32.6,
+    "fibre_g": 4.9,
     "protein_pct_kcal": 35.4,
     "prep_min": 15,
     "items": [
@@ -62,6 +63,7 @@
     "protein_g": 28.2,
     "fat_g": 15.4,
     "carbs_g": 33.3,
+    "fibre_g": 4.6,
     "protein_pct_kcal": 28.6,
     "prep_min": 12,
     "items": [
@@ -114,6 +116,7 @@
     "protein_g": 29.4,
     "fat_g": 19.5,
     "carbs_g": 59.4,
+    "fibre_g": 7.7,
     "protein_pct_kcal": 23.3,
     "prep_min": 8,
     "items": [
@@ -161,6 +164,7 @@
     "protein_g": 29.2,
     "fat_g": 19.8,
     "carbs_g": 48.0,
+    "fibre_g": 5.2,
     "protein_pct_kcal": 23.9,
     "prep_min": 18,
     "items": [
@@ -213,6 +217,7 @@
     "protein_g": 28.6,
     "fat_g": 6.8,
     "carbs_g": 33.0,
+    "fibre_g": 4.7,
     "protein_pct_kcal": 37.0,
     "prep_min": 8,
     "items": [
@@ -264,6 +269,7 @@
     "protein_g": 23.3,
     "fat_g": 12.1,
     "carbs_g": 42.2,
+    "fibre_g": 5.4,
     "protein_pct_kcal": 25.1,
     "prep_min": 10,
     "items": [
@@ -320,6 +326,7 @@
     "protein_g": 36.0,
     "fat_g": 10.0,
     "carbs_g": 31.5,
+    "fibre_g": 4.5,
     "protein_pct_kcal": 38.7,
     "prep_min": 15,
     "items": [
@@ -361,6 +368,7 @@
     "protein_g": 25.1,
     "fat_g": 12.2,
     "carbs_g": 52.6,
+    "fibre_g": 7.3,
     "protein_pct_kcal": 24.2,
     "prep_min": 10,
     "items": [
@@ -417,6 +425,7 @@
     "protein_g": 25.1,
     "fat_g": 17.1,
     "carbs_g": 34.6,
+    "fibre_g": 5.0,
     "protein_pct_kcal": 25.4,
     "prep_min": 12,
     "items": [
@@ -473,6 +482,7 @@
     "protein_g": 30.3,
     "fat_g": 4.9,
     "carbs_g": 48.0,
+    "fibre_g": 10.1,
     "protein_pct_kcal": 33.8,
     "prep_min": 15,
     "items": [
@@ -525,6 +535,7 @@
     "protein_g": 36.3,
     "fat_g": 13.2,
     "carbs_g": 34.6,
+    "fibre_g": 4.3,
     "protein_pct_kcal": 35.2,
     "prep_min": 20,
     "items": [
@@ -582,6 +593,7 @@
     "protein_g": 29.5,
     "fat_g": 22.5,
     "carbs_g": 49.1,
+    "fibre_g": 4.3,
     "protein_pct_kcal": 22.7,
     "prep_min": 18,
     "items": [
@@ -633,6 +645,7 @@
     "protein_g": 24.3,
     "fat_g": 20.8,
     "carbs_g": 34.6,
+    "fibre_g": 4.2,
     "protein_pct_kcal": 22.5,
     "prep_min": 12,
     "items": [
@@ -685,6 +698,7 @@
     "protein_g": 29.9,
     "fat_g": 4.9,
     "carbs_g": 47.9,
+    "fibre_g": 10.0,
     "protein_pct_kcal": 33.4,
     "prep_min": 20,
     "items": [
@@ -737,6 +751,7 @@
     "protein_g": 30.5,
     "fat_g": 5.8,
     "carbs_g": 6.0,
+    "fibre_g": 1.7,
     "protein_pct_kcal": 59.4,
     "prep_min": 15,
     "items": [
@@ -784,6 +799,7 @@
     "protein_g": 23.4,
     "fat_g": 12.2,
     "carbs_g": 60.0,
+    "fibre_g": 10.1,
     "protein_pct_kcal": 21.2,
     "prep_min": 15,
     "items": [
@@ -835,6 +851,7 @@
     "protein_g": 21.2,
     "fat_g": 18.5,
     "carbs_g": 39.0,
+    "fibre_g": 6.3,
     "protein_pct_kcal": 21.4,
     "prep_min": 15,
     "items": [
@@ -892,6 +909,7 @@
     "protein_g": 36.2,
     "fat_g": 8.1,
     "carbs_g": 33.5,
+    "fibre_g": 4.0,
     "protein_pct_kcal": 40.0,
     "prep_min": 20,
     "items": [
@@ -944,6 +962,7 @@
     "protein_g": 22.6,
     "fat_g": 14.0,
     "carbs_g": 62.1,
+    "fibre_g": 10.4,
     "protein_pct_kcal": 19.6,
     "prep_min": 12,
     "items": [
@@ -995,6 +1014,7 @@
     "protein_g": 26.2,
     "fat_g": 8.6,
     "carbs_g": 33.4,
+    "fibre_g": 4.2,
     "protein_pct_kcal": 32.5,
     "prep_min": 18,
     "items": [
@@ -1047,6 +1067,7 @@
     "protein_g": 41.5,
     "fat_g": 16.4,
     "carbs_g": 58.2,
+    "fibre_g": 4.2,
     "protein_pct_kcal": 29.8,
     "prep_min": 35,
     "items": [
@@ -1100,6 +1121,7 @@
     "protein_g": 25.1,
     "fat_g": 24.4,
     "carbs_g": 58.8,
+    "fibre_g": 5.0,
     "protein_pct_kcal": 17.9,
     "prep_min": 15,
     "items": [
@@ -1152,6 +1174,7 @@
     "protein_g": 30.4,
     "fat_g": 10.7,
     "carbs_g": 76.1,
+    "fibre_g": 10.6,
     "protein_pct_kcal": 23.5,
     "prep_min": 25,
     "items": [
@@ -1204,6 +1227,7 @@
     "protein_g": 25.1,
     "fat_g": 24.9,
     "carbs_g": 68.8,
+    "fibre_g": 4.5,
     "protein_pct_kcal": 16.8,
     "prep_min": 20,
     "items": [
@@ -1256,6 +1280,7 @@
     "protein_g": 37.7,
     "fat_g": 14.9,
     "carbs_g": 42.1,
+    "fibre_g": 5.8,
     "protein_pct_kcal": 32.9,
     "prep_min": 25,
     "items": [
@@ -1302,6 +1327,7 @@
     "protein_g": 32.3,
     "fat_g": 10.8,
     "carbs_g": 57.3,
+    "fibre_g": 4.6,
     "protein_pct_kcal": 28.5,
     "prep_min": 15,
     "items": [
@@ -1354,6 +1380,7 @@
     "protein_g": 22.0,
     "fat_g": 14.7,
     "carbs_g": 104.3,
+    "fibre_g": 17.7,
     "protein_pct_kcal": 14.0,
     "prep_min": 20,
     "items": [
@@ -1400,6 +1427,7 @@
     "protein_g": 26.1,
     "fat_g": 18.9,
     "carbs_g": 76.2,
+    "fibre_g": 14.1,
     "protein_pct_kcal": 18.1,
     "prep_min": 25,
     "items": [
@@ -1447,6 +1475,7 @@
     "protein_g": 29.7,
     "fat_g": 21.0,
     "carbs_g": 61.2,
+    "fibre_g": 4.7,
     "protein_pct_kcal": 21.6,
     "prep_min": 25,
     "items": [
@@ -1499,6 +1528,7 @@
     "protein_g": 23.0,
     "fat_g": 20.6,
     "carbs_g": 72.0,
+    "fibre_g": 6.6,
     "protein_pct_kcal": 16.5,
     "prep_min": 18,
     "items": [
@@ -1555,6 +1585,7 @@
     "protein_g": 29.4,
     "fat_g": 30.4,
     "carbs_g": 25.5,
+    "fibre_g": 1.7,
     "protein_pct_kcal": 24.0,
     "prep_min": 15,
     "items": [
@@ -1607,6 +1638,7 @@
     "protein_g": 31.2,
     "fat_g": 32.9,
     "carbs_g": 26.6,
+    "fibre_g": 1.2,
     "protein_pct_kcal": 23.8,
     "prep_min": 25,
     "items": [
@@ -1654,6 +1686,7 @@
     "protein_g": 26.9,
     "fat_g": 10.4,
     "carbs_g": 22.2,
+    "fibre_g": 7.8,
     "protein_pct_kcal": 37.4,
     "prep_min": 25,
     "items": [
@@ -1696,6 +1729,7 @@
     "protein_g": 21.2,
     "fat_g": 20.1,
     "carbs_g": 11.2,
+    "fibre_g": 3.8,
     "protein_pct_kcal": 29.2,
     "prep_min": 15,
     "items": [
@@ -1742,6 +1776,7 @@
     "protein_g": 28.1,
     "fat_g": 23.7,
     "carbs_g": 43.6,
+    "fibre_g": 6.0,
     "protein_pct_kcal": 22.4,
     "prep_min": 20,
     "items": [
@@ -1794,6 +1829,7 @@
     "protein_g": 27.3,
     "fat_g": 8.5,
     "carbs_g": 26.2,
+    "fibre_g": 8.8,
     "protein_pct_kcal": 38.0,
     "prep_min": 20,
     "items": [
@@ -1846,6 +1882,7 @@
     "protein_g": 33.2,
     "fat_g": 33.6,
     "carbs_g": 29.4,
+    "fibre_g": 1.6,
     "protein_pct_kcal": 24.0,
     "prep_min": 25,
     "items": [
@@ -1888,6 +1925,7 @@
     "protein_g": 22.5,
     "fat_g": 8.7,
     "carbs_g": 36.3,
+    "fibre_g": 10.8,
     "protein_pct_kcal": 29.2,
     "prep_min": 25,
     "items": [
@@ -1935,6 +1973,7 @@
     "protein_g": 33.2,
     "fat_g": 30.8,
     "carbs_g": 28.0,
+    "fibre_g": 3.8,
     "protein_pct_kcal": 26.0,
     "prep_min": 20,
     "items": [
@@ -1982,6 +2021,7 @@
     "protein_g": 28.2,
     "fat_g": 8.8,
     "carbs_g": 23.2,
+    "fibre_g": 7.6,
     "protein_pct_kcal": 39.8,
     "prep_min": 25,
     "items": [
@@ -2029,6 +2069,7 @@
     "protein_g": 37.8,
     "fat_g": 14.6,
     "carbs_g": 37.7,
+    "fibre_g": 6.4,
     "protein_pct_kcal": 34.7,
     "prep_min": 25,
     "items": [
@@ -2076,6 +2117,7 @@
     "protein_g": 28.8,
     "fat_g": 31.8,
     "carbs_g": 60.1,
+    "fibre_g": 6.1,
     "protein_pct_kcal": 18.1,
     "prep_min": 20,
     "items": [
@@ -2128,6 +2170,7 @@
     "protein_g": 24.6,
     "fat_g": 20.8,
     "carbs_g": 36.2,
+    "fibre_g": 10.4,
     "protein_pct_kcal": 23.1,
     "prep_min": 18,
     "items": [
@@ -2175,6 +2218,7 @@
     "protein_g": 20.3,
     "fat_g": 18.3,
     "carbs_g": 47.9,
+    "fibre_g": 6.2,
     "protein_pct_kcal": 19.3,
     "prep_min": 20,
     "items": [
@@ -2222,6 +2266,7 @@
     "protein_g": 22.1,
     "fat_g": 21.2,
     "carbs_g": 26.7,
+    "fibre_g": 7.1,
     "protein_pct_kcal": 25.0,
     "prep_min": 10,
     "items": [
@@ -2279,6 +2324,7 @@
     "protein_g": 35.4,
     "fat_g": 5.4,
     "carbs_g": 43.4,
+    "fibre_g": 2.9,
     "protein_pct_kcal": 38.0,
     "prep_min": 25,
     "items": [
@@ -2326,6 +2372,7 @@
     "protein_g": 21.5,
     "fat_g": 23.3,
     "carbs_g": 9.1,
+    "fibre_g": 5.3,
     "protein_pct_kcal": 26.3,
     "prep_min": 15,
     "items": [
@@ -2372,6 +2419,7 @@
     "protein_g": 29.2,
     "fat_g": 9.8,
     "carbs_g": 53.0,
+    "fibre_g": 8.8,
     "protein_pct_kcal": 27.7,
     "prep_min": 25,
     "items": [
@@ -2419,6 +2467,7 @@
     "protein_g": 30.8,
     "fat_g": 15.1,
     "carbs_g": 35.3,
+    "fibre_g": 2.8,
     "protein_pct_kcal": 31.7,
     "prep_min": 8,
     "items": [
@@ -2465,6 +2514,7 @@
     "protein_g": 31.9,
     "fat_g": 11.9,
     "carbs_g": 43.5,
+    "fibre_g": 4.3,
     "protein_pct_kcal": 31.4,
     "prep_min": 20,
     "items": [
@@ -2512,6 +2562,7 @@
     "protein_g": 51.3,
     "fat_g": 21.1,
     "carbs_g": 13.7,
+    "fibre_g": 4.7,
     "protein_pct_kcal": 45.1,
     "prep_min": 35,
     "items": [
@@ -2559,6 +2610,7 @@
     "protein_g": 45.1,
     "fat_g": 17.6,
     "carbs_g": 6.6,
+    "fibre_g": 2.6,
     "protein_pct_kcal": 48.9,
     "prep_min": 30,
     "items": [
@@ -2596,6 +2648,7 @@
     "protein_g": 33.4,
     "fat_g": 11.1,
     "carbs_g": 6.4,
+    "fibre_g": 3.1,
     "protein_pct_kcal": 53.2,
     "prep_min": 15,
     "items": [
@@ -2643,6 +2696,7 @@
     "protein_g": 20.1,
     "fat_g": 22.5,
     "carbs_g": 8.9,
+    "fibre_g": 2.0,
     "protein_pct_kcal": 24.9,
     "prep_min": 25,
     "items": [
@@ -2690,6 +2744,7 @@
     "protein_g": 31.2,
     "fat_g": 9.0,
     "carbs_g": 8.8,
+    "fibre_g": 2.3,
     "protein_pct_kcal": 52.5,
     "prep_min": 15,
     "items": [
@@ -2737,6 +2792,7 @@
     "protein_g": 36.4,
     "fat_g": 12.3,
     "carbs_g": 10.9,
+    "fibre_g": 3.3,
     "protein_pct_kcal": 48.1,
     "prep_min": 18,
     "items": [
@@ -2788,6 +2844,7 @@
     "protein_g": 36.1,
     "fat_g": 4.5,
     "carbs_g": 6.9,
+    "fibre_g": 0.9,
     "protein_pct_kcal": 65.8,
     "prep_min": 25,
     "items": [
@@ -2840,6 +2897,7 @@
     "protein_g": 28.4,
     "fat_g": 21.0,
     "carbs_g": 14.5,
+    "fibre_g": 2.1,
     "protein_pct_kcal": 32.3,
     "prep_min": 25,
     "items": [
@@ -2887,6 +2945,7 @@
     "protein_g": 20.9,
     "fat_g": 19.5,
     "carbs_g": 32.6,
+    "fibre_g": 4.5,
     "protein_pct_kcal": 21.3,
     "prep_min": 20,
     "items": [
@@ -2923,6 +2982,7 @@
     "protein_g": 24.8,
     "fat_g": 5.1,
     "carbs_g": 5.3,
+    "fibre_g": 0.8,
     "protein_pct_kcal": 59.0,
     "prep_min": 20,
     "items": [
@@ -2970,6 +3030,7 @@
     "protein_g": 35.8,
     "fat_g": 20.1,
     "carbs_g": 40.9,
+    "fibre_g": 5.1,
     "protein_pct_kcal": 29.8,
     "prep_min": 15,
     "items": [
@@ -3022,6 +3083,7 @@
     "protein_g": 21.9,
     "fat_g": 19.1,
     "carbs_g": 39.2,
+    "fibre_g": 6.0,
     "protein_pct_kcal": 21.0,
     "prep_min": 15,
     "items": [
@@ -3074,6 +3136,7 @@
     "protein_g": 19.1,
     "fat_g": 3.6,
     "carbs_g": 4.1,
+    "fibre_g": 0.7,
     "protein_pct_kcal": 57.2,
     "prep_min": 30,
     "items": [
@@ -3121,6 +3184,7 @@
     "protein_g": 15.3,
     "fat_g": 10.6,
     "carbs_g": 22.7,
+    "fibre_g": 3.0,
     "protein_pct_kcal": 26.2,
     "prep_min": 15,
     "items": [
@@ -3168,6 +3232,7 @@
     "protein_g": 29.9,
     "fat_g": 12.5,
     "carbs_g": 43.2,
+    "fibre_g": 6.0,
     "protein_pct_kcal": 29.6,
     "prep_min": 20,
     "items": [
@@ -3210,6 +3275,7 @@
     "protein_g": 20.3,
     "fat_g": 11.9,
     "carbs_g": 35.5,
+    "fibre_g": 4.9,
     "protein_pct_kcal": 24.6,
     "prep_min": 10,
     "items": [
@@ -3257,6 +3323,7 @@
     "protein_g": 16.7,
     "fat_g": 8.7,
     "carbs_g": 10.1,
+    "fibre_g": 1.6,
     "protein_pct_kcal": 35.4,
     "prep_min": 30,
     "items": [
@@ -3309,6 +3376,7 @@
     "protein_g": 16.8,
     "fat_g": 5.6,
     "carbs_g": 26.9,
+    "fibre_g": 2.9,
     "protein_pct_kcal": 30.8,
     "prep_min": 30,
     "items": [
@@ -3361,6 +3429,7 @@
     "protein_g": 31.4,
     "fat_g": 8.6,
     "carbs_g": 34.8,
+    "fibre_g": 2.6,
     "protein_pct_kcal": 38.6,
     "prep_min": 5,
     "items": [
@@ -3397,6 +3466,7 @@
     "protein_g": 35.8,
     "fat_g": 18.5,
     "carbs_g": 27.4,
+    "fibre_g": 2.5,
     "protein_pct_kcal": 36.0,
     "prep_min": 5,
     "items": [
@@ -3438,6 +3508,7 @@
     "protein_g": 20.5,
     "fat_g": 3.5,
     "carbs_g": 28.0,
+    "fibre_g": 4.0,
     "protein_pct_kcal": 37.8,
     "prep_min": 5,
     "items": [
@@ -3479,6 +3550,7 @@
     "protein_g": 24.0,
     "fat_g": 20.0,
     "carbs_g": 42.7,
+    "fibre_g": 1.6,
     "protein_pct_kcal": 21.9,
     "prep_min": 5,
     "items": [
@@ -3520,6 +3592,7 @@
     "protein_g": 21.3,
     "fat_g": 10.8,
     "carbs_g": 66.9,
+    "fibre_g": 11.3,
     "protein_pct_kcal": 19.5,
     "prep_min": 5,
     "items": [
@@ -3561,6 +3634,7 @@
     "protein_g": 22.3,
     "fat_g": 14.5,
     "carbs_g": 10.0,
+    "fibre_g": 2.4,
     "protein_pct_kcal": 34.7,
     "prep_min": 10,
     "items": [
@@ -3608,6 +3682,7 @@
     "protein_g": 12.5,
     "fat_g": 7.9,
     "carbs_g": 17.5,
+    "fibre_g": 2.3,
     "protein_pct_kcal": 27.7,
     "prep_min": 15,
     "items": [
@@ -3655,6 +3730,7 @@
     "protein_g": 25.8,
     "fat_g": 23.6,
     "carbs_g": 55.3,
+    "fibre_g": 11.4,
     "protein_pct_kcal": 19.9,
     "prep_min": 2,
     "items": [
@@ -3686,6 +3762,7 @@
     "protein_g": 30.4,
     "fat_g": 11.6,
     "carbs_g": 5.1,
+    "fibre_g": 1.4,
     "protein_pct_kcal": 48.8,
     "prep_min": 20,
     "items": [
@@ -3738,6 +3815,7 @@
     "protein_g": 24.8,
     "fat_g": 14.6,
     "carbs_g": 42.8,
+    "fibre_g": 8.6,
     "protein_pct_kcal": 25.2,
     "prep_min": 10,
     "items": [
@@ -3789,6 +3867,7 @@
     "protein_g": 17.2,
     "fat_g": 17.8,
     "carbs_g": 24.3,
+    "fibre_g": 8.3,
     "protein_pct_kcal": 23.8,
     "prep_min": 10,
     "items": [
@@ -3841,6 +3920,7 @@
     "protein_g": 24.5,
     "fat_g": 4.6,
     "carbs_g": 5.0,
+    "fibre_g": 1.3,
     "protein_pct_kcal": 61.4,
     "prep_min": 8,
     "items": [
@@ -3887,6 +3967,7 @@
     "protein_g": 25.8,
     "fat_g": 22.4,
     "carbs_g": 4.6,
+    "fibre_g": 0.7,
     "protein_pct_kcal": 31.0,
     "prep_min": 12,
     "items": [
@@ -3928,6 +4009,7 @@
     "protein_g": 21.0,
     "fat_g": 1.3,
     "carbs_g": 58.6,
+    "fibre_g": 16.0,
     "protein_pct_kcal": 26.4,
     "prep_min": 10,
     "items": [
@@ -3979,6 +4061,7 @@
     "protein_g": 21.7,
     "fat_g": 0.4,
     "carbs_g": 18.6,
+    "fibre_g": 6.2,
     "protein_pct_kcal": 53.8,
     "prep_min": 15,
     "items": [
@@ -4025,6 +4108,7 @@
     "protein_g": 18.7,
     "fat_g": 18.1,
     "carbs_g": 31.8,
+    "fibre_g": 5.6,
     "protein_pct_kcal": 21.3,
     "prep_min": 15,
     "items": [
@@ -4077,6 +4161,7 @@
     "protein_g": 49.0,
     "fat_g": 10.7,
     "carbs_g": 6.5,
+    "fibre_g": 1.1,
     "protein_pct_kcal": 59.6,
     "prep_min": 25,
     "items": [
@@ -4124,6 +4209,7 @@
     "protein_g": 19.4,
     "fat_g": 19.3,
     "carbs_g": 4.8,
+    "fibre_g": 0.8,
     "protein_pct_kcal": 28.2,
     "prep_min": 15,
     "items": [
@@ -4166,6 +4252,7 @@
     "protein_g": 28.8,
     "fat_g": 27.2,
     "carbs_g": 21.9,
+    "fibre_g": 0.7,
     "protein_pct_kcal": 25.8,
     "prep_min": 15,
     "items": [
@@ -4208,6 +4295,7 @@
     "protein_g": 15.0,
     "fat_g": 9.3,
     "carbs_g": 52.8,
+    "fibre_g": 13.8,
     "protein_pct_kcal": 17.9,
     "prep_min": 15,
     "items": [
@@ -4255,6 +4343,7 @@
     "protein_g": 34.2,
     "fat_g": 9.0,
     "carbs_g": 3.1,
+    "fibre_g": 0.3,
     "protein_pct_kcal": 57.5,
     "prep_min": 25,
     "items": [
@@ -4297,6 +4386,7 @@
     "protein_g": 22.9,
     "fat_g": 4.6,
     "carbs_g": 3.1,
+    "fibre_g": 0.2,
     "protein_pct_kcal": 61.9,
     "prep_min": 20,
     "items": [
@@ -4338,6 +4428,7 @@
     "protein_g": 12.6,
     "fat_g": 5.1,
     "carbs_g": 14.1,
+    "fibre_g": 2.0,
     "protein_pct_kcal": 33.0,
     "prep_min": 40,
     "items": [
@@ -4385,6 +4476,7 @@
     "protein_g": 13.0,
     "fat_g": 8.1,
     "carbs_g": 20.7,
+    "fibre_g": 2.4,
     "protein_pct_kcal": 25.2,
     "prep_min": 40,
     "items": [
@@ -4432,6 +4524,7 @@
     "protein_g": 10.3,
     "fat_g": 4.3,
     "carbs_g": 26.4,
+    "fibre_g": 6.7,
     "protein_pct_kcal": 22.2,
     "prep_min": 30,
     "items": [
@@ -4479,6 +4572,7 @@
     "protein_g": 12.7,
     "fat_g": 5.8,
     "carbs_g": 27.1,
+    "fibre_g": 7.9,
     "protein_pct_kcal": 28.3,
     "prep_min": 15,
     "items": [
@@ -4521,6 +4615,7 @@
     "protein_g": 23.1,
     "fat_g": 0.5,
     "carbs_g": 5.1,
+    "fibre_g": 1.2,
     "protein_pct_kcal": 75.3,
     "prep_min": 10,
     "items": [
@@ -4562,6 +4657,7 @@
     "protein_g": 35.3,
     "fat_g": 12.2,
     "carbs_g": 6.8,
+    "fibre_g": 2.2,
     "protein_pct_kcal": 50.1,
     "prep_min": 25,
     "items": [
@@ -4609,6 +4705,7 @@
     "protein_g": 11.1,
     "fat_g": 2.3,
     "carbs_g": 29.3,
+    "fibre_g": 7.9,
     "protein_pct_kcal": 24.2,
     "prep_min": 35,
     "items": [
@@ -4656,6 +4753,7 @@
     "protein_g": 21.3,
     "fat_g": 0.3,
     "carbs_g": 17.1,
+    "fibre_g": 5.9,
     "protein_pct_kcal": 55.3,
     "prep_min": 15,
     "items": [
@@ -4698,6 +4796,7 @@
     "protein_g": 18.8,
     "fat_g": 19.5,
     "carbs_g": 14.7,
+    "fibre_g": 5.3,
     "protein_pct_kcal": 26.2,
     "prep_min": 20,
     "items": [
@@ -4745,6 +4844,7 @@
     "protein_g": 32.1,
     "fat_g": 33.0,
     "carbs_g": 19.2,
+    "fibre_g": 4.7,
     "protein_pct_kcal": 27.7,
     "prep_min": 20,
     "items": [
@@ -4792,6 +4892,7 @@
     "protein_g": 79.4,
     "fat_g": 11.3,
     "carbs_g": 53.1,
+    "fibre_g": 4.2,
     "protein_pct_kcal": 50.6,
     "prep_min": 20,
     "items": [
@@ -4838,6 +4939,7 @@
     "protein_g": 20.0,
     "fat_g": 18.4,
     "carbs_g": 10.1,
+    "fibre_g": 3.0,
     "protein_pct_kcal": 30.4,
     "prep_min": 20,
     "items": [
@@ -4885,6 +4987,7 @@
     "protein_g": 19.7,
     "fat_g": 11.5,
     "carbs_g": 59.5,
+    "fibre_g": 16.5,
     "protein_pct_kcal": 19.4,
     "prep_min": 20,
     "items": [
@@ -4932,6 +5035,7 @@
     "protein_g": 17.9,
     "fat_g": 16.8,
     "carbs_g": 55.2,
+    "fibre_g": 5.3,
     "protein_pct_kcal": 16.7,
     "prep_min": 20,
     "items": [
@@ -4979,6 +5083,7 @@
     "protein_g": 19.0,
     "fat_g": 18.7,
     "carbs_g": 12.0,
+    "fibre_g": 3.8,
     "protein_pct_kcal": 27.6,
     "prep_min": 20,
     "items": [
@@ -5026,6 +5131,7 @@
     "protein_g": 20.0,
     "fat_g": 3.9,
     "carbs_g": 83.2,
+    "fibre_g": 19.9,
     "protein_pct_kcal": 18.7,
     "prep_min": 15,
     "items": [
@@ -5073,6 +5179,7 @@
     "protein_g": 17.9,
     "fat_g": 6.7,
     "carbs_g": 61.1,
+    "fibre_g": 17.8,
     "protein_pct_kcal": 19.6,
     "prep_min": 30,
     "items": [
@@ -5120,6 +5227,7 @@
     "protein_g": 18.0,
     "fat_g": 15.3,
     "carbs_g": 64.7,
+    "fibre_g": 9.9,
     "protein_pct_kcal": 15.6,
     "prep_min": 15,
     "items": [
@@ -5166,6 +5274,7 @@
     "protein_g": 19.6,
     "fat_g": 16.6,
     "carbs_g": 57.7,
+    "fibre_g": 16.6,
     "protein_pct_kcal": 17.7,
     "prep_min": 20,
     "items": [
@@ -5213,6 +5322,7 @@
     "protein_g": 19.6,
     "fat_g": 17.2,
     "carbs_g": 10.6,
+    "fibre_g": 4.6,
     "protein_pct_kcal": 30.4,
     "prep_min": 15,
     "items": [
@@ -5260,6 +5370,7 @@
     "protein_g": 31.6,
     "fat_g": 25.2,
     "carbs_g": 48.3,
+    "fibre_g": 7.9,
     "protein_pct_kcal": 24.9,
     "prep_min": 18,
     "items": [
@@ -5307,6 +5418,7 @@
     "protein_g": 18.4,
     "fat_g": 8.0,
     "carbs_g": 66.3,
+    "fibre_g": 19.3,
     "protein_pct_kcal": 18.3,
     "prep_min": 30,
     "items": [
@@ -5354,6 +5466,7 @@
     "protein_g": 25.9,
     "fat_g": 23.0,
     "carbs_g": 68.3,
+    "fibre_g": 15.1,
     "protein_pct_kcal": 18.3,
     "prep_min": 20,
     "items": [
@@ -5401,6 +5514,7 @@
     "protein_g": 20.7,
     "fat_g": 13.9,
     "carbs_g": 69.2,
+    "fibre_g": 15.8,
     "protein_pct_kcal": 17.7,
     "prep_min": 20,
     "items": [
@@ -5448,6 +5562,7 @@
     "protein_g": 20.5,
     "fat_g": 5.7,
     "carbs_g": 30.8,
+    "fibre_g": 11.0,
     "protein_pct_kcal": 32.7,
     "prep_min": 30,
     "items": [
@@ -5495,6 +5610,7 @@
     "protein_g": 40.0,
     "fat_g": 19.7,
     "carbs_g": 36.0,
+    "fibre_g": 4.9,
     "protein_pct_kcal": 32.9,
     "prep_min": 25,
     "items": [
@@ -5546,6 +5662,7 @@
     "protein_g": 23.9,
     "fat_g": 14.3,
     "carbs_g": 76.8,
+    "fibre_g": 16.4,
     "protein_pct_kcal": 18.3,
     "prep_min": 20,
     "items": [
@@ -5592,6 +5709,7 @@
     "protein_g": 37.6,
     "fat_g": 18.2,
     "carbs_g": 47.7,
+    "fibre_g": 7.9,
     "protein_pct_kcal": 30.1,
     "prep_min": 15,
     "items": [
@@ -5639,6 +5757,7 @@
     "protein_g": 44.2,
     "fat_g": 10.4,
     "carbs_g": 73.0,
+    "fibre_g": 14.1,
     "protein_pct_kcal": 31.6,
     "prep_min": 20,
     "items": [
@@ -5685,6 +5804,7 @@
     "protein_g": 30.9,
     "fat_g": 10.2,
     "carbs_g": 43.8,
+    "fibre_g": 4.2,
     "protein_pct_kcal": 31.9,
     "prep_min": 15,
     "items": [
@@ -5731,6 +5851,7 @@
     "protein_g": 36.8,
     "fat_g": 13.8,
     "carbs_g": 44.4,
+    "fibre_g": 2.6,
     "protein_pct_kcal": 32.3,
     "prep_min": 25,
     "items": [
@@ -5777,6 +5898,7 @@
     "protein_g": 23.9,
     "fat_g": 9.4,
     "carbs_g": 91.4,
+    "fibre_g": 17.8,
     "protein_pct_kcal": 17.7,
     "prep_min": 25,
     "items": [
@@ -5823,6 +5945,7 @@
     "protein_g": 41.5,
     "fat_g": 14.4,
     "carbs_g": 58.5,
+    "fibre_g": 9.7,
     "protein_pct_kcal": 30.9,
     "prep_min": 20,
     "items": [
@@ -5869,6 +5992,7 @@
     "protein_g": 38.6,
     "fat_g": 22.9,
     "carbs_g": 45.2,
+    "fibre_g": 4.4,
     "protein_pct_kcal": 28.6,
     "prep_min": 20,
     "items": [
@@ -5915,6 +6039,7 @@
     "protein_g": 37.9,
     "fat_g": 18.6,
     "carbs_g": 43.1,
+    "fibre_g": 4.1,
     "protein_pct_kcal": 30.8,
     "prep_min": 25,
     "items": [
@@ -5962,6 +6087,7 @@
     "protein_g": 34.3,
     "fat_g": 11.4,
     "carbs_g": 12.1,
+    "fibre_g": 4.6,
     "protein_pct_kcal": 49.9,
     "prep_min": 20,
     "items": [
@@ -6003,6 +6129,7 @@
     "protein_g": 32.1,
     "fat_g": 30.2,
     "carbs_g": 47.4,
+    "fibre_g": 3.8,
     "protein_pct_kcal": 21.9,
     "prep_min": 20,
     "items": [
@@ -6050,6 +6177,7 @@
     "protein_g": 19.9,
     "fat_g": 18.4,
     "carbs_g": 52.7,
+    "fibre_g": 6.0,
     "protein_pct_kcal": 18.2,
     "prep_min": 20,
     "items": [
@@ -6096,6 +6224,7 @@
     "protein_g": 37.4,
     "fat_g": 12.8,
     "carbs_g": 41.6,
+    "fibre_g": 6.2,
     "protein_pct_kcal": 34.9,
     "prep_min": 25,
     "items": [
@@ -6142,6 +6271,7 @@
     "protein_g": 22.4,
     "fat_g": 6.3,
     "carbs_g": 17.1,
+    "fibre_g": 6.4,
     "protein_pct_kcal": 41.5,
     "prep_min": 30,
     "items": [
@@ -6189,6 +6319,7 @@
     "protein_g": 24.1,
     "fat_g": 7.2,
     "carbs_g": 18.5,
+    "fibre_g": 6.4,
     "protein_pct_kcal": 40.8,
     "prep_min": 30,
     "items": [
@@ -6236,6 +6367,7 @@
     "protein_g": 15.0,
     "fat_g": 5.0,
     "carbs_g": 43.8,
+    "fibre_g": 16.8,
     "protein_pct_kcal": 22.1,
     "prep_min": 25,
     "items": [
@@ -6283,6 +6415,7 @@
     "protein_g": 16.7,
     "fat_g": 6.0,
     "carbs_g": 46.5,
+    "fibre_g": 17.9,
     "protein_pct_kcal": 22.3,
     "prep_min": 20,
     "items": [
@@ -6325,6 +6458,7 @@
     "protein_g": 18.3,
     "fat_g": 9.9,
     "carbs_g": 10.0,
+    "fibre_g": 3.1,
     "protein_pct_kcal": 39.6,
     "prep_min": 15,
     "items": [
@@ -6362,6 +6496,7 @@
     "protein_g": 17.3,
     "fat_g": 12.9,
     "carbs_g": 56.4,
+    "fibre_g": 15.5,
     "protein_pct_kcal": 17.4,
     "prep_min": 20,
     "items": [
@@ -6404,6 +6539,7 @@
     "protein_g": 18.1,
     "fat_g": 12.6,
     "carbs_g": 4.4,
+    "fibre_g": 1.2,
     "protein_pct_kcal": 35.3,
     "prep_min": 10,
     "items": [
@@ -6441,6 +6577,7 @@
     "protein_g": 33.3,
     "fat_g": 4.4,
     "carbs_g": 18.7,
+    "fibre_g": 2.0,
     "protein_pct_kcal": 54.6,
     "prep_min": 20,
     "items": [
@@ -6483,6 +6620,7 @@
     "protein_g": 15.6,
     "fat_g": 9.4,
     "carbs_g": 47.9,
+    "fibre_g": 13.5,
     "protein_pct_kcal": 19.1,
     "prep_min": 25,
     "items": [
@@ -6525,6 +6663,7 @@
     "protein_g": 16.8,
     "fat_g": 4.9,
     "carbs_g": 42.6,
+    "fibre_g": 16.7,
     "protein_pct_kcal": 24.7,
     "prep_min": 25,
     "items": [
@@ -6567,6 +6706,7 @@
     "protein_g": 24.9,
     "fat_g": 0.8,
     "carbs_g": 6.6,
+    "fibre_g": 1.6,
     "protein_pct_kcal": 76.0,
     "prep_min": 15,
     "items": [
@@ -6609,6 +6749,7 @@
     "protein_g": 13.3,
     "fat_g": 5.8,
     "carbs_g": 27.8,
+    "fibre_g": 8.0,
     "protein_pct_kcal": 29.0,
     "prep_min": 20,
     "items": [
@@ -6651,6 +6792,7 @@
     "protein_g": 30.5,
     "fat_g": 20.5,
     "carbs_g": 11.4,
+    "fibre_g": 2.7,
     "protein_pct_kcal": 34.7,
     "prep_min": 8,
     "items": [
@@ -6698,6 +6840,7 @@
     "protein_g": 19.4,
     "fat_g": 9.6,
     "carbs_g": 51.7,
+    "fibre_g": 5.1,
     "protein_pct_kcal": 21.3,
     "prep_min": 5,
     "items": [
@@ -6745,6 +6888,7 @@
     "protein_g": 28.6,
     "fat_g": 22.8,
     "carbs_g": 4.9,
+    "fibre_g": 0.7,
     "protein_pct_kcal": 33.2,
     "prep_min": 10,
     "items": [
@@ -6787,6 +6931,7 @@
     "protein_g": 23.8,
     "fat_g": 9.5,
     "carbs_g": 23.2,
+    "fibre_g": 3.0,
     "protein_pct_kcal": 35.0,
     "prep_min": 20,
     "items": [
@@ -6829,6 +6974,7 @@
     "protein_g": 23.9,
     "fat_g": 19.9,
     "carbs_g": 31.0,
+    "fibre_g": 4.7,
     "protein_pct_kcal": 23.5,
     "prep_min": 15,
     "items": [
@@ -6871,6 +7017,7 @@
     "protein_g": 24.1,
     "fat_g": 8.8,
     "carbs_g": 35.7,
+    "fibre_g": 2.6,
     "protein_pct_kcal": 31.8,
     "prep_min": 5,
     "items": [
@@ -6917,6 +7064,7 @@
     "protein_g": 23.3,
     "fat_g": 16.6,
     "carbs_g": 31.7,
+    "fibre_g": 10.3,
     "protein_pct_kcal": 26.2,
     "prep_min": 5,
     "items": [
@@ -6958,6 +7106,7 @@
     "protein_g": 13.8,
     "fat_g": 5.4,
     "carbs_g": 27.5,
+    "fibre_g": 3.7,
     "protein_pct_kcal": 26.4,
     "prep_min": 30,
     "items": [
@@ -7005,6 +7154,7 @@
     "protein_g": 23.0,
     "fat_g": 17.7,
     "carbs_g": 25.5,
+    "fibre_g": 9.4,
     "protein_pct_kcal": 26.1,
     "prep_min": 15,
     "items": [
@@ -7052,6 +7202,7 @@
     "protein_g": 20.1,
     "fat_g": 11.8,
     "carbs_g": 34.4,
+    "fibre_g": 4.6,
     "protein_pct_kcal": 24.8,
     "prep_min": 8,
     "items": [
@@ -7094,6 +7245,7 @@
     "protein_g": 12.7,
     "fat_g": 2.4,
     "carbs_g": 2.0,
+    "fibre_g": 0.3,
     "protein_pct_kcal": 59.0,
     "prep_min": 25,
     "items": [
@@ -7136,6 +7288,7 @@
     "protein_g": 33.6,
     "fat_g": 9.8,
     "carbs_g": 39.2,
+    "fibre_g": 3.6,
     "protein_pct_kcal": 36.8,
     "prep_min": 5,
     "items": [
@@ -7177,6 +7330,7 @@
     "protein_g": 20.3,
     "fat_g": 14.8,
     "carbs_g": 34.2,
+    "fibre_g": 6.0,
     "protein_pct_kcal": 22.9,
     "prep_min": 15,
     "items": [
@@ -7224,6 +7378,7 @@
     "protein_g": 25.3,
     "fat_g": 7.0,
     "carbs_g": 57.6,
+    "fibre_g": 0.9,
     "protein_pct_kcal": 24.8,
     "prep_min": 25,
     "items": [
@@ -7266,6 +7421,7 @@
     "protein_g": 25.8,
     "fat_g": 8.9,
     "carbs_g": 4.3,
+    "fibre_g": 1.2,
     "protein_pct_kcal": 50.1,
     "prep_min": 30,
     "items": [
@@ -7308,6 +7464,7 @@
     "protein_g": 32.9,
     "fat_g": 17.8,
     "carbs_g": 3.5,
+    "fibre_g": 1.8,
     "protein_pct_kcal": 43.3,
     "prep_min": 15,
     "items": [
@@ -7350,6 +7507,7 @@
     "protein_g": 32.6,
     "fat_g": 13.6,
     "carbs_g": 3.3,
+    "fibre_g": 0.7,
     "protein_pct_kcal": 47.6,
     "prep_min": 45,
     "items": [
@@ -7392,6 +7550,7 @@
     "protein_g": 29.0,
     "fat_g": 17.6,
     "carbs_g": 2.6,
+    "fibre_g": 0.6,
     "protein_pct_kcal": 39.9,
     "prep_min": 15,
     "items": [
@@ -7434,6 +7593,7 @@
     "protein_g": 36.1,
     "fat_g": 12.5,
     "carbs_g": 7.3,
+    "fibre_g": 1.4,
     "protein_pct_kcal": 49.0,
     "prep_min": 25,
     "items": [
@@ -7481,6 +7641,7 @@
     "protein_g": 19.9,
     "fat_g": 22.5,
     "carbs_g": 7.0,
+    "fibre_g": 1.5,
     "protein_pct_kcal": 25.4,
     "prep_min": 20,
     "items": [
@@ -7523,6 +7684,7 @@
     "protein_g": 31.7,
     "fat_g": 12.8,
     "carbs_g": 5.1,
+    "fibre_g": 1.9,
     "protein_pct_kcal": 47.3,
     "prep_min": 18,
     "items": [
@@ -7564,6 +7726,7 @@
     "protein_g": 32.8,
     "fat_g": 15.0,
     "carbs_g": 3.2,
+    "fibre_g": 0.4,
     "protein_pct_kcal": 46.4,
     "prep_min": 15,
     "items": [
@@ -7606,6 +7769,7 @@
     "protein_g": 24.7,
     "fat_g": 14.8,
     "carbs_g": 8.8,
+    "fibre_g": 3.0,
     "protein_pct_kcal": 37.3,
     "prep_min": 30,
     "items": [
@@ -7648,6 +7812,7 @@
     "protein_g": 26.7,
     "fat_g": 20.3,
     "carbs_g": 4.6,
+    "fibre_g": 1.1,
     "protein_pct_kcal": 34.9,
     "prep_min": 15,
     "items": [
@@ -7690,6 +7855,7 @@
     "protein_g": 32.3,
     "fat_g": 12.6,
     "carbs_g": 1.4,
+    "fibre_g": 0.3,
     "protein_pct_kcal": 50.4,
     "prep_min": 30,
     "items": [
@@ -7727,6 +7893,7 @@
     "protein_g": 30.6,
     "fat_g": 7.3,
     "carbs_g": 3.5,
+    "fibre_g": 0.2,
     "protein_pct_kcal": 61.7,
     "prep_min": 15,
     "items": [
@@ -7769,6 +7936,7 @@
     "protein_g": 29.4,
     "fat_g": 21.9,
     "carbs_g": 38.9,
+    "fibre_g": 6.1,
     "protein_pct_kcal": 26.4,
     "prep_min": 15,
     "items": [
@@ -7816,6 +7984,7 @@
     "protein_g": 20.3,
     "fat_g": 6.8,
     "carbs_g": 35.4,
+    "fibre_g": 4.8,
     "protein_pct_kcal": 28.6,
     "prep_min": 10,
     "items": [
@@ -7863,6 +8032,7 @@
     "protein_g": 27.3,
     "fat_g": 17.7,
     "carbs_g": 83.3,
+    "fibre_g": 18.7,
     "protein_pct_kcal": 18.4,
     "prep_min": 20,
     "items": [
@@ -7910,6 +8080,7 @@
     "protein_g": 34.0,
     "fat_g": 15.9,
     "carbs_g": 33.6,
+    "fibre_g": 6.9,
     "protein_pct_kcal": 33.0,
     "prep_min": 10,
     "items": [
@@ -7952,6 +8123,7 @@
     "protein_g": 83.4,
     "fat_g": 10.6,
     "carbs_g": 48.0,
+    "fibre_g": 4.7,
     "protein_pct_kcal": 53.4,
     "prep_min": 20,
     "items": [
@@ -7999,6 +8171,7 @@
     "protein_g": 31.3,
     "fat_g": 10.4,
     "carbs_g": 30.4,
+    "fibre_g": 3.6,
     "protein_pct_kcal": 35.4,
     "prep_min": 15,
     "items": [
@@ -8046,6 +8219,7 @@
     "protein_g": 21.6,
     "fat_g": 15.6,
     "carbs_g": 71.0,
+    "fibre_g": 17.1,
     "protein_pct_kcal": 17.3,
     "prep_min": 20,
     "items": [
@@ -8093,6 +8267,7 @@
     "protein_g": 19.5,
     "fat_g": 12.3,
     "carbs_g": 35.7,
+    "fibre_g": 5.3,
     "protein_pct_kcal": 24.2,
     "prep_min": 18,
     "items": [
@@ -8140,6 +8315,7 @@
     "protein_g": 29.6,
     "fat_g": 30.5,
     "carbs_g": 26.8,
+    "fibre_g": 2.3,
     "protein_pct_kcal": 23.8,
     "prep_min": 20,
     "items": [
@@ -8187,6 +8363,7 @@
     "protein_g": 29.3,
     "fat_g": 30.4,
     "carbs_g": 25.0,
+    "fibre_g": 1.7,
     "protein_pct_kcal": 24.0,
     "prep_min": 18,
     "items": [
@@ -8234,6 +8411,7 @@
     "protein_g": 28.1,
     "fat_g": 28.6,
     "carbs_g": 38.1,
+    "fibre_g": 3.1,
     "protein_pct_kcal": 22.2,
     "prep_min": 20,
     "items": [
@@ -8281,6 +8459,7 @@
     "protein_g": 25.0,
     "fat_g": 14.6,
     "carbs_g": 44.0,
+    "fibre_g": 8.8,
     "protein_pct_kcal": 25.1,
     "prep_min": 15,
     "items": [
@@ -8327,6 +8506,7 @@
     "protein_g": 25.9,
     "fat_g": 21.5,
     "carbs_g": 6.0,
+    "fibre_g": 3.4,
     "protein_pct_kcal": 32.8,
     "prep_min": 15,
     "items": [
@@ -8374,6 +8554,7 @@
     "protein_g": 21.2,
     "fat_g": 7.9,
     "carbs_g": 39.1,
+    "fibre_g": 13.3,
     "protein_pct_kcal": 28.6,
     "prep_min": 12,
     "items": [
@@ -8420,6 +8601,7 @@
     "protein_g": 18.3,
     "fat_g": 12.0,
     "carbs_g": 46.3,
+    "fibre_g": 12.6,
     "protein_pct_kcal": 20.6,
     "prep_min": 12,
     "items": [
@@ -8467,6 +8649,7 @@
     "protein_g": 42.3,
     "fat_g": 15.0,
     "carbs_g": 49.8,
+    "fibre_g": 7.3,
     "protein_pct_kcal": 33.2,
     "prep_min": 20,
     "items": [
@@ -8513,6 +8696,7 @@
     "protein_g": 34.3,
     "fat_g": 11.4,
     "carbs_g": 12.1,
+    "fibre_g": 4.6,
     "protein_pct_kcal": 49.9,
     "prep_min": 20,
     "items": [
@@ -8555,6 +8739,7 @@
     "protein_g": 18.4,
     "fat_g": 25.2,
     "carbs_g": 49.7,
+    "fibre_g": 14.6,
     "protein_pct_kcal": 15.5,
     "prep_min": 15,
     "items": [
@@ -8601,6 +8786,7 @@
     "protein_g": 28.4,
     "fat_g": 14.5,
     "carbs_g": 41.6,
+    "fibre_g": 2.5,
     "protein_pct_kcal": 27.4,
     "prep_min": 20,
     "items": [

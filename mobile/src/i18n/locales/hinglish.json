@@ -74,7 +74,13 @@
     "weekGoal": "🏆 {{weeks}}-week goal",
     "goalFooter": "{{weeks}} weeks left · {{pace}}",
     "logWeightTitle": "Aaj ka weight log karein",
-    "lastLogged": "Last logged: {{weight}}kg"
+    "lastLogged": "Last logged: {{weight}}kg",
+    "todaysGoal": "TODAY'S GOAL",
+    "goalComplete": "Goal Complete!",
+    "mealsLoggedToday": "🍽️ Meals logged today",
+    "sessionsDoneToday": "🔥 Sessions done today",
+    "sessionBoxLabel": "Session",
+    "restDayNoSession": "Today is a rest day 🛌 — no session scheduled"
   },
   "profile": {
     "alerts": {
@@ -182,15 +188,15 @@
     "selectChoice": "Choice select karein",
     "title": "Workout Log 🏋️",
     "openCamera": "Camera tracker open karein",
-    "sessionMilestone": "SESSION MILESTONE",
-    "lastSession": "Last session · {{kcal}} kcal",
-    "sessionsDenom": "/ 6 sessions",
-    "goalSessions": "Goal: 6 sessions",
+    "sessionMilestone": "EXERCISE MILESTONE",
+    "lastSession": "Last exercise · {{kcal}} kcal",
+    "sessionsDenom": "/ 6 exercises",
+    "goalSessions": "Goal: 6 exercises",
     "goalCrushed": "🎉 Goal crush ho gaya! +{{count}} bonus",
     "goalReached": "✓ Goal reached!",
     "moreToGo": "{{count}} aur baki",
     "kcalBurned": "kcal burned",
-    "sessions": "sessions",
+    "sessions": "exercises",
     "target": "target",
     "burnProgress": "🔥 Burn progress",
     "done": "Done ✓",
@@ -377,7 +383,9 @@
     "retry": "Retry",
     "loading": "Loading...",
     "required": "Required",
-    "close": "Band karein"
+    "close": "Band karein",
+    "viewLog": "Log",
+    "viewPlanner": "Planner"
   },
   "social": {
     "nav": {

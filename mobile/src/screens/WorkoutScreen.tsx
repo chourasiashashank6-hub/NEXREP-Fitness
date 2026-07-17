@@ -14,8 +14,8 @@ import {
   UIManager,
   View,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import type { RouteProp } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCameraPermissions } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,10 +35,15 @@ import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { fetchOnboardingMe } from "../api/onboarding";
 import { deleteStrengthLift, logStrengthLift, updateStrengthLift } from "../api/strength";
 import { getProfile } from "../api/user";
+import { apiClient } from "../api/client";
+import { localDateIso } from "../utils/localDate";
+import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
 import AllTimeHistoryModal from "../components/AllTimeHistoryModal";
 import { AppInput } from "../components/AppInput";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
 import MediaPipeGuidanceView from "../components/MediaPipeGuidanceView";
+import { LogPlannerSegment, type LogPlannerMode } from "../components/LogPlannerSegment";
+import { PlannerLockedUpsell } from "../components/PlannerLockedUpsell";
 import { SessionTypePickerModal } from "../components/SessionTypePickerModal";
 import { unlockWebSpeech } from "../services/aiTrainer/audioCoach";
 import type { GlobalExercise } from "../constants/GlobalExercisesData";
@@ -51,11 +56,14 @@ import type { MediaPipeGuidanceViewProps } from "../components/MediaPipeGuidance
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import { useAuthStore } from "../store/authStore";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
+import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import type { WorkoutPlanCurrent } from "../types/planner";
+import type { MainTabParamList } from "../navigation/types";
 import { useAppTheme } from "../theme";
 import { formatDate } from "../utils/date";
 import { calcExerciseEstimateKcal } from "../utils/sessionCalories";
 import { navigationRef } from "../navigation/navigationRef";
+import MonthlyWorkoutPlannerScreen from "./Coach/MonthlyWorkoutPlannerScreen";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -72,7 +80,7 @@ const MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
 const BORDER = "#E2E2DD";
 const DANGER = "#E85B5B";
-const BURN_TARGET = 154;
+const BURN_TARGET_FALLBACK = 200;
 
 const CHIP_DROPDOWN_COLORS = {
   text: TEXT,
@@ -348,13 +356,20 @@ const EditModalInput = ({
 export const WorkoutScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<MainTabParamList, "Workout">>();
   const language = useLanguageStore((s) => s.language);
   const { colors, radius } = useAppTheme();
   const tier = useSubscriptionStore((s) => s.subscription?.tier);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
+  const { hasFeatureAccess } = useFeatureAccess();
+  const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
+  const [viewMode, setViewMode] = useState<LogPlannerMode>("log");
+  const [plannerMounted, setPlannerMounted] = useState(false);
+  const [todayKey, setTodayKey] = useState(() => toDateKey(new Date()));
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
   const [todayPlan, setTodayPlan] = useState<WorkoutPlanCurrent | null>(null);
   const [userWeightKg, setUserWeightKg] = useState(70);
+  const [burnTargetKcal, setBurnTargetKcal] = useState(BURN_TARGET_FALLBACK);
   const [catalog, setCatalog] = useState<WorkoutCatalogItem[]>([]);
   const [bodyPartOptions, setBodyPartOptions] = useState<string[]>([]);
   const [typeOptions, setTypeOptions] = useState<string[]>([]);
@@ -549,12 +564,26 @@ export const WorkoutScreen = () => {
 
   const loadInitial = async (options?: { preservePlannerState?: boolean }) => {
     try {
-      const [historyData, profileData, onboardingData] = await Promise.all([
+      const [historyData, profileData, onboardingData, goalProgressRes] = await Promise.all([
         getWorkoutHistory(24 * 7),
         getProfile(),
         fetchOnboardingMe().catch(() => null),
+        apiClient
+          .get(`/api/goal-progress`, { params: { local_date: localDateIso() } })
+          .then((r) => r.data)
+          .catch(() => null),
       ]);
       setHistory(historyData.items ?? []);
+      setBurnTargetKcal(
+        resolveDailyBurnTarget({
+          exercise_delta_kcal: goalProgressRes?.exercise_delta_kcal,
+          daily_delta_kcal: goalProgressRes?.daily_delta_kcal,
+          timeline:
+            (goalProgressRes?.timeline as Record<string, unknown> | undefined) ??
+            (onboardingData?.targets?.timeline as unknown as Record<string, unknown> | undefined) ??
+            null,
+        }),
+      );
       const resolvedGoalTag = profileData.goalTag || SELECT_CHOICE;
       const onboardingGoalType = String(onboardingData?.onboarding?.goal?.type || "").toLowerCase();
       const onboardingDifficulty = normalizeDifficultyLabel(onboardingData?.onboarding?.goal?.difficulty);
@@ -618,12 +647,28 @@ export const WorkoutScreen = () => {
     useCallback(() => {
       // Always show planner form when user returns to this tab.
       setShowHistory(false);
+      setTodayKey(toDateKey(new Date()));
       loadInitial({ preservePlannerState: true });
       fetchWorkoutPlanCurrent()
         .then((plan) => setTodayPlan(plan))
         .catch(() => setTodayPlan(null));
     }, [needsGoalTagInput, needsDifficultyInput, language]),
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      const view = route.params?.view;
+      if (view === "planner" || view === "log") {
+        setViewMode(view);
+        if (view === "planner") setPlannerMounted(true);
+      }
+    }, [route.params?.view]),
+  );
+
+  const selectViewMode = useCallback((mode: LogPlannerMode) => {
+    setViewMode(mode);
+    if (mode === "planner") setPlannerMounted(true);
+  }, []);
 
   const parsedTimeTaken = useMemo(() => {
     const trimmed = timeTaken.trim();
@@ -1192,7 +1237,6 @@ export const WorkoutScreen = () => {
   };
 
   const canOpenCamera = exerciseName !== SELECT_CHOICE;
-  const todayKey = useMemo(() => toDateKey(new Date()), []);
   const todayHistory = useMemo(() => {
     if (!todayKey) return [];
     return history.filter((item) => toDateKey(item?.date) === todayKey);
@@ -1203,8 +1247,8 @@ export const WorkoutScreen = () => {
     [todayHistory],
   );
   const todaySessionCount = todayHistory.length;
-  const burnTargetReached = todayCaloriesBurned >= BURN_TARGET;
-  const burnProgressPct = Math.min(todayCaloriesBurned / BURN_TARGET, 1);
+  const burnTargetReached = todayCaloriesBurned >= burnTargetKcal;
+  const burnProgressPct = burnTargetKcal > 0 ? Math.min(todayCaloriesBurned / burnTargetKcal, 1) : 1;
   const guidanceExerciseName = selectedEntry?.defaultExerciseName ?? selectedEntry?.exerciseName ?? exerciseName;
   const exerciseGuidance = useMemo(() => findExerciseGuidance(guidanceExerciseName), [guidanceExerciseName]);
   const showGuideCard = exerciseName !== SELECT_CHOICE && !isNoChoice(exerciseName);
@@ -1242,6 +1286,15 @@ export const WorkoutScreen = () => {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <View style={styles.chrome}>
+        <Text style={styles.greetingTitle}>{t("workoutLog.title")}</Text>
+        <LogPlannerSegment mode={viewMode} onChange={selectViewMode} />
+      </View>
+
+      <View
+        style={[styles.modePanel, viewMode !== "log" && styles.modePanelHidden]}
+        pointerEvents={viewMode === "log" ? "auto" : "none"}
+      >
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -1249,12 +1302,6 @@ export const WorkoutScreen = () => {
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="on-drag"
       >
-        <View style={styles.greetingHeader}>
-          <View style={styles.greetingLeft}>
-            <Text style={styles.greetingTitle}>{t("workoutLog.title")}</Text>
-          </View>
-        </View>
-
         {/* Active session banner — Elite gated; manual log below unchanged */}
         {(() => {
           const isElite = tier === "ELITE";
@@ -1367,11 +1414,7 @@ export const WorkoutScreen = () => {
                 {!isRest ? (
                   <Pressable
                     style={[styles.startSessionBtn, { backgroundColor: GREEN }]}
-                    onPress={() =>
-                      navigation.getParent()?.navigate("Coach", {
-                        screen: "MonthlyWorkoutPlanner",
-                      })
-                    }
+                    onPress={() => selectViewMode("planner")}
                   >
                     <Text style={[styles.startSessionBtnTxt, { color: "#fff" }]}>Generate plan</Text>
                   </Pressable>
@@ -1382,84 +1425,87 @@ export const WorkoutScreen = () => {
           );
         })()}
 
-        {todaySessionCount > 0 ? (
-          <View style={styles.milestoneCard}>
-            <View style={styles.milestoneTopRow}>
-              <View style={styles.milestoneTopLeft}>
-                <Text style={styles.milestoneEyebrow}>{t("workoutLog.sessionMilestone")}</Text>
-                {latestTodayWorkout ? (
-                  <>
-                    <Text style={styles.milestoneExerciseName} numberOfLines={1}>
-                      {bodyPartEmoji(
-                        latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || t("workoutLog.body"),
-                      )}{" "}
-                      {latestTodayWorkout.exerciseName}
-                    </Text>
-                    <Text style={styles.milestoneLastMeta}>
-                      {t("workoutLog.lastSession", { kcal: Math.round(Number(latestTodayWorkout.caloriesBurned) || 0) })}
-                    </Text>
-                  </>
-                ) : null}
-              </View>
-              <View style={styles.milestoneCountCol}>
-                <Text style={[styles.milestoneCount, todaySessionCount >= 6 ? styles.milestoneCountMet : null]}>
-                  {todaySessionCount}
-                </Text>
-                <Text style={styles.milestoneCountDenom}>{t("workoutLog.sessionsDenom")}</Text>
-              </View>
-            </View>
-
-            <View style={styles.milestoneTileRow}>
-              {Array.from({ length: Math.max(todaySessionCount, 6) }, (_, index) => {
-                const tileNum = index + 1;
-                const filled = tileNum <= Math.min(todaySessionCount, 6);
-                const bonus = tileNum > 6;
-                const empty = !filled && !bonus;
-                return (
-                  <View
-                    key={`milestone-tile-${tileNum}`}
-                    style={[
-                      styles.milestoneTile,
-                      filled ? styles.milestoneTileFilled : null,
-                      bonus ? styles.milestoneTileBonus : null,
-                      empty ? styles.milestoneTileEmpty : null,
-                    ]}
-                  >
-                    {filled ? (
-                      <Text style={styles.milestoneTileCheck}>✓</Text>
-                    ) : bonus ? (
-                      <Text style={styles.milestoneTileBonusText}>+{tileNum - 6}</Text>
-                    ) : (
-                      <Text style={styles.milestoneTileEmptyText}>{tileNum}</Text>
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-
-            <View style={styles.milestoneProgressTrack}>
-              <View
-                style={[
-                  styles.milestoneProgressFill,
-                  { width: `${Math.min(todaySessionCount / 6, 1) * 100}%` },
-                ]}
-              />
-            </View>
-
-            <View style={styles.milestoneFooterRow}>
-              <Text style={styles.milestoneFooterGoal}>{t("workoutLog.goalSessions")}</Text>
-              {todaySessionCount > 6 ? (
-                <Text style={styles.milestoneFooterSuccess}>
-                  {t("workoutLog.goalCrushed", { count: todaySessionCount - 6 })}
-                </Text>
-              ) : todaySessionCount === 6 ? (
-                <Text style={styles.milestoneFooterSuccess}>{t("workoutLog.goalReached")}</Text>
+        <View style={styles.milestoneCard}>
+          <View style={styles.milestoneTopRow}>
+            <View style={styles.milestoneTopLeft}>
+              <Text style={styles.milestoneEyebrow}>{t("workoutLog.sessionMilestone")}</Text>
+              {latestTodayWorkout ? (
+                <>
+                  <Text style={styles.milestoneExerciseName} numberOfLines={1}>
+                    {bodyPartEmoji(
+                      latestTodayWorkout.bodyPart || parseBodyPartFromNotes(latestTodayWorkout.notes) || t("workoutLog.body"),
+                    )}{" "}
+                    {latestTodayWorkout.exerciseName}
+                  </Text>
+                  <Text style={styles.milestoneLastMeta}>
+                    {t("workoutLog.lastSession", { kcal: Math.round(Number(latestTodayWorkout.caloriesBurned) || 0) })}
+                  </Text>
+                </>
               ) : (
-                <Text style={styles.milestoneFooterRemaining}>{t("workoutLog.moreToGo", { count: 6 - todaySessionCount })}</Text>
+                <>
+                  <Text style={styles.milestoneExerciseName}>{t("workoutLog.emptyHistoryTitle")}</Text>
+                  <Text style={styles.milestoneLastMeta}>{t("workoutLog.goalSessions")}</Text>
+                </>
               )}
             </View>
+            <View style={styles.milestoneCountCol}>
+              <Text style={[styles.milestoneCount, todaySessionCount >= 6 ? styles.milestoneCountMet : null]}>
+                {todaySessionCount}
+              </Text>
+              <Text style={styles.milestoneCountDenom}>{t("workoutLog.sessionsDenom")}</Text>
+            </View>
           </View>
-        ) : null}
+
+          <View style={styles.milestoneTileRow}>
+            {Array.from({ length: Math.max(todaySessionCount, 6) }, (_, index) => {
+              const tileNum = index + 1;
+              const filled = tileNum <= Math.min(todaySessionCount, 6);
+              const bonus = tileNum > 6;
+              const empty = !filled && !bonus;
+              return (
+                <View
+                  key={`milestone-tile-${tileNum}`}
+                  style={[
+                    styles.milestoneTile,
+                    filled ? styles.milestoneTileFilled : null,
+                    bonus ? styles.milestoneTileBonus : null,
+                    empty ? styles.milestoneTileEmpty : null,
+                  ]}
+                >
+                  {filled ? (
+                    <Text style={styles.milestoneTileCheck}>✓</Text>
+                  ) : bonus ? (
+                    <Text style={styles.milestoneTileBonusText}>+{tileNum - 6}</Text>
+                  ) : (
+                    <Text style={styles.milestoneTileEmptyText}>{tileNum}</Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          <View style={styles.milestoneProgressTrack}>
+            <View
+              style={[
+                styles.milestoneProgressFill,
+                { width: `${Math.min(todaySessionCount / 6, 1) * 100}%` },
+              ]}
+            />
+          </View>
+
+          <View style={styles.milestoneFooterRow}>
+            <Text style={styles.milestoneFooterGoal}>{t("workoutLog.goalSessions")}</Text>
+            {todaySessionCount > 6 ? (
+              <Text style={styles.milestoneFooterSuccess}>
+                {t("workoutLog.goalCrushed", { count: todaySessionCount - 6 })}
+              </Text>
+            ) : todaySessionCount === 6 ? (
+              <Text style={styles.milestoneFooterSuccess}>{t("workoutLog.goalReached")}</Text>
+            ) : (
+              <Text style={styles.milestoneFooterRemaining}>{t("workoutLog.moreToGo", { count: 6 - todaySessionCount })}</Text>
+            )}
+          </View>
+        </View>
 
         <View style={styles.kpiRow}>
           <View style={styles.kpiPill}>
@@ -1474,7 +1520,7 @@ export const WorkoutScreen = () => {
           </View>
           <View style={styles.kpiPill}>
             <Text style={styles.kpiEmoji}>🎯</Text>
-            <Text style={styles.kpiValueGreen}>{BURN_TARGET}</Text>
+            <Text style={styles.kpiValueGreen}>{burnTargetKcal}</Text>
             <Text style={styles.kpiLabel}>{t("workoutLog.target")}</Text>
           </View>
         </View>
@@ -1499,7 +1545,7 @@ export const WorkoutScreen = () => {
               <Text style={styles.burnTargetReached}>{t("workoutLog.goalReached")}</Text>
             ) : (
               <Text style={styles.burnMeta}>
-                {todayCaloriesBurned} / {BURN_TARGET} kcal
+                {todayCaloriesBurned} / {burnTargetKcal} kcal
               </Text>
             )}
           </View>
@@ -1874,6 +1920,26 @@ export const WorkoutScreen = () => {
           ) : null}
         </View>
       </ScrollView>
+      </View>
+
+      <View
+        style={[styles.modePanel, viewMode !== "planner" && styles.modePanelHidden]}
+        pointerEvents={viewMode === "planner" ? "auto" : "none"}
+      >
+        {plannerMounted ? (
+          hasWorkoutPlannerAccess ? (
+            <MonthlyWorkoutPlannerScreen embedded />
+          ) : (
+            <PlannerLockedUpsell
+              feature="workout_plan_generation"
+              featureName={t("coach.home.workoutPlanner.name")}
+              featureDescription={t("coach.home.workoutPlanner.gateDescription")}
+              featureEmoji="🏆"
+              accentColor="#7f77dd"
+            />
+          )
+        ) : null}
+      </View>
 
       <Modal visible={durationPickerOpen} transparent animationType="fade" onRequestClose={() => setDurationPickerOpen(false)}>
         <View style={styles.durationModalBackdrop}>
@@ -2077,6 +2143,9 @@ export const WorkoutScreen = () => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: WHITE },
+  chrome: { paddingHorizontal: 16, paddingTop: 4 },
+  modePanel: { flex: 1 },
+  modePanelHidden: { display: "none" },
   scroll: { flex: 1, backgroundColor: WHITE },
   scrollContent: { padding: 16, paddingBottom: 40 },
   greetingHeader: {
@@ -2086,7 +2155,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   greetingLeft: { flex: 1, paddingRight: 12 },
-  greetingTitle: { fontSize: 25, fontWeight: "800", color: TEXT },
+  greetingTitle: { fontSize: 25, fontWeight: "800", color: TEXT, marginBottom: 12 },
   logActionRow: {
     flexDirection: "row",
     alignItems: "center",

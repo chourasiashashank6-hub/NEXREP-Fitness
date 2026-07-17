@@ -30,8 +30,8 @@ export type OnboardingStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Workout: undefined;
-  Calories: undefined;
+  Workout: { view?: "log" | "planner" } | undefined;
+  Calories: { view?: "log" | "planner" } | undefined;
   Coach: undefined;
   Social: undefined;
   Profile: undefined;

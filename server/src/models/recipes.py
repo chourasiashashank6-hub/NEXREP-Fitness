@@ -25,6 +25,7 @@ class Recipe(Base):
     protein_g = Column(Float, nullable=False)
     fat_g = Column(Float, nullable=False)
     carbs_g = Column(Float, nullable=False)
+    fibre_g = Column(Float, nullable=False, default=0)
     protein_pct_kcal = Column(Float, nullable=False)
     prep_min = Column(Integer, nullable=False)
     items = Column(JSONB, nullable=False)

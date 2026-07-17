@@ -12,10 +12,9 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import ProGateModal from "../../components/ProGateModal";
-import { canAccess, getRequiredPlan } from "../../constants/featureTiers";
+import { getRequiredPlan } from "../../constants/featureTiers";
+import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
-import { auth } from "../../services/authService";
-import { useAuthStore } from "../../store/authStore";
 
 export type { CoachStackParamList } from "../../navigation/coachTypes";
 
@@ -32,13 +31,6 @@ const GREEN_LIGHT = "#E8F5EE";
 const GREEN_STRIP = "#E8F5EE";
 const PURPLE = "#7B68CC";
 const PURPLE_LIGHT = "#F0EEF9";
-const BLUE = "#4A90D9";
-const BLUE_LIGHT = "#EEF4FB";
-const ORANGE = "#D85A30";
-const ORANGE_LIGHT = "#FFF1EE";
-const GOLD = "#FFD700";
-const AMBER_BG = "#FFF8E8";
-const AMBER_TEXT = "#B87500";
 const BG = "#F7F6F3";
 const WHITE = "#FFFFFF";
 const TEXT = "#1A1A18";
@@ -46,29 +38,11 @@ const MUTED = "#BBBBBB";
 const BORDER = "#ECEAE5";
 const SCREEN_BG = "#FFFFFF";
 
-const PLANNER_GATE_BYPASS_EMAILS = new Set(["shashank1@gmail.com"]);
-const PLANNER_GATE_BYPASS_USER_IDS = new Set(["2"]);
-const PLANNER_GATE_BYPASS_FEATURES = new Set(["meal_plan_generation", "workout_plan_generation"]);
-
 export default function CoachHomeScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
-  const plan_id = useAuthStore((s) => s.plan_id) ?? "free";
-  const sessionUserId = useAuthStore((s) => s.sessionUserId);
+  const { hasFeatureAccess } = useFeatureAccess();
   const [gate, setGate] = useState<GateConfig | null>(null);
-  const signedInEmail = String(auth.currentUser?.email || "")
-    .trim()
-    .toLowerCase();
-  const plannerGateBypassEnabled =
-    PLANNER_GATE_BYPASS_EMAILS.has(signedInEmail) ||
-    (sessionUserId ? PLANNER_GATE_BYPASS_USER_IDS.has(sessionUserId) : false);
-
-  const hasFeatureAccess = useCallback(
-    (feature: string) =>
-      canAccess(plan_id, feature) ||
-      (plannerGateBypassEnabled && PLANNER_GATE_BYPASS_FEATURES.has(feature)),
-    [plan_id, plannerGateBypassEnabled],
-  );
 
   const openOrGate = useCallback(
     (navigateFn: () => void, config: GateConfig) => {
@@ -80,10 +54,6 @@ export default function CoachHomeScreen() {
     },
     [hasFeatureAccess],
   );
-
-  const openSubscription = () => {
-    navigation.getParent()?.navigate("Profile", { screen: "Subscription" });
-  };
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -219,129 +189,6 @@ export default function CoachHomeScreen() {
               </View>
             </View>
           </TouchableOpacity>
-
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionLabel}>{t("coach.home.planners")}</Text>
-            <View style={styles.eliteBadge}>
-              <Text style={styles.eliteBadgeText}>{t("coach.home.eliteFeature")}</Text>
-            </View>
-          </View>
-
-          <View style={styles.plannerGrid}>
-            <TouchableOpacity
-              style={styles.plannerTile}
-              onPress={() =>
-                openOrGate(() => navigation.navigate("MonthlyMealPlanner"), {
-                  feature: "meal_plan_generation",
-                  name: t("coach.home.mealPlanner.name"),
-                  description: t("coach.home.mealPlanner.gateDescription"),
-                  emoji: "📅",
-                  accentColor: "#378add",
-                })
-              }
-              activeOpacity={0.85}
-            >
-              <View style={styles.plannerIconBlue}>
-                <Ionicons name="calendar-outline" size={18} color={BLUE} />
-              </View>
-              <Text style={styles.plannerTitle}>{t("coach.home.mealPlanner.title")}</Text>
-              <Text style={styles.plannerSub}>{t("coach.home.mealPlanner.subtitle")}</Text>
-              <View style={styles.plannerBadges}>
-                <View style={styles.eliteMiniBadge}>
-                  <Text style={styles.eliteMiniBadgeText}>{t("coach.home.eliteBadge")}</Text>
-                </View>
-                <View style={styles.newMiniBadge}>
-                  <Text style={styles.newMiniBadgeText}>{t("coach.home.newBadge")}</Text>
-                </View>
-              </View>
-              <View style={styles.miniStatGrid}>
-                <View style={styles.miniStat}>
-                  <Text style={[styles.miniStatValue, { color: BLUE }]}>31</Text>
-                  <Text style={styles.miniStatLabel}>{t("coach.home.mealPlanner.days")}</Text>
-                </View>
-                <View style={styles.miniStat}>
-                  <Text style={[styles.miniStatValue, { color: BLUE }]}>3x</Text>
-                  <Text style={styles.miniStatLabel}>{t("coach.home.mealPlanner.meals")}</Text>
-                </View>
-              </View>
-              <View
-                style={[
-                  styles.plannerCta,
-                  hasFeatureAccess("meal_plan_generation") ? styles.plannerCtaBlue : styles.plannerCtaLocked,
-                  !hasFeatureAccess("meal_plan_generation") && styles.ctaLockedOpacity,
-                ]}
-              >
-                <Text style={[styles.plannerCtaText, !hasFeatureAccess("meal_plan_generation") && styles.ctaTextLocked]}>
-                  {hasFeatureAccess("meal_plan_generation") ? t("coach.home.openPlanner") : t("coach.home.lockedOpenPlanner")}
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.plannerTile}
-              onPress={() =>
-                openOrGate(() => navigation.navigate("MonthlyWorkoutPlanner"), {
-                  feature: "workout_plan_generation",
-                  name: t("coach.home.workoutPlanner.name"),
-                  description: t("coach.home.workoutPlanner.gateDescription"),
-                  emoji: "🏆",
-                  accentColor: "#7f77dd",
-                })
-              }
-              activeOpacity={0.85}
-            >
-              <View style={styles.plannerIconOrange}>
-                <Ionicons name="trophy-outline" size={18} color={ORANGE} />
-              </View>
-              <Text style={styles.plannerTitle}>{t("coach.home.workoutPlanner.title")}</Text>
-              <Text style={styles.plannerSub}>{t("coach.home.workoutPlanner.subtitle")}</Text>
-              <View style={styles.plannerBadges}>
-                <View style={styles.eliteMiniBadge}>
-                  <Text style={styles.eliteMiniBadgeText}>{t("coach.home.eliteBadge")}</Text>
-                </View>
-                <View style={styles.newMiniBadge}>
-                  <Text style={styles.newMiniBadgeText}>{t("coach.home.newBadge")}</Text>
-                </View>
-              </View>
-              <View style={styles.miniStatGrid}>
-                <View style={styles.miniStat}>
-                  <Text style={[styles.miniStatValue, { color: ORANGE }]}>4wk</Text>
-                  <Text style={styles.miniStatLabel}>{t("coach.home.workoutPlanner.plan")}</Text>
-                </View>
-                <View style={styles.miniStat}>
-                  <Text style={[styles.miniStatValue, { color: ORANGE }]}>5x</Text>
-                  <Text style={styles.miniStatLabel}>{t("coach.home.workoutPlanner.swaps")}</Text>
-                </View>
-              </View>
-              <View
-                style={[
-                  styles.plannerCta,
-                  hasFeatureAccess("workout_plan_generation") ? styles.plannerCtaOrange : styles.plannerCtaLocked,
-                  !hasFeatureAccess("workout_plan_generation") && styles.ctaLockedOpacity,
-                ]}
-              >
-                <Text style={[styles.plannerCtaText, !hasFeatureAccess("workout_plan_generation") && styles.ctaTextLocked]}>
-                  {hasFeatureAccess("workout_plan_generation") ? t("coach.home.openPlanner") : t("coach.home.lockedOpenPlanner")}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {!hasFeatureAccess("meal_plan_generation") ? (
-            <View style={styles.upgradeBanner}>
-              <View style={styles.upgradeInfo}>
-                <Text style={styles.upgradeTitle}>{t("coach.home.unlockAll")}</Text>
-                <Text style={styles.upgradeSub}>{t("coach.home.upgradePrice")}</Text>
-              </View>
-              <TouchableOpacity
-                onPress={openSubscription}
-                style={styles.upgradeBtn}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.upgradeBtnText}>{t("coach.home.upgrade")}</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
         </View>
       </ScrollView>
 
@@ -353,7 +200,7 @@ export default function CoachHomeScreen() {
           featureDescription={gate.description}
           featureEmoji={gate.emoji}
           accentColor={gate.accentColor}
-          requiredPlan={getRequiredPlan(gate.feature)}
+          requiredPlan={getRequiredPlan(gate.feature) === "elite" ? "elite" : "pro"}
         />
       ) : null}
     </SafeAreaView>
@@ -448,17 +295,6 @@ const styles = StyleSheet.create({
   },
   sectionBadgeText: {
     color: GREEN,
-    fontSize: 10,
-    fontWeight: "900",
-  },
-  eliteBadge: {
-    backgroundColor: AMBER_BG,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  eliteBadgeText: {
-    color: AMBER_TEXT,
     fontSize: 10,
     fontWeight: "900",
   },
@@ -629,158 +465,6 @@ const styles = StyleSheet.create({
   },
   ctaTextLocked: {
     color: MUTED,
-  },
-  plannerGrid: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  plannerTile: {
-    flex: 1,
-    minWidth: 0,
-    backgroundColor: BG,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  plannerIconBlue: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: BLUE_LIGHT,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-  plannerIconOrange: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: ORANGE_LIGHT,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-  plannerTitle: {
-    color: TEXT,
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  plannerSub: {
-    color: MUTED,
-    fontSize: 10,
-    marginTop: 3,
-    marginBottom: 9,
-    fontWeight: "700",
-  },
-  plannerBadges: {
-    flexDirection: "row",
-    gap: 5,
-    marginBottom: 10,
-    flexWrap: "wrap",
-  },
-  eliteMiniBadge: {
-    backgroundColor: AMBER_BG,
-    borderRadius: 99,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  eliteMiniBadgeText: {
-    color: AMBER_TEXT,
-    fontSize: 9,
-    fontWeight: "900",
-  },
-  newMiniBadge: {
-    backgroundColor: GREEN_LIGHT,
-    borderRadius: 99,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  newMiniBadgeText: {
-    color: GREEN,
-    fontSize: 9,
-    fontWeight: "900",
-  },
-  miniStatGrid: {
-    flexDirection: "row",
-    gap: 5,
-    marginBottom: 10,
-  },
-  miniStat: {
-    flex: 1,
-    backgroundColor: WHITE,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 8,
-    paddingHorizontal: 5,
-    paddingVertical: 7,
-    alignItems: "center",
-  },
-  miniStatValue: {
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  miniStatLabel: {
-    color: MUTED,
-    fontSize: 9,
-    marginTop: 1,
-  },
-  plannerCta: {
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  plannerCtaBlue: {
-    backgroundColor: BLUE,
-  },
-  plannerCtaOrange: {
-    backgroundColor: ORANGE,
-  },
-  plannerCtaLocked: {
-    backgroundColor: WHITE,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  plannerCtaText: {
-    color: WHITE,
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  upgradeBanner: {
-    backgroundColor: "#1A1A18",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  upgradeInfo: {
-    flex: 1,
-  },
-  upgradeTitle: {
-    color: WHITE,
-    fontSize: 13,
-    fontWeight: "900",
-    marginBottom: 4,
-  },
-  upgradeSub: {
-    color: "rgba(255,255,255,0.4)",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  upgradeBtn: {
-    backgroundColor: GOLD,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  upgradeBtnText: {
-    color: "#1A1A18",
-    fontSize: 12,
-    fontWeight: "900",
   },
 });
 

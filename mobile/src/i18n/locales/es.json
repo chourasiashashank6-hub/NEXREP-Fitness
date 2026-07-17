@@ -74,7 +74,13 @@
     "weekGoal": "🏆 Meta de {{weeks}} semanas",
     "goalFooter": "{{weeks}}quedan semanas ·{{pace}}",
     "logWeightTitle": "Registrar el peso de hoy",
-    "lastLogged": "Último registro:{{weight}}kg"
+    "lastLogged": "Último registro:{{weight}}kg",
+    "todaysGoal": "META DE HOY",
+    "goalComplete": "¡Meta cumplida!",
+    "mealsLoggedToday": "🍽️ Comidas registradas hoy",
+    "sessionsDoneToday": "🔥 Sesiones de hoy",
+    "sessionBoxLabel": "Sesión",
+    "restDayNoSession": "Hoy es día de descanso 🛌 — no hay sesión programada"
   },
   "profile": {
     "alerts": {
@@ -182,15 +188,15 @@
     "selectChoice": "Seleccione la opción",
     "title": "Registro de entrenamiento 🏋️",
     "openCamera": "Abrir rastreador de cámara",
-    "sessionMilestone": "HITO DE LA SESIÓN",
-    "lastSession": "Última sesión ·{{kcal}}kcal",
-    "sessionsDenom": "/ 6 sesiones",
-    "goalSessions": "Meta: 6 sesiones",
+    "sessionMilestone": "HITO DE EJERCICIO",
+    "lastSession": "Último ejercicio · {{kcal}} kcal",
+    "sessionsDenom": "/ 6 ejercicios",
+    "goalSessions": "Meta: 6 ejercicios",
     "goalCrushed": "🎉¡Gol aplastado! + Bono{{count}}",
     "goalReached": "✓ ¡Objetivo alcanzado!",
     "moreToGo": "{{count}}más por recorrer",
     "kcalBurned": "kcalquemado",
-    "sessions": "sesiones",
+    "sessions": "ejercicios",
     "target": "objetivo",
     "burnProgress": "🔥 Progreso de grabación",
     "done": "Hecho ✓",
@@ -376,7 +382,9 @@
     "retry": "Rever",
     "loading": "Cargando...",
     "required": "Requerido",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "viewLog": "Registro",
+    "viewPlanner": "Plan"
   },
   "social": {
     "nav": {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
+import type { RouteProp } from "@react-navigation/native";
 import type { TextInputProps } from "react-native";
 import {
   ActivityIndicator,
@@ -39,11 +40,16 @@ import { loadOnboardingWithFallback } from "../api/onboarding";
 import { resolveApiBaseUrl } from "../api/client";
 import AllTimeMealHistoryModal from "../components/AllTimeMealHistoryModal";
 import { FoodCameraButton } from "../components/FoodCameraButton";
+import { LogPlannerSegment, type LogPlannerMode } from "../components/LogPlannerSegment";
+import { PlannerLockedUpsell } from "../components/PlannerLockedUpsell";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
+import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { useFoodRecognition } from "../hooks/useFoodRecognition";
 import type { FoodAnalysisResult } from "../services/foodRecognitionService";
 import { useAuthStore } from "../store/authStore";
+import type { MainTabParamList } from "../navigation/types";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
+import MonthlyMealPlannerScreen from "./Coach/MonthlyMealPlannerScreen";
 
 type BurnProfile = {
   name: string;
@@ -354,6 +360,11 @@ export const CalorieLog = () => {
   const { t, i18n: i18nInstance } = useTranslation();
   const catalogLanguage = i18nInstance.resolvedLanguage || i18nInstance.language;
   const token = useAuthStore((s) => s.token);
+  const route = useRoute<RouteProp<MainTabParamList, "Calories">>();
+  const { hasFeatureAccess } = useFeatureAccess();
+  const hasMealPlannerAccess = hasFeatureAccess("meal_plan_generation");
+  const [viewMode, setViewMode] = useState<LogPlannerMode>("log");
+  const [plannerMounted, setPlannerMounted] = useState(false);
   const { data: onboardingData } = useOnboardingContext();
   const dietType = (onboardingData?.dietary?.diet_type ?? "none").toLowerCase().trim();
   const visibleQuickFoods = QUICK_FOODS.filter((q) => {
@@ -443,6 +454,21 @@ export const CalorieLog = () => {
     }, [loadTargets]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      const view = route.params?.view;
+      if (view === "planner" || view === "log") {
+        setViewMode(view);
+        if (view === "planner") setPlannerMounted(true);
+      }
+    }, [route.params?.view]),
+  );
+
+  const selectViewMode = useCallback((mode: LogPlannerMode) => {
+    setViewMode(mode);
+    if (mode === "planner") setPlannerMounted(true);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -492,8 +518,8 @@ export const CalorieLog = () => {
     };
   }, [qtyN, cal100N, p100N, c100N, f100N, fi100N, inputMode]);
 
-  const waterTotal = day?.water.total_water_l ?? 0;
-  const waterTarget = day?.log.target_water_l ?? 2.5;
+  const waterTotal = day?.water?.total_water_l ?? 0;
+  const waterTarget = day?.log?.target_water_l ?? 2.5;
   const glassCount = Math.max(1, Math.round(waterTarget / 0.25));
   const waterPct = waterTarget > 0 ? Math.min(100, (waterTotal / waterTarget) * 100) : 0;
 
@@ -805,40 +831,13 @@ export const CalorieLog = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-        <View style={styles.center}>
-          <ActivityIndicator color={GREEN} size="large" />
-          <Text style={styles.loadingText}>{t("calorieLog.loading")}</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (loadError || !day) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Text style={styles.pageTitle}>{t("calorieLog.title")}</Text>
-          <Text style={styles.errorText}>{loadError ?? t("calorieLog.alerts.generic")}</Text>
-          <Pressable
-            style={styles.retryBtn}
-            onPress={() => {
-              invalidateCaloriesRoutePrefix();
-              setReloadToken((n) => n + 1);
-            }}
-          >
-            <Text style={styles.retryBtnText}>{t("calorieLog.retry")}</Text>
-          </Pressable>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  const { log, macro_split_label } = day;
-  const fiberConsumed = Number((log as Record<string, unknown>).total_fiber_g ?? 0);
-  const fiberTarget = Number((log as Record<string, unknown>).target_fiber_g ?? targets?.macros?.fiber_g ?? 0);
+  const showLogContent = !loading && Boolean(day) && !loadError;
+  const log = day?.log;
+  const macro_split_label = day?.macro_split_label ?? "";
+  const fiberConsumed = Number((log as Record<string, unknown> | undefined)?.total_fiber_g ?? 0);
+  const fiberTarget = Number(
+    (log as Record<string, unknown> | undefined)?.target_fiber_g ?? targets?.macros?.fiber_g ?? 0,
+  );
   // Match Home: live Mifflin plan overrides the persisted calorie-log target.
   const burnPlan = burnProfile
     ? computeUserCaloriePlan({
@@ -848,17 +847,42 @@ export const CalorieLog = () => {
     : null;
   const dailyGoal = Math.max(
     1,
-    Math.round(Number(burnPlan?.dailyCalorieTarget ?? log.target_calories) || 1800),
+    Math.round(Number(burnPlan?.dailyCalorieTarget ?? log?.target_calories) || 1800),
   );
-  const eatenToday = Number(log.total_calories) || 0;
+  const eatenToday = Number(log?.total_calories) || 0;
   const remaining = dailyGoal - eatenToday;
   const remainingColor = remaining > 0 ? GREEN : remaining < 0 ? ORANGE : MUTED;
   const caloriePct = dailyGoal > 0 ? clamp(eatenToday / dailyGoal, 0, 1) * 100 : 0;
   const macroSplit = parseMacroSplit(macro_split_label);
-  const totalGlasses = Math.round(log.target_water_l / 0.25);
+  const totalGlasses = Math.round((log?.target_water_l ?? 0) / 0.25);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <View style={styles.chrome}>
+        <Text style={styles.pageTitle}>{t("calorieLog.title")}</Text>
+        <LogPlannerSegment mode={viewMode} onChange={selectViewMode} />
+      </View>
+
+      <View style={[styles.modePanel, viewMode !== "log" && styles.modePanelHidden]} pointerEvents={viewMode === "log" ? "auto" : "none"}>
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={GREEN} size="large" />
+            <Text style={styles.loadingText}>{t("calorieLog.loading")}</Text>
+          </View>
+        ) : !showLogContent || !log || !day ? (
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <Text style={styles.errorText}>{loadError ?? t("calorieLog.alerts.generic")}</Text>
+            <Pressable
+              style={styles.retryBtn}
+              onPress={() => {
+                invalidateCaloriesRoutePrefix();
+                setReloadToken((n) => n + 1);
+              }}
+            >
+              <Text style={styles.retryBtnText}>{t("calorieLog.retry")}</Text>
+            </Pressable>
+          </ScrollView>
+        ) : (
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -866,8 +890,6 @@ export const CalorieLog = () => {
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="on-drag"
       >
-        <Text style={styles.pageTitle}>{t("calorieLog.title")}</Text>
-
         <View style={styles.card}>
           <View style={styles.calorieHeroRow}>
             <View style={styles.calorieHeroLeft}>
@@ -1217,6 +1239,27 @@ export const CalorieLog = () => {
           )}
         </View>
       </ScrollView>
+        )}
+      </View>
+
+      <View
+        style={[styles.modePanel, viewMode !== "planner" && styles.modePanelHidden]}
+        pointerEvents={viewMode === "planner" ? "auto" : "none"}
+      >
+        {plannerMounted ? (
+          hasMealPlannerAccess ? (
+            <MonthlyMealPlannerScreen embedded />
+          ) : (
+            <PlannerLockedUpsell
+              feature="meal_plan_generation"
+              featureName={t("coach.home.mealPlanner.name")}
+              featureDescription={t("coach.home.mealPlanner.gateDescription")}
+              featureEmoji="📅"
+              accentColor="#378add"
+            />
+          )
+        ) : null}
+      </View>
 
       <Modal visible={mealPickerOpen} transparent animationType="fade">
         <Pressable style={styles.modalBackdrop} onPress={() => setMealPickerOpen(false)}>
@@ -1284,11 +1327,14 @@ export const CalorieLog = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: SCREEN_BG },
+  chrome: { paddingHorizontal: 16, paddingTop: 4, maxWidth: 860, width: "100%", alignSelf: "center" },
+  modePanel: { flex: 1 },
+  modePanelHidden: { display: "none" },
   scroll: { flex: 1, backgroundColor: SCREEN_BG },
   scrollContent: { padding: 16, paddingBottom: 40, maxWidth: 860, width: "100%", alignSelf: "center" },
   center: { flex: 1, minHeight: 200, alignItems: "center", justifyContent: "center", backgroundColor: SCREEN_BG },
   loadingText: { color: MUTED, marginTop: 12, fontSize: 14 },
-  pageTitle: { color: TEXT, fontSize: 25, fontWeight: "800", marginBottom: 16 },
+  pageTitle: { color: TEXT, fontSize: 25, fontWeight: "800", marginBottom: 12 },
   errorText: { color: MUTED, fontSize: 15, lineHeight: 22, marginTop: 12, marginBottom: 20 },
   retryBtn: {
     alignSelf: "flex-start",

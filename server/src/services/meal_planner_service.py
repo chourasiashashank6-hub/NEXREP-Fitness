@@ -516,11 +516,11 @@ def _build_daily_meal_entry(plan_id: int, day_data: dict[str, Any], ctx: dict[st
 
 def get_user_nutrition_targets(db: Session, user: User) -> dict[str, int | float]:
     """
-    Nutrition targets from the same source as Calorie Log (resolve_user_targets).
+    Same targets Calorie Log displays (Mifflin kcal + resolve macros/fibre/water).
     """
-    from src.routes.calories import resolve_user_targets
+    from src.services.calorie_log_targets import get_calorie_log_targets
 
-    resolved = resolve_user_targets(db, user)
+    resolved = get_calorie_log_targets(db, user)
     target_kcal = int(resolved.get("target_calories") or 0)
     protein_g = int(float(resolved.get("target_protein_g") or 0))
     carbs_g = int(float(resolved.get("target_carbs_g") or 0))
@@ -541,12 +541,13 @@ def get_user_nutrition_targets(db: Session, user: User) -> dict[str, int | float
         "water_target_l": water_l,
     }
     logger.info(
-        "[MealPlanner] resolve_user_targets for user %s: kcal=%s, P=%sg, C=%sg, F=%sg",
+        "[MealPlanner] calorie_log_targets for user %s: kcal=%s, P=%sg, C=%sg, F=%sg, Fi=%sg",
         user.id,
         target_kcal,
         protein_g,
         carbs_g,
         fat_g,
+        fiber_g,
     )
     return out
 

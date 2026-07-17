@@ -18,7 +18,7 @@ export function CoachPlannerEntryCards({ navigation }: { navigation: Nav }) {
     <>
       <Pressable
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}
-        onPress={() => navigation.navigate("MonthlyMealPlanner")}
+        onPress={() => navigation.getParent()?.navigate("Calories", { view: "planner" })}
       >
         <View style={styles.badgeWrap}>
           <LinearGradient colors={["#f97316", "#ec4899"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badge}>
@@ -32,7 +32,7 @@ export function CoachPlannerEntryCards({ navigation }: { navigation: Nav }) {
 
       <Pressable
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: radius.lg }]}
-        onPress={() => navigation.navigate("MonthlyWorkoutPlanner")}
+        onPress={() => navigation.getParent()?.navigate("Workout", { view: "planner" })}
       >
         <View style={styles.badgeWrap}>
           <LinearGradient colors={["#f97316", "#ec4899"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badge}>

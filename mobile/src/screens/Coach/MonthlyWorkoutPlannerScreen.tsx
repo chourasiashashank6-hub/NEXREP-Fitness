@@ -250,7 +250,12 @@ const LOADING_MSGS = [
   i18n.t("coach.workoutPlannerScreen.loadingMessages.cues"),
 ];
 
-export default function MonthlyWorkoutPlannerScreen() {
+type Props = {
+  /** When true, hide back button and nest safely inside Log tab. */
+  embedded?: boolean;
+};
+
+export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props) {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
   const now = new Date();
@@ -633,7 +638,7 @@ export default function MonthlyWorkoutPlannerScreen() {
   const showFocusBadge = activeFocusMuscles.length > 0;
   if (loading) {
     return (
-      <ScreenContainer bg={SCREEN_BG} contentStyle={styles.loadingContent}>
+      <ScreenContainer bg={SCREEN_BG} embedded={embedded} contentStyle={styles.loadingContent}>
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={ORANGE} />
           <Text style={styles.loadingText}>{t("coach.workoutPlannerScreen.loading")}</Text>
@@ -643,11 +648,13 @@ export default function MonthlyWorkoutPlannerScreen() {
   }
 
   return (
-    <ScreenContainer bg={SCREEN_BG}>
+    <ScreenContainer bg={SCREEN_BG} embedded={embedded}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>←</Text>
-        </Pressable>
+        {!embedded ? (
+          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={styles.backBtnText}>←</Text>
+          </Pressable>
+        ) : null}
         <View style={styles.headerTitleBlock}>
           <Text style={styles.title}>{t("coach.workoutPlannerScreen.title")}</Text>
           <Text style={styles.sub}>{headerTitle}</Text>
