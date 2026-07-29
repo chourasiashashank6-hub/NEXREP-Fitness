@@ -38,6 +38,7 @@ import type { AiRepEvent } from "../data/aiTrainer/types";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 import {
   sharedAudioCoach,
+  speakBypassTestAudio,
   speakTestUtterance,
   speechLocaleForAppLang,
   unlockWebSpeech,
@@ -1269,7 +1270,8 @@ export default function AICameraWorkoutScreen() {
             <Pressable
               style={styles.enableAudioBanner}
               onPress={() => {
-                unlockWebSpeech();
+                console.log("[TestAudio] enable-audio banner clicked");
+                // Sync speak in the same gesture — marks unlocked
                 speakTestUtterance("Coach audio is on");
               }}
             >
@@ -1283,8 +1285,15 @@ export default function AICameraWorkoutScreen() {
             <Pressable
               style={styles.testAudioBtn}
               onPress={() => {
-                unlockWebSpeech();
-                speakTestUtterance("Test audio one two three");
+                console.log("[TestAudio] button clicked");
+                console.log("[TestAudio] platform check", Platform.OS);
+                // Module-held utterance + onstart/onend/onerror + speaking polls
+                // (Chrome can GC a local SpeechSynthesisUtterance → silent speak).
+                const ok = speakBypassTestAudio("bypass test");
+                if (!ok) {
+                  console.warn("[TestAudio] raw synth missing — falling back to speakTestUtterance");
+                  speakTestUtterance("Test audio one two three");
+                }
               }}
             >
               <Text style={styles.testAudioTxt}>Test Audio</Text>

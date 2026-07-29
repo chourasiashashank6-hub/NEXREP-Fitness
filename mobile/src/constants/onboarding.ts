@@ -48,11 +48,11 @@ export const DEFAULT_ONBOARDING_DATA: OnboardingData = {
   activity: {
     level: null,
     workouts_per_week: null,
+    tdee_multiplier: null,
     workout_types: [],
   },
   dietary: {
     diet_type: "standard",
-    regional_food_styles: [],
     allergies: [],
     meals_per_day: 3,
   },
@@ -84,3 +84,44 @@ export const ACTIVITY_MULTIPLIERS: Record<string, number> = {
   very_active: 1.725,
   extremely_active: 1.9,
 };
+
+/** Piecewise-linear TDEE anchors (workouts/week → Mifflin activity factor). */
+const TDEE_ANCHORS: [number, number][] = [
+  [0, 1.2],
+  [1.5, 1.375],
+  [3.5, 1.55],
+  [5.5, 1.725],
+  [14, 1.9],
+];
+
+/** Keep in sync with server/src/services/calorie_log_targets.py */
+export function getTdeeMultiplier(workoutsPerWeek: number): number {
+  for (let i = 0; i < TDEE_ANCHORS.length - 1; i++) {
+    const [x0, y0] = TDEE_ANCHORS[i];
+    const [x1, y1] = TDEE_ANCHORS[i + 1];
+    if (x0 <= workoutsPerWeek && workoutsPerWeek <= x1) {
+      const t = (workoutsPerWeek - x0) / (x1 - x0);
+      return Math.round((y0 + t * (y1 - y0)) * 100) / 100;
+    }
+  }
+  if (workoutsPerWeek > TDEE_ANCHORS[TDEE_ANCHORS.length - 1][0]) {
+    return TDEE_ANCHORS[TDEE_ANCHORS.length - 1][1];
+  }
+  return TDEE_ANCHORS[0][1];
+}
+
+/** Keep in sync with server/src/services/calorie_log_targets.py */
+export function getActivityLevel(workoutsPerWeek: number): import("../types/onboarding").ActivityLevel {
+  if (workoutsPerWeek <= 0) return "sedentary";
+  if (workoutsPerWeek <= 2) return "lightly_active";
+  if (workoutsPerWeek <= 4) return "moderately_active";
+  if (workoutsPerWeek <= 6) return "very_active";
+  return "extremely_active";
+}
+
+export const WORKOUTS_PER_WEEK_MIN = 0;
+export const WORKOUTS_PER_WEEK_MAX = 14;
+
+/** Per-meal kcal bounds for meals-per-day picker (Screen 4). */
+export const MIN_KCAL_PER_MEAL = 350;
+export const MAX_KCAL_PER_MEAL = 1000;

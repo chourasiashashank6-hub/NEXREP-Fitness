@@ -21,6 +21,8 @@ type Props = {
   dailyCalorieTarget: number;
   caloriesBurnedToday: number;
   dailyBurnTarget: number;
+  /** Elite + generated plan + today rest — ring is eat-only with caption. */
+  restDayActive?: boolean;
   size?: number;
 };
 
@@ -29,6 +31,7 @@ export function TodaysGoalRing({
   dailyCalorieTarget,
   caloriesBurnedToday,
   dailyBurnTarget,
+  restDayActive = false,
   size = DEFAULT_SIZE,
 }: Props) {
   const { t } = useTranslation();
@@ -37,6 +40,7 @@ export function TodaysGoalRing({
     dailyCalorieTarget,
     caloriesBurnedToday,
     dailyBurnTarget,
+    { restDayActive },
   );
 
   const radius = (size - STROKE) / 2;
@@ -84,9 +88,14 @@ export function TodaysGoalRing({
             <Text style={[styles.completeText, { fontSize: completeSize }]}>{t("home.goalComplete")}</Text>
           </>
         ) : (
-          <Text style={[styles.ringCenterValue, { fontSize: valueSize, lineHeight: valueSize + 4 }]}>
-            {percent}%
-          </Text>
+          <>
+            <Text style={[styles.ringCenterValue, { fontSize: valueSize, lineHeight: valueSize + 4 }]}>
+              {percent}%
+            </Text>
+            {restDayActive ? (
+              <Text style={styles.eatingOnlyCaption}>{t("home.eatingOnly")}</Text>
+            ) : null}
+          </>
         )}
       </View>
     </View>
@@ -123,5 +132,12 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: GREEN,
     textAlign: "center",
+  },
+  eatingOnlyCaption: {
+    marginTop: 2,
+    fontSize: 10,
+    fontWeight: "600",
+    color: TEXT_MUTED,
+    letterSpacing: 0.3,
   },
 });

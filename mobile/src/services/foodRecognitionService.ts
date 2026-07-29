@@ -113,6 +113,12 @@ export const analyzeFoodImageWithGroq = async ({
         break;
       } catch (error) {
         lastError = error;
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        // Only try alternate prefix when route may be missing. For provider 5xx/429
+        // errors, repeating the same request doubles quota burn without helping.
+        if (status && status !== 404 && status !== 405) {
+          break;
+        }
       }
     }
 

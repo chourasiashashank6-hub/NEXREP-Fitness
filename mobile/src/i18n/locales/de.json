@@ -60,6 +60,8 @@
     "logAction": "Loggen →",
     "toEat": "zu essen",
     "toBurn": "brennen",
+    "eatingOnly": "nur Essen",
+    "restDayNoBurn": "Ruhetag — kein Verbrennungsziel",
     "tdee": "TDEE",
     "tdeeFull": "Gesamter täglicher Energieaufwand",
     "tdeeDescription": "Kalorien, die dein Körper täglich in Ruhe + Aktivität verbrennt.",
@@ -384,7 +386,8 @@
     "required": "Erforderlich",
     "close": "Schließen",
     "viewLog": "Log",
-    "viewPlanner": "Planer"
+    "viewPlanner": "Planer",
+    "and": "and"
   },
   "social": {
     "nav": {
@@ -934,18 +937,17 @@
       "eliteBenefitsTitle": "Was du mit Elite bekommen",
       "proBenefitsTitle": "Was du mit Pro bekommen",
       "eliteBenefits": [
-        "Monatliche Essens- und Trainingsplaner",
         "Unbegrenzter KI-Austausch und tägliche Regenerationen",
         "Alles in Pro enthalten",
         "Zugang zum Personal Trainer",
         "Vorrangiger Support rund um die Uhr"
       ],
       "proBenefits": [
+        "Monatliche Essens- und Trainingsplaner",
         "Alle 4 KI-Coaching-Funktionen freigeschaltet",
         "Kalorienscanner für Lebensmittelfotos",
         "KI-Posenführung + Wiederholungszähler",
-        "Kalorien- und Trainings-KI-Trainer",
-        "5 KI-Swaps pro Tag"
+        "Kalorien- und Trainings-KI-Trainer"
       ],
       "elitePricePrefix": "Elite von",
       "proPricePrefix": "Pro von",
@@ -1201,6 +1203,7 @@
           "analytics": "Fortschrittsanalysen und Diagramme",
           "guidedPlans": "Über 100 geführte Trainingspläne",
           "nutritionTracker": "Ernährungs-Tracker",
+          "monthlyPlanners": "Monatliche Essens- und Trainingsplaner",
           "trainerAccess": "Zugang zum Personal Trainer",
           "customMealPlans": "Individuelle Speisepläne",
           "prioritySupport": "Vorrangiger Support"
@@ -1828,8 +1831,14 @@
         "allMonthRegensUsed": "Du hast alle monatlichen Planregenerationen genutzt. Setzt {{resetDate}} zurück.",
         "monthPlanRegenerated": "Monatsplan neu generiert!",
         "monthPlanLimitReset": "Monatsplanlimit erreicht. Setzt {{resetDate}} zurück.",
-        "monthPlanRegenerateFailed": "Der Plan konnte nicht neu generiert werden. Bitte versuch es erneut."
-      }
+        "monthPlanRegenerateFailed": "Der Plan konnte nicht neu generiert werden. Bitte versuch es erneut.",
+        "logExerciseFailed": "Could not update Workout Log. Try again.",
+        "swapLockedTitle": "Exercise already logged",
+        "swapLockedBody": "Can't swap an exercise you've already logged — remove the log first."
+      },
+      "loggedBadge": "Logged",
+      "logExercise": "Log this exercise to Workout Log",
+      "unlogExercise": "Remove from Workout Log"
     },
     "mealPlannerScreen": {
       "budgets": {
@@ -1949,8 +1958,11 @@
       "weightLb": "Bitte gib das Gewicht (lb) auf Bildschirm 1 ein.",
       "goal": "Bitte wähle auf Bildschirm 2 ein Ziel aus.",
       "difficulty": "Bitte wähle den Schwierigkeitsgrad auf Bildschirm 2 aus.",
+      "goalPace": "Bitte wähle das Zieltempo auf Bildschirm 2 aus.",
+      "targetWeight": "Bitte wähle das Zielgewicht auf Bildschirm 2 aus.",
       "activity": "Bitte wähle die Aktivitätsstufe auf Bildschirm 3 aus.",
-      "regionalFood": "Bitte wähle auf Bildschirm 4 mindestens einen regionalen Lebensmittelstil aus."
+      "workoutsPerWeek": "Bitte wähle die Trainings pro Woche auf Bildschirm 3 aus.",
+      "dietType": "Bitte wähle den Ernährungstyp auf Bildschirm 4 aus."
     },
     "focusMuscles": {
       "balancedHint": "Ausgewogen – alle Muskelgruppen werden gleichermaßen trainiert",
@@ -2027,16 +2039,6 @@
         "intermittentFasting": "Intermittierendes Fasten",
         "halal": "Halal",
         "jain": "Jain"
-      },
-      "regionalFoods": {
-        "northIndian": "Nordindisch",
-        "southIndian": "Südindisch",
-        "rajasthani": "Rajasthani",
-        "punjabi": "Punjabi",
-        "gujarati": "Gujarati",
-        "bengali": "Bengali",
-        "maharashtrian": "Maharashtrian",
-        "noPreference": "Keine Präferenz / Pan-Indisch"
       },
       "meals": {
         "one": "1 Mahlzeit",
@@ -2142,16 +2144,14 @@
       "subtitle": "Für die Kalorienberechnung nicht erforderlich, aber für den KI-Trainer von entscheidender Bedeutung, um relevante Ernährungsvorschläge zu geben. Bleib locker – maximal 3 Fragen.",
       "dietType": "Diättyp",
       "noPreference": "Keine Präferenz",
-      "regionalFoodStyle": "Regionaler Essensstil",
       "requiredHint": "* erforderlich",
-      "regionalHelper": "Wird vom KI-Speiseplaner verwendet, um Gerichte zu empfehlen, die dir tatsächlich schmecken",
       "selectedCount": "{{count}} ausgewählt",
       "selectOneOrMore": "Wähle eine oder mehrere aus",
       "allergies": "Nahrungsmittelallergien/-unverträglichkeiten",
       "mealsPerDay": "Mahlzeiten pro Tag",
       "mealsPlaceholder": "3 Mahlzeiten",
       "errors": {
-        "regionalRequired": "Bitte wähle mindestens eine Option aus"
+        "dietTypeRequired": "Ernährungstyp ist erforderlich"
       }
     },
     "screen5": {
@@ -2397,5 +2397,43 @@
     "cal_skip": "Vorerst überspringen",
     "calibrate_banner": "Für Genauigkeit kalibrieren",
     "calibrate_profile": "KI-Trainer-Kalibrierung"
+  },
+  "stalePlan": {
+    "bannerTitle": "Your plan may be outdated",
+    "bannerBody": "Your {{fields}} changed since this plan was generated. Regenerate to get accurate recommendations.",
+    "regenerate": "Regenerate",
+    "modalTitle": "Regenerate affected plans?",
+    "modalBodyOne": "Your {{fields}} changed. This affects your {{planners}} — regenerating will update it with your latest profile.",
+    "modalBodyTwo": "Your {{fields}} changed. This affects your {{planners}} — regenerating will update them with your latest profile.",
+    "regenerateNow": "Regenerate now",
+    "doItLater": "I'll do it later",
+    "regenerating": "Regenerating...",
+    "regenerated": "Plan regenerated successfully",
+    "regenerateFailed": "Could not regenerate plan. Try again.",
+    "planners": {
+      "meal": "Meal Planner",
+      "workout": "Workout Planner"
+    },
+    "fields": {
+      "age": "age",
+      "biological_sex": "biological sex",
+      "height_cm": "height",
+      "current_weight_kg": "current weight",
+      "primary_goal": "primary goal",
+      "goal_pace": "goal pace",
+      "target_weight_kg": "target weight",
+      "daily_activity_level": "activity level",
+      "diet_type": "diet type",
+      "food_allergies": "food allergies",
+      "meals_per_day": "meals per day",
+      "difficulty": "difficulty",
+      "body_type_current": "current body type",
+      "body_type_goal": "goal body type",
+      "body_type_problem_areas": "problem areas",
+      "workouts_per_week": "workouts per week",
+      "workout_types": "workout types",
+      "muscle_focus": "muscle focus",
+      "legacyProfile": "profile"
+    }
   }
 }

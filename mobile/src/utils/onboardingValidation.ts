@@ -18,8 +18,17 @@ export function validateOnboardingForSave(data: OnboardingData): string | null {
 
   if (!goal.type) return i18n.t("onboarding.validation.goal");
   if (!goal.difficulty) return i18n.t("onboarding.validation.difficulty");
-  if (!activity.level) return i18n.t("onboarding.validation.activity");
-  if (!dietary.regional_food_styles?.length) return i18n.t("onboarding.validation.regionalFood");
+  if ((goal.type === "fat_loss" || goal.type === "muscle_gain") && !goal.pace) {
+    return i18n.t("onboarding.validation.goalPace");
+  }
+  if (goal.type === "fat_loss" || goal.type === "muscle_gain") {
+    const targetWeight = personal.unit_system === "metric" ? goal.target_weight_kg : goal.target_weight_lb;
+    if (targetWeight == null || targetWeight <= 0) return i18n.t("onboarding.validation.targetWeight");
+  }
+  if (activity.workouts_per_week == null || activity.workouts_per_week < 1) {
+    return i18n.t("onboarding.validation.workoutsPerWeek");
+  }
+  if (!String(dietary.diet_type || "").trim()) return i18n.t("onboarding.validation.dietType");
 
   return null;
 }

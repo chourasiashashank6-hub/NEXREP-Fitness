@@ -63,6 +63,7 @@ from src.services.food_catalog_service import ensure_food_catalog_schema, load_f
 from src.services.global_exercises_service import load_global_exercises_if_empty
 from src.services.workout_catalog_service import load_workout_catalog_if_empty
 from src.services.score_service import compute_discipline_score
+from src.services.calorie_log_targets import get_activity_level, get_tdee_multiplier
 from src.services.notification_service import (
     send_push_to_user,
     start_notification_scheduler,
@@ -1160,40 +1161,58 @@ def _groq_workout_coach(
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY missing on server")
 
-    model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
-    try:
-        raw = post_json(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                "Accept": "application/json",
-                "User-Agent": "fitness-workout-coach/1.0",
-            },
-            payload={
-                "model": model_name,
-                "temperature": 0.3,
-                "max_tokens": 1200,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": WORKOUT_COACH_SYSTEM_PROMPT + ai_language_instruction(preferred_language)},
-                    {"role": "user", "content": json.dumps(payload)},
-                ],
-            },
-            timeout=60,
-        )
+    model_candidates = [
+        (settings.GROQ_MODEL or "").strip(),
+        "llama-3.3-70b-versatile",
+    ]
+    model_candidates = [m for i, m in enumerate(model_candidates) if m and m not in model_candidates[:i]]
+    model_name = model_candidates[0] if model_candidates else "llama-3.3-70b-versatile"
+    raw: dict[str, Any] | None = None
+    for model_name in model_candidates[:2]:
         try:
-            log_groq_call(
-                user_id=user_id,
-                feature="workout_coach",
-                model=model_name,
-                endpoint="/workout/coach/insight",
-                response_json=raw,
+            raw = post_json(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                    "Accept": "application/json",
+                    "User-Agent": "fitness-workout-coach/1.0",
+                },
+                payload={
+                    "model": model_name,
+                    "temperature": 0.3,
+                    "max_tokens": 1200,
+                    "response_format": {"type": "json_object"},
+                    "messages": [
+                        {"role": "system", "content": WORKOUT_COACH_SYSTEM_PROMPT + ai_language_instruction(preferred_language)},
+                        {"role": "user", "content": json.dumps(payload)},
+                    ],
+                },
+                timeout=30,
             )
-        except Exception:
-            pass
-    except ExternalHTTPError as e:
-        raise RuntimeError(f"Groq HTTP {e.status_code}: {e.body[:260]}") from e
+            break
+        except ExternalHTTPError as e:
+            lower = (e.body or "").lower()
+            if e.status_code in (400, 404) and (
+                "decommissioned" in lower
+                or "no longer supported" in lower
+                or "model_not_found" in lower
+                or "not found" in lower
+            ):
+                continue
+            raise RuntimeError(f"Groq HTTP {e.status_code}: {e.body[:260]}") from e
+    if raw is None:
+        raise RuntimeError("No compatible Groq model available for workout coach")
+    try:
+        log_groq_call(
+            user_id=user_id,
+            feature="workout_coach",
+            model=model_name,
+            endpoint="/workout/coach/insight",
+            response_json=raw,
+        )
+    except Exception:
+        pass
 
     content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
     if not content:
@@ -1389,28 +1408,30 @@ def _normalize_onboarding_canonical_choices(onboarding: dict) -> None:
         "soy": "soy",
         "shellfish": "shellfish",
     }
-    regional_aliases = {
-        "north_indian": "north_indian",
-        "south_indian": "south_indian",
-        "rajasthani": "rajasthani",
-        "punjabi": "punjabi",
-        "gujarati": "gujarati",
-        "bengali": "bengali",
-        "maharashtrian": "maharashtrian",
-        "no_preference": "no_preference",
-        "no_preference_pan_indian": "no_preference",
-        "pan_indian": "no_preference",
-    }
     if isinstance(activity, dict):
         activity["workout_types"] = _canonicalize_choice_list(activity.get("workout_types"), workout_aliases)
         onboarding["activity"] = activity
     if isinstance(dietary, dict):
         dietary["allergies"] = _canonicalize_choice_list(dietary.get("allergies"), allergy_aliases)
-        regional_food_styles = _canonicalize_choice_list(dietary.get("regional_food_styles"), regional_aliases)
-        if "no_preference" in regional_food_styles:
-            regional_food_styles = ["no_preference"]
-        dietary["regional_food_styles"] = regional_food_styles
+        # Regional food styles are no longer used by the meal planner; stop persisting them.
+        dietary.pop("regional_food_styles", None)
         onboarding["dietary"] = dietary
+
+
+def _derive_activity_from_workouts(onboarding: dict) -> None:
+    """Recompute activity.level and tdee_multiplier from workouts_per_week (server source of truth)."""
+    activity = onboarding.get("activity") if isinstance(onboarding.get("activity"), dict) else {}
+    wpw = activity.get("workouts_per_week")
+    if wpw is None:
+        return
+    try:
+        wpw_int = int(wpw)
+    except (TypeError, ValueError):
+        return
+    activity["workouts_per_week"] = wpw_int
+    activity["level"] = get_activity_level(wpw_int)
+    activity["tdee_multiplier"] = get_tdee_multiplier(float(wpw_int))
+    onboarding["activity"] = activity
 
 
 def _strength_weeks_left(goal: dict) -> int | None:
@@ -1836,6 +1857,7 @@ def put_my_onboarding(
         raise HTTPException(status_code=422, detail="Invalid payload")
     _normalize_onboarding_canonical_choices(payload.onboarding)
     _normalize_target_lifts(payload.onboarding, db)
+    _derive_activity_from_workouts(payload.onboarding)
     apply_onboarding_personal_to_user(current_user, payload.onboarding)
     row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
 
@@ -2422,10 +2444,12 @@ def workout_coach_insight(
     _, target_weekly_sets_default = _weekly_target_context(db, current_user.id)
     payload = body if isinstance(body, dict) else {}
     workout_data = payload.get("workoutData") if isinstance(payload.get("workoutData"), dict) else {}
+    preferred_language = current_user.preferred_language
+    user_id = current_user.id
     if not workout_data:
         recent = (
             db.query(Workout)
-            .filter(Workout.user_id == current_user.id)
+            .filter(Workout.user_id == user_id)
             .order_by(Workout.date.desc())
             .limit(30)
             .all()
@@ -2446,12 +2470,16 @@ def workout_coach_insight(
             "totalWeeklySets": int(sum((i.sets or 0) for i in recent)),
             "targetWeeklySets": target_weekly_sets_default,
         }
+    # Free the pooled connection before Groq HTTP (can take ~60s).
+    from src.db.session import release_db_connection
+
+    release_db_connection(db)
     try:
         return _groq_workout_coach(
             workout_data,
-            user_id=current_user.id,
+            user_id=user_id,
             target_weekly_sets_default=target_weekly_sets_default,
-            preferred_language=current_user.preferred_language,
+            preferred_language=preferred_language,
         )
     except Exception:
         return _fallback_workout_coach(workout_data, target_weekly_sets_default=target_weekly_sets_default)

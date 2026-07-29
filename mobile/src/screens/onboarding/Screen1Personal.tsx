@@ -3,8 +3,9 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
+import { StalePlanModal } from "../../components/StalePlanModal";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
-import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
+import { useOnboardingStalePlanCheck } from "../../hooks/useOnboardingStalePlanCheck";
 import { AGE_OPTIONS, getImperialHeightOptions, getImperialWeightOptions, getMetricHeightOptions, getMetricWeightOptions, SEX_OPTIONS } from "../../utils/onboardingOptions";
 import { cmToIn, inToCm, kgToLb, lbToKg, roundToNearest } from "../../utils/units";
 
@@ -28,7 +29,7 @@ const SCREEN_BG = "#FFFFFF";
 export default function Screen1Personal({ navigation }: any) {
   const { t } = useTranslation();
   const { data, updatePersonal } = useOnboardingContext();
-  const { saveAndExit, saving } = useOnboardingSaveAndExit();
+  const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const heightOptions = useMemo(
@@ -74,6 +75,7 @@ export default function Screen1Personal({ navigation }: any) {
   const selectedWeight = data.personal.unit_system === "metric" ? data.personal.weight_kg : data.personal.weight_lb;
 
   return (
+    <>
     <OnboardingLayout
       step={1}
       title={t("onboarding.screen1.title")}
@@ -147,6 +149,8 @@ export default function Screen1Personal({ navigation }: any) {
         />
       </FieldCard>
     </OnboardingLayout>
+    <StalePlanModal {...modalProps} />
+    </>
   );
 }
 

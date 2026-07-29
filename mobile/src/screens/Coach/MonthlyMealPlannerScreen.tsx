@@ -27,6 +27,7 @@ import {
   generateMealPlan,
   generateWeekPlan,
   regenerateMealPlanDay,
+  regenerateWeek,
   swapMealPlanMeal,
 } from "../../api/mealPlanner";
 import {
@@ -38,6 +39,7 @@ import {
 } from "../../api/caloriesLog";
 import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
+import { StalePlanBanner } from "../../components/StalePlanBanner";
 import { MEAL_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { auth } from "../../services/authService";
@@ -299,6 +301,8 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
   const [recipeSheetMeal, setRecipeSheetMeal] = useState<MealPlanMeal | null>(null);
   const [loggedMealIds, setLoggedMealIds] = useState<Record<string, number>>({});
   const [loggingMealKey, setLoggingMealKey] = useState<string | null>(null);
+  const [staleFields, setStaleFields] = useState<string[]>([]);
+  const [isRegeneratingStale, setIsRegeneratingStale] = useState(false);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const signedInEmail = String(auth.currentUser?.email || "")
     .trim()
@@ -457,6 +461,11 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
       }
     })();
   }, []);
+
+  // Derive stale fields from the plan response (server computes this).
+  useEffect(() => {
+    setStaleFields(plan?.stale_fields ?? []);
+  }, [plan]);
 
   useEffect(() => {
     if (!plan) {
@@ -805,6 +814,26 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
     return fallback;
   };
 
+  const handleRegenerateStale = async () => {
+    if (!plan || selectedWeekStart == null) return;
+    setIsRegeneratingStale(true);
+    try {
+      // Soft generate-week skips rebuild when the week already exists; use force regen
+      // so meals refresh AND onboarding_snapshot_json is rewritten (clears banner).
+      const fromDay = Math.max(selectedWeekStart, now.getDate());
+      const created = await regenerateWeek(selectedWeekStart, fromDay);
+      lastDayFetchRef.current = null;
+      setPlan(created);
+      setStaleFields(created.stale_fields ?? []);
+      syncRegenStats(created, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+      notifyUser(t("stalePlan.regenerated"), t("stalePlan.regenerated"));
+    } catch {
+      Alert.alert(t("common.error"), t("stalePlan.regenerateFailed"));
+    } finally {
+      setIsRegeneratingStale(false);
+    }
+  };
+
   const handleRegenerateDay = (day: number) => {
     if (!plan) return;
     if (!effectiveLimitsExempt && dayRegensRemaining <= 0) {
@@ -966,6 +995,13 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
       </View>
 
       <View style={styles.screenBody}>
+        {staleFields.length > 0 && plan ? (
+          <StalePlanBanner
+            staleFields={staleFields}
+            onRegenerate={() => void handleRegenerateStale()}
+            regenerating={isRegeneratingStale}
+          />
+        ) : null}
         <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled keyboardShouldPersistTaps="handled">
           {showWeekGeneratePanel || showMonthlyGeneratePanel ? (
             <View style={styles.panel}>

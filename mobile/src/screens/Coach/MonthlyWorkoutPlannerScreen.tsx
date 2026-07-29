@@ -25,8 +25,10 @@ import {
   regenerateWorkoutPlanDay,
   swapWorkoutExercise,
 } from "../../api/workoutPlanner";
+import { addWorkout, deleteWorkout, getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
 import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
+import { StalePlanBanner } from "../../components/StalePlanBanner";
 import { EXERCISE_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { auth } from "../../services/authService";
@@ -38,8 +40,15 @@ import {
   rescheduleWorkoutPlanNotifications,
 } from "../../services/notificationService";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
-import type { FocusMuscle, WorkoutDayPlan, WorkoutPlanCurrent } from "../../types/planner";
-import { fullDayLabel, getNextMonthResetLabel, isPastPlanDay, monthYearLabel } from "../../utils/localDate";
+import type { FocusMuscle, WorkoutDayPlan, WorkoutExercise, WorkoutPlanCurrent } from "../../types/planner";
+import { isWorkoutRestDay } from "../../utils/workoutRestDay";
+import {
+  buildLoggedExerciseIdMap,
+  estimatePlannerTimeTaken,
+  exerciseLogKey,
+  parsePlannerReps,
+} from "../../utils/workoutPlannerLog";
+import { fullDayLabel, getNextMonthResetLabel, isPastPlanDay, localDateIso, monthYearLabel } from "../../utils/localDate";
 
 const PURPLE_MID = '#7B68CC';
 const PURPLE_LIGHT = '#F0EEF9';
@@ -181,13 +190,6 @@ function RegenerateActionButton({
   );
 }
 
-function isWorkoutRestDay(day: Pick<WorkoutDayPlan, "is_rest_day" | "split_name"> | null | undefined): boolean {
-  if (!day) return true;
-  if (day.is_rest_day) return true;
-  const split = (day.split_name ?? "").trim().toLowerCase();
-  return split.includes("rest") || split === "off";
-}
-
 function apiErrorMessage(e: unknown, fallback: string): string {
   if (axios.isAxiosError(e)) {
     const detail = e.response?.data?.detail;
@@ -282,6 +284,10 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const [monthPlanRegensLimit, setMonthPlanRegensLimit] = useState(MAX_MONTH_PLAN_REGENS_PER_MONTH);
   const [monthPlanRegensRemaining, setMonthPlanRegensRemaining] = useState(MAX_MONTH_PLAN_REGENS_PER_MONTH);
   const [isRegeneratingMonthPlan, setIsRegeneratingMonthPlan] = useState(false);
+  const [staleFields, setStaleFields] = useState<string[]>([]);
+  const [isRegeneratingStale, setIsRegeneratingStale] = useState(false);
+  const [loggedExerciseIds, setLoggedExerciseIds] = useState<Record<string, number>>({});
+  const [loggingExerciseKey, setLoggingExerciseKey] = useState<string | null>(null);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const signedInEmail = String(auth.currentUser?.email || "")
     .trim()
@@ -322,6 +328,18 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const canPressRegenerateMonthPlan = Boolean(
     plan && (plannerLimitsExempt || monthPlanRegensRemaining > 0),
   );
+  // Workouts always date to "now" — only allow planner log checkbox on today's day.
+  const canLogExercises = Boolean(
+    plan &&
+      dayDetail &&
+      !dayDetail.locked &&
+      !isWorkoutRestDay(dayDetail) &&
+      selectedWorkoutOverview?.is_today,
+  );
+  const selectedLogDateKey = useMemo(() => {
+    if (!plan) return localDateIso();
+    return `${plan.year}-${String(plan.month).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
+  }, [plan, selectedDay]);
 
   const applyPlan = useCallback((current: WorkoutPlanCurrent | null) => {
     setPlan(current);
@@ -426,6 +444,10 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   }, []);
 
   useEffect(() => {
+    setStaleFields(plan?.stale_fields ?? []);
+  }, [plan]);
+
+  useEffect(() => {
     if (plan) void loadDay(selectedDay);
   }, [plan, selectedDay, loadDay]);
 
@@ -438,6 +460,82 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       }
     })();
   }, [plan]);
+
+  const syncLoggedExercises = useCallback((items: WorkoutHistoryItem[], exercises: WorkoutExercise[], dayKey: string) => {
+    setLoggedExerciseIds(buildLoggedExerciseIdMap(items, exercises, dayKey));
+  }, []);
+
+  const refreshLoggedExercises = useCallback(async () => {
+    if (!canLogExercises || !dayDetail?.exercises?.length) {
+      setLoggedExerciseIds({});
+      return;
+    }
+    try {
+      const { items } = await getWorkoutHistory(24 * 2);
+      syncLoggedExercises(items ?? [], dayDetail.exercises, selectedLogDateKey);
+    } catch {
+      setLoggedExerciseIds({});
+    }
+  }, [canLogExercises, dayDetail?.exercises, selectedLogDateKey, syncLoggedExercises]);
+
+  useEffect(() => {
+    void refreshLoggedExercises();
+  }, [refreshLoggedExercises]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshLoggedExercises();
+    }, [refreshLoggedExercises]),
+  );
+
+  const handleToggleLogExercise = async (exercise: WorkoutExercise, index: number) => {
+    if (!canLogExercises) return;
+    const key = exerciseLogKey(exercise, index);
+    const existingId = loggedExerciseIds[key];
+    setLoggingExerciseKey(key);
+    try {
+      if (existingId) {
+        await deleteWorkout(existingId);
+        setLoggedExerciseIds((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+        return;
+      }
+      const sets = Math.max(1, Number(exercise.sets) || 1);
+      const reps = parsePlannerReps(exercise.reps);
+      const { timeTaken, durationMin } = estimatePlannerTimeTaken(exercise);
+      const difficulty = String(preview.difficulty || "intermediate");
+      const saved = await addWorkout({
+        type: "compound",
+        exerciseName: exercise.name,
+        sets,
+        reps,
+        duration: durationMin,
+        difficulty,
+        timeTaken,
+        notes: [
+          `source=workout_planner`,
+          `body_part=${exercise.muscle || ""}`,
+          `difficulty=${difficulty}`,
+          `planned_sets=${exercise.sets}`,
+          `planned_reps=${exercise.reps}`,
+          `planned_rest_seconds=${exercise.rest_seconds}`,
+        ].join("; "),
+      });
+      const savedId = Number(saved?.id);
+      if (Number.isFinite(savedId) && savedId > 0) {
+        setLoggedExerciseIds((prev) => ({ ...prev, [key]: savedId }));
+      } else {
+        await refreshLoggedExercises();
+      }
+    } catch {
+      notifyUser(t("coach.workoutPlannerScreen.alerts.error"), t("coach.workoutPlannerScreen.alerts.logExerciseFailed"));
+    } finally {
+      setLoggingExerciseKey(null);
+    }
+  };
 
   const startGenerate = async () => {
     generatingRef.current = true;
@@ -615,6 +713,21 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
     }
   };
 
+  const handleRegenerateStale = async () => {
+    if (!plan) return;
+    setIsRegeneratingStale(true);
+    try {
+      const updated = await regenerateWorkoutMonthPlan(plan.plan_id);
+      applyPlan(updated);
+      await rescheduleWorkoutPlanNotifications(updated).catch(() => undefined);
+      notifyUser(t("stalePlan.regenerated"), t("stalePlan.regenerated"));
+    } catch {
+      notifyUser(t("common.error"), t("stalePlan.regenerateFailed"));
+    } finally {
+      setIsRegeneratingStale(false);
+    }
+  };
+
   const isMuscleSelected = (muscle: string): boolean => {
     if (muscle === "Balanced") return selectedMuscles.length === 0;
     return selectedMuscles.includes(muscle as FocusMuscle);
@@ -692,6 +805,13 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       </View>
 
       <View style={styles.screenBody}>
+        {staleFields.length > 0 && plan ? (
+          <StalePlanBanner
+            staleFields={staleFields}
+            onRegenerate={() => void handleRegenerateStale()}
+            regenerating={isRegeneratingStale}
+          />
+        ) : null}
         <ScrollView showsVerticalScrollIndicator={false}>
           {!plan && !generating ? (
             <View style={styles.panel}>
@@ -820,8 +940,14 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                       ) : null}
                       {dayDetail.exercises.map((ex, i) => {
                         const tag = MUSCLE_TAG[ex.muscle] ?? defaultMuscleTag;
+                        const logKey = exerciseLogKey(ex, i);
+                        const isLogged = Boolean(loggedExerciseIds[logKey]);
+                        const isLogging = loggingExerciseKey === logKey;
                         return (
-                          <View key={`${exerciseListVersion}-${ex.name}-${i}`} style={styles.exercise}>
+                          <View
+                            key={`${exerciseListVersion}-${ex.name}-${i}`}
+                            style={[styles.exercise, isLogged && styles.exerciseLogged]}
+                          >
                             {swappingExerciseIndex === i ? (
                               <View style={styles.swapLoadingRow}>
                                 <ActivityIndicator color={ORANGE} size="small" />
@@ -833,7 +959,14 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                                   <Text style={styles.exerciseNumberText}>{i + 1}</Text>
                                 </View>
                                 <View style={styles.exerciseMiddle}>
-                                  <Text style={styles.exName}>{ex.name}</Text>
+                                  <View style={styles.exerciseTitleRow}>
+                                    <Text style={styles.exName}>{ex.name}</Text>
+                                    {isLogged ? (
+                                      <View style={styles.loggedBadge}>
+                                        <Text style={styles.loggedBadgeText}>{t("coach.workoutPlannerScreen.loggedBadge")}</Text>
+                                      </View>
+                                    ) : null}
+                                  </View>
                                   <Text style={styles.exercisePrescription}>
                                     {t("coach.workoutPlannerScreen.restSeconds", { sets: ex.sets, reps: ex.reps, seconds: ex.rest_seconds })}
                                   </Text>
@@ -844,15 +977,53 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                                     <Text style={styles.exerciseCue} numberOfLines={2}>{ex.note}</Text>
                                   </View>
                                 </View>
-                                {canSwapExercises && exerciseSwapsRemaining > 0 ? (
-                                  <Pressable
-                                    style={styles.exerciseSwapButton}
-                                    onPress={() => handleExerciseSwapPress(dayDetail.day, i, ex.name, ex.muscle)}
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                  >
-                                    <Ionicons name="swap-horizontal" size={15} color={ORANGE} />
-                                  </Pressable>
-                                ) : null}
+                                <View style={styles.exerciseActions}>
+                                  {canLogExercises ? (
+                                    <Pressable
+                                      style={[styles.logButton, isLogged ? styles.logButtonLogged : styles.logButtonIdle]}
+                                      onPress={() => void handleToggleLogExercise(ex, i)}
+                                      disabled={isLogging}
+                                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                      accessibilityLabel={
+                                        isLogged
+                                          ? t("coach.workoutPlannerScreen.unlogExercise")
+                                          : t("coach.workoutPlannerScreen.logExercise")
+                                      }
+                                    >
+                                      {isLogging ? (
+                                        <ActivityIndicator size="small" color={isLogged ? WHITE : GREEN} />
+                                      ) : (
+                                        <Ionicons name="checkmark" size={16} color={isLogged ? WHITE : GREEN} />
+                                      )}
+                                    </Pressable>
+                                  ) : null}
+                                  {canSwapExercises && exerciseSwapsRemaining > 0 ? (
+                                    <Pressable
+                                      style={[
+                                        styles.exerciseSwapButton,
+                                        isLogged && styles.exerciseSwapButtonLocked,
+                                      ]}
+                                      onPress={() => {
+                                        if (isLogged) {
+                                          notifyUser(
+                                            t("coach.workoutPlannerScreen.alerts.swapLockedTitle"),
+                                            t("coach.workoutPlannerScreen.alerts.swapLockedBody"),
+                                          );
+                                          return;
+                                        }
+                                        handleExerciseSwapPress(dayDetail.day, i, ex.name, ex.muscle);
+                                      }}
+                                      disabled={isLogged}
+                                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                      <Ionicons
+                                        name={isLogged ? "lock-closed" : "swap-horizontal"}
+                                        size={15}
+                                        color={isLogged ? MUTED : ORANGE}
+                                      />
+                                    </Pressable>
+                                  ) : null}
+                                </View>
                               </>
                             )}
                           </View>
@@ -938,16 +1109,25 @@ const styles = StyleSheet.create({
   swapLimitNotice: { backgroundColor: ORANGE_LIGHT, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 8, marginBottom: 12 },
   swapLimitNoticeText: { color: ORANGE, fontSize: 11, fontWeight: "800" },
   exercise: { flexDirection: "row", alignItems: "flex-start", gap: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#F0EEF5" },
+  exerciseLogged: { backgroundColor: GREEN_LIGHT, marginHorizontal: -8, paddingHorizontal: 8, borderRadius: 12, borderBottomColor: "transparent" },
   exerciseNumberBadge: { width: 28, height: 28, borderRadius: 99, backgroundColor: ORANGE, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 },
   exerciseNumberText: { color: WHITE, fontSize: 12, fontWeight: "800" },
   exerciseMiddle: { flex: 1, minWidth: 0 },
-  exName: { color: TEXT, fontSize: 14, fontWeight: "800", marginBottom: 4 },
+  exerciseTitleRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 4 },
+  exName: { color: TEXT, fontSize: 14, fontWeight: "800" },
+  loggedBadge: { backgroundColor: GREEN, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  loggedBadgeText: { color: WHITE, fontSize: 10, fontWeight: "800" },
   exercisePrescription: { color: ORANGE, fontSize: 12, fontWeight: "800", marginBottom: 4 },
   exerciseMetaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
   muscleTag: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
   muscleTagText: { fontSize: 10, fontWeight: "800" },
   exerciseCue: { color: "#AAAAAA", fontSize: 10, fontStyle: "italic", flex: 1, minWidth: 120 },
+  exerciseActions: { flexDirection: "column", alignItems: "center", gap: 8, flexShrink: 0 },
+  logButton: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+  logButtonIdle: { backgroundColor: WHITE, borderWidth: 1.5, borderColor: GREEN },
+  logButtonLogged: { backgroundColor: GREEN, borderWidth: 0 },
   exerciseSwapButton: { width: 26, height: 26, borderRadius: 7, backgroundColor: ORANGE_LIGHT, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  exerciseSwapButtonLocked: { backgroundColor: TRACK },
   swapLoadingRow: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: BG, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12 },
   swapLoadingText: { color: MUTED, fontSize: 12, fontWeight: "800" },
   musclePill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: BORDER, backgroundColor: BG },

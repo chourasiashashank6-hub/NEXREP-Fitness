@@ -8,17 +8,11 @@ import { fetchWorkoutPlanCurrent, fetchWorkoutPlanDay } from "../api/workoutPlan
 import { AppCard } from "./AppCard";
 import { useAppTheme } from "../theme";
 import type { WorkoutDayPlan, WorkoutExercise } from "../types/planner";
+import { isWorkoutRestDay } from "../utils/workoutRestDay";
 
 const ACCENT = "#22d3ee";
 const ACCENT_PLANNER = ["#3b82f6", "#22d3ee", "transparent"] as const;
 const EMPTY_MESSAGE = "components.emptyFocus";
-
-function isWorkoutRestDay(day: Pick<WorkoutDayPlan, "is_rest_day" | "split_name"> | null | undefined): boolean {
-  if (!day) return true;
-  if (day.is_rest_day) return true;
-  const split = (day.split_name ?? "").trim().toLowerCase();
-  return split.includes("rest") || split === "off";
-}
 
 export function dedupeMusclesFromExercises(exercises: WorkoutExercise[]): string[] {
   const seen = new Set<string>();

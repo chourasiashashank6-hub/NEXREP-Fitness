@@ -5,7 +5,8 @@ import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { ToggleRow } from "../../components/ToggleRow";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
-import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
+import { StalePlanModal } from "../../components/StalePlanModal";
+import { useOnboardingStalePlanCheck } from "../../hooks/useOnboardingStalePlanCheck";
 import {
   requestNotificationPermissions,
   rescheduleMotivationalQuoteReminder,
@@ -33,7 +34,7 @@ const SCREEN_BG = "#FFFFFF";
 export default function Screen6Setup({ navigation }: any) {
   const { t } = useTranslation();
   const { data, updateAppSetup } = useOnboardingContext();
-  const { saveAndExit } = useOnboardingSaveAndExit();
+  const { saveWithCheck: saveAndExit, saving: _saving, modalProps } = useOnboardingStalePlanCheck();
   const [saving, setSaving] = useState(false);
 
   const onFinish = async () => {
@@ -53,6 +54,7 @@ export default function Screen6Setup({ navigation }: any) {
   };
 
   return (
+    <>
     <OnboardingLayout
       step={6}
       title={t("onboarding.screen6.title")}
@@ -113,6 +115,8 @@ export default function Screen6Setup({ navigation }: any) {
       <Text style={styles.section}>{t("onboarding.screen6.regionLanguage")}</Text>
       <BottomSheetPicker label={t("onboarding.screen6.regionLanguage")} value={data.app_setup.region} options={REGION_OPTIONS} onChange={(v) => updateAppSetup({ region: String(v) })} placeholder={t("onboarding.screen6.regionPlaceholder")} />
     </OnboardingLayout>
+  <StalePlanModal {...modalProps} />
+    </>
   );
 }
 

@@ -39,6 +39,8 @@ import {
   listPastDateKeys,
   type DayMeta,
 } from "../utils/streakEngine";
+import { isHomeRestDayActive, isWorkoutRestDay } from "../utils/workoutRestDay";
+import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import type { WorkoutPlanCurrent } from "../types/planner";
 
 interface LatestWeightData {
@@ -211,6 +213,8 @@ function ProgressBar({ percent, color }: { percent: number; color: string }) {
 export const HomeScreen = () => {
   const { t } = useTranslation();
   const token = useAuthStore((s) => s.token);
+  const { hasFeatureAccess } = useFeatureAccess();
+  const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
   const [calorieDay, setCalorieDay] = useState<CalorieDayPayload | null>(null);
   const [burnProfile, setBurnProfile] = useState<BurnProfile | null>(null);
   const [mealsPerDay, setMealsPerDay] = useState(3);
@@ -432,7 +436,8 @@ export const HomeScreen = () => {
     ? computeUserCaloriePlan({ ...burnProfile, current_weight_kg: effectiveWeightKg ?? burnProfile.current_weight_kg })
     : null;
   const eatenToday = Number.isFinite(intake) ? Math.round(intake) : 0;
-  const dailyGoal = (burnPlan?.dailyCalorieTarget ?? targetKcal) || 1800;
+  // Authoritative kcal from calorie_log_targets via daily log API (same as Meal Planner).
+  const dailyGoal = Math.max(1, Math.round(targetKcal || burnPlan?.dailyCalorieTarget || 1800));
   const remainingBurnTarget = Math.max(0, eatenToday - dailyGoal - caloriesBurnedSoFar);
   const netCalorieGap = eatenToday - dailyGoal - caloriesBurnedSoFar;
   const remainingIntakeToGoal = netCalorieGap < 0 ? Math.abs(netCalorieGap) : 0;
@@ -546,19 +551,29 @@ export const HomeScreen = () => {
     [mealsPerDay, calorieDay?.meals],
   );
 
+  const restDayActive = useMemo(
+    () =>
+      isHomeRestDayActive({
+        hasWorkoutPlannerAccess,
+        plan: todayWorkoutPlan,
+      }),
+    [hasWorkoutPlannerAccess, todayWorkoutPlan],
+  );
+
   const sessionMilestoneItems = useMemo(() => {
     const today = new Date();
     const todayPlanDay = todayWorkoutPlan?.today ?? null;
     const planned =
-      todayPlanDay && !todayPlanDay.is_rest_day ? todayPlanDay.exercises ?? [] : [];
+      todayPlanDay && !isWorkoutRestDay(todayPlanDay) ? todayPlanDay.exercises ?? [] : [];
     const loggedNames = workoutHistory
       .filter((item) => item?.date && item.exerciseName && isSameLocalDay(item.date, today))
       .map((item) => String(item.exerciseName));
     return fillSessionSlots(planned, loggedNames);
   }, [todayWorkoutPlan, workoutHistory]);
 
-  const sessionsRestMessage =
-    sessionMilestoneItems.length === 0 ? t("home.restDayNoSession") : null;
+  // Only show rest-day empty state when Elite + generated plan + today rest —
+  // not merely because there are 0 scheduled exercises (e.g. no plan yet).
+  const sessionsRestMessage = restDayActive ? t("home.restDayNoSession") : null;
 
   const openWeighInModal = () => {
     setWeighInValue(String(latestWeight?.weight_kg || ""));
@@ -660,6 +675,7 @@ export const HomeScreen = () => {
               dailyCalorieTarget={dailyGoal}
               caloriesBurnedToday={caloriesBurnedSoFar}
               dailyBurnTarget={exerciseDeltaDisplay}
+              restDayActive={restDayActive}
               size={168}
             />
             <View style={styles.kpiColumn}>
@@ -670,13 +686,22 @@ export const HomeScreen = () => {
                 </View>
                 <Text style={styles.kpiValue}>{formatNum(dailyGoal)}</Text>
               </View>
-              <View style={styles.kpiPill}>
-                <View style={styles.kpiPillLeft}>
-                  <Text style={styles.kpiEmoji}>🔥</Text>
-                  <Text style={styles.kpiLabel}>{t("home.toBurn")}</Text>
+              {restDayActive ? (
+                <View style={[styles.kpiPill, styles.kpiPillRestDay]}>
+                  <View style={styles.kpiPillLeft}>
+                    <Text style={styles.kpiEmoji}>🌙</Text>
+                    <Text style={styles.kpiLabelRestDay}>{t("home.restDayNoBurn")}</Text>
+                  </View>
                 </View>
-                <Text style={[styles.kpiValue, styles.kpiValueOrange]}>{formatNum(exerciseDeltaDisplay)}</Text>
-              </View>
+              ) : (
+                <View style={styles.kpiPill}>
+                  <View style={styles.kpiPillLeft}>
+                    <Text style={styles.kpiEmoji}>🔥</Text>
+                    <Text style={styles.kpiLabel}>{t("home.toBurn")}</Text>
+                  </View>
+                  <Text style={[styles.kpiValue, styles.kpiValueOrange]}>{formatNum(exerciseDeltaDisplay)}</Text>
+                </View>
+              )}
               <View style={styles.kpiPill}>
                 <View style={styles.kpiPillLeft}>
                   <Text style={styles.kpiEmoji}>📉</Text>
@@ -938,11 +963,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: TRACK,
   },
+  kpiPillRestDay: {
+    borderStyle: "dashed",
+    borderColor: "#C9C4B8",
+    backgroundColor: "#FAFAF7",
+  },
   kpiPillLeft: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1, flex: 1 },
   kpiEmoji: { fontSize: 16 },
   kpiValue: { fontSize: 17, fontWeight: "700", color: TEXT_PRIMARY, flexShrink: 0 },
   kpiValueOrange: { color: ORANGE },
   kpiLabel: { fontSize: 11, color: TEXT_MUTED, textTransform: "lowercase", flexShrink: 1 },
+  kpiLabelRestDay: {
+    fontSize: 11,
+    color: TEXT_MUTED,
+    fontWeight: "600",
+    flexShrink: 1,
+    lineHeight: 14,
+  },
   tdeeCard: {
     backgroundColor: GREEN,
     borderRadius: 16,

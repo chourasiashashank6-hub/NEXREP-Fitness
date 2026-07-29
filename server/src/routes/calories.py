@@ -199,8 +199,7 @@ CALORIE_COACH_SYSTEM_PROMPT = (
     "If diet_type is 'vegetarian', every single food item across insight, mealPlan items, "
     "dietTips, and alerts MUST be vegetarian. No exceptions. "
     "If diet_type is 'vegan', exclude all animal products. "
-    "Never suggest any food listed in allergies. "
-    "If regional_food_styles is set, prefer those cuisines in all suggestions.\n"
+    "Never suggest any food listed in allergies.\n"
     "- Suggest only foods from the provided food_dataset_reference with approximate quantities.\n"
     '- No markdown, no bullets, no headings. Do not use emojis except in dietTips[].emoji.\n'
     "- All numbers must be realistic integers, not strings.\n"
@@ -238,7 +237,6 @@ def _user_coach_profile(db: Session, user: User) -> dict[str, Any]:
     activity = "moderate"
     diet_type = "none"
     allergies: list[str] = []
-    regional_food_styles: list[str] = []
 
     ob = db.query(UserOnboarding).filter(UserOnboarding.user_id == user.id).first()
     if ob and isinstance(ob.onboarding_json, dict):
@@ -261,14 +259,6 @@ def _user_coach_profile(db: Session, user: User) -> dict[str, Any]:
             if isinstance(raw_allergies, list):
                 allergies = [str(a).lower().strip() for a in raw_allergies if a]
 
-            raw_styles = (
-                dietary.get("regional_food_styles")
-                or dietary.get("regionalFoodStyles")
-                or []
-            )
-            if isinstance(raw_styles, list):
-                regional_food_styles = [str(s).strip() for s in raw_styles if s]
-
     elif user.goal_tag:
         goal = str(user.goal_tag).lower().replace(" ", "_")
 
@@ -278,7 +268,6 @@ def _user_coach_profile(db: Session, user: User) -> dict[str, Any]:
         "activity_level": activity,
         "diet_type": diet_type,
         "allergies": allergies,
-        "regional_food_styles": regional_food_styles,
     }
 
 
@@ -407,7 +396,6 @@ def _build_coach_user_msg(db: Session, user: User, day_payload: dict[str, Any]) 
         "goal": profile["goal"],
         "diet_type": profile.get("diet_type", "none"),
         "allergies": profile.get("allergies", []),
-        "regional_food_styles": profile.get("regional_food_styles", []),
         "food_dataset_reference": dataset_rows,
         "meals_eaten_today": meals_eaten,
         "rules": [
@@ -421,9 +409,6 @@ def _build_coach_user_msg(db: Session, user: User, day_payload: dict[str, Any]) 
             f"ALLERGIES: User is allergic to or intolerant of: "
             f"{', '.join(profile.get('allergies', [])) or 'none'}. "
             "NEVER suggest any food containing these allergens in any form.",
-            f"REGIONAL PREFERENCE: User prefers "
-            f"{', '.join(profile.get('regional_food_styles', [])) or 'Indian'} cuisine. "
-            "Prioritise dishes and ingredients from this cuisine style when filling macro gaps.",
             "If remaining_calories <= 0 suggest stopping intake or very light options.",
             "If no meals logged, suggest a full-day plan.",
             "Use approximate quantities.",
@@ -696,6 +681,21 @@ def _groq_model_unavailable(status_code: int, body: str) -> bool:
 
 def _extract_json_object(raw: str) -> dict[str, Any]:
     text = (raw or "").strip()
+    if not text:
+        raise ValueError("Malformed JSON response from model")
+
+    # Strip common wrappers like ```json ... ``` before deeper parsing.
+    if "```" in text:
+        text = text.replace("```json", "```").replace("```JSON", "```")
+        parts = [part.strip() for part in text.split("```") if part.strip()]
+        for part in parts:
+            try:
+                parsed = json.loads(part)
+                if isinstance(parsed, dict):
+                    return parsed
+            except Exception:
+                continue
+
     try:
         parsed = json.loads(text)
         if isinstance(parsed, dict):
@@ -703,11 +703,10 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
     except Exception:
         pass
 
-    # Fallback: find the first balanced JSON object to survive model outputs like:
+    # Fallback: scan all balanced JSON objects and return the first valid one.
     #   { ... }\n\nExtra notes...
-    # or multiple JSON blobs back-to-back.
-    start = text.find("{")
-    if start >= 0:
+    # or chain-of-thought text before a final JSON block.
+    for start in [i for i, ch in enumerate(text) if ch == "{"]:
         depth = 0
         in_string = False
         escaped = False
@@ -730,7 +729,10 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
                 depth -= 1
                 if depth == 0:
                     candidate = text[start : i + 1]
-                    parsed = json.loads(candidate)
+                    try:
+                        parsed = json.loads(candidate)
+                    except Exception:
+                        break
                     if isinstance(parsed, dict):
                         return parsed
                     break
@@ -771,11 +773,22 @@ def _groq_food_image_analysis(
     *,
     user_id: int | None = None,
 ) -> dict[str, Any]:
-    if not settings.GROQ_API_KEY:
+    groq_keys: list[str] = []
+    for key in (settings.GROQ_API_KEY, settings.GROQ_API_KEY_FALLBACK):
+        k = (key or "").strip()
+        if k and k not in groq_keys:
+            groq_keys.append(k)
+    if not groq_keys:
         raise RuntimeError("GROQ_API_KEY missing on server")
-    # Use a vision-capable model explicitly. settings.GROQ_MODEL may point to text-only models
-    # (used elsewhere for coach text generation), which reject multimodal `content` arrays.
-    model_name = "meta-llama/llama-4-scout-17b-16e-instruct"
+
+    # Use vision-capable models explicitly. settings.GROQ_MODEL can be text-only.
+    model_candidates = [
+        # Verified available for this Groq account; accepts image_url content arrays.
+        "qwen/qwen3.6-27b",
+        # Keep legacy candidates as fallback for accounts with Llama vision access.
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "meta-llama/llama-4-maverick-17b-128e-instruct",
+    ]
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
     system_prompt = (
         "You are a strict nutrition expert AI for meal photo analysis. "
@@ -791,49 +804,72 @@ def _groq_food_image_analysis(
         "If no food is visible, return {\"error\":\"No food detected\"}. "
         "No markdown, no code fences, no extra text."
     )
-    try:
-        payload = post_json(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                "Accept": "application/json",
-                "User-Agent": "fitness-food-analyzer/1.0",
-            },
-            payload={
-                "model": model_name,
-                "temperature": 0.1,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": "Analyze this food image and estimate nutrition values."},
-                            {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
+    payload: dict[str, Any] | None = None
+    used_model = model_candidates[0]
+    used_fallback_key = False
+    last_err: str | None = None
+    for key_idx, api_key in enumerate(groq_keys):
+        for model_name in model_candidates:
+            try:
+                payload = post_json(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {api_key}",
+                        "Accept": "application/json",
+                        "User-Agent": "fitness-food-analyzer/1.0",
+                    },
+                    payload={
+                        "model": model_name,
+                        "temperature": 0.1,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"type": "text", "text": "Analyze this food image and estimate nutrition values."},
+                                    {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
+                                ],
+                            },
                         ],
                     },
-                ],
-            },
-            timeout=40,
-        )
-    except ExternalHTTPError as e:
-        body = e.body
-        if e.status_code == 400 and "messages[1].content must be a string" in body:
-            raise RuntimeError(
-                "The configured Groq model is text-only for this account. "
-                "Use a vision-capable Groq model/key for food image analysis."
-            ) from e
-        if e.status_code == 429:
-            raise RuntimeError("Too many requests, try again in a moment.") from e
-        raise RuntimeError(f"Groq HTTP {e.status_code}: {body[:260]}") from e
+                    timeout=40,
+                )
+                used_model = model_name
+                used_fallback_key = key_idx > 0
+                break
+            except ExternalHTTPError as e:
+                body = e.body or ""
+                lower = body.lower()
+                if e.status_code == 429:
+                    last_err = f"{model_name}: rate limited"
+                    continue
+                if e.status_code in (400, 404) and (
+                    "model_not_found" in lower
+                    or "not found" in lower
+                    or "decommissioned" in lower
+                    or "no longer supported" in lower
+                ):
+                    last_err = f"{model_name}: unavailable"
+                    continue
+                if e.status_code == 400 and "messages[1].content must be a string" in body:
+                    last_err = f"{model_name}: not vision-capable for this key"
+                    continue
+                raise RuntimeError(f"Groq HTTP {e.status_code}: {body[:260]}") from e
+        if payload is not None:
+            break
+
+    if payload is None:
+        raise RuntimeError(f"Groq vision unavailable or rate-limited. Last error: {last_err or 'unknown'}")
 
     try:
         log_groq_call(
             user_id=user_id,
             feature="food_photo_analysis",
-            model=model_name,
+            model=used_model,
             endpoint="/api/calories/foods/analyze-image",
             response_json=payload,
+            is_fallback=used_fallback_key,
         )
     except Exception:
         pass
@@ -918,6 +954,56 @@ def _gemini_food_image_analysis(
     return _normalize_food_analysis_payload(parsed)
 
 
+def _openai_food_image_analysis(
+    base64: str,
+    mime_type: str | None,
+) -> dict[str, Any]:
+    api_key = (settings.OPENAI_API_KEY or "").strip()
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY missing on server")
+    image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
+    payload = post_json(
+        "https://api.openai.com/v1/chat/completions",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+            "Accept": "application/json",
+            "User-Agent": "fitness-food-analyzer/1.0",
+        },
+        payload={
+            "model": "gpt-4o-mini",
+            "temperature": 0.1,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a strict nutrition expert AI for meal photo analysis. "
+                        "Return ONLY valid JSON with keys: foodName, estimatedServingSize, "
+                        "calories, protein, carbs, fats, fibre, confidence. "
+                        "confidence must be low|medium|high. "
+                        'If no food is visible, return {"error":"No food detected"}.'
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Analyze this food image and estimate nutrition values."},
+                        {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
+                    ],
+                },
+            ],
+            "max_tokens": 400,
+        },
+        timeout=30,
+    )
+    raw = (payload.get("choices") or [{}])[0].get("message", {}).get("content", "")
+    if not raw:
+        raise RuntimeError("OpenAI returned empty content")
+    parsed = _extract_json_object(raw)
+    return _normalize_food_analysis_payload(parsed)
+
+
 def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[str, Any]:
     if not has_gemini_key():
         raise RuntimeError("GEMINI_API_KEY missing on server")
@@ -994,6 +1080,7 @@ def _groq_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[st
         "llama-3.1-8b-instant",
     ]
     model_candidates = [m for i, m in enumerate(model_candidates) if m and m not in model_candidates[:i]]
+    model_candidates = model_candidates[:2]
 
     payload: dict[str, Any] | None = None
     last_err: str | None = None
@@ -1018,7 +1105,7 @@ def _groq_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[st
                         {"role": "user", "content": json.dumps(user_msg)},
                     ],
                 },
-                timeout=45,
+                timeout=30,
             )
             used_model = model_name
             break
@@ -1118,38 +1205,41 @@ def resolve_user_targets(db: Session, user: User) -> dict[str, Any]:
     otherwise use user_onboarding.targets_json; else adaptive defaults.
     """
     try:
-        row = (
-            db.execute(
-                text(
-                    """
-                    SELECT target_calories, target_protein_g, target_carbs_g, target_fat_g, target_fiber_g, target_water_l,
-                           protein_pct, carbs_pct, fat_pct
-                    FROM user_calorie_targets
-                    WHERE user_id = :uid AND is_current = true
-                    LIMIT 1
-                    """
-                ),
-                {"uid": user.id},
+        # SAVEPOINT so a missing/legacy table does not wipe uncommitted work
+        # (e.g. a newly flushed MonthlyMealPlan during week generation).
+        with db.begin_nested():
+            row = (
+                db.execute(
+                    text(
+                        """
+                        SELECT target_calories, target_protein_g, target_carbs_g, target_fat_g, target_fiber_g, target_water_l,
+                               protein_pct, carbs_pct, fat_pct
+                        FROM user_calorie_targets
+                        WHERE user_id = :uid AND is_current = true
+                        LIMIT 1
+                        """
+                    ),
+                    {"uid": user.id},
+                )
+                .mappings()
+                .first()
             )
-            .mappings()
-            .first()
-        )
-        if row:
-            persisted_targets = {
-                "target_calories": int(row["target_calories"] or DEFAULT_TARGETS["target_calories"]),
-                "target_protein_g": _to_decimal(row["target_protein_g"], DEFAULT_TARGETS["target_protein_g"]),
-                "target_carbs_g": _to_decimal(row["target_carbs_g"], DEFAULT_TARGETS["target_carbs_g"]),
-                "target_fat_g": _to_decimal(row["target_fat_g"], DEFAULT_TARGETS["target_fat_g"]),
-                "target_fiber_g": _to_decimal(row["target_fiber_g"], DEFAULT_TARGETS["target_fiber_g"]),
-                "target_water_l": _to_decimal(row["target_water_l"], DEFAULT_TARGETS["target_water_l"]),
-                "protein_pct": int(row["protein_pct"] or DEFAULT_TARGETS["protein_pct"]),
-                "carbs_pct": int(row["carbs_pct"] or DEFAULT_TARGETS["carbs_pct"]),
-                "fat_pct": int(row["fat_pct"] or DEFAULT_TARGETS["fat_pct"]),
-            }
-            return _adapt_existing_targets_for_user(persisted_targets, user)
+            if row:
+                persisted_targets = {
+                    "target_calories": int(row["target_calories"] or DEFAULT_TARGETS["target_calories"]),
+                    "target_protein_g": _to_decimal(row["target_protein_g"], DEFAULT_TARGETS["target_protein_g"]),
+                    "target_carbs_g": _to_decimal(row["target_carbs_g"], DEFAULT_TARGETS["target_carbs_g"]),
+                    "target_fat_g": _to_decimal(row["target_fat_g"], DEFAULT_TARGETS["target_fat_g"]),
+                    "target_fiber_g": _to_decimal(row["target_fiber_g"], DEFAULT_TARGETS["target_fiber_g"]),
+                    "target_water_l": _to_decimal(row["target_water_l"], DEFAULT_TARGETS["target_water_l"]),
+                    "protein_pct": int(row["protein_pct"] or DEFAULT_TARGETS["protein_pct"]),
+                    "carbs_pct": int(row["carbs_pct"] or DEFAULT_TARGETS["carbs_pct"]),
+                    "fat_pct": int(row["fat_pct"] or DEFAULT_TARGETS["fat_pct"]),
+                }
+                return _adapt_existing_targets_for_user(persisted_targets, user)
     except Exception:
-        # Missing table, wrong schema, or aborted transaction — fall back to onboarding / defaults.
-        db.rollback()
+        # Missing table / wrong schema — fall back to onboarding / defaults.
+        pass
 
     ob = db.query(UserOnboarding).filter(UserOnboarding.user_id == user.id).first()
     if ob and isinstance(ob.targets_json, dict):
@@ -1181,12 +1271,14 @@ def _ensure_water_row(db: Session, user_id: int, log_date: date, target_water_l:
 
 
 def _get_or_create_daily_log(db: Session, user: User, log_date: date) -> DailyNutritionLog:
+    from src.services.calorie_log_targets import get_calorie_log_targets
+
     log = (
         db.query(DailyNutritionLog)
         .filter(DailyNutritionLog.user_id == user.id, DailyNutritionLog.log_date == log_date)
         .first()
     )
-    t = resolve_user_targets(db, user)
+    t = get_calorie_log_targets(db, user)
     if log:
         log.target_calories = t["target_calories"]
         log.target_protein_g = t["target_protein_g"]
@@ -1698,22 +1790,15 @@ def analyze_food_image(
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
 
-    try:
-        return _groq_food_image_analysis(clean_base64, image_mime, user_id=current_user.id)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
-    except RuntimeError as e:
-        groq_error = str(e)
-        lowered = groq_error.lower()
-        if "invalid image" in lowered or "image data" in lowered:
-            raise HTTPException(
-                status_code=422,
-                detail="Could not read this photo. Try a JPEG or PNG image under 4MB.",
-            ) from e
+    def _try_fallbacks() -> dict[str, Any]:
         try:
             return _gemini_food_image_analysis(clean_base64, image_mime, user_id=current_user.id, is_fallback=True)
         except Exception as ge:
             gemini_msg = str(ge)
+            try:
+                return _openai_food_image_analysis(clean_base64, image_mime)
+            except Exception:
+                pass
             if "429" in gemini_msg or "quota" in gemini_msg.lower():
                 raise HTTPException(
                     status_code=503,
@@ -1723,6 +1808,25 @@ def analyze_food_image(
                 status_code=502,
                 detail="Could not analyze this image right now. Please try again or enter values manually.",
             ) from ge
+
+    try:
+        return _groq_food_image_analysis(clean_base64, image_mime, user_id=current_user.id)
+    except ValueError as e:
+        detail = str(e).strip()
+        lowered = detail.lower()
+        if "no food detected" in lowered or "could not detect food" in lowered:
+            raise HTTPException(status_code=422, detail=detail) from e
+        # Model output formatting issues should not hard-fail; fall through to other providers.
+        return _try_fallbacks()
+    except RuntimeError as e:
+        groq_error = str(e)
+        lowered = groq_error.lower()
+        if "invalid image" in lowered or "image data" in lowered:
+            raise HTTPException(
+                status_code=422,
+                detail="Could not read this photo. Try a JPEG or PNG image under 4MB.",
+            ) from e
+        return _try_fallbacks()
 
 
 @router.post("/foods/ai-meals")
@@ -1783,6 +1887,10 @@ def coach_calorie_insight(
 ):
     today = datetime.utcnow().date()
     day_payload = _serialize_day(db, current_user, today)
+    # Free the pooled connection before Groq/Gemini HTTP (can take 30–60s).
+    from src.db.session import release_db_connection
+
+    release_db_connection(db)
     try:
         return _groq_coach(db, day_payload, current_user)
     except Exception as e:

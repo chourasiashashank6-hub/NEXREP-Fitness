@@ -72,6 +72,7 @@ SLOTS: tuple[SlotName, ...] = ("breakfast", "lunch", "dinner")
 SLOT_SHARE: dict[SlotName, float] = {s.slot: s.share for s in MEAL_SLOT_SCHEDULES[3]}
 
 MULTIPLIERS = (0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5)
+DAY_KCAL_TOLERANCE_FRAC = 0.05
 COOLDOWN_DAYS = 5
 CANDIDATE_SAMPLE = 12
 NEVER_USED_WEIGHT = 999
@@ -159,12 +160,6 @@ class SlotPick:
     error: float
 
 
-def meal_engine_v3_enabled() -> bool:
-    from src.core.config import settings
-
-    return bool(getattr(settings, "MEAL_ENGINE_V3", False))
-
-
 def normalize_diet(raw: str | None) -> DietFilter:
     s = (raw or "").strip().lower().replace("-", "_").replace(" ", "_")
     if s in {"vegan"}:
@@ -192,6 +187,22 @@ def daily_targets(daily_kcal: float, goal: GoalType) -> MacroTarget:
         protein=target_kcal * split["protein"] / 4.0,
         carbs=target_kcal * split["carbs"] / 4.0,
         fat=target_kcal * split["fat"] / 9.0,
+    )
+
+
+def calorie_log_daily_target(
+    *,
+    target_kcal: float,
+    protein_g: float,
+    carbs_g: float,
+    fat_g: float,
+) -> MacroTarget:
+    """Calorie Log / Meal Planner display macros — no extra v3 kcal_mult."""
+    return MacroTarget(
+        kcal=float(target_kcal),
+        protein=float(protein_g),
+        carbs=float(carbs_g),
+        fat=float(fat_g),
     )
 
 
@@ -299,6 +310,166 @@ def best_multiplier(recipe: Recipe, target: MacroTarget) -> SlotPick:
             best = pick
     assert best is not None
     return best
+
+
+def _slot_pick(recipe: Recipe, mult: float, target: MacroTarget) -> SlotPick:
+    return SlotPick(
+        recipe=recipe,
+        multiplier=mult,
+        kcal=round(recipe.kcal * mult, 1),
+        protein_g=round(recipe.protein_g * mult, 1),
+        carbs_g=round(recipe.carbs_g * mult, 1),
+        fat_g=round(recipe.fat_g * mult, 1),
+        error=_macro_error(recipe, mult, target),
+    )
+
+
+def best_multiplier_bounded(
+    recipe: Recipe,
+    target: MacroTarget,
+    *,
+    min_mult: float,
+    max_mult: float,
+) -> SlotPick:
+    """Pick the best multiplier within [min_mult, max_mult] using the normal grid."""
+    best: SlotPick | None = None
+    for mult in MULTIPLIERS:
+        if mult < min_mult - 1e-9 or mult > max_mult + 1e-9:
+            continue
+        pick = _slot_pick(recipe, mult, target)
+        if best is None or pick.error < best.error:
+            best = pick
+    if best is not None:
+        return best
+    return best_multiplier(recipe, target)
+
+
+def _next_multiplier(current: float, direction: int) -> float | None:
+    mults = list(MULTIPLIERS)
+    idx = next((i for i, m in enumerate(mults) if abs(m - current) < 1e-9), None)
+    if idx is None:
+        return None
+    nxt = idx + direction
+    if 0 <= nxt < len(mults):
+        return mults[nxt]
+    return None
+
+
+def reconcile_day_kcal(
+    db: Session,
+    *,
+    rows: list[UserMealPlan],
+    daily: MacroTarget,
+    meals_per_day: int,
+    user_id: int,
+    plan_date: date,
+) -> tuple[list[UserMealPlan], dict[str, Any]]:
+    """Close day-level kcal gaps after per-slot fitting, respecting the multiplier ceiling."""
+    meal_rows = [r for r in rows if _is_meal_assignment(r) and r.recipe is not None]
+    if not meal_rows:
+        return rows, {"reconciled": False, "residual_gap_kcal": 0.0}
+
+    target_kcal = float(daily.kcal)
+    day_total = sum(float(r.kcal) for r in meal_rows)
+    gap = target_kcal - day_total
+    tolerance = DAY_KCAL_TOLERANCE_FRAC * target_kcal
+    meta: dict[str, Any] = {
+        "reconciled": False,
+        "initial_gap_kcal": round(gap, 1),
+        "residual_gap_kcal": round(gap, 1),
+        "target_kcal": round(target_kcal, 1),
+    }
+    if target_kcal <= 0 or abs(gap) <= tolerance:
+        return rows, meta
+
+    max_mult = max(MULTIPLIERS)
+    day_protein = sum(float(r.protein_g) for r in meal_rows)
+    protein_gap = float(daily.protein) - day_protein
+    protein_short = protein_gap > 0.05 * float(daily.protein)
+    direction = 1 if gap > 0 else -1
+    meta["reconciled"] = True
+    meta["adjusted_slots"] = []
+
+    def sort_key(row: UserMealPlan) -> float:
+        recipe = row.recipe
+        assert recipe is not None
+        if protein_short and direction > 0:
+            return float(recipe.protein_g) / max(float(recipe.kcal), 1.0)
+        return float(row.kcal)
+
+    working = list(meal_rows)
+    max_steps = len(MULTIPLIERS) * max(1, len(working))
+    for _ in range(max_steps):
+        residual = target_kcal - sum(float(r.kcal) for r in working)
+        if abs(residual) <= tolerance:
+            break
+        progressed = False
+        # Spread kcal bumps across lighter slots; trim heavier slots first when reducing.
+        ordered = sorted(working, key=sort_key, reverse=(direction < 0 or (protein_short and direction > 0)))
+        for row in ordered:
+            recipe = row.recipe
+            assert recipe is not None
+            cur_mult = float(row.multiplier)
+            nxt_mult = _next_multiplier(cur_mult, direction)
+            if nxt_mult is None:
+                continue
+            if direction > 0 and nxt_mult > max_mult + 1e-9:
+                continue
+            slot_target = slot_targets(daily, row.slot, meals_per_day)
+            candidate = _slot_pick(recipe, nxt_mult, slot_target)
+            if direction > 0 and candidate.kcal <= float(row.kcal) + 0.5:
+                continue
+            if direction < 0 and candidate.kcal >= float(row.kcal) - 0.5:
+                continue
+            delta = float(candidate.kcal) - float(row.kcal)
+            if direction > 0:
+                projected_protein = sum(float(r.protein_g) for r in working) + (
+                    float(candidate.protein_g) - float(row.protein_g)
+                )
+                if projected_protein > float(daily.protein) * 1.10:
+                    continue
+            upsert_assignment(
+                db,
+                user_id=user_id,
+                plan_date=plan_date,
+                slot=row.slot,
+                slot_order=int(row.slot_order or 0),
+                pick=candidate,
+                swap_version=int(row.swap_version or 0),
+            )
+            row.multiplier = candidate.multiplier
+            row.kcal = candidate.kcal
+            row.protein_g = candidate.protein_g
+            row.carbs_g = candidate.carbs_g
+            row.fat_g = candidate.fat_g
+            meta["adjusted_slots"].append(
+                {"slot": row.slot, "delta_kcal": round(delta, 1)}
+            )
+            progressed = True
+            break
+        if not progressed:
+            break
+
+    db.flush()
+    refreshed = (
+        db.query(UserMealPlan)
+        .options(joinedload(UserMealPlan.recipe))
+        .filter(
+            UserMealPlan.user_id == user_id,
+            UserMealPlan.plan_date == plan_date,
+            UserMealPlan.slot != PROTEIN_GAP_SLOT,
+        )
+        .order_by(UserMealPlan.slot_order.asc())
+        .all()
+    )
+    residual = target_kcal - sum(float(r.kcal) for r in refreshed)
+    meta["residual_gap_kcal"] = round(residual, 1)
+    if abs(residual) > tolerance:
+        logger.info(
+            "meal_engine_v3.reconcile_residual_gap",
+            extra={**meta, "reason": "post_adjust_still_outside_tolerance"},
+        )
+    return list(refreshed), meta
 
 
 def select_for_slot(
@@ -596,6 +767,16 @@ def ensure_day_plan(
             continue
         if (old.slot, int(old.slot_order)) not in keep_keys:
             db.delete(old)
+    db.flush()
+
+    rows, _reconcile_meta = reconcile_day_kcal(
+        db,
+        rows=rows,
+        daily=daily,
+        meals_per_day=meals_per_day,
+        user_id=user_id,
+        plan_date=plan_date,
+    )
     db.flush()
     return rows
 

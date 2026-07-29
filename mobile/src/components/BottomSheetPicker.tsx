@@ -18,7 +18,13 @@ const TRACK = "#E5E4E0";
 const BORDER = "#ECEAE5";
 const SCREEN_BG = "#FFFFFF";
 
-type Option = { value: string | number | null; label: string; description?: string };
+type Option = {
+  value: string | number | null;
+  label: string;
+  description?: string;
+  disabled?: boolean;
+  caption?: string;
+};
 
 export const BottomSheetPicker = ({
   label,
@@ -85,14 +91,27 @@ export const BottomSheetPicker = ({
               return (
                 <Pressable
                   key={`${item.value}-${idx}`}
-                  style={styles.row}
+                  style={[styles.row, item.disabled ? styles.rowDisabled : null]}
+                  disabled={item.disabled}
                   onPress={() => {
+                    if (item.disabled) return;
                     onChange(item.value);
                     setOpenPicker(false);
                   }}
                 >
-                  <Text style={[styles.rowText, isSelected ? styles.rowTextSelected : null]}>{item.label}</Text>
-                  {isSelected ? <Text style={styles.tick}>✓</Text> : null}
+                  <View style={styles.rowContent}>
+                    <Text
+                      style={[
+                        styles.rowText,
+                        isSelected ? styles.rowTextSelected : null,
+                        item.disabled ? styles.rowTextDisabled : null,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                    {item.caption ? <Text style={styles.rowCaption}>{item.caption}</Text> : null}
+                  </View>
+                  {isSelected && !item.disabled ? <Text style={styles.tick}>✓</Text> : null}
                 </Pressable>
               );
             })}
@@ -140,14 +159,19 @@ const styles = StyleSheet.create({
   title: { color: TEXT, fontSize: 16, fontWeight: "800", marginBottom: 6, marginTop: 10 },
   optionsList: { maxHeight: 260 },
   row: {
-    height: 52,
+    minHeight: 52,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
+    paddingVertical: 8,
   },
+  rowDisabled: { opacity: 0.55 },
+  rowContent: { flex: 1, paddingRight: 8 },
   rowText: { color: TEXT, fontSize: 15, fontWeight: "600" },
   rowTextSelected: { color: GREEN, fontWeight: "800" },
+  rowTextDisabled: { color: MUTED },
+  rowCaption: { color: MUTED, fontSize: 12, marginTop: 2, lineHeight: 16 },
   tick: { color: GREEN, fontSize: 16, fontWeight: "800" },
 });

@@ -42,13 +42,13 @@ export type OnboardingData = {
   activity: {
     level: ActivityLevel | null;
     workouts_per_week: number | null;
+    tdee_multiplier: number | null;
     workout_types: string[];
   };
   dietary: {
     diet_type: string;
-    regional_food_styles: string[];
     allergies: string[];
-    meals_per_day: number;
+    meals_per_day: number | null;
   };
   body_type?: BodyTypeData;
   app_setup: {

@@ -40,6 +40,60 @@ ACTIVITY_MULTIPLIER: dict[str, float] = {
     "very_active": 1.9,
 }
 
+ONBOARDING_ACTIVITY_MULTIPLIERS: dict[str, float] = {
+    "sedentary": 1.2,
+    "lightly_active": 1.375,
+    "moderately_active": 1.55,
+    "very_active": 1.725,
+    "extremely_active": 1.9,
+}
+
+TDEE_ANCHORS: list[tuple[float, float]] = [
+    (0, 1.2),
+    (1.5, 1.375),
+    (3.5, 1.55),
+    (5.5, 1.725),
+    (14, 1.9),
+]
+
+
+def get_tdee_multiplier(workouts_per_week: float) -> float:
+    """Piecewise-linear interpolation between standard Mifflin-St Jeor activity factors."""
+    # keep in sync with: mobile/src/constants/onboarding.ts
+    for (x0, y0), (x1, y1) in zip(TDEE_ANCHORS, TDEE_ANCHORS[1:]):
+        if x0 <= workouts_per_week <= x1:
+            t = (workouts_per_week - x0) / (x1 - x0)
+            return round(y0 + t * (y1 - y0), 2)
+    if workouts_per_week > TDEE_ANCHORS[-1][0]:
+        return TDEE_ANCHORS[-1][1]
+    return TDEE_ANCHORS[0][1]
+
+
+def get_activity_level(workouts_per_week: int) -> str:
+    if workouts_per_week <= 0:
+        return "sedentary"
+    if workouts_per_week <= 2:
+        return "lightly_active"
+    if workouts_per_week <= 4:
+        return "moderately_active"
+    if workouts_per_week <= 6:
+        return "very_active"
+    return "extremely_active"
+
+
+def resolve_onboarding_tdee_multiplier(activity: dict[str, Any] | None) -> float:
+    """Use stored tdee_multiplier when present; fall back to level lookup for legacy users."""
+    if isinstance(activity, dict):
+        stored = activity.get("tdee_multiplier")
+        if stored is not None:
+            try:
+                return float(stored)
+            except (TypeError, ValueError):
+                pass
+        level = str(activity.get("level") or "moderately_active").lower()
+        return ONBOARDING_ACTIVITY_MULTIPLIERS.get(level, 1.55)
+    return 1.55
+
 GOAL_PACE_MAP: dict[str, dict[str, dict[str, float]]] = {
     "Fat Loss": {
         "slow": {"weeklyKg": 0.25, "dailyKcal": -275},
@@ -95,6 +149,7 @@ def compute_user_calorie_plan(
     goal_tag: str,
     goal_pace: str,
     activity_level: str,
+    activity_multiplier: float | None = None,
 ) -> dict[str, float | int]:
     """Python port of mobile/src/utils/calorieEngine.js `computeUserCaloriePlan`."""
     age_n = _safe_number(age, 25)
@@ -110,7 +165,7 @@ def compute_user_calorie_plan(
     else:
         bmr = 10 * weight_n + 6.25 * height_n - 5 * age_n - 161
 
-    multiplier = ACTIVITY_MULTIPLIER[activity]
+    multiplier = float(activity_multiplier) if activity_multiplier is not None else ACTIVITY_MULTIPLIER[activity]
     tdee = round(bmr * multiplier)
     pace_config = GOAL_PACE_MAP[tag][pace]
     daily_adjustment = pace_config["dailyKcal"]
@@ -178,6 +233,7 @@ def burn_profile_from_onboarding(
     goal_type = goal_type_map.get(str(goal.get("type") or "").lower(), "Fat Loss")
     goal_pace = pace_map.get(str(goal.get("pace") or "").lower(), "moderate")
     activity_level = activity_map.get(str(activity.get("level") or "").lower(), "moderate")
+    tdee_multiplier = resolve_onboarding_tdee_multiplier(activity)
 
     return {
         "name": name,
@@ -189,23 +245,25 @@ def burn_profile_from_onboarding(
         "goal_tag": goal_type,
         "goal_pace": goal_pace,
         "activity_level": activity_level,
+        "tdee_multiplier": tdee_multiplier,
     }
 
 
 def _latest_weight_kg(db: Session, user_id: int) -> float | None:
     try:
-        row = (
-            db.query(WeightLog)
-            .filter(WeightLog.user_id == user_id)
-            .order_by(WeightLog.logged_at.desc(), WeightLog.id.desc())
-            .first()
-        )
-        if row is None:
-            return None
-        kg = _safe_number(getattr(row, "weight_kg", None), 0)
-        return kg if kg > 0 else None
+        # SAVEPOINT: never wipe an outer transaction on a weight-log probe failure.
+        with db.begin_nested():
+            row = (
+                db.query(WeightLog)
+                .filter(WeightLog.user_id == user_id)
+                .order_by(WeightLog.logged_at.desc(), WeightLog.id.desc())
+                .first()
+            )
+            if row is None:
+                return None
+            kg = _safe_number(getattr(row, "weight_kg", None), 0)
+            return kg if kg > 0 else None
     except Exception:
-        db.rollback()
         return None
 
 
@@ -229,6 +287,7 @@ def get_calorie_log_targets(db: Session, user: User) -> dict[str, Any]:
             goal_tag=str(profile["goal_tag"]),
             goal_pace=str(profile["goal_pace"]),
             activity_level=str(profile["activity_level"]),
+            activity_multiplier=float(profile["tdee_multiplier"]),
         )
         display_kcal = int(plan["dailyCalorieTarget"])
     else:

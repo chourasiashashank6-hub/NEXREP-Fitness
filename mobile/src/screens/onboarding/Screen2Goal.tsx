@@ -4,10 +4,12 @@ import { useTranslation } from "react-i18next";
 import { BodyTypeSelectionModal } from "../../components/BodyTypeSelectionModal";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
+import { RequiredBadge, RequiredLabelRow } from "../../components/RequiredBadge";
 import { TapCards } from "../../components/TapCards";
 import { BODY_DATA } from "../../data/bodyTypeData";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
-import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
+import { StalePlanModal } from "../../components/StalePlanModal";
+import { useOnboardingStalePlanCheck } from "../../hooks/useOnboardingStalePlanCheck";
 import { DIFFICULTY_OPTIONS, GOAL_OPTIONS, GOAL_PACE_OPTIONS, getImperialWeightOptions, getMetricWeightOptions } from "../../utils/onboardingOptions";
 
 const GREEN = "#0F6E56";
@@ -36,7 +38,7 @@ const SUGGESTED_STRENGTH_LIFTS = [
 export default function Screen2Goal({ navigation }: any) {
   const { t } = useTranslation();
   const { data, updateGoal } = useOnboardingContext();
-  const { saveAndExit, saving } = useOnboardingSaveAndExit();
+  const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCustomLift, setShowCustomLift] = useState(false);
   const [customLiftName, setCustomLiftName] = useState("");
@@ -107,6 +109,7 @@ export default function Screen2Goal({ navigation }: any) {
   };
 
   return (
+    <>
     <OnboardingLayout
       step={2}
       title={t("onboarding.screen2.title")}
@@ -117,24 +120,38 @@ export default function Screen2Goal({ navigation }: any) {
       saveLoading={saving}
       saveDisabled={saving}
     >
-      <Text style={styles.label}>{t("onboarding.screen2.primaryGoal")}</Text>
+      <RequiredLabelRow>
+        <Text style={styles.labelInline}>{t("onboarding.screen2.primaryGoal")}</Text>
+        <RequiredBadge />
+      </RequiredLabelRow>
       <TapCards options={GOAL_OPTIONS as any} value={data.goal.type} onChange={setGoalType} />
       {errors.goal ? <Text style={styles.error}>{errors.goal}</Text> : null}
 
       <View style={styles.block}>
-        <Text style={styles.label}>{t("onboarding.screen2.difficulty")}</Text>
+        <RequiredLabelRow>
+          <Text style={styles.labelInline}>{t("onboarding.screen2.difficulty")}</Text>
+          <RequiredBadge />
+        </RequiredLabelRow>
         <TapCards options={DIFFICULTY_OPTIONS as any} value={data.goal.difficulty} onChange={(v) => updateGoal({ difficulty: v as any })} />
         {errors.difficulty ? <Text style={styles.error}>{errors.difficulty}</Text> : null}
       </View>
 
       {isPaceNeeded ? (
         <View style={styles.block}>
-          <Text style={styles.label}>{t("onboarding.screen2.goalPace")}</Text>
+          <RequiredLabelRow>
+            <Text style={styles.labelInline}>{t("onboarding.screen2.goalPace")}</Text>
+            <RequiredBadge />
+          </RequiredLabelRow>
           <BottomSheetPicker label={t("onboarding.screen2.goalPace")} value={data.goal.pace} options={GOAL_PACE_OPTIONS} onChange={(v) => updateGoal({ pace: v as any })} placeholder={t("onboarding.screen2.goalPacePlaceholder")} error={errors.pace} />
 
-          <Text style={[styles.label, { marginTop: 12 }]}>
-            {data.goal.type === "fat_loss" ? t("onboarding.screen2.targetWeightLess", { currentWeight }) : t("onboarding.screen2.targetWeightMore", { currentWeight })}
-          </Text>
+          <View style={styles.targetWeightLabelWrap}>
+            <RequiredLabelRow>
+              <Text style={styles.labelInline}>
+                {data.goal.type === "fat_loss" ? t("onboarding.screen2.targetWeightLess", { currentWeight }) : t("onboarding.screen2.targetWeightMore", { currentWeight })}
+              </Text>
+              <RequiredBadge />
+            </RequiredLabelRow>
+          </View>
           <BottomSheetPicker
             label={t("onboarding.screen2.targetWeight")}
             value={targetWeight}
@@ -241,11 +258,15 @@ export default function Screen2Goal({ navigation }: any) {
 
       <BodyTypeSelectionModal visible={showBodyTypeModal} onClose={() => setShowBodyTypeModal(false)} />
     </OnboardingLayout>
+  <StalePlanModal {...modalProps} />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   label: { color: TEXT, fontSize: 16, fontWeight: "800", marginBottom: 8 },
+  labelInline: { color: TEXT, fontSize: 16, fontWeight: "800", flexShrink: 1 },
+  targetWeightLabelWrap: { marginTop: 12 },
   block: { marginTop: 12 },
   error: { marginTop: 4, fontSize: 12, color: ORANGE },
   helperText: { color: MUTED, fontSize: 13, marginBottom: 10, lineHeight: 18 },

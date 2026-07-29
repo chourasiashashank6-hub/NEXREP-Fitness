@@ -21,6 +21,7 @@ export function computeTodaysGoalProgress(
   dailyCalorieTarget: number,
   caloriesBurnedToday: number,
   dailyBurnTarget: number,
+  opts?: { restDayActive?: boolean },
 ): TodaysGoalProgress {
   const eaten = Math.max(0, Number(caloriesEatenToday) || 0);
   const burned = Math.max(0, Number(caloriesBurnedToday) || 0);
@@ -29,7 +30,8 @@ export function computeTodaysGoalProgress(
 
   const eatFrac = eatTarget > 0 ? Math.min(1, eaten / eatTarget) : 0;
   const burnFrac = burnTarget > 0 ? Math.min(1, burned / burnTarget) : 0;
-  const combined = (eatFrac + burnFrac) / 2;
+  // Rest day: eat-only — do not average in a phantom burn target.
+  const combined = opts?.restDayActive ? eatFrac : (eatFrac + burnFrac) / 2;
   const percent = Math.round(combined * 100);
   const complete = combined >= 1;
 

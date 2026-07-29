@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
-import { useOnboardingSaveAndExit } from "../../hooks/useOnboardingSaveAndExit";
+import { StalePlanModal } from "../../components/StalePlanModal";
+import { useOnboardingStalePlanCheck } from "../../hooks/useOnboardingStalePlanCheck";
 import { BF_METHOD_OPTIONS, BODY_FAT_OPTIONS } from "../../utils/onboardingOptions";
 
 const GREEN = "#0F6E56";
@@ -26,9 +27,10 @@ const SCREEN_BG = "#FFFFFF";
 export default function Screen5BodyComp({ navigation }: any) {
   const { t } = useTranslation();
   const { data, updatePersonal } = useOnboardingContext();
-  const { saveAndExit, saving } = useOnboardingSaveAndExit();
+  const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
 
   return (
+    <>
     <OnboardingLayout
       step={5}
       title={t("onboarding.screen5.title")}
@@ -57,6 +59,8 @@ export default function Screen5BodyComp({ navigation }: any) {
         </View>
       ) : null}
     </OnboardingLayout>
+  <StalePlanModal {...modalProps} />
+    </>
   );
 }
 

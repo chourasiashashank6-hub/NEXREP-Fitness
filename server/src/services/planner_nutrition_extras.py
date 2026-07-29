@@ -14,7 +14,7 @@ from src.core.http_client import post_json
 from src.services.ai_logger import log_groq_call
 from src.models.meal_plan import MonthlyMealPlan
 from src.models.models import User
-from src.services.planner_common import parse_local_date, safe_json_loads
+from src.services.planner_common import parse_local_date
 
 logger = logging.getLogger(__name__)
 
@@ -538,97 +538,12 @@ def protein_suggestions_response(
     plan_id: int | None,
     local_date: str | None,
 ) -> dict[str, Any]:
-    from src.services.meal_engine_v3 import meal_engine_v3_enabled
     from src.services.meal_engine_v3_bridge import protein_gap_v3
-    from src.services.meal_planner_service import _build_meal_ctx, _plan_targets_dict
 
     today = parse_local_date(local_date)
     local_key = today.isoformat()
 
-    if meal_engine_v3_enabled():
-        result = protein_gap_v3(db, user, day=day, year=today.year, month=today.month)
-        _set_cached_protein(user.id, day, local_key, result)
-        return result
-
-    cached = _get_cached_protein(user.id, day, local_key)
-    if cached:
-        return cached
-
-    plan = _resolve_plan_for_day(db, user.id, today.month, today.year, day, plan_id)
-
-    if not plan:
-        return {
-            "protein_gap_g": 0,
-            "target_protein_g": 0,
-            "consumed_protein_g": 0,
-            "gap_pct": 0,
-            "show_suggestions": False,
-            "suggestions": [],
-        }
-
-    entry = next((e for e in plan.entries if e.day == day), None)
-    if not entry:
-        return {
-            "protein_gap_g": 0,
-            "target_protein_g": 0,
-            "consumed_protein_g": 0,
-            "gap_pct": 0,
-            "show_suggestions": False,
-            "suggestions": [],
-        }
-
-    targets = _plan_targets_dict(plan, db, user)
-    target_protein = int(targets.get("protein_g") or 0)
-    consumed = int(entry.total_protein_g or 0)
-    gap = max(0, target_protein - consumed)
-    gap_pct = int(round((gap / target_protein) * 100)) if target_protein > 0 else 0
-
-    base = {
-        "protein_gap_g": gap,
-        "target_protein_g": target_protein,
-        "consumed_protein_g": consumed,
-        "gap_pct": gap_pct,
-        "show_suggestions": gap > 10,
-        "suggestions": [],
-    }
-
-    if gap <= 10:
-        _set_cached_protein(user.id, day, local_key, base)
-        return base
-
-    ctx = _build_meal_ctx(db, user)
-    meals = safe_json_loads(entry.meals_json)
-    meal_types = [
-        str(m.get("meal_type"))
-        for m in (meals if isinstance(meals, list) else [])
-        if isinstance(m, dict) and m.get("meal_type")
-    ]
-
-    user_msg = {
-        "protein_gap_g": gap,
-        "already_consumed_protein_g": consumed,
-        "target_protein_g": target_protein,
-        "meals_already_planned": meal_types,
-        "time_of_day": f"hour {datetime.now().hour}",
-        "diet_type": ctx["diet_type"],
-        "allergies": ctx["allergies"],
-        "budget_level": plan.budget_level or "budget",
-        "goal": ctx["goal"],
-        "region": ctx["region"],
-    }
-
-    suggestions: list[dict[str, Any]] = []
-    try:
-        if settings.GROQ_API_KEY:
-            suggestions = _groq_protein_suggestions(PROTEIN_SUGGESTION_SYSTEM_PROMPT, user_msg, user_id=user.id)
-    except Exception as exc:
-        logger.warning("[ProteinSuggestions] Groq failed: %s", exc)
-        suggestions = []
-
-    if not suggestions:
-        suggestions = get_fallback_protein_suggestions(str(ctx["diet_type"]), gap)
-
-    result = {**base, "suggestions": suggestions}
+    result = protein_gap_v3(db, user, day=day, year=today.year, month=today.month)
     _set_cached_protein(user.id, day, local_key, result)
     return result
 

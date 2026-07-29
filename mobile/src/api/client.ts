@@ -59,8 +59,8 @@ export function resolveApiBaseUrl(): string {
 /** Default for most API calls; AI coach routes override with COACH_API_TIMEOUT_MS. */
 export const DEFAULT_API_TIMEOUT_MS = 20000;
 
-/** Groq/Gemini coach insight can exceed the default when the server tries fallbacks. */
-export const COACH_API_TIMEOUT_MS = 120000;
+/** AI endpoints can include one fallback attempt; keep margin above server-side budget. */
+export const COACH_API_TIMEOUT_MS = 180000;
 
 export const apiClient = axios.create({
   baseURL: envApiUrl,

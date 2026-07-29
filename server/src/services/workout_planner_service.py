@@ -4,17 +4,23 @@ import json
 import logging
 import random
 from datetime import date, datetime, timedelta
+from time import monotonic
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+AI_MAX_ATTEMPTS_PER_REQUEST = 2
+AI_TOTAL_BUDGET_SECONDS = 70
 
 from sqlalchemy.orm import Session
 
 from src.core.config import settings
 from src.core.http_client import post_json
+from src.db.session import release_db_connection
 from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.services.gemini_client import gemini_generate_content, has_gemini_key
 from src.services.language_service import ai_language_instruction
+from src.services.plan_snapshot import build_workout_snapshot, encode_snapshot, stale_workout_fields
 from src.models.meal_plan import DailyWorkoutPlanEntry, MonthlyWorkoutPlan
 from src.models.models import User, UserOnboarding, Workout
 from src.services.planner_common import (
@@ -417,7 +423,7 @@ def _groq_workout_chunk(
                 {"role": "user", "content": json.dumps(user_message)},
             ],
         },
-        timeout=90,
+        timeout=30,
     )
     try:
         log_groq_call(
@@ -452,7 +458,7 @@ def _gemini_workout_chunk(
             "responseMimeType": "application/json",
         },
     }
-    raw, used_fallback_key = gemini_generate_content(model, request_payload, timeout=90)
+    raw, used_fallback_key = gemini_generate_content(model, request_payload, timeout=30)
     try:
         log_gemini_call(
             user_id=user_id,
@@ -470,13 +476,16 @@ def _gemini_workout_chunk(
 
 
 def _validate_workout_day(day_obj: dict[str, Any]) -> dict[str, Any] | None:
-    if not isinstance(day_obj.get("day"), int):
+    raw_day = day_obj.get("day")
+    try:
+        day_num = int(raw_day)
+    except (TypeError, ValueError):
         return None
     is_rest = bool(day_obj.get("is_rest_day"))
     exercises = day_obj.get("exercises") if isinstance(day_obj.get("exercises"), list) else []
     focus = day_obj.get("focus_muscles") if isinstance(day_obj.get("focus_muscles"), list) else []
     return {
-        "day": int(day_obj["day"]),
+        "day": day_num,
         "is_rest_day": is_rest,
         "split_name": str(day_obj.get("split_name") or ("Rest Day" if is_rest else "Training Day")),
         "focus_muscles": [str(m) for m in focus],
@@ -656,6 +665,22 @@ def _normalize_workout_chunk_days(
     ]
 
 
+def _align_chunk_days_to_calendar(result: list[dict[str, Any]], calendar_days: list[int]) -> list[dict[str, Any]]:
+    """Force AI/fallback day numbers onto the requested calendar days (by position).
+
+    Models often renumber a mid-month chunk as day 1..N. Without remapping, inserts
+    collide with existing early-month rows (uq_workout_plan_day).
+    """
+    aligned: list[dict[str, Any]] = []
+    for i, day_num in enumerate(calendar_days):
+        if i >= len(result):
+            break
+        row = dict(result[i])
+        row["day"] = int(day_num)
+        aligned.append(row)
+    return aligned
+
+
 def _fallback_workout_days(
     days: list[int],
     workouts_per_week: int,
@@ -785,36 +810,39 @@ def _generate_workout_chunk(
 
     system_prompt = _build_workout_system_prompt(ctx, continue_from_split=bool(continue_from_split))
 
-    for attempt in range(2):
+    started = monotonic()
+    attempts = 0
+    providers = (
+        ("groq", lambda: _groq_workout_chunk(user_msg, system_prompt=system_prompt, user_id=user_id)),
+        ("gemini", lambda: _gemini_workout_chunk(user_msg, system_prompt=system_prompt, user_id=user_id)),
+    )
+    for provider_name, provider_call in providers:
+        if attempts >= AI_MAX_ATTEMPTS_PER_REQUEST or (monotonic() - started) >= AI_TOTAL_BUDGET_SECONDS:
+            break
+        attempts += 1
         try:
-            raw = _groq_workout_chunk(user_msg, system_prompt=system_prompt, user_id=user_id)
+            raw = provider_call()
             validated = [_validate_workout_day(d) for d in raw]
             validated = [d for d in validated if d]
             if len(validated) >= len(days):
-                result = _normalize_workout_chunk_days(
-                    validated[: len(days)],
-                    exercises_per_session=int(ctx["exercises_per_session"]),
-                    week_number=week_number,
+                result = _align_chunk_days_to_calendar(
+                    _normalize_workout_chunk_days(
+                        validated[: len(days)],
+                        exercises_per_session=int(ctx["exercises_per_session"]),
+                        week_number=week_number,
+                    ),
+                    days,
                 )
                 _log_workout_day_counts(result, int(ctx["exercises_per_session"]), int(ctx["workouts_per_week"]))
-                return result, "groq"
-        except Exception:
-            if attempt == 0:
-                continue
-        try:
-            raw = _gemini_workout_chunk(user_msg, system_prompt=system_prompt, user_id=user_id)
-            validated = [_validate_workout_day(d) for d in raw]
-            validated = [d for d in validated if d]
-            if len(validated) >= len(days):
-                result = _normalize_workout_chunk_days(
-                    validated[: len(days)],
-                    exercises_per_session=int(ctx["exercises_per_session"]),
-                    week_number=week_number,
-                )
-                _log_workout_day_counts(result, int(ctx["exercises_per_session"]), int(ctx["workouts_per_week"]))
-                return result, "gemini"
-        except Exception:
-            pass
+                return result, provider_name
+        except Exception as exc:
+            logger.warning(
+                "[WorkoutPlanner] Chunk AI attempt failed via %s (attempt %s/%s): %s",
+                provider_name,
+                attempts,
+                AI_MAX_ATTEMPTS_PER_REQUEST,
+                exc,
+            )
 
     fallback = _fallback_workout_days(
         days,
@@ -875,9 +903,10 @@ def generate_workout_plan(
         db.flush()
 
     ctx = _build_workout_ctx(db, user, focus_muscles=effective_focus)
+    user_id = user.id
     logger.info(
         "[WorkoutPlanner] user=%s: workouts_per_week=%s, exercises_per_session=%s, difficulty=%s, goal=%s, focus=%s",
-        user.id,
+        user_id,
         ctx["workouts_per_week"],
         ctx["exercises_per_session"],
         ctx["difficulty"],
@@ -885,10 +914,13 @@ def generate_workout_plan(
         ctx["focus_muscles"],
     )
 
+    # Release the DB connection before long AI HTTP so coach/other requests are not starved.
+    release_db_connection(db)
+
     all_days: list[dict[str, Any]] = []
     source = "groq"
     for idx, chunk in enumerate(month_chunks(month, year)):
-        chunk_days, chunk_source = _generate_workout_chunk(days=chunk, chunk_index=idx, ctx=ctx, user_id=user.id)
+        chunk_days, chunk_source = _generate_workout_chunk(days=chunk, chunk_index=idx, ctx=ctx, user_id=user_id)
         if chunk_source == "fallback":
             source = "fallback"
         elif chunk_source == "gemini" and source == "groq":
@@ -896,7 +928,7 @@ def generate_workout_plan(
         all_days.extend(chunk_days)
 
     plan = MonthlyWorkoutPlan(
-        user_id=user.id,
+        user_id=user_id,
         month=month,
         year=year,
         generated_at=datetime.utcnow(),
@@ -905,6 +937,10 @@ def generate_workout_plan(
     plan_set_focus_muscles(plan, ctx["focus_muscles"])
     db.add(plan)
     db.flush()
+
+    # Snapshot onboarding values for staleness detection.
+    onboarding, _ = _onboarding_context(db, user_id)
+    plan.onboarding_snapshot_json = encode_snapshot(build_workout_snapshot(onboarding))
 
     for d in all_days:
         db.add(_build_daily_workout_entry(plan.id, d))
@@ -1020,6 +1056,11 @@ def workout_plan_current_response(
         payload.update(_monthly_workout_day_regen_stats(db, user.id, plan.month, plan.year, user=user))
         payload.update(_monthly_workout_month_plan_regen_stats(db, user.id, plan.month, plan.year, user=user))
         payload.update(planner_days_unlocked_flag(user))
+        # Staleness — compare stored onboarding snapshot against current values.
+        onboarding_raw, _ = _onboarding_context(db, user.id)
+        stale = stale_workout_fields(plan.onboarding_snapshot_json, onboarding_raw)
+        payload["stale_fields"] = stale
+        payload["is_stale"] = len(stale) > 0
     return payload
 
 
@@ -1142,34 +1183,46 @@ def _regenerate_workout_day_ai(
     }
     system_prompt = _build_workout_system_prompt(ctx) + WORKOUT_DAY_REGEN_SUFFIX
 
-    for attempt in range(2):
-        try:
-            raw = _groq_workout_chunk(
+    started = monotonic()
+    attempts = 0
+    providers = (
+        (
+            "groq",
+            lambda: _groq_workout_chunk(
                 user_msg,
                 system_prompt=system_prompt,
                 user_id=user_id,
                 endpoint="/api/workout-planner/regenerate-day",
-            )
-            validated = [_validate_workout_day(d) for d in raw]
-            validated = [d for d in validated if d]
-            if validated:
-                return validated[0]
-        except Exception:
-            if attempt == 0:
-                continue
-        try:
-            raw = _gemini_workout_chunk(
+            ),
+        ),
+        (
+            "gemini",
+            lambda: _gemini_workout_chunk(
                 user_msg,
                 system_prompt=system_prompt,
                 user_id=user_id,
                 endpoint="/api/workout-planner/regenerate-day",
-            )
+            ),
+        ),
+    )
+    for provider_name, provider_call in providers:
+        if attempts >= AI_MAX_ATTEMPTS_PER_REQUEST or (monotonic() - started) >= AI_TOTAL_BUDGET_SECONDS:
+            break
+        attempts += 1
+        try:
+            raw = provider_call()
             validated = [_validate_workout_day(d) for d in raw]
             validated = [d for d in validated if d]
             if validated:
                 return validated[0]
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "[WorkoutPlanner] Day regen AI attempt failed via %s (attempt %s/%s): %s",
+                provider_name,
+                attempts,
+                AI_MAX_ATTEMPTS_PER_REQUEST,
+                exc,
+            )
     return None
 
 
@@ -1231,6 +1284,28 @@ def regenerate_single_workout_day(
         raise ValueError("Cannot regenerate a rest day")
 
     ctx = _build_workout_ctx(db, user, focus_muscles=plan_get_focus_muscles(plan))
+    release_db_connection(db)
+    plan = (
+        db.query(MonthlyWorkoutPlan)
+        .filter(
+            MonthlyWorkoutPlan.id == plan_id,
+            MonthlyWorkoutPlan.user_id == user.id,
+            MonthlyWorkoutPlan.month == month,
+            MonthlyWorkoutPlan.year == year,
+        )
+        .first()
+    )
+    if not plan:
+        raise LookupError("Plan not found")
+    existing_entry = (
+        db.query(DailyWorkoutPlanEntry)
+        .filter(DailyWorkoutPlanEntry.plan_id == plan.id, DailyWorkoutPlanEntry.day == day)
+        .first()
+    )
+    if not existing_entry:
+        raise LookupError("Day not found")
+    if existing_entry.is_rest_day:
+        raise ValueError("Cannot regenerate a rest day")
 
     try:
         _refresh_workout_entry_exercises(db, user, plan, existing_entry, ctx=ctx)
@@ -1282,7 +1357,12 @@ def regenerate_month_plan_workouts(
     plan_id: int,
     local_date: str | None,
 ) -> dict[str, Any]:
-    """Regenerate exercises for today and all future workout days; keep split schedule."""
+    """Regenerate today + future days with current onboarding (chunked AI, not per-day).
+
+    Previously this looped one AI call per remaining training day, which made the
+    stale-plan / month regenerate button take minutes near the start of a month.
+    Chunk generation matches initial plan create (~1 AI call per ~7 days).
+    """
     today = parse_local_date(local_date)
     month, year = today.month, today.year
 
@@ -1308,29 +1388,28 @@ def regenerate_month_plan_workouts(
     if not plan:
         raise LookupError("Plan not found")
 
-    entries = (
-        db.query(DailyWorkoutPlanEntry)
-        .filter(
-            DailyWorkoutPlanEntry.plan_id == plan.id,
-            DailyWorkoutPlanEntry.day >= today.day,
-            DailyWorkoutPlanEntry.is_rest_day.is_(False),
-        )
-        .order_by(DailyWorkoutPlanEntry.day.asc())
-        .all()
-    )
-    if not entries:
-        raise ValueError("No remaining workout days to regenerate this month.")
-
-    ctx = _build_workout_ctx(db, user, focus_muscles=plan_get_focus_muscles(plan))
+    # Prefer current onboarding focus so stale-profile regenerations pick up changes.
+    focus_muscles = _resolve_focus_muscles(db, user, None) or plan_get_focus_muscles(plan)
 
     try:
-        for entry in entries:
-            _refresh_workout_entry_exercises(db, user, plan, entry, ctx=ctx)
+        plan = regenerate_remaining_workouts(
+            db,
+            user,
+            from_day=today.day,
+            focus_muscles=focus_muscles,
+            local_date=local_date,
+            allow_fallback=True,
+        )
         if not test_user:
+            # Reload after commit inside regenerate_remaining_workouts.
+            plan = (
+                db.query(MonthlyWorkoutPlan)
+                .filter(MonthlyWorkoutPlan.id == plan_id, MonthlyWorkoutPlan.user_id == user.id)
+                .first()
+            ) or plan
             plan.month_plan_regens_used = int(plan.month_plan_regens_used or 0) + 1
-        plan.generated_at = datetime.utcnow()
-        db.commit()
-        db.refresh(plan)
+            db.commit()
+            db.refresh(plan)
     except Exception as db_exc:
         db.rollback()
         logger.exception("[WorkoutPlanner] DB error on month plan regen: %s", db_exc)
@@ -1346,6 +1425,7 @@ def regenerate_remaining_workouts(
     from_day: int,
     focus_muscles: list[str],
     local_date: str | None,
+    allow_fallback: bool = False,
 ) -> MonthlyWorkoutPlan:
     today = parse_local_date(local_date)
     month, year = today.month, today.year
@@ -1362,6 +1442,8 @@ def regenerate_remaining_workouts(
 
     if from_day > last_day:
         plan_set_focus_muscles(plan, focus_muscles)
+        onboarding_raw, _ = _onboarding_context(db, user.id)
+        plan.onboarding_snapshot_json = encode_snapshot(build_workout_snapshot(onboarding_raw))
         db.commit()
         db.refresh(plan)
         return plan
@@ -1373,38 +1455,68 @@ def regenerate_remaining_workouts(
     split_cursor = kept_prev.split_name if kept_prev else None
 
     ctx = _build_workout_ctx(db, user, focus_muscles=focus_muscles)
+    plan_id = plan.id
+    user_id = user.id
     logger.info(
         "[WorkoutPlanner] Regenerating user=%s from day %s: workouts_per_week=%s, exercises_per_session=%s, focus=%s",
-        user.id,
+        user_id,
         from_day,
         ctx["workouts_per_week"],
         ctx["exercises_per_session"],
         ctx["focus_muscles"],
     )
 
+    # Release the DB connection before long AI HTTP so coach/other requests are not starved.
+    release_db_connection(db)
+
     new_day_dicts: list[dict[str, Any]] = []
+    used_fallback = False
     for idx, chunk_days in enumerate(days_chunks_from_range(from_day, last_day)):
         new_days, chunk_source = _generate_workout_chunk(
             days=chunk_days,
             chunk_index=idx,
             ctx=ctx,
             continue_from_split=split_cursor,
-            user_id=user.id,
+            user_id=user_id,
         )
         if chunk_source == "fallback":
+            used_fallback = True
+            if not allow_fallback:
+                logger.warning(
+                    "[WorkoutPlanner] Focus-forward regen kept existing plan because AI generation fell back for user=%s from day=%s",
+                    user_id,
+                    from_day,
+                )
+                plan = get_existing_workout_plan(db, user_id, month, year)
+                if not plan:
+                    raise LookupError("Plan not found")
+                return plan
             logger.warning(
-                "[WorkoutPlanner] Focus-forward regen kept existing plan because AI generation fell back for user=%s from day=%s",
-                user.id,
+                "[WorkoutPlanner] Using local fallback chunk for user=%s from day=%s (AI unavailable)",
+                user_id,
                 from_day,
             )
-            return plan
         new_day_dicts.extend(new_days)
         non_rest = [d for d in reversed(new_days) if not d.get("is_rest_day")]
         if non_rest:
             split_cursor = str(non_rest[0].get("split_name"))
 
     if not new_day_dicts:
+        plan = get_existing_workout_plan(db, user_id, month, year)
+        if not plan:
+            raise LookupError("Plan not found")
         return plan
+
+    # Final remap: models often renumber mid-month chunks as day 1..N.
+    expected_days = list(range(from_day, last_day + 1))
+    if len(new_day_dicts) >= len(expected_days):
+        new_day_dicts = _align_chunk_days_to_calendar(new_day_dicts[: len(expected_days)], expected_days)
+    else:
+        new_day_dicts = _align_chunk_days_to_calendar(new_day_dicts, expected_days[: len(new_day_dicts)])
+
+    plan = get_existing_workout_plan(db, user_id, month, year)
+    if not plan or plan.id != plan_id:
+        raise LookupError("Plan not found")
 
     db.query(DailyWorkoutPlanEntry).filter(
         DailyWorkoutPlanEntry.plan_id == plan.id,
@@ -1417,6 +1529,10 @@ def regenerate_remaining_workouts(
 
     plan_set_focus_muscles(plan, focus_muscles)
     plan.generated_at = datetime.utcnow()
+    if used_fallback:
+        plan.source = "fallback"
+    onboarding_raw, _ = _onboarding_context(db, user_id)
+    plan.onboarding_snapshot_json = encode_snapshot(build_workout_snapshot(onboarding_raw))
     db.add(plan)
     db.commit()
     db.refresh(plan)

@@ -60,6 +60,8 @@
     "logAction": "लॉग →",
     "toEat": "खाने के लिए",
     "toBurn": "जलाना",
+    "eatingOnly": "केवल खाना",
+    "restDayNoBurn": "रेस्ट डे — कोई बर्न टारगेट नहीं",
     "tdee": "TDEE",
     "tdeeFull": "कुल दैनिक ऊर्जा व्यय",
     "tdeeDescription": "आपका शरीर प्रतिदिन आराम + गतिविधि के समय कैलोरी जलाता है।",
@@ -384,7 +386,8 @@
     "required": "आवश्यक",
     "close": "बंद करें",
     "viewLog": "लॉग",
-    "viewPlanner": "प्लानर"
+    "viewPlanner": "प्लानर",
+    "and": "and"
   },
   "social": {
     "nav": {
@@ -934,18 +937,17 @@
       "eliteBenefitsTitle": "आपको Elite से क्या मिलता है",
       "proBenefitsTitle": "आपको Pro से क्या मिलता है",
       "eliteBenefits": [
-        "मासिक भोजन + workout योजनाकार",
         "असीमित AI स्वैप और दिन पुनर्जनन",
         "Pro में सब कुछ शामिल है",
         "व्यक्तिगत प्रशिक्षक की पहुंच",
         "प्राथमिकता 24/7 समर्थन"
       ],
       "proBenefits": [
+        "मासिक भोजन + workout योजनाकार",
         "सभी 4 AI कोचिंग सुविधाएं अनलॉक की गईं",
         "खाद्य फोटो कैलोरी स्कैनर",
         "AI पोज़ मार्गदर्शन + प्रतिनिधि काउंटर",
-        "कैलोरी और workout AI कोच",
-        "प्रति दिन 5 AI स्वैप"
+        "कैलोरी और workout AI कोच"
       ],
       "elitePricePrefix": "Elite से",
       "proPricePrefix": "Pro से",
@@ -1201,6 +1203,7 @@
           "analytics": "प्रगति विश्लेषण एवं चार्ट",
           "guidedPlans": "100+ निर्देशित workout योजनाएँ",
           "nutritionTracker": "पोषण ट्रैकर",
+          "monthlyPlanners": "मासिक भोजन और workout योजनाकार",
           "trainerAccess": "व्यक्तिगत प्रशिक्षक की पहुंच",
           "customMealPlans": "कस्टम भोजन योजनाएं",
           "prioritySupport": "प्राथमिकता समर्थन"
@@ -1828,8 +1831,14 @@
         "allMonthRegensUsed": "आपने सभी माह की योजना पुनर्जनन का उपयोग कर लिया है। {{resetDate}} रीसेट करता है।",
         "monthPlanRegenerated": "मासिक योजना पुनर्जीवित!",
         "monthPlanLimitReset": "माह योजना की सीमा पूरी हो गई. {{resetDate}} रीसेट करता है।",
-        "monthPlanRegenerateFailed": "योजना पुन: उत्पन्न करने में विफल. कृपया पुन: प्रयास करें।"
-      }
+        "monthPlanRegenerateFailed": "योजना पुन: उत्पन्न करने में विफल. कृपया पुन: प्रयास करें।",
+        "logExerciseFailed": "Could not update Workout Log. Try again.",
+        "swapLockedTitle": "Exercise already logged",
+        "swapLockedBody": "Can't swap an exercise you've already logged — remove the log first."
+      },
+      "loggedBadge": "Logged",
+      "logExercise": "Log this exercise to Workout Log",
+      "unlogExercise": "Remove from Workout Log"
     },
     "mealPlannerScreen": {
       "budgets": {
@@ -1949,8 +1958,11 @@
       "weightLb": "कृपया स्क्रीन 1 पर वजन (पौंड) दर्ज करें।",
       "goal": "कृपया स्क्रीन 2 पर एक लक्ष्य चुनें।",
       "difficulty": "कृपया स्क्रीन 2 पर कठिनाई का चयन करें।",
+      "goalPace": "कृपया स्क्रीन 2 पर लक्ष्य गति चुनें।",
+      "targetWeight": "कृपया स्क्रीन 2 पर लक्ष्य वजन चुनें।",
       "activity": "कृपया स्क्रीन 3 पर गतिविधि स्तर चुनें।",
-      "regionalFood": "कृपया स्क्रीन 4 पर कम से कम एक क्षेत्रीय भोजन शैली का चयन करें।"
+      "workoutsPerWeek": "कृपया स्क्रीन 3 पर प्रति सप्ताह वर्कआउट चुनें।",
+      "dietType": "कृपया स्क्रीन 4 पर डाइट टाइप चुनें।"
     },
     "focusMuscles": {
       "balancedHint": "संतुलित - सभी मांसपेशी समूहों को समान रूप से प्रशिक्षित किया जाएगा",
@@ -2027,16 +2039,6 @@
         "intermittentFasting": "आंतरायिक उपवास",
         "halal": "हलाल",
         "jain": "जैन"
-      },
-      "regionalFoods": {
-        "northIndian": "उत्तर भारतीय",
-        "southIndian": "दक्षिण भारतीय",
-        "rajasthani": "राजस्थानी",
-        "punjabi": "पंजाबी",
-        "gujarati": "गुजराती",
-        "bengali": "बंगाली",
-        "maharashtrian": "महाराष्ट्रीयन",
-        "noPreference": "कोई प्राथमिकता नहीं / अखिल भारतीय"
       },
       "meals": {
         "one": "1 भोजन",
@@ -2142,16 +2144,14 @@
       "subtitle": "कैलोरी गणित के लिए आवश्यक नहीं है, लेकिन प्रासंगिक भोजन सुझाव देने के लिए AI कोच के लिए महत्वपूर्ण है। इसे हल्का रखें - अधिकतम 3 प्रश्न।",
       "dietType": "आहार का प्रकार",
       "noPreference": "कोई प्राथमिकता नहीं",
-      "regionalFoodStyle": "क्षेत्रीय भोजन शैली",
       "requiredHint": "*आवश्यक है",
-      "regionalHelper": "AI भोजन योजनाकार द्वारा उन व्यंजनों की अनुशंसा करने के लिए उपयोग किया जाता है जिनका आप वास्तव में आनंद लेंगे",
       "selectedCount": "{{count}} चयनित",
       "selectOneOrMore": "एक या अधिक का चयन करें",
       "allergies": "खाद्य एलर्जी/असहिष्णुता",
       "mealsPerDay": "प्रति दिन भोजन",
       "mealsPlaceholder": "3 भोजन",
       "errors": {
-        "regionalRequired": "कृपया कम से कम एक विकल्प चुनें"
+        "dietTypeRequired": "डाइट टाइप आवश्यक है"
       }
     },
     "screen5": {
@@ -2397,5 +2397,43 @@
     "cal_skip": "अभी छोड़ें",
     "calibrate_banner": "सटीकता के लिए कैलिब्रेट करें",
     "calibrate_profile": "AI ट्रेनर कैलिब्रेशन"
+  },
+  "stalePlan": {
+    "bannerTitle": "Your plan may be outdated",
+    "bannerBody": "Your {{fields}} changed since this plan was generated. Regenerate to get accurate recommendations.",
+    "regenerate": "Regenerate",
+    "modalTitle": "Regenerate affected plans?",
+    "modalBodyOne": "Your {{fields}} changed. This affects your {{planners}} — regenerating will update it with your latest profile.",
+    "modalBodyTwo": "Your {{fields}} changed. This affects your {{planners}} — regenerating will update them with your latest profile.",
+    "regenerateNow": "Regenerate now",
+    "doItLater": "I'll do it later",
+    "regenerating": "Regenerating...",
+    "regenerated": "Plan regenerated successfully",
+    "regenerateFailed": "Could not regenerate plan. Try again.",
+    "planners": {
+      "meal": "Meal Planner",
+      "workout": "Workout Planner"
+    },
+    "fields": {
+      "age": "age",
+      "biological_sex": "biological sex",
+      "height_cm": "height",
+      "current_weight_kg": "current weight",
+      "primary_goal": "primary goal",
+      "goal_pace": "goal pace",
+      "target_weight_kg": "target weight",
+      "daily_activity_level": "activity level",
+      "diet_type": "diet type",
+      "food_allergies": "food allergies",
+      "meals_per_day": "meals per day",
+      "difficulty": "difficulty",
+      "body_type_current": "current body type",
+      "body_type_goal": "goal body type",
+      "body_type_problem_areas": "problem areas",
+      "workouts_per_week": "workouts per week",
+      "workout_types": "workout types",
+      "muscle_focus": "muscle focus",
+      "legacyProfile": "profile"
+    }
   }
 }

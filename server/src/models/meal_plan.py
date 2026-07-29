@@ -16,6 +16,8 @@ class MonthlyMealPlan(Base):
     budget_level = Column(String(32), nullable=False)
     regional_food_styles_json = Column(Text, nullable=True)  # JSON list snapshot from onboarding
     diet_type = Column(String(32), nullable=True)  # snapshot from onboarding
+    # Onboarding snapshot for staleness detection (JSON object)
+    onboarding_snapshot_json = Column(Text, nullable=True)
     generated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     source = Column(String(32), default="groq")
     target_kcal = Column(Integer, nullable=True)
@@ -66,6 +68,8 @@ class MonthlyWorkoutPlan(Base):
     focus_muscles_json = Column(Text, nullable=True)  # JSON array e.g. ["Chest", "Back"]
     generated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     source = Column(String(32), default="groq")
+    # Onboarding snapshot for staleness detection (JSON object)
+    onboarding_snapshot_json = Column(Text, nullable=True)
     day_regens_used = Column(Integer, default=0, nullable=False)
     day_regens_limit = Column(Integer, default=2, nullable=False)
     month_plan_regens_used = Column(Integer, default=0, nullable=False)

@@ -79,7 +79,11 @@ export function computeUserCaloriePlan(user) {
       161;
   }
 
-  const multiplier = activityMultiplier[normalizedUser.activity_level];
+  const storedMultiplier = user.tdee_multiplier ?? user.activity_multiplier;
+  const multiplier =
+    storedMultiplier != null && Number.isFinite(Number(storedMultiplier))
+      ? Number(storedMultiplier)
+      : activityMultiplier[normalizedUser.activity_level];
   const tdee = Math.round(bmr * multiplier);
 
   const paceConfig = goalPaceMap[normalizedUser.goal_tag][normalizedUser.goal_pace];

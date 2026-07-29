@@ -81,7 +81,11 @@ export const calculateNutritionTargets = (data: OnboardingData): NutritionTarget
     formulaUsed = "katch_mcardle";
   }
 
-  const mult = ACTIVITY_MULTIPLIERS[data.activity.level || "moderately_active"] || 1.55;
+  const storedMultiplier = data.activity.tdee_multiplier;
+  const mult =
+    storedMultiplier != null && Number.isFinite(Number(storedMultiplier))
+      ? Number(storedMultiplier)
+      : ACTIVITY_MULTIPLIERS[data.activity.level || "moderately_active"] || 1.55;
   const tdee = bmr * mult;
 
   let delta = 0;

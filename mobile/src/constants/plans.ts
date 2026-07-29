@@ -34,8 +34,8 @@ export const PLANS: Plan[] = [
       { label: i18n.t("subscription.plans.pro.features.analytics"), included: true },
       { label: i18n.t("subscription.plans.pro.features.guidedPlans"), included: true },
       { label: i18n.t("subscription.plans.pro.features.nutritionTracker"), included: true },
+      { label: i18n.t("subscription.plans.pro.features.monthlyPlanners"), included: true },
       { label: i18n.t("subscription.plans.pro.features.trainerAccess"), included: false },
-      { label: i18n.t("subscription.plans.pro.features.customMealPlans"), included: false },
       { label: i18n.t("subscription.plans.pro.features.prioritySupport"), included: false },
     ],
   },
@@ -51,7 +51,6 @@ export const PLANS: Plan[] = [
     features: [
       { label: i18n.t("subscription.plans.elite.features.everythingPro"), included: true },
       { label: i18n.t("subscription.plans.elite.features.trainerAccess"), included: true },
-      { label: i18n.t("subscription.plans.elite.features.monthlyPlanners"), included: true },
       { label: i18n.t("subscription.plans.elite.features.bodyComposition"), included: true },
       { label: i18n.t("subscription.plans.elite.features.prioritySupport"), included: true },
       { label: i18n.t("subscription.plans.elite.features.liveChallenges"), included: true },

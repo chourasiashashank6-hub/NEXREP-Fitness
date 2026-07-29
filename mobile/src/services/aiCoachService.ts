@@ -11,32 +11,12 @@ export function hasOpenAiKey() {
 
 export async function getCalorieCoachInsight(data: NutritionData): Promise<AICoachResponse> {
   try {
-    const requestConfig = {
+    // Server endpoint is GET with no body. Sending a body on GET can yield 403 from
+    // some stacks/proxies and left the Refresh spinner stuck waiting on retries.
+    const response = await apiClient.get<Record<string, unknown>>("/api/calories/coach/insight", {
       timeout: COACH_API_TIMEOUT_MS,
-      data: {
-        generateDietTips: true,
-        tipCount: 5,
-        focus: ["gut_health", "macro_gaps", "meal_timing", "digestion"],
-      },
-    };
-    let payload: Record<string, unknown>;
-    try {
-      const response = await apiClient.request<Record<string, unknown>>({
-        method: "GET",
-        url: "/api/calories/coach/insight",
-        ...requestConfig,
-      });
-      payload = response.data;
-    } catch (e) {
-      if (!axios.isAxiosError(e) || ![400, 405, 415, 422].includes(e.response?.status ?? 0)) {
-        throw e;
-      }
-      const response = await apiClient.get<Record<string, unknown>>("/api/calories/coach/insight", {
-        timeout: COACH_API_TIMEOUT_MS,
-      });
-      payload = response.data;
-    }
-    return normalizeCalorieCoachResponse(payload, data);
+    });
+    return normalizeCalorieCoachResponse(response.data, data);
   } catch (e) {
     if (axios.isAxiosError(e)) {
       const detail = (e.response?.data as { detail?: unknown } | undefined)?.detail;

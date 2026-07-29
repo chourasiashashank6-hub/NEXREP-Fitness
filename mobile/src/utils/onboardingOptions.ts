@@ -87,17 +87,6 @@ export const DIET_TYPE_OPTIONS: PickerOption<string>[] = [
   { value: "jain", label: i18n.t("onboarding.options.diet.jain") },
 ];
 
-export const REGIONAL_FOOD_STYLE_OPTIONS: PickerOption<string>[] = [
-  { value: "north_indian", label: i18n.t("onboarding.options.regionalFoods.northIndian") },
-  { value: "south_indian", label: i18n.t("onboarding.options.regionalFoods.southIndian") },
-  { value: "rajasthani", label: i18n.t("onboarding.options.regionalFoods.rajasthani") },
-  { value: "punjabi", label: i18n.t("onboarding.options.regionalFoods.punjabi") },
-  { value: "gujarati", label: i18n.t("onboarding.options.regionalFoods.gujarati") },
-  { value: "bengali", label: i18n.t("onboarding.options.regionalFoods.bengali") },
-  { value: "maharashtrian", label: i18n.t("onboarding.options.regionalFoods.maharashtrian") },
-  { value: "no_preference", label: i18n.t("onboarding.options.regionalFoods.noPreference") },
-];
-
 export const MEALS_PER_DAY_OPTIONS: PickerOption<number>[] = [1, 2, 3, 4, 5, 6].map((n) => ({
   value: n,
   label: n === 1 ? i18n.t("onboarding.options.meals.one") : n === 3 ? i18n.t("onboarding.options.meals.default") : i18n.t("onboarding.options.meals.many", { count: n }),

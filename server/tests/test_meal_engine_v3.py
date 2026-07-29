@@ -704,3 +704,105 @@ def test_protein_gap_excludes_today_meals_and_unique_categories(db: Session):
     for s in suggestions:
         assert s["description"] == s["category"]
         assert s.get("time_suggestion") in ("", None)
+
+
+def test_day_reconcile_closes_compounded_gap(db: Session):
+    """Per-slot fits within tolerance can still compound — reconciliation closes the day gap."""
+    if db.query(Recipe).count() < 40:
+        pytest.skip("recipes not imported")
+    user_id = _ensure_user(db, "meal_v3_reconcile@test.local")
+    _clean_plans(db, user_id)
+    plan_date = date(2030, 2, 10)
+    daily = v3.calorie_log_daily_target(target_kcal=2000, protein_g=150, carbs_g=200, fat_g=60)
+
+    rows = v3.ensure_day_plan(
+        db,
+        user_id=user_id,
+        plan_date=plan_date,
+        diet="no_preference",
+        goal="maintain",
+        daily_kcal=daily.kcal,
+        meals_per_day=3,
+        force=True,
+        daily_override=daily,
+    )
+    # Simulate compounded undershoot: scale every slot down ~12% on the multiplier grid.
+    scaled: list[UserMealPlan] = []
+    for row in rows:
+        recipe = row.recipe
+        assert recipe is not None
+        cur = float(row.multiplier)
+        lower = max(m for m in v3.MULTIPLIERS if m <= cur - 0.24) if cur > min(v3.MULTIPLIERS) else cur
+        pick = v3._slot_pick(recipe, lower, v3.slot_targets(daily, row.slot, 3))
+        scaled.append(
+            v3.upsert_assignment(
+                db,
+                user_id=user_id,
+                plan_date=plan_date,
+                slot=row.slot,
+                slot_order=int(row.slot_order or 0),
+                pick=pick,
+                swap_version=int(row.swap_version or 0),
+            )
+        )
+    before = sum(float(r.kcal) for r in scaled)
+    reconciled, meta = v3.reconcile_day_kcal(
+        db,
+        rows=scaled,
+        daily=daily,
+        meals_per_day=3,
+        user_id=user_id,
+        plan_date=plan_date,
+    )
+    db.commit()
+    total = sum(float(r.kcal) for r in reconciled)
+    assert meta["reconciled"] is True
+    assert total > before
+    assert abs(meta["residual_gap_kcal"]) < abs(meta["initial_gap_kcal"])
+    assert total >= daily.kcal * 0.88
+    for row in reconciled:
+        assert float(row.multiplier) <= max(v3.MULTIPLIERS) + 1e-6
+
+
+def test_day_reconcile_respects_ceiling_and_logs_residual(db: Session, monkeypatch, caplog):
+    """When no slot can absorb more without exceeding 2.5×, leave a residual gap."""
+    if db.query(Recipe).count() < 40:
+        pytest.skip("recipes not imported")
+    user_id = _ensure_user(db, "meal_v3_reconcile_ceiling@test.local")
+    _clean_plans(db, user_id)
+    plan_date = date(2030, 2, 11)
+    daily = v3.calorie_log_daily_target(target_kcal=5000, protein_g=300, carbs_g=500, fat_g=120)
+
+    real_select = v3.select_for_slot
+
+    def maxed_select(*args, **kwargs):
+        pick = real_select(*args, **kwargs)
+        recipe = pick.recipe
+        mult = max(v3.MULTIPLIERS)
+        return v3.SlotPick(
+            recipe=recipe,
+            multiplier=mult,
+            kcal=round(recipe.kcal * mult, 1),
+            protein_g=round(recipe.protein_g * mult, 1),
+            carbs_g=round(recipe.carbs_g * mult, 1),
+            fat_g=round(recipe.fat_g * mult, 1),
+            error=pick.error,
+        )
+
+    monkeypatch.setattr(v3, "select_for_slot", maxed_select)
+    with caplog.at_level("INFO"):
+        rows = v3.ensure_day_plan(
+            db,
+            user_id=user_id,
+            plan_date=plan_date,
+            diet="no_preference",
+            goal="maintain",
+            daily_kcal=daily.kcal,
+            meals_per_day=3,
+            force=True,
+            daily_override=daily,
+        )
+    db.commit()
+    total = sum(float(r.kcal) for r in rows)
+    assert total < daily.kcal * (1 - v3.DAY_KCAL_TOLERANCE_FRAC)
+    assert any("reconcile_residual_gap" in r.message for r in caplog.records)

@@ -51,4 +51,20 @@ function almostEqual(a: number, b: number, eps = 1e-9) {
   assert(p.complete === false, "overeating alone must not complete");
 }
 
+// Rest day: combined === eatFrac; incidental burn never factors in
+{
+  const p = computeTodaysGoalProgress(1000, 2000, 400, 400, { restDayActive: true });
+  assert(almostEqual(p.combined, p.eatFrac), `rest combined should equal eatFrac, got ${p.combined} vs ${p.eatFrac}`);
+  assert(p.percent === 50, `rest eat-half should be 50, got ${p.percent}`);
+  assert(almostEqual(p.burnFrac, 1), "burnFrac still computed but unused");
+  assert(p.complete === false, "rest half-eat incomplete");
+}
+
+{
+  const p = computeTodaysGoalProgress(2000, 2000, 0, 400, { restDayActive: true });
+  assert(p.percent === 100, `rest eat-done should be 100, got ${p.percent}`);
+  assert(p.complete === true, "rest eat-done complete");
+  assert(almostEqual(p.combined, 1), "combined is eatFrac only");
+}
+
 console.log("todaysGoalRing.test.ts: all assertions passed");

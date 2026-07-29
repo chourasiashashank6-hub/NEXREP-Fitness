@@ -48,7 +48,6 @@ import { useFoodRecognition } from "../hooks/useFoodRecognition";
 import type { FoodAnalysisResult } from "../services/foodRecognitionService";
 import { useAuthStore } from "../store/authStore";
 import type { MainTabParamList } from "../navigation/types";
-import { computeUserCaloriePlan } from "../utils/calorieEngine";
 import MonthlyMealPlannerScreen from "./Coach/MonthlyMealPlannerScreen";
 
 type BurnProfile = {
@@ -838,17 +837,8 @@ export const CalorieLog = () => {
   const fiberTarget = Number(
     (log as Record<string, unknown> | undefined)?.target_fiber_g ?? targets?.macros?.fiber_g ?? 0,
   );
-  // Match Home: live Mifflin plan overrides the persisted calorie-log target.
-  const burnPlan = burnProfile
-    ? computeUserCaloriePlan({
-        ...burnProfile,
-        current_weight_kg: latestWeightKg ?? burnProfile.current_weight_kg,
-      })
-    : null;
-  const dailyGoal = Math.max(
-    1,
-    Math.round(Number(burnPlan?.dailyCalorieTarget ?? log?.target_calories) || 1800),
-  );
+  // Daily kcal from calorie_log_targets via daily log API (same as Home + Meal Planner).
+  const dailyGoal = Math.max(1, Math.round(Number(log?.target_calories) || 1800));
   const eatenToday = Number(log?.total_calories) || 0;
   const remaining = dailyGoal - eatenToday;
   const remainingColor = remaining > 0 ? GREEN : remaining < 0 ? ORANGE : MUTED;

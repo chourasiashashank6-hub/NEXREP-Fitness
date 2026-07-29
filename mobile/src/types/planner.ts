@@ -155,6 +155,9 @@ export type MealPlanCurrent = {
   month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
   planner_days_unlocked?: boolean;
+  /** Onboarding fields that have changed since this plan was generated. */
+  stale_fields?: string[];
+  is_stale?: boolean;
 };
 
 export type WeekTab = {
@@ -256,4 +259,7 @@ export type WorkoutPlanCurrent = {
   month_plan_regens_remaining?: number;
   planner_limits_exempt?: boolean;
   planner_days_unlocked?: boolean;
+  /** Onboarding fields that have changed since this plan was generated. */
+  stale_fields?: string[];
+  is_stale?: boolean;
 };

@@ -22,6 +22,91 @@ let voicesReadyPromise: Promise<SpeechSynthesisVoice[]> | null = null;
 let cancelSettleTimer: ReturnType<typeof setTimeout> | null = null;
 const unlockListeners = new Set<(unlocked: boolean) => void>();
 
+/**
+ * Chrome GC quirk: local SpeechSynthesisUtterance vars can be collected before
+ * the engine fires events → silent speak() with no onstart/onend/onerror.
+ * Keep a module-level hold until end/error.
+ */
+let currentUtteranceRef: SpeechSynthesisUtterance | null = null;
+/** Extra set so unlock + test paths never lose an utterance mid-flight. */
+const heldUtterances = new Set<SpeechSynthesisUtterance>();
+
+function retainUtterance(utter: SpeechSynthesisUtterance): void {
+  currentUtteranceRef = utter;
+  heldUtterances.add(utter);
+}
+
+function releaseUtterance(utter: SpeechSynthesisUtterance): void {
+  heldUtterances.delete(utter);
+  if (currentUtteranceRef === utter) currentUtteranceRef = null;
+}
+
+function clearHeldUtterances(): void {
+  heldUtterances.clear();
+  currentUtteranceRef = null;
+}
+
+/** Chrome: synth can sit paused after idle — resume before every speak. */
+function resumeSynth(synth: SpeechSynthesis): void {
+  try {
+    synth.resume();
+  } catch {
+    // ignore
+  }
+}
+
+function pollSpeakingState(tag: string, synth: SpeechSynthesis): void {
+  const snap = () => ({
+    speaking: synth.speaking,
+    pending: synth.pending,
+    paused: synth.paused,
+    held: heldUtterances.size,
+  });
+  console.log(`[${tag}] speaking poll immediate`, snap());
+  for (const ms of [100, 500, 1500] as const) {
+    setTimeout(() => {
+      console.log(`[${tag}] speaking poll +${ms}ms`, snap());
+    }, ms);
+  }
+}
+
+type SpeakHeldOpts = {
+  tag: string;
+  onStart?: () => void;
+  onEnd?: () => void;
+  onError?: (error: string) => void;
+};
+
+/**
+ * Assign lifecycle handlers, retain the utterance, resume + speak, poll state.
+ */
+function speakHeldUtterance(
+  synth: SpeechSynthesis,
+  utter: SpeechSynthesisUtterance,
+  opts: SpeakHeldOpts,
+): void {
+  retainUtterance(utter);
+  utter.onstart = () => {
+    console.log(`[${opts.tag}] onstart`);
+    opts.onStart?.();
+  };
+  utter.onend = () => {
+    console.log(`[${opts.tag}] onend`);
+    releaseUtterance(utter);
+    opts.onEnd?.();
+  };
+  utter.onerror = (e) => {
+    console.warn(`[${opts.tag}] onerror`, e.error);
+    releaseUtterance(utter);
+    opts.onError?.(String(e.error || "unknown"));
+  };
+
+  resumeSynth(synth);
+  synth.speak(utter);
+  resumeSynth(synth);
+  pollSpeakingState(opts.tag, synth);
+}
+
 function notifyUnlock() {
   for (const l of unlockListeners) {
     try {
@@ -35,6 +120,12 @@ function notifyUnlock() {
 export function isWebSpeechUnlocked(): boolean {
   if (!webSpeechAvailable()) return true;
   return webAudioUnlocked;
+}
+
+/** Mark unlocked without speaking or canceling (for Test Audio / warm-up already spoken). */
+export function markWebSpeechUnlocked(): void {
+  webAudioUnlocked = true;
+  notifyUnlock();
 }
 
 export function onWebSpeechUnlockChange(listener: (unlocked: boolean) => void) {
@@ -68,9 +159,7 @@ function ensureVoicesReady(): Promise<SpeechSynthesisVoice[]> {
     };
     const onChange = () => finish();
     synth.addEventListener("voiceschanged", onChange);
-    // Some browsers never fire voiceschanged — don't block forever
     setTimeout(finish, 1500);
-    // Prime the list
     void synth.getVoices();
   });
   return voicesReadyPromise;
@@ -85,67 +174,34 @@ function pickVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesi
 }
 
 /**
- * Unlock browser TTS under the user-gesture policy.
- * Must run synchronously in a click/tap handler (Start AI session, voice toggle, Test Audio).
+ * Single choke-point for speechSynthesis.cancel().
+ * Never call synth.cancel() elsewhere — so we can see who cancelled what.
  */
-export function unlockWebSpeech(): void {
-  if (!webSpeechAvailable()) return;
-  const synth = getSynth()!;
-  void ensureVoicesReady();
-  try {
-    // Chromium: empty/near-silent unlock often fails — use a tiny audible warm-up
-    try {
-      synth.cancel();
-    } catch {
-      // ignore
-    }
-    const warm = new SpeechSynthesisUtterance("Coach ready");
-    warm.volume = 0.35;
-    warm.rate = 1.35;
-    warm.pitch = 1;
-    const lang = speechLocaleForAppLang(i18n.language);
-    warm.lang = lang;
-    warm.onstart = () => {
-      webAudioUnlocked = true;
-      notifyUnlock();
-      console.log("[WebTTS] unlock onstart");
-    };
-    warm.onend = () => {
-      webAudioUnlocked = true;
-      notifyUnlock();
-      console.log("[WebTTS] unlock onend");
-    };
-    warm.onerror = (e) => {
-      // Gesture still consumed; mark unlocked so later cues can try
-      webAudioUnlocked = true;
-      notifyUnlock();
-      console.warn("[WebTTS] unlock onerror", e.error);
-    };
-    if (synth.paused) synth.resume();
-    synth.speak(warm);
-    if (synth.paused) synth.resume();
-    webAudioUnlocked = true;
-    notifyUnlock();
-    console.log("[WebTTS] unlockWebSpeech() — gesture unlock issued", {
-      speaking: synth.speaking,
-      pending: synth.pending,
-      paused: synth.paused,
-      voices: synth.getVoices().length,
-    });
-  } catch (err) {
-    console.warn("[WebTTS] unlockWebSpeech failed", err);
-  }
-}
-
-function stopWebSpeech(): Promise<void> {
+function cancelWebSpeech(reason: string, opts?: { force?: boolean }): Promise<void> {
   const synth = getSynth();
   if (!synth) return Promise.resolve();
+
+  const speaking = synth.speaking;
+  const pending = synth.pending;
+  const paused = synth.paused;
+  const force = opts?.force === true;
+
+  // Legitimate cancels only:
+  // - force: session end / pause / safety interrupt / watchdog on OUR stuck speak
+  // - or there is actually something to supersede
+  if (!force && !speaking && !pending) {
+    return Promise.resolve();
+  }
+
+  console.warn("[cancel-call]", reason, { speaking, pending, paused, force });
+
   try {
     synth.cancel();
   } catch {
     // ignore
   }
-  // cancel()+speak() in the same tick drops utterances in Chromium
+  clearHeldUtterances();
+
   return new Promise((resolve) => {
     if (cancelSettleTimer) clearTimeout(cancelSettleTimer);
     cancelSettleTimer = setTimeout(() => {
@@ -155,9 +211,59 @@ function stopWebSpeech(): Promise<void> {
   });
 }
 
-function stopAllSpeech(): void {
-  void stopWebSpeech();
-  // On web, expo Speech.stop === speechSynthesis.cancel — skip to avoid double-cancel races
+/**
+ * Unlock browser TTS under the user-gesture policy.
+ * Must stay synchronous in a click handler.
+ * Never cancel an in-flight utterance here — that caused Test Audio "canceled" errors.
+ */
+export function unlockWebSpeech(): void {
+  if (!webSpeechAvailable()) return;
+  const synth = getSynth()!;
+  void ensureVoicesReady();
+  try {
+    // Already speaking (e.g. Test Audio) — don't interrupt; just mark unlocked
+    if (synth.speaking || synth.pending) {
+      webAudioUnlocked = true;
+      notifyUnlock();
+      console.log("[WebTTS] unlockWebSpeech() — skip warm-up, synth busy", {
+        speaking: synth.speaking,
+        pending: synth.pending,
+      });
+      return;
+    }
+
+    const warm = new SpeechSynthesisUtterance("Coach ready");
+    warm.volume = 0.35;
+    warm.rate = 1.35;
+    warm.pitch = 1;
+    const lang = speechLocaleForAppLang(i18n.language);
+    warm.lang = lang;
+    const voice = pickVoice(synth.getVoices(), lang);
+    if (voice) warm.voice = voice;
+    console.log("[WebTTS] unlockWebSpeech() — sync speak", {
+      speaking: synth.speaking,
+      pending: synth.pending,
+      paused: synth.paused,
+      voices: synth.getVoices().length,
+    });
+    const markReady = () => {
+      webAudioUnlocked = true;
+      notifyUnlock();
+    };
+    speakHeldUtterance(synth, warm, {
+      tag: "WebTTS unlock",
+      onStart: markReady,
+      onEnd: markReady,
+      onError: markReady,
+    });
+    markReady();
+  } catch (err) {
+    console.warn("[WebTTS] unlockWebSpeech failed", err);
+  }
+}
+
+function stopAllSpeech(reason: string): void {
+  void cancelWebSpeech(reason, { force: true });
   if (!webSpeechAvailable()) {
     try {
       Speech.stop();
@@ -169,15 +275,13 @@ function stopAllSpeech(): void {
 
 /** Dev/manual isolation: speak raw text with no coach queue. */
 export function speakTestUtterance(text = "Test audio one two three"): void {
-  if (!webSpeechAvailable()) {
-    Speech.speak(text, { language: speechLocaleForAppLang(i18n.language) });
-    return;
-  }
-  unlockWebSpeech();
-  const synth = getSynth()!;
-  void (async () => {
-    await ensureVoicesReady();
-    await stopWebSpeech();
+  console.log("[TestAudio] speakTestUtterance enter", {
+    platform: Platform.OS,
+    webSpeechAvailable: webSpeechAvailable(),
+  });
+
+  if (webSpeechAvailable()) {
+    const synth = getSynth()!;
     const voices = synth.getVoices();
     const lang = speechLocaleForAppLang(i18n.language);
     const utter = new SpeechSynthesisUtterance(text);
@@ -185,22 +289,66 @@ export function speakTestUtterance(text = "Test audio one two three"): void {
     const voice = pickVoice(voices, lang);
     if (voice) utter.voice = voice;
     utter.volume = 1;
-    utter.onstart = () => console.log("[WebTTS] TEST onstart");
-    utter.onend = () => console.log("[WebTTS] TEST onend");
-    utter.onerror = (e) => console.error("[WebTTS] TEST onerror", e.error);
-    console.log("[WebTTS] TEST before speak", {
+    console.log("[TestAudio] wrapper before speak (sync)", {
       text,
       speaking: synth.speaking,
       pending: synth.pending,
       paused: synth.paused,
       voices: voices.length,
       unlocked: webAudioUnlocked,
-      voice: voice?.name || null,
     });
-    if (synth.paused) synth.resume();
-    synth.speak(utter);
-    if (synth.paused) synth.resume();
-  })();
+    try {
+      speakHeldUtterance(synth, utter, {
+        tag: "TestAudio wrapper",
+        onStart: () => console.log("[TestAudio] wrapper onstart", text),
+        onEnd: () => console.log("[TestAudio] wrapper onend", text),
+        onError: (error) => console.error("[TestAudio] wrapper onerror", error),
+      });
+      markWebSpeechUnlocked();
+    } catch (err) {
+      console.error("[TestAudio] wrapper speak threw", err);
+    }
+    return;
+  }
+
+  console.log("[TestAudio] falling through to expo-speech");
+  Speech.speak(text, { language: speechLocaleForAppLang(i18n.language) });
+}
+
+/**
+ * Zero-abstraction Test Audio path for the workout screen button.
+ * Must hold the utterance at module scope (Chrome GC).
+ */
+export function speakBypassTestAudio(text = "bypass test"): boolean {
+  if (!webSpeechAvailable()) return false;
+  const synth = getSynth()!;
+  const UtteranceCtor = (globalThis as { SpeechSynthesisUtterance: typeof SpeechSynthesisUtterance })
+    .SpeechSynthesisUtterance;
+  console.log("[TestAudio] synth available?", {
+    hasSynth: Boolean(synth),
+    hasUtterance: Boolean(UtteranceCtor),
+    voices: synth.getVoices().length,
+  });
+  const utter = new UtteranceCtor(text);
+  utter.volume = 1;
+  const lang = speechLocaleForAppLang(i18n.language);
+  utter.lang = lang;
+  const voice = pickVoice(synth.getVoices(), lang);
+  if (voice) utter.voice = voice;
+  console.log("[TestAudio] calling raw speechSynthesis.speak (sync)");
+  try {
+    speakHeldUtterance(synth, utter, {
+      tag: "TestAudio bypass",
+      onStart: () => console.log("[TestAudio] bypass onstart"),
+      onEnd: () => console.log("[TestAudio] bypass onend"),
+      onError: (error) => console.error("[TestAudio] bypass onerror", error),
+    });
+    markWebSpeechUnlocked();
+    return true;
+  } catch (err) {
+    console.error("[TestAudio] raw speak threw", err);
+    return false;
+  }
 }
 
 export type CoachPriority = "safety" | "correction" | "encouragement";
@@ -208,7 +356,6 @@ export type VoiceMode = "full" | "corrections_only" | "muted";
 
 export type CoachCue = {
   id: string;
-  /** i18n key, e.g. cue_go_deeper */
   key: string;
   priority: CoachPriority;
   createdAt: number;
@@ -230,7 +377,6 @@ const SPEAK_WATCHDOG_MS = 2800;
 
 type SpeakingListener = (speaking: boolean, cueKey: string | null, priority: CoachPriority | null) => void;
 
-/** Map app language tags to expo-speech / OS voice locales. */
 export function speechLocaleForAppLang(lang?: string | null): string {
   const raw = String(lang || i18n.language || "en").toLowerCase();
   if (raw.startsWith("hinglish") || raw.startsWith("hi")) return "hi-IN";
@@ -243,11 +389,11 @@ export function speechLocaleForAppLang(lang?: string | null): string {
 /**
  * Priority queue for AI trainer TTS.
  * Web → speechSynthesis; native → expo-speech.
+ * cancel() only when superseding / ending — never as a periodic no-op.
  */
 export class AudioCoachQueue {
   private queue: CoachCue[] = [];
   private speaking = false;
-  /** Web: hold the pump until onstart/onerror (don't block on false-positive speaking). */
   private webSpeakPending = false;
   private lastSpokeAt = 0;
   private lastSafetyById = new Map<string, number>();
@@ -281,7 +427,7 @@ export class AudioCoachQueue {
       try {
         l(this.speaking, this.currentKey, this.currentPriority);
       } catch {
-        // ignore listener errors
+        // ignore
       }
     }
   }
@@ -321,8 +467,8 @@ export class AudioCoachQueue {
       this.webSpeakPending = false;
       this.queue = [cue, ...this.queue.filter((c) => c.priority === "safety" && c.id !== cue.id)];
       this.lastSafetyById.set(cue.id, now);
-      // Cancel then settle before next speak (Chromium drop bug)
-      void stopWebSpeech().then(() => {
+      // Legitimate interrupt of whatever is speaking
+      void cancelWebSpeech("safety:interrupt-lower-priority", { force: true }).then(() => {
         if (!webSpeechAvailable()) {
           try {
             Speech.stop();
@@ -338,6 +484,7 @@ export class AudioCoachQueue {
     if (cue.priority === "correction") {
       const last = this.lastCorrectionById.get(cue.id) || 0;
       if (now - last < CORRECTION_COOLDOWN_MS) return;
+      // If something is already speaking, queue and wait — do NOT cancel it
       this.queue = this.queue.filter(
         (c) => !(c.priority === "correction" && c.repIndex === cue.repIndex),
       );
@@ -371,7 +518,7 @@ export class AudioCoachQueue {
       clearTimeout(this.speakWatchdog);
       this.speakWatchdog = null;
     }
-    stopAllSpeech();
+    stopAllSpeech("clear:session-pause-or-mute");
     this.speaking = false;
     this.webSpeakPending = false;
     this.currentKey = null;
@@ -404,11 +551,23 @@ export class AudioCoachQueue {
       const voicesFromWait = await ensureVoicesReady();
       if (gen !== this.pumpGeneration) return;
 
-      // Always settle cancel before speak on Chromium — prevents dropped utterances
-      await stopWebSpeech();
-      if (gen !== this.pumpGeneration) return;
+      // Never cancel here. Safety interrupts and clear() are the only cancel paths.
+      // If something is already speaking (Test Audio, unlock warm-up, prior cue),
+      // wait until the synth is free — cancel-before-every-speak was causing
+      // onerror: "canceled" on legitimate utterances.
+      if (synth.speaking || synth.pending) {
+        console.log("[WebTTS] speakWeb waiting for synth free", {
+          speaking: synth.speaking,
+          pending: synth.pending,
+          text,
+        });
+        setTimeout(() => {
+          if (gen !== this.pumpGeneration) return;
+          this.speakWeb(text, lang, gen);
+        }, 200);
+        return;
+      }
 
-      // Fresh voice list at speak-time (never trust a cached empty array)
       const voices = synth.getVoices().length > 0 ? synth.getVoices() : voicesFromWait;
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = lang;
@@ -424,33 +583,6 @@ export class AudioCoachQueue {
         }
       };
 
-      utter.onstart = () => {
-        clearWatchdog();
-        console.log("[WebTTS] onstart", {
-          text,
-          unlocked: webAudioUnlocked,
-          voice: voice?.name || null,
-        });
-        this.webSpeakPending = false;
-        this.speaking = true;
-        this.emit();
-      };
-      utter.onend = () => {
-        clearWatchdog();
-        console.log("[WebTTS] onend", { text });
-        this.finishUtterance();
-      };
-      utter.onerror = (ev) => {
-        clearWatchdog();
-        console.error("[WebTTS] onerror", {
-          text,
-          error: ev.error,
-          unlocked: webAudioUnlocked,
-          voices: voices.length,
-        });
-        this.finishUtterance();
-      };
-
       console.log("[WebTTS] before speak", {
         text,
         lang,
@@ -464,43 +596,63 @@ export class AudioCoachQueue {
 
       if (!webAudioUnlocked) {
         console.warn(
-          "[WebTTS] speak without unlockWebSpeech() — browser may silently block (tap Voice / Test Audio)",
+          "[WebTTS] speak without unlock — tap Test Audio / Voice once to unlock",
         );
       }
 
-      if (voices.length === 0) {
-        console.warn("[WebTTS] getVoices() still empty at speak-time");
-      }
-
       try {
-        if (synth.paused) synth.resume();
-        synth.speak(utter);
-        // Chromium sometimes parks the utterance as paused immediately
-        if (synth.paused) synth.resume();
+        // Hold utterance at module scope so Chrome GC cannot drop it before events.
+        speakHeldUtterance(synth, utter, {
+          tag: "WebTTS",
+          onStart: () => {
+            clearWatchdog();
+            console.log("[WebTTS] onstart detail", {
+              text,
+              unlocked: webAudioUnlocked,
+              voice: voice?.name || null,
+            });
+            this.webSpeakPending = false;
+            this.speaking = true;
+            this.emit();
+          },
+          onEnd: () => {
+            clearWatchdog();
+            console.log("[WebTTS] onend detail", { text });
+            this.finishUtterance();
+          },
+          onError: (error) => {
+            clearWatchdog();
+            console.error("[WebTTS] onerror detail", {
+              text,
+              error,
+              unlocked: webAudioUnlocked,
+              voices: voices.length,
+            });
+            this.finishUtterance();
+          },
+        });
         setTimeout(() => {
-          if (gen === this.pumpGeneration && synth.paused) synth.resume();
+          if (gen === this.pumpGeneration && synth.paused) resumeSynth(synth);
         }, 40);
       } catch (err) {
         console.error("[WebTTS] speak() threw", err);
+        releaseUtterance(utter);
         this.finishUtterance();
         return;
       }
 
-      // If neither start nor error fires (silent browser drop), unblock the queue
       this.speakWatchdog = setTimeout(() => {
         if (gen !== this.pumpGeneration) return;
         if (this.speaking) return;
+        // Only cancel if OUR pending speak never started — don't touch unrelated speech
+        if (!this.webSpeakPending) return;
         console.error("[WebTTS] watchdog — no onstart after speak(); resetting queue", {
           unlocked: webAudioUnlocked,
           speaking: synth.speaking,
           pending: synth.pending,
           paused: synth.paused,
         });
-        try {
-          synth.cancel();
-        } catch {
-          // ignore
-        }
+        void cancelWebSpeech("watchdog:our-speak-never-started", { force: true });
         this.finishUtterance();
       }, SPEAK_WATCHDOG_MS);
     })();
@@ -528,7 +680,6 @@ export class AudioCoachQueue {
     const gen = this.pumpGeneration;
 
     if (webSpeechAvailable()) {
-      // Banner can update; speaking flag waits for onstart
       this.webSpeakPending = true;
       this.speaking = false;
       this.emit();

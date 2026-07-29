@@ -106,7 +106,6 @@ class OnboardingUpsertRequest(BaseModel):
 
     Expected onboarding keys include:
     - dietary.meals_per_day (1-6)
-    - dietary.regional_food_styles (optional list of regional cuisine preferences)
     - activity.workouts_per_week, activity.level, activity.workout_types
     - goal.type, goal.difficulty, goal.focus_muscles (optional array), goal.focus_muscle (legacy)
     """
