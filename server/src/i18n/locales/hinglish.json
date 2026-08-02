@@ -1,0 +1,31 @@
+{
+  "notifications": {
+    "macroCheckin": {
+      "title": "Macro check-in",
+      "body": "Aapka {{checkpoint}} check-in off-track hai: {{summary}}. Next meal ko count karein.",
+      "lowCalories": "{{calories}} of {{targetCalories}} kcal",
+      "lowProtein": "{{protein}} of {{targetProtein}}g protein",
+      "highCalories": "{{calories}} kcal already logged"
+    },
+    "missingMeal": {
+      "title": "Apna {{meal}} log karein",
+      "body": "Lagta hai {{meal}} abhi log nahi hua. Fresh hai toh abhi add karein."
+    },
+    "missingWorkout": {
+      "title": "Workout log missing",
+      "body": "Aaj koi workout log nahi hua. Apna session log karein ya plan mein rest day mark karein."
+    },
+    "streakRisk": {
+      "title": "Apni streak protect karein",
+      "body": "Aaj aapne meals ya training log nahi ki. Day end hone se pehle ek quick entry add karein."
+    },
+    "quoteOfDay": {
+      "title": "Aaj ka quote",
+      "body": "\"{{quote}}\" - {{author}}"
+    },
+    "weeklyDigest": {
+      "title": "Aapka NexRep weekly digest",
+      "body": "Is week: {{mealsLogged}} nutrition days, {{workoutsLogged}} workouts, {{strengthLifts}} strength lifts logged. Next plan karne ke liye NexRep open karein."
+    }
+  }
+}

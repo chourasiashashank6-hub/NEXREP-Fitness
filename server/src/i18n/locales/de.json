@@ -1,0 +1,31 @@
+{
+  "notifications": {
+    "macroCheckin": {
+      "title": "Makro-Check-in",
+      "body": "Dein {{checkpoint}}-Check-in liegt daneben: {{summary}}. Mach die nächste Mahlzeit stark.",
+      "lowCalories": "{{calories}} von {{targetCalories}} kcal",
+      "lowProtein": "{{protein}} von {{targetProtein}}g Protein",
+      "highCalories": "{{calories}} kcal bereits protokolliert"
+    },
+    "missingMeal": {
+      "title": "{{meal}} loggen",
+      "body": "Sieht so aus, als wäre {{meal}} noch nicht geloggt. Füge es jetzt hinzu, solange es frisch ist."
+    },
+    "missingWorkout": {
+      "title": "Trainingsprotokoll fehlt",
+      "body": "Heute ist noch kein Training geloggt. Logge deine Session oder markiere sie in deinem Plan als Ruhetag."
+    },
+    "streakRisk": {
+      "title": "Schütze deinen Streak",
+      "body": "Du hast heute weder Mahlzeiten noch Training protokolliert. Füge einen kurzen Eintrag hinzu, bevor der Tag endet."
+    },
+    "quoteOfDay": {
+      "title": "Zitat des Tages",
+      "body": "„{{quote}}“ – {{author}}"
+    },
+    "weeklyDigest": {
+      "title": "Dein NexRep-Wochenüberblick",
+      "body": "Diese Woche: {{mealsLogged}} Ernährungstage, {{workoutsLogged}} Workouts, {{strengthLifts}} Kraftübungen geloggt. Öffne NexRep und plane die nächste Einheit."
+    }
+  }
+}

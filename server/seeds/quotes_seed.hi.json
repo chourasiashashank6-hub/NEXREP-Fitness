@@ -1,0 +1,5037 @@
+[
+  {
+    "quote": "आखिरी तीन-चार रेप्स ही मसल्स को सच में बढ़ाते हैं।",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "हर कोई बॉडीबिल्डर बनना चाहता है, लेकिन कोई भी भारी वजन नहीं उठाना चाहता।",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मसल्स और दिमाग को एक हो जाना चाहिए।",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "कोई शॉर्टकट नहीं होता। सब कुछ रेप्स, रेप्स और रेप्स से बनता है।",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "यदि आप कुछ ऐसा चाहते हैं जो आपके पास कभी नहीं है, तो आपको वह करने के लिए तैयार रहना चाहिए जो आपने कभी नहीं किया है।",
+    "author": "Thomas Jefferson",
+    "category": "general"
+  },
+  {
+    "quote": "सफलता काम से पहले सिर्फ डिक्शनरी में आती है।",
+    "author": "Vidal Sassoon",
+    "category": "general"
+  },
+  {
+    "quote": "दर्द थोड़ी देर का है, हार मानना हमेशा चुभता है।",
+    "author": "Lance Armstrong",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "घड़ी चल रही है। क्या आप वही इंसान बन रहे हैं जो बनना चाहते हैं?",
+    "author": "Greg Plitt",
+    "category": "general"
+  },
+  {
+    "quote": "मुझे ट्रेनिंग का हर मिनट पसंद नहीं था, पर मैंने खुद से कहा: हार मत मानो। अभी दर्द सहो और बाकी जिंदगी चैंपियन की तरह जियो।",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "ताकत शरीर से नहीं, अडिग इच्छाशक्ति से आती है।",
+    "author": "Mahatma Gandhi",
+    "category": "strength"
+  },
+  {
+    "quote": "सफल योद्धा लेजर जैसा फोकस वाला औसत आदमी होता है।",
+    "author": "Bruce Lee",
+    "category": "strength"
+  },
+  {
+    "quote": "हम वही बनते हैं जो हम बार-बार करते हैं। उत्कृष्टता कोई एक काम नहीं, बल्कि आदत है।",
+    "author": "Aristotle",
+    "category": "general"
+  },
+  {
+    "quote": "शरीर वही हासिल करता है जो मन मानता है।",
+    "author": "Napoleon Hill",
+    "category": "general"
+  },
+  {
+    "quote": "जो आज दुख पहुंचाता है वह कल आपको मजबूत बनाता है।",
+    "author": "Jay Cutler",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आज आप जो दर्द महसूस कर रहे हैं वह कल आपकी ताकत होगी।",
+    "author": "Arnold Schwarzenegger",
+    "category": "strength"
+  },
+  {
+    "quote": "सफलता आम तौर पर विफलता पर नियंत्रण की परिणति होती है।",
+    "author": "Sylvester Stallone",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर लगभग किसी भी चीज़ का सामना कर सकता है। अपने मन को ही तुम्हें समझाना है।",
+    "author": "Andrew Murphy",
+    "category": "general"
+  },
+  {
+    "quote": "सिर्फ वही वर्कआउट खराब है जो किया ही नहीं गया।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अगर आपकी सफलता के रास्ते में कुछ खड़ा है, तो उसे हटाइए। खुद को रुकने मत दीजिए।",
+    "author": "Dwayne Johnson",
+    "category": "general"
+  },
+  {
+    "quote": "बिना किसी उत्साह के असफलता से असफलता की ओर चलना ही सफलता है।",
+    "author": "Winston Churchill",
+    "category": "general"
+  },
+  {
+    "quote": "जब आप उतनी बुरी तरह सफल होना चाहते हैं जितना आप सांस लेना चाहते हैं, तो आप सफल होंगे।",
+    "author": "Eric Thomas",
+    "category": "general"
+  },
+  {
+    "quote": "मैं सिट-अप्स तभी गिनता हूं जब दर्द शुरू होता है, क्योंकि असली गिनती वहीं से शुरू होती है।",
+    "author": "Muhammad Ali",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "सारी प्रगति सुविधा क्षेत्र के बाहर होती है।",
+    "author": "Michael John Bobak",
+    "category": "general"
+  },
+  {
+    "quote": "अगर वजन उठाना खतरनाक लगता है, तो कमजोर रहकर देखिए। कमजोर रहना ज्यादा खतरनाक है।",
+    "author": "Bret Contreras",
+    "category": "strength"
+  },
+  {
+    "quote": "आयरन कभी झूठ नहीं बोलता। सौ पाउंड, सौ पाउंड ही होता है।",
+    "author": "Henry Rollins",
+    "category": "strength"
+  },
+  {
+    "quote": "नंबर एक बनने के लिए, आपको ऐसे ट्रेनिंग लेना होगा जैसे आप नंबर दो हैं।",
+    "author": "Maurice Greene",
+    "category": "general"
+  },
+  {
+    "quote": "अनुशासन मतलब अभी की चाह और सबसे बड़े लक्ष्य के बीच सही चुनाव करना।",
+    "author": "Abraham Lincoln",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आप जिम में शारीरिक रूप से जिस प्रतिरोध से लड़ते हैं और जीवन में जिस प्रतिरोध से आप लड़ते हैं, वही एक मजबूत चरित्र का निर्माण कर सकता है।",
+    "author": "Arnold Schwarzenegger",
+    "category": "strength"
+  },
+  {
+    "quote": "आपकी डाइट बैंक खाते जैसी है। अच्छे खाने के चुनाव अच्छे निवेश हैं।",
+    "author": "Bethenny Frankel",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आज आप औसत दर्जे के होने के लिए नहीं उठे।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बात समय मिलने की नहीं, समय निकालने की है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "खून, पसीना और सम्मान। पहले दो आप देते हैं, आखिरी आप कमाते हैं।",
+    "author": "Dwayne Johnson",
+    "category": "general"
+  },
+  {
+    "quote": "मैं आपको यह नहीं बता रहा हूं कि यह आसान होगा। मैं आपको बता रहा हूं कि यह इसके लायक होगा।",
+    "author": "Art Williams",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "एक बार जब आप इसे छोड़ना सीख जाते हैं, तो यह एक आदत बन जाती है।",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "विजेता वही करते हैं जिससे उन्हें डर लगता है।",
+    "author": "Franco Columbu",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी सीमाओं को परिभाषित करने का एकमात्र तरीका उनसे परे जाना है।",
+    "author": "Arthur C. Clarke",
+    "category": "strength"
+  },
+  {
+    "quote": "एक कदम और आगे बढ़िए। वहां भीड़ कभी नहीं होती।",
+    "author": "Wayne Dyer",
+    "category": "general"
+  },
+  {
+    "quote": "जब तक आप ऐसा नहीं करेंगे तब तक कुछ भी काम नहीं करेगा।",
+    "author": "Maya Angelou",
+    "category": "general"
+  },
+  {
+    "quote": "जुनूनी एक ऐसा शब्द है जिसका उपयोग आलसी लोग समर्पित का वर्णन करने के लिए करते हैं।",
+    "author": "Grant Cardone",
+    "category": "general"
+  },
+  {
+    "quote": "ऐसा करने से पहले आपको यह सोचना होगा। मन ही है जो सब कुछ संभव बनाता है।",
+    "author": "Kai Greene",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "अधिकांश लोग इच्छा की कमी के कारण नहीं बल्कि प्रतिबद्धता की कमी के कारण असफल होते हैं।",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी चुनौतियां छोटी मत कीजिए, अपनी सीमाओं को चुनौती दीजिए।",
+    "author": "Jerry Dunn",
+    "category": "strength"
+  },
+  {
+    "quote": "लड़ाई जितनी कठिन होगी, जीत उतनी ही मधुर होगी।",
+    "author": "Les Brown",
+    "category": "general"
+  },
+  {
+    "quote": "चैंपियन वह है जो तब उठता है जब वह नहीं उठ पाता।",
+    "author": "Jack Dempsey",
+    "category": "general"
+  },
+  {
+    "quote": "पागल हो जाओ या वैसे ही रहो।",
+    "author": "Jillian Michaels",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "संघर्ष के बिना ताकत नहीं बनती।",
+    "author": "Oprah Winfrey",
+    "category": "strength"
+  },
+  {
+    "quote": "आज मैं वह करूंगा जो दूसरे नहीं करेंगे, इसलिए कल मैं वह पूरा कर सकूंगा जो दूसरे नहीं कर सकते।",
+    "author": "Jerry Rice",
+    "category": "general"
+  },
+  {
+    "quote": "बस खुद पर भरोसा रखिए। भरोसा न भी हो तो निभाइए, एक दिन वह सच बन जाएगा।",
+    "author": "Venus Williams",
+    "category": "general"
+  },
+  {
+    "quote": "कुछ लोग चाहते हैं कि यह हो, कुछ इसकी कामना करते हैं, और कुछ इसे करके दिखाते हैं।",
+    "author": "Michael Jordan",
+    "category": "general"
+  },
+  {
+    "quote": "यदि यह आपको चुनौती नहीं देता, तो यह आपको बदलता नहीं है।",
+    "author": "Fred DeVito",
+    "category": "general"
+  },
+  {
+    "quote": "आप वही बनते हैं जिसे बनने का फैसला आप करते हैं।",
+    "author": "Ralph Waldo Emerson",
+    "category": "general"
+  },
+  {
+    "quote": "आप सोचते हैं कि कर सकते हैं या नहीं कर सकते, दोनों ही हाल में आप सही साबित होते हैं।",
+    "author": "Henry Ford",
+    "category": "general"
+  },
+  {
+    "quote": "मैं असफल नहीं हुआ। मैंने बस दस हजार तरीके खोजे जो काम नहीं करते।",
+    "author": "Thomas Edison",
+    "category": "general"
+  },
+  {
+    "quote": "महान कार्य ताकत से नहीं बल्कि लगन से किये जाते हैं।",
+    "author": "Samuel Johnson",
+    "category": "strength"
+  },
+  {
+    "quote": "कोशिश और जीत के बीच थोड़ा सा अंतर है।",
+    "author": "Marvin Phillips",
+    "category": "general"
+  },
+  {
+    "quote": "आप सौ प्रतिशत शॉट चूक जाते हैं जो आप कभी नहीं लेते।",
+    "author": "Wayne Gretzky",
+    "category": "general"
+  },
+  {
+    "quote": "अपने शरीर का ध्यान रखें। यही आपके रहने की एकमात्र जगह है।",
+    "author": "Jim Rohn",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आप ख़राब डाइट का ट्रेनिंग नहीं ले सकते।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "तराजू आपको नहीं बताता कि आप कौन हैं। आपकी ताकत बताती है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "प्रत्येक चैंपियन एक बार ऐसा दावेदार था जिसने हार मानने से इनकार कर दिया था।",
+    "author": "Rocky Balboa",
+    "category": "general"
+  },
+  {
+    "quote": "एकमात्र असंभव यात्रा वह है जिसे आप कभी शुरू नहीं करते।",
+    "author": "Tony Robbins",
+    "category": "general"
+  },
+  {
+    "quote": "ताकत संघर्ष से बनती है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "हारना अक्सर अस्थायी होता है। हार मान लेना ही उसे स्थायी बनाता है।",
+    "author": "Marilyn vos Savant",
+    "category": "general"
+  },
+  {
+    "quote": "यदि आप एक अलग कल चाहते हैं तो कल से भी अधिक मेहनत करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कदम उठाना ही हर सफलता की बुनियादी कुंजी है।",
+    "author": "Pablo Picasso",
+    "category": "general"
+  },
+  {
+    "quote": "सर्वश्रेष्ठ बनने के लिए जो भी आवश्यक होगा मैं उसका त्याग करूंगा।",
+    "author": "Deion Sanders",
+    "category": "general"
+  },
+  {
+    "quote": "लाइट वेट, बेबी!",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "शारीरिक ट्रेनिंग के मामले में किसी भी नागरिक को अनाड़ी बने रहने का हक नहीं है।",
+    "author": "Socrates",
+    "category": "general"
+  },
+  {
+    "quote": "मोटिवेशन वह है जो आपको आरंभ कराती है। आदत है जो आपको बनाए रखती है।",
+    "author": "Jim Ryun",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर वह सब कुछ सुनता है जो आपका दिमाग कहता है। सकारात्मक बने रहें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सभी खुशियों का आधार अच्छा स्वास्थ्य है।",
+    "author": "Leigh Hunt",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "सपना देखिए, योजना बनाइए, आगे बढ़िए। रुकावटें और शक करने वाले आएंगे, पर मेहनत की कोई सीमा नहीं होती।",
+    "author": "Michael Phelps",
+    "category": "general"
+  },
+  {
+    "quote": "सुबह दृढ़ निश्चय के साथ उठिए, रात संतोष के साथ सोइए।",
+    "author": "Dwayne Johnson",
+    "category": "general"
+  },
+  {
+    "quote": "सबसे अच्छा प्रोजेक्ट जिस पर आप काम करेंगे, वह आप हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "डेड लास्ट फ़िनिश, न ख़त्म होने से ज़्यादा बड़ा है, जिसे ट्रम्प ने शुरू नहीं किया।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "ट्रेनिंग में शरीर की सुनिए। मुकाबले में शरीर से कहिए कि चुप रहे।",
+    "author": "Rich Froning",
+    "category": "strength"
+  },
+  {
+    "quote": "पसीना दरअसल फैट का रोना है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "रेंगना चलेगा। गिरना चलेगा। उल्टी भी चलेगी। हार मानना नहीं चलेगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जिम मेरी थेरेपी है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बड़े आर्म्स और छोटी कमर बताते हैं कि इंसान मेहनत को गंभीरता से लेता है।",
+    "author": "Serge Nubret",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "यह कभी आसान नहीं होता। तुम बस मजबूत हो जाओ।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बाइसेप्स क्रिसमस ट्री पर आभूषणों की तरह हैं।",
+    "author": "Ed Coan",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मैं कमजोर होकर संघर्ष करना पसंद करूंगा और कभी नहीं जान पाऊंगा कि मैं क्या बन सकता हूं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "सफलता ख़ुशी की कुंजी नहीं है। खुशहाली सफलता की कुंजी है।",
+    "author": "Albert Schweitzer",
+    "category": "general"
+  },
+  {
+    "quote": "काम से पहले सफलता सिर्फ डिक्शनरी में मिलती है।",
+    "author": "Harvey Specter",
+    "category": "general"
+  },
+  {
+    "quote": "अच्छे मूड से आप बस एक वर्कआउट दूर हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "यदि आप असफलता से डरते हैं तो आप सफलता के लायक नहीं हैं।",
+    "author": "Charles Barkley",
+    "category": "general"
+  },
+  {
+    "quote": "जीवन आपके आराम क्षेत्र के अंत से शुरू होता है।",
+    "author": "Neale Donald Walsch",
+    "category": "general"
+  },
+  {
+    "quote": "दीवार वहाँ एक कारण से है। यह हमें बाहर रखने के लिए नहीं है। यह हमें यह दिखाने का मौका देने के लिए है कि हम किसी चीज़ को कितनी बुरी तरह चाहते हैं।",
+    "author": "Randy Pausch",
+    "category": "general"
+  },
+  {
+    "quote": "अपना शरीर मेहनत से कमाइए।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "एब्स किचन में बनते हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आज दर्द हो रहा है। मजबूत कल।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "सात बार गिरे। हार न मानें कोशिश करते रहें।",
+    "author": "Japanese Proverb",
+    "category": "general"
+  },
+  {
+    "quote": "दिन मत गिनिए, हर दिन को मायने दीजिए।",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "चैंपियंस तब तक खेलते रहते हैं जब तक वे इसे सही नहीं कर लेते।",
+    "author": "Billie Jean King",
+    "category": "general"
+  },
+  {
+    "quote": "जीतने की चाह बेकार है, अगर तैयारी करने की चाह नहीं है।",
+    "author": "Juma Ikangaa",
+    "category": "general"
+  },
+  {
+    "quote": "गेन्स मिलेंगे, लेकिन कीमत पसीने, खून और उल्टी से चुकानी पड़ेगी।",
+    "author": "Pavel Tsatsouline",
+    "category": "strength"
+  },
+  {
+    "quote": "असली वर्कआउट तब शुरू होता है जब मन रुकना चाहता है।",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "खुद को अपने बहानों से मजबूत बनाइए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपने लक्ष्य ऊंचे रखिए और वहां पहुंचने तक मत रुकिए।",
+    "author": "Bo Jackson",
+    "category": "general"
+  },
+  {
+    "quote": "मैं उस आदमी से नहीं डरता जिसने एक बार दस हजार किक का अभ्यास किया हो। मुझे उस आदमी से डर लगता है जिसने एक किक का अभ्यास दस हजार बार किया हो।",
+    "author": "Bruce Lee",
+    "category": "strength"
+  },
+  {
+    "quote": "आपके पास परिणाम या बहाने हो सकते हैं। दोनों नहीं।",
+    "author": "Arnold Schwarzenegger",
+    "category": "general"
+  },
+  {
+    "quote": "प्रगति के पीछे भागिए, परफेक्शन के नहीं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "किसी व्यक्ति के लिए यह शर्म की बात है कि वह उस सुंदरता और ताकत को देखे बिना बूढ़ा हो जाता है जो उसके शरीर में सक्षम है।",
+    "author": "Socrates",
+    "category": "strength"
+  },
+  {
+    "quote": "अच्छी चीज़ें उन लोगों को मिलती हैं जो पसीना बहाते हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मसल्स को जगाइए, उन्हें तोड़ मत डालिए।",
+    "author": "Lee Haney",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "जब मेरा शरीर चिल्लाता है रुक जाओ, मेरा मन कभी नहीं चिल्लाता।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "जीत उन्हीं को मिलती है जो उसकी कीमत चुकाने को तैयार होते हैं।",
+    "author": "Sun Tzu",
+    "category": "general"
+  },
+  {
+    "quote": "ताकत सिर्फ यह नहीं कि आप कितना उठा सकते हैं, बल्कि यह भी है कि आप कितना सह सकते हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ट्रेनिंग में जितना ज्यादा पसीना बहाएंगे, जंग में उतना कम खून बहेगा।",
+    "author": "Richard Marcinko",
+    "category": "strength"
+  },
+  {
+    "quote": "अनुशासन की तकलीफ चुनिए, वरना पछतावे की तकलीफ झेलनी पड़ेगी।",
+    "author": "Jim Rohn",
+    "category": "general"
+  },
+  {
+    "quote": "पेड़ लगाने का सबसे अच्छा समय बीस साल पहले था। दूसरा सबसे अच्छा समय अभी है।",
+    "author": "Chinese Proverb",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर अमेज़न प्राइम नहीं है। नतीजे दो दिन में नहीं आते।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मैं आग जला रहा हूं। हर ट्रेनिंग डे उसमें और ईंधन जोड़ता है।",
+    "author": "Mia Hamm",
+    "category": "general"
+  },
+  {
+    "quote": "एक बार जब आप परिणाम देखते हैं, तो यह एक लत बन जाती है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "प्रैक्टिस में शोहरत नहीं होती, पर शोहरत प्रैक्टिस के बिना नहीं मिलती।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सच्चे अच्छे वर्कआउट की पहचान: करते समय नफरत हो, खत्म होने पर प्यार।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "शरीर को स्वस्थ रखना एक कर्तव्य है। अन्यथा हम अपने मन को मजबूत और स्पष्ट नहीं रख पाएंगे।",
+    "author": "Buddha",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मैं स्वाद के लिए नहीं खाता। मैं समारोह के लिए खाता हूं।",
+    "author": "Jay Cutler",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "यदि बार झुक नहीं रहा है, तो आप दिखावा कर रहे हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ट्रेनिंग तनाव में फंसी ऊर्जा को बाहर निकालने का रास्ता देती है।",
+    "author": "Arnold Schwarzenegger",
+    "category": "general"
+  },
+  {
+    "quote": "आप कल पीड़ा महसूस कर सकते हैं, या आप कल खेद महसूस कर सकते हैं। आप चुनते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सबसे बड़ा धन स्वास्थ्य है।",
+    "author": "Virgil",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "अपने शरीर का सम्मान करें। यह एकमात्र ऐसा है जो आपको मिलता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "असंभव और संभव के बीच का अंतर दृढ़ संकल्प में निहित है।",
+    "author": "Tommy Lasorda",
+    "category": "general"
+  },
+  {
+    "quote": "कमजोर लोगों की तुलना में मजबूत लोगों को मारना कठिन होता है, और सामान्य तौर पर अधिक उपयोगी होता है।",
+    "author": "Mark Rippetoe",
+    "category": "strength"
+  },
+  {
+    "quote": "आज वह करो जो दूसरे नहीं कर सकते, और कल वह हासिल करो जो दूसरे नहीं कर सकते।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "दर्द दो तरह का होता है: एक जो चोट देता है, और एक जो आपको बदल देता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका स्वास्थ्य खाता आपकी सबसे बड़ी संपत्ति है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "शारीरिक फिटनेस खुशी की पहली शर्त है।",
+    "author": "Joseph Pilates",
+    "category": "general"
+  },
+  {
+    "quote": "यकीन रखिए कि आप कर सकते हैं, आधी मंजिल वहीं तय हो जाती है।",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "पहली और सबसे बड़ी जीत खुद पर विजय पाना है।",
+    "author": "Plato",
+    "category": "general"
+  },
+  {
+    "quote": "कठिन दिन सबसे अच्छे होते हैं क्योंकि यही वे दिन होते हैं जो चैंपियन बनाते हैं।",
+    "author": "Gabby Douglas",
+    "category": "general"
+  },
+  {
+    "quote": "बॉडीबिल्डिंग का नियम नंबर एक: लेग डे कभी न छोड़ें।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "ज्यादातर चैंपियन असाधारण कोशिशों से नहीं, लगातार मेहनत से बनते हैं।",
+    "author": "Dan John",
+    "category": "general"
+  },
+  {
+    "quote": "कठिन समय नहीं टिकता, लेकिन कठिन लोग टिकते हैं।",
+    "author": "Robert Schuller",
+    "category": "general"
+  },
+  {
+    "quote": "एक घंटे का वर्कआउट आपके दिन का सिर्फ चार प्रतिशत है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "स्वच्छ खाओ। ट्रेन गंदी।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "केवल वही वज़न मायने रखता है जो आप उठाते हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "इसकी इच्छा मत करो। उसके लिए काम करो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मन सबसे महत्वपूर्ण मसल है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपके पैर साथ नहीं दे रहे हैं। आपका सिर हार मान रहा है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "मैं उसे हराऊंगी। मैं उससे ज्यादा मेहनत से ट्रेनिंग करूंगी, उससे साफ खाऊंगी और उससे बेहतर सोऊंगी।",
+    "author": "Ronda Rousey",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "उस मसल के लिए मेहनत कीजिए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "जब आप थक जाएं तो रुकें नहीं। जब आपका काम पूरा हो जाए तो रुकें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपने सबसे मजबूत बहाने से अधिक मजबूत बनें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "साइज मायने रखता है, लेकिन कंडीशनिंग भी उतनी ही जरूरी है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "वर्कआउट के बाद भी अगर आप बहुत फ्रेश दिख रहे हैं, तो मेहनत कम हुई है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अच्छे स्वास्थ्य की चमक का आनंद लेने के लिए आपको व्यायाम अवश्य करना चाहिए।",
+    "author": "Gene Tunney",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "धैर्यवान और कठोर बनें। किसी दिन ये दर्द आपके काम आएगा।",
+    "author": "Ovid",
+    "category": "general"
+  },
+  {
+    "quote": "जब मैं थक जाता हूं तो रुकता नहीं हूं। जब मेरा काम पूरा हो जाता है तो मैं रुक जाता हूं।",
+    "author": "David Goggins",
+    "category": "general"
+  },
+  {
+    "quote": "आप कौन हैं यह इस बात से परिभाषित होता है कि आप किस चीज के लिए संघर्ष करने को तैयार हैं।",
+    "author": "Mark Manson",
+    "category": "general"
+  },
+  {
+    "quote": "लोहा महान सन्दर्भ बिन्दु है। दो सौ पाउंड हमेशा दो सौ पाउंड होते हैं।",
+    "author": "Henry Rollins",
+    "category": "strength"
+  },
+  {
+    "quote": "असहज होने पर सहज हो जाएं।",
+    "author": "Jillian Michaels",
+    "category": "general"
+  },
+  {
+    "quote": "मैं दौड़ता हूं क्योंकि अगर मैं दौड़ता नहीं तो मैं सुस्त हो जाता और खुद को स्थूल महसूस करता।",
+    "author": "Jessica Alba",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपसे ज्यादा व्यस्त कोई अभी वर्कआउट कर रहा है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपको इच्छाशक्ति नहीं मिलती। आप इसे बनाएं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं सबसे ताकतवर नहीं हूं। मैं सबसे तेज़ नहीं हूँ। लेकिन मैं हूं कि रुकने वाला नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "गेन्स दिए नहीं जाते, कमाए जाते हैं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "सफलता के लिए कोई लिफ्ट नहीं है। आपको सीढ़ियाँ चढ़नी होंगी।",
+    "author": "Zig Ziglar",
+    "category": "general"
+  },
+  {
+    "quote": "अफसोस सिर्फ उस वर्कआउट का होता है जिसे छोड़ दिया।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आत्मविश्वास अनुशासन और ट्रेनिंग से आता है।",
+    "author": "Robert Kiyosaki",
+    "category": "general"
+  },
+  {
+    "quote": "दर्द शरीर से निकलने वाली कमजोरी है।",
+    "author": "U.S. Marine Corps",
+    "category": "strength"
+  },
+  {
+    "quote": "जो आज असंभव लगता है वह एक दिन आपका वार्म-अप बन जाएगा।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "अब से एक साल बाद, आप चाहेंगे कि आपने आज ही शुरुआत की होती।",
+    "author": "Karen Lamb",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "विजेता ट्रेनिंग लेते हैं। हारने वाले शिकायत करते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कोई भी व्यक्ति मजबूत पैदा नहीं होता। आप इसे अर्जित करें।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आगे बढ़ने का रहस्य शुरुआत करना है।",
+    "author": "Mark Twain",
+    "category": "general"
+  },
+  {
+    "quote": "बहानेबाजी से कैलोरी बर्न नहीं होती।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "दर्पण में देखो। वह आपकी प्रतिस्पर्धा है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "पंप दुनिया का सबसे अच्छा अहसास है।",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "फिटनेस का मतलब किसी और से बेहतर होना नहीं है। यह आपके पहले से बेहतर होने के बारे में है।",
+    "author": "Khloe Kardashian",
+    "category": "general"
+  },
+  {
+    "quote": "निरंतरता ही औसत को उत्कृष्टता में बदलती है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "यदि आप फिट रहना चाहते हैं तो अपने आसपास फिट लोगों का ध्यान रखें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "शरीर मन का सेवक है।",
+    "author": "James Allen",
+    "category": "general"
+  },
+  {
+    "quote": "तराजू को अपनी पहचान मत बनने दीजिए। सक्रिय, स्वस्थ और खुश रहिए।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आज पसीना बहाओ। कल चमको।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "एक मजबूत शरीर मन को मजबूत बनाता है।",
+    "author": "Thomas Jefferson",
+    "category": "strength"
+  },
+  {
+    "quote": "जब तक इसे पूरा नहीं किया जाता तब तक यह हमेशा असंभव लगता है।",
+    "author": "Nelson Mandela",
+    "category": "general"
+  },
+  {
+    "quote": "लड़ाई गवाहों से दूर जीती या हारी जाती है।",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "असफलता सफलता के विपरीत नहीं है। यह सफलता का हिस्सा है।",
+    "author": "Arianna Huffington",
+    "category": "general"
+  },
+  {
+    "quote": "आपकी एकमात्र सीमा आप ही हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर रेप मायने रखता है। हर सेट मायने रखता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "जो आप अकेले में खाते हैं, वही दुनिया आपके शरीर पर देखती है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मैं अभी तक वहां नहीं हूं, लेकिन मैं कल की तुलना में करीब हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बार पर भार का कोई मतलब नहीं है। आपका इरादा ही सब कुछ है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "खाओ। नींद। उठाना। दोहराना।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "वह ऊर्जा बनें जिसे आप आकर्षित करना चाहते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मजबूत नई पतली है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आप यहाँ तक केवल यहाँ तक आने के लिए ही नहीं आये हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "व्यायाम राजा है। पोषण रानी है। उन्हें एक साथ रख दो और तुम्हें एक राज्य मिल जाएगा।",
+    "author": "Jack LaLanne",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "प्रतिबद्धता का मतलब है कि आपने जो कहा था कि आप जो करने जा रहे हैं उसके प्रति वफादार रहना, जब तक कि आपने जो मूड कहा था वह आपको छोड़ चुका है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर दिन की छोटी-छोटी प्रगति समय के साथ बड़े नतीजे देती है।",
+    "author": "Robin Sharma",
+    "category": "general"
+  },
+  {
+    "quote": "कड़ी मेहनत का कोई विकल्प नहीं है।",
+    "author": "Thomas Edison",
+    "category": "general"
+  },
+  {
+    "quote": "आप केवल उन दीवारों तक ही सीमित हैं जिन्हें आपने स्वयं बनाया है।",
+    "author": "Andrew Murphy",
+    "category": "general"
+  },
+  {
+    "quote": "जिम में मसल्स बनती हैं। फैट रसोई में खो जाती है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "लक्ष्य छोटा मत कीजिए, मेहनत बढ़ाइए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "फिटनेस रिश्ते जैसी है। धोखा देकर उम्मीद नहीं कर सकते कि सब ठीक चलेगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "उठो और उत्साह के साथ दिन पर आक्रमण करो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जब आप फेल होने लगते हैं, असली वर्कआउट वहीं शुरू होता है।",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मुझ पर शक करो। मुझसे नफरत है। आप ही हैं जो मुझे सफल होते हुए देख रहे हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप परिणाम चाहते हैं? फिर इसकी तरह ट्रेनिंग लें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप जितना अधिक ट्रेनिंग लेंगे, उतने ही अधिक लोग आपसे कमजोर होंगे।",
+    "author": "Mark Rippetoe",
+    "category": "strength"
+  },
+  {
+    "quote": "किसी भी चीज़ का स्वाद उतना अच्छा नहीं होता जितना फिट महसूस होता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "एकमात्र व्यक्ति जो आपको बता सकता है कि आप कुछ नहीं कर सकते, वह आप ही हैं। और आपको सुनने की जरूरत नहीं है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कसरत करो। अच्छा खाएं। धैर्य रखें। आपका शरीर आपको पुरस्कृत करेगा।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आराम कब्र में करना।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "किसी बेहतर चीज़ के लिए किसी अच्छी चीज़ का त्याग करना ही बलिदान है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रत्येक दिन को अपनी उत्कृष्ट कृति बनाएं।",
+    "author": "John Wooden",
+    "category": "general"
+  },
+  {
+    "quote": "सीमाएँ केवल तभी मौजूद होती हैं जब आप उन्हें अनुमति देते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "चैंपियन जिम में नहीं बनते। चैंपियंस उनके अंदर गहरी किसी चीज़, एक इच्छा, एक सपने, एक दृष्टि से बनते हैं।",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "नंबर एक, अपने जैसा। नंबर दो, आपको स्वस्थ भोजन करना होगा। नंबर तीन, आपको अपने बन्स को निचोड़ना होगा।",
+    "author": "Richard Simmons",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "लोहा लोहे को काटता है।",
+    "author": "Proverbs 27:17",
+    "category": "strength"
+  },
+  {
+    "quote": "मैं जो भी करता हूं उसमें दुनिया में सर्वश्रेष्ठ बनने के लिए ट्रेनिंग लेता हूं, जिम में सर्वश्रेष्ठ बनने के लिए नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सफलता की शुरुआत आत्म-अनुशासन से होती है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मेहनत करें, आगे बढ़ें, अपना सर्वश्रेष्ठ दें, बाकी चीजें अपने आप जगह पर आ जाएंगी।",
+    "author": "Usain Bolt",
+    "category": "general"
+  },
+  {
+    "quote": "दर्द नहीं, तो गेन्स नहीं। चुप रहिए और प्रैक्टिस कीजिए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आप जितना सोचते हैं उससे कहीं अधिक मजबूत हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "एक बार में एक कदम, एक रेप, एक दिन।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अच्छा वर्कआउट वह है जो आपकी ड्राई-फिट शर्ट को सचमुच गीला कर दे।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका आज का शरीर ही आपको नए शरीर तक ले जाएगा। इसका ध्यान रखें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "इंटेंसिटी से साइज बनता है।",
+    "author": "Kevin Levrone",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "खुद को बेहतर बनाने के आदी बनें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप चाहते हैं कि मैं कुछ करूं। मुझे बताओ मैं यह नहीं कर सकता।",
+    "author": "Maya Angelou",
+    "category": "general"
+  },
+  {
+    "quote": "यह वह बोझ नहीं है जो आपको तोड़ देता है। यह वह तरीका है जिससे आप इसे ले जाते हैं।",
+    "author": "Lou Holtz",
+    "category": "strength"
+  },
+  {
+    "quote": "किसी सपने को सिर्फ इसलिए मत छोड़ो क्योंकि उसे पूरा करने में समय लगेगा। समय वैसे भी बीत जायेगा।",
+    "author": "Earl Nightingale",
+    "category": "general"
+  },
+  {
+    "quote": "अपना सर्वश्रेष्ठ देने वाले किसी भी व्यक्ति को इसका अफसोस नहीं हुआ।",
+    "author": "George Halas",
+    "category": "general"
+  },
+  {
+    "quote": "शरीर रुकना चाहता है। दौड़ते समय वह आपको रोकने को कहेगा, लेकिन मन मजबूत होना चाहिए।",
+    "author": "Jacqueline Gareau",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "वज़न उठाना एक उपहार है जो आप अपने भविष्य को देते हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आप बस एक फैसले की दूरी पर हैं, और जिंदगी पूरी तरह बदल सकती है।",
+    "author": "Mark Batterson",
+    "category": "general"
+  },
+  {
+    "quote": "एक सुगठित शरीर एक स्टेटस सिंबल है। यह कड़ी मेहनत और समर्पण को दर्शाता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "जब प्रतिभा कड़ी मेहनत नहीं करती तो कड़ी मेहनत प्रतिभा को हरा देती है।",
+    "author": "Tim Notke",
+    "category": "general"
+  },
+  {
+    "quote": "मैं जिम व्यफैटय में अपना दायरा बढ़ाने वाला पहला व्यक्ति बनना चाहूंगा।",
+    "author": "Vince Gironda",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "टैलेंट की कमी को इच्छा, मेहनत और हर बार 110 प्रतिशत देने से पूरा किया जा सकता है।",
+    "author": "Don Zimmer",
+    "category": "general"
+  },
+  {
+    "quote": "कंट्रोल के बिना ताकत किसी काम की नहीं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आपका परिवर्तन आपके शरीर के बारे में नहीं है। यह इस बारे में है कि आप मानसिक रूप से क्या बनते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "यदि आप दृढ़ हैं, तो आप इसे प्राप्त करेंगे। यदि आप सुसंगत हैं, तो आप इसे बनाए रखेंगे।",
+    "author": "Harvey Mackay",
+    "category": "general"
+  },
+  {
+    "quote": "शक्ति अन्य सभी भौतिक गुणों का आधार है।",
+    "author": "Mark Rippetoe",
+    "category": "strength"
+  },
+  {
+    "quote": "जो आदमी पहाड़ को हिलाता है वह छोटे पत्थरों को उठाकर ले जाना शुरू करता है।",
+    "author": "Confucius",
+    "category": "general"
+  },
+  {
+    "quote": "यदि आप व्यायाम के लिए समय नहीं निकालेंगे तो संभवतः आपको बीमारी के लिए भी समय निकालना पड़ेगा।",
+    "author": "Robin Sharma",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आप किसी भी चीज़ पर कोई सीमा नहीं लगा सकते। आप जितना अधिक सपने देखेंगे, आप उतना ही आगे बढ़ेंगे।",
+    "author": "Michael Phelps",
+    "category": "general"
+  },
+  {
+    "quote": "दिखावा करना आधी लड़ाई है।",
+    "author": "Woody Allen",
+    "category": "general"
+  },
+  {
+    "quote": "धीमी प्रगति अभी भी प्रगति है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "इच्छा करना बंद करो। करना शुरू करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपकी मसल्स को बार पर लगे वजन से फर्क नहीं पड़ता। उन्हें बस मेहनत महसूस होती है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "भविष्य की भविष्यवाणी करने का सबसे अच्छा तरीका उसे बनाना है।",
+    "author": "Peter Drucker",
+    "category": "general"
+  },
+  {
+    "quote": "अभी मेहनत करो, बाद में चमको।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मेरी निन्यानबे समस्याएं हैं, पर मैं उन सबको भूलने जिम जा रहा हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "उद्देश्य के साथ ट्रेनिंग लें, इरादे के साथ खाएं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मोटिवेशन का इंतज़ार बंद कीजिए। अनुशासन बनाना शुरू कीजिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बॉडीबिल्डिंग एक कला है। आपका शरीर कैनवास है, वज़न आपका ब्रश है और पोषण आपकी पेंट है।",
+    "author": "Ernie Taylor",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आज की जीत, कल वाले खुद पर जीत है।",
+    "author": "Miyamoto Musashi",
+    "category": "general"
+  },
+  {
+    "quote": "जो आसान था उसे करके कोई भी कभी भी मजबूत नहीं बन पाया।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "हर वर्कआउट मायने रखता है, खराब वाला भी।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "इस पर बैठने से आपको वह बट नहीं मिलता जो आप चाहते हैं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "योग्यता वह है जो आप करने में सक्षम हैं। मोटिवेशन निर्धारित करती है कि आप क्या करते हैं। आपकी मनोवृत्ति निर्धारित करती है की आप कितने अच्छे से काम करते है।",
+    "author": "Lou Holtz",
+    "category": "general"
+  },
+  {
+    "quote": "इतने अच्छे बनो कि वे तुम्हें नज़रअंदाज न कर सकें।",
+    "author": "Steve Martin",
+    "category": "general"
+  },
+  {
+    "quote": "कमजोर लोग बदला लेते हैं। ताकतवर लोग माफ कर देते हैं। बुद्धिमान लोग उपेक्षा करते हैं।",
+    "author": "Albert Einstein",
+    "category": "strength"
+  },
+  {
+    "quote": "ऐसे खाएं जैसे आप खुद से प्यार करते हैं। ऐसे आगे बढ़ें जैसे आप खुद से प्यार करते हैं। ऐसे बोलें जैसे आप खुद से प्यार करते हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "एक और रेप। एक और सेट। लक्ष्य के एक कदम और करीब।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "सो जाओ। खाओ। जिम। दोहराना।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपको अपनी कथित सीमाओं से आगे बढ़ना होगा।",
+    "author": "Drew Brees",
+    "category": "strength"
+  },
+  {
+    "quote": "छह सबसे अच्छे डॉक्टर: धूप, पानी, आराम, हवा, व्यायाम और डाइट।",
+    "author": "Wayne Fields",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मैं खुद पर, अपने लिए, अपने दम पर काम कर रहा हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "इसे बाद की फोटो के लिए करें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "उत्कृष्टता कोई कौशल नहीं है। यह एक दृष्टिकोण है।",
+    "author": "Ralph Marston",
+    "category": "general"
+  },
+  {
+    "quote": "अपने ध्यान भटकाने वाली चीजों को भूखा रखें। अपना ध्यान केंद्रित करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आज ऐसा कुछ कीजिए जिसके लिए आपका भविष्य वाला आप आपको धन्यवाद दे।",
+    "author": "Sean Patrick Flanery",
+    "category": "general"
+  },
+  {
+    "quote": "आप आज जो करते हैं वह आपके सभी कल को बेहतर बना सकता है।",
+    "author": "Ralph Marston",
+    "category": "general"
+  },
+  {
+    "quote": "भारी वजन उठाना है तो शरीर को सही ईंधन भी देना होगा।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मैं एक प्रतिस्पर्धी हूं। मैं हावी होना चाहता हूं।",
+    "author": "Serena Williams",
+    "category": "strength"
+  },
+  {
+    "quote": "सोफ़े से उतरो। पसीना। कुछ करो।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "ताकत उन चीजों को पार करने से आती है जिनके बारे में आपने कभी सोचा था कि आप नहीं कर पाएंगे।",
+    "author": "Rikki Rogers",
+    "category": "strength"
+  },
+  {
+    "quote": "आप कभी भी हमेशा प्रेरित नहीं रहेंगे। आपको अनुशासित रहना सीखना होगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "शरीर तुम्हारा मंदिर है। आत्मा के वास के लिए इसे शुद्ध और स्वच्छ रखें।",
+    "author": "B.K.S. Iyengar",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "सफलता आम तौर पर उन लोगों को मिलती है जो इसकी तलाश में बहुत व्यस्त होते हैं।",
+    "author": "Henry David Thoreau",
+    "category": "general"
+  },
+  {
+    "quote": "अगर तकलीफ नहीं हो रही, तो कोशिश अभी पूरी नहीं है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "अफ़्रीका में हर सुबह एक चिकारा जागता है। वह जानता है कि उसे सबसे तेज़ शेर से भी आगे निकलना होगा। हर सुबह एक शेर जागता है। वह जानता है कि उसे सबसे धीमी चिकारे से आगे निकलना होगा। इससे कोई फर्क नहीं पड़ता कि आप शेर हैं या हिरण। जब सूरज उग आए तो बेहतर होगा कि आप दौड़ना शुरू कर दें।",
+    "author": "African Proverb",
+    "category": "general"
+  },
+  {
+    "quote": "आप अभ्यास में जितना अधिक पसीना बहाएँगे, युद्ध में आपका खून उतना ही कम होगा।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बहाने खो दो। परिणाम खोजें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "उचित तैयारी खराब प्रदर्शन को रोकती है।",
+    "author": "Charlie Batch",
+    "category": "general"
+  },
+  {
+    "quote": "हम जीवन में जो करते हैं उसकी प्रतिध्वनि अनंत काल तक होती है।",
+    "author": "Maximus",
+    "category": "general"
+  },
+  {
+    "quote": "मैं शायद अभी तक वहां नहीं हूं, लेकिन हर कदम मुझे करीब ले जाता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आत्मविश्वास जगाएं। संदेह को बाहर निकालें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आज का दर्द कल की जीत है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "स्कीनी कोई तारीफ नहीं है। मजबूत है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "हर उपलब्धि कोशिश करने के फैसले से शुरू होती है।",
+    "author": "John F. Kennedy",
+    "category": "general"
+  },
+  {
+    "quote": "मैं नहीं छोड़ूंगा। पीड़ा सौदे का हिस्सा है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप जहां हैं वहीं से शुरू करें। जो आपके पास है उसका उपयोग करें। जो तुम कर सकतो हो वो करो।",
+    "author": "Arthur Ashe",
+    "category": "general"
+  },
+  {
+    "quote": "आपको तेजी से जाने की जरूरत नहीं है। आपको बस जाने की जरूरत है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "अब से एक साल बाद, आपको ख़ुशी होगी कि आपने आज शुरुआत की।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "उदय। पिसना। चमक।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मजबूत तब होता है जब आपके पास कमजोरियां खत्म हो जाती हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बहाने बनाओ या प्रगति करो। आप दोनों नहीं कर सकते।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "पसीने में कभी कोई नहीं डूबा।",
+    "author": "U.S. Marine Corps",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "जब जीवन कठिन हो जाता है, तो आपको मजबूत बनना होगा।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "दृढ़ संकल्प मानव इच्छाशक्ति को जगाने वाली पुकार है।",
+    "author": "Anthony Robbins",
+    "category": "general"
+  },
+  {
+    "quote": "लोहा आपको सिखाता है कि जीवन में सबसे महत्वपूर्ण चीज है नीचे गिरने के बाद फिर से खड़े होने में सक्षम होना।",
+    "author": "Henry Rollins",
+    "category": "strength"
+  },
+  {
+    "quote": "कैलोरी दुश्मन नहीं, अनजान रहना दुश्मन है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आप जितना विश्वास करते हैं उससे अधिक बहादुर हैं, आप जितना दिखते हैं उससे कहीं अधिक मजबूत हैं और आप जितना सोचते हैं उससे कहीं अधिक चतुर हैं।",
+    "author": "A.A. Milne",
+    "category": "general"
+  },
+  {
+    "quote": "एक दिन, एक भोजन और एक वर्कआउट पर ध्यान दें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "अपने सर्वोत्तम से कुछ भी कम देना उपहार का त्याग करना है।",
+    "author": "Steve Prefontaine",
+    "category": "general"
+  },
+  {
+    "quote": "शरीर बनाइए। चरित्र बनाइए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "जब सब उम्मीद करते हैं कि आप टूट जाएंगे, तब खुद को संभाले रखना ही असली ताकत है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "हर वर्कआउट प्रगति है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "पहले जुनून लाइए, बाकी चीजें अपने आप आ जाएंगी।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "एक मजबूत पुरुष एक मजबूत महिला को संभाल सकता है। एक कमज़ोर आदमी कहेगा कि उसके पास एक दृष्टिकोण है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आप जो शरीर चाहते हैं उसके लिए खाएं, न कि उस शरीर के लिए जो आपके पास है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "उत्साह के बिना कोई भी बड़ी उपलब्धि कभी हासिल नहीं हुई।",
+    "author": "Ralph Waldo Emerson",
+    "category": "general"
+  },
+  {
+    "quote": "निर्णय करें। प्रतिबद्ध। सफल होना।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "दर्द तो शरीर से निकलने वाली कमजोरी मात्र है।",
+    "author": "U.S. Marine Corps",
+    "category": "strength"
+  },
+  {
+    "quote": "फिटनेस एक यात्रा है, मंजिल नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "चाहत और जरूरत के बीच का फर्क आत्म-अनुशासन है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "विजेता हार नहीं मानते, और हार मानने वाले जीतते नहीं।",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "महानता अर्जित की जाती है, पुरस्कार नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "विफलता के परिणामों के बारे में भूल जाओ। असफलता दिशा में केवल एक अस्थायी परिवर्तन है।",
+    "author": "Denis Waitley",
+    "category": "general"
+  },
+  {
+    "quote": "हर कठिनाई के बीच में अवसर छिपा होता है।",
+    "author": "Albert Einstein",
+    "category": "general"
+  },
+  {
+    "quote": "नौसिखिया होने से डरो मत।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपकी कल्पना आने वाले कल की झलक है।",
+    "author": "Albert Einstein",
+    "category": "general"
+  },
+  {
+    "quote": "तैयारी की चाह, जीत की चाह से भी मजबूत होनी चाहिए।",
+    "author": "Bobby Knight",
+    "category": "general"
+  },
+  {
+    "quote": "जब बेहतर की उम्मीद हो, तो अच्छा काफी नहीं होता।",
+    "author": "Vin Scully",
+    "category": "general"
+  },
+  {
+    "quote": "पाने लायक कोई भी चीज़ आसानी से नहीं मिलती।",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "जिम में आपको जो सबसे बड़ा एहसास मिल सकता है वह है पंप।",
+    "author": "Arnold Schwarzenegger",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "बड़ी चीज़ों की शुरुआत अक्सर छोटी होती है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जब तक आप उल्टी न करें, बेहोश न हो जाएं या मर न जाएं, चलते रहें।",
+    "author": "Jillian Michaels",
+    "category": "general"
+  },
+  {
+    "quote": "आप जो बन सकते थे, वह बनने में कभी देर नहीं होती।",
+    "author": "George Eliot",
+    "category": "general"
+  },
+  {
+    "quote": "यदि यह आसान होता तो हर कोई इसे करता।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कमजोर लोग कभी माफ नहीं कर पाते। क्षमा मजबूत लोगों की खूबी है।",
+    "author": "Mahatma Gandhi",
+    "category": "strength"
+  },
+  {
+    "quote": "चलते रहो। आपकी ज़रूरत की हर चीज़ सही समय पर आपके पास आ जाएगी।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मशीनें मसल्स पर काम कराती हैं। फ्री वेट्स मसल्स को सच में काम करना सिखाते हैं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "विनम्र रहें। भूख लगी है। और हमेशा कमरे में सबसे मेहनती कार्यकर्ता बनें।",
+    "author": "Dwayne Johnson",
+    "category": "general"
+  },
+  {
+    "quote": "आपका स्वास्थ्य एक निवेश है, खर्च नहीं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "जब जलन शुरू होती है, तब शरीर बनना शुरू होता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपके और आपके लक्ष्य के बीच बस वह कहानी खड़ी है जो आप खुद को सुनाते रहते हैं।",
+    "author": "Jordan Belfort",
+    "category": "general"
+  },
+  {
+    "quote": "विकास सुरक्षा के अस्थायी समर्पण की मांग करता है।",
+    "author": "Gail Sheehy",
+    "category": "general"
+  },
+  {
+    "quote": "एक घंटे का वर्कआउट दिन का चार प्रतिशत है। कोई बहाना नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "खुद को इतना गौरवान्वित कीजिए कि शक करने वालों को जलन हो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "खाओ। उठाना। नींद। बढ़ना।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "एक मजबूत पीठ एक मजबूत जीवन है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "अनुशासन का दर्द पछतावे के दर्द से बहुत छोटा है।",
+    "author": "Sarah Bombell",
+    "category": "general"
+  },
+  {
+    "quote": "ट्रेनिंग का उद्देश्य ढीलेपन को दूर करना, शरीर को मजबूत बनाना और आत्मा को निखारना है।",
+    "author": "Morihei Ueshiba",
+    "category": "general"
+  },
+  {
+    "quote": "इस पर ध्यान केंद्रित करें कि आप कितनी दूर आ गए हैं, न कि इस पर कि आपको कितनी दूर जाना है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मजबूत लोग दूसरों को नीचा नहीं दिखाते। वे उन्हें उठा देता है।",
+    "author": "Michael P. Watson",
+    "category": "strength"
+  },
+  {
+    "quote": "प्रत्येक विशेषज्ञ कभी नौसिखिया था।",
+    "author": "Helen Hayes",
+    "category": "general"
+  },
+  {
+    "quote": "भारी सेट से ठीक पहले मैं खुद से यही कहता हूं।",
+    "author": "Dorian Yates",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपके मन पर अधिकार है, बाहरी घटनाओं पर नहीं। इसे समझें, और आपको ताकत मिलेगी।",
+    "author": "Marcus Aurelius",
+    "category": "strength"
+  },
+  {
+    "quote": "जब आपको लगे कि आप और आगे नहीं जा सकते, तो आगे बढ़ें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप कितने धीमे चलते हैं, इससे फर्क नहीं पड़ता, जब तक रुकते नहीं।",
+    "author": "Confucius",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "जिम महान तुल्यकारक है। हर कोई शून्य से शुरू करता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका सबसे बड़ा दुश्मन वह व्यक्ति है जो आपको आईने में घूरकर देख रहा है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सबसे पहले वे आपसे पूछेंगे कि आप ऐसा क्यों कर रहे हैं। बाद में वे आपसे पूछेंगे कि आपने यह कैसे किया।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "घमंड करो लेकिन कभी संतुष्ट मत रहो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रयास आपके और आपके बीच है।",
+    "author": "Ray Lewis",
+    "category": "general"
+  },
+  {
+    "quote": "मैं अपने जीवन में दिन जोड़ने के लिए ट्रेनिंग नहीं लेता। मैं अपने दिनों में जीवन जोड़ने के लिए ट्रेनिंग लेता हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप वही हैं जो आप खाते हैं। इसलिए तेज़, सस्ता, आसान या नकली न बनें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपका भविष्य वाला आप अभी आपको यादों के जरिए देख रहा है।",
+    "author": "Aubrey de Grey",
+    "category": "general"
+  },
+  {
+    "quote": "चुप रहो और बैठ जाओ।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "फोकस। गाड़ी चलाना। जीतना।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "फिट रहना पदार्थ के बजाय दिमाग पर निर्भर करता है। मुझे कोई फ़र्क नहीं पड़ता, इसलिए कोई फ़र्क नहीं पड़ता।",
+    "author": "Adam Hargreaves",
+    "category": "general"
+  },
+  {
+    "quote": "सफलता नहीं मिलती। इसे ट्रैक पर, मैदान पर, जिम में, खून, पसीने और कभी-कभार आंसुओं से कमाया जाता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "यह आप बनाम आप है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "नींद मौत की चचेरी बहन है। और मैं पूरी तरह से जाग रहा हूँ।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "वजन का सम्मान करें। वे ऐसे सबक सिखाएंगे जिनकी आपने उम्मीद भी नहीं की होगी।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "मैं इसलिए उठाता हूं क्योंकि मुक्का मारना लोगों को बुरा लगता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रगति, परफेक्शन नहीं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मसल्स को पोषण दीजिए, फैट को भूखा रखिए।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "अपने शरीर को सबसे सेक्सी पोशाक बनाएं जो आपके पास है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "बारबेल एक ईमानदार साथी है। यह कभी चापलूसी नहीं करता। यह कभी झूठ नहीं बोलता।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ट्रेनिंग कोई ऐसी चीज़ नहीं है जो मैं करता हूँ। यह कुछ ऐसा है जो मैं हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपने शरीर की देखभाल से प्यार करें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "जब तक आप ऐसा नहीं करते तब तक सपने काम नहीं करते।",
+    "author": "John C. Maxwell",
+    "category": "general"
+  },
+  {
+    "quote": "संघर्ष को गले लगाओ और इसे तुम्हें मजबूत बनाने दो।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आज एक नया दिन है। नयी शुरुआत। नई संभावनाएँ।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जब आपको छोड़ने का मन हो, तो याद रखें कि आपने शुरुआत क्यों की।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "दर्द ईंधन है। डर ईंधन है। यदि आप इसका उपयोग करना चुनते हैं तो हर चीज़ ईंधन है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "डेडलिफ्ट किसी भी एक्सरसाइज से ज्यादा चरित्र बनाती है।",
+    "author": "Mark Rippetoe",
+    "category": "strength"
+  },
+  {
+    "quote": "आपका दिमाग आपके शरीर से पहले ही हार मान लेता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "मैं ही वह हूं जो मेरे भविष्य को नियंत्रित करता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "ईंधन के लिए खाओ, पेट भरने के लिए नहीं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "जो तुम्हें नष्ट करता है उसे नष्ट करो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बीस्ट की तरह ट्रेन कीजिए, खूबसूरती से दिखिए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "बहाने उन लोगों के लिए हैं जो इसका बहुत बुरा नहीं चाहते।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "चाहे आप कुछ भी लिखें, आपका शरीर एक सटीक पत्रिका रखता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "यदि आप अपना सपना पूरा नहीं करते हैं, तो कोई और आपको अपना सपना पूरा करने में मदद करने के लिए काम पर रखेगा।",
+    "author": "Dhirubhai Ambani",
+    "category": "general"
+  },
+  {
+    "quote": "निरंतर प्रयास और संघर्ष से ही शक्ति और विकास आता है।",
+    "author": "Napoleon Hill",
+    "category": "strength"
+  },
+  {
+    "quote": "उस प्रकार का व्यक्ति बनें जो अन्य लोगों को अपने खेल में आगे बढ़ने के लिए प्रेरित करे।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "खुद पर संदेह करना बंद करें। कड़ी मेहनत करें, और इसे पूरा करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "पुराने रास्ते नये दरवाजे नहीं खोलेंगे।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप एक दिन में अपने शेष जीवन में महारत हासिल नहीं करने जा रहे हैं। बस आराम करो। दिन में महारत हासिल करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बार आपकी उम्र, आपके लिंग या आपकी समस्याओं को नहीं जानता। यह केवल यह जानता है कि आप इसे उठा सकते हैं या नहीं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "नतीजे समय के साथ आते हैं, एक रात में नहीं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "यदि कोई चीज़ बहुत महत्वपूर्ण है, तो भले ही परिस्थितियाँ आपके विरुद्ध हों, फिर भी आपको वह करना चाहिए।",
+    "author": "Elon Musk",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी सुबह का मालिक बनें। अपने जीवन को ऊँचा उठायें।",
+    "author": "Robin Sharma",
+    "category": "general"
+  },
+  {
+    "quote": "मोटिवेशन आपको आरंभ करवाती है। समर्पण आपको आगे बढ़ाता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "खुद को नतीजों से नहीं, कोशिश से मापिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मजबूत हो जाओ या बाहर निकल जाओ।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "फिटनेस कोई मौसमी शौक नहीं है। यह एक जीवनशैली है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "महापुरूष पैदा नहीं होते। वे निर्मित हैं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "सभी में से सबसे कठिन लिफ्ट अपने बट को सोफे से उठाना है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रोटीन राजा है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "कम चीनी। अधिक लोहा।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "हर भोजन एक विकल्प है। हर चुनाव एक मौका है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आराम प्रगति का दुश्मन है।",
+    "author": "P.T. Barnum",
+    "category": "general"
+  },
+  {
+    "quote": "मैं यह सिर्फ हेल्दी रहने के लिए नहीं कर रहा। मैं दमदार बॉडी बनाने के लिए कर रहा हूं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपका शरीर एक मशीन है। इसे ठीक से ईंधन दो।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "सफलता कभी आपकी स्थायी संपत्ति नहीं होती। यह किराए पर मिलती है, और किराया रोज चुकाना पड़ता है।",
+    "author": "J.J. Watt",
+    "category": "general"
+  },
+  {
+    "quote": "जिस रेप को करने का मन नहीं है, अक्सर वही सबसे ज्यादा मायने रखता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "पसीना बस आपके फैट की रोने की आवाज है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मैं देखना चाहूँगा कि आपमें से कोई भी वही करने का प्रयास करे जो मैं करता हूँ।",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "जंगली बनो, औसत नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बाधा ही रास्ता है।",
+    "author": "Ryan Holiday",
+    "category": "general"
+  },
+  {
+    "quote": "भीतर से जीतो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "स्क्वैट्स। सभी व्यायामों का राजा।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "अनुशासन, ड्राइव और दृढ़ निश्चय हो, तो कुछ भी असंभव नहीं।",
+    "author": "Dana Linn Bailey",
+    "category": "general"
+  },
+  {
+    "quote": "आज वह दिन है जब आप नियंत्रण अपने हाथ में लें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं कभी भी हारने के बारे में नहीं सोचता।",
+    "author": "Florence Griffith Joyner",
+    "category": "general"
+  },
+  {
+    "quote": "जो चीज़ आपकी आत्मा को आग लगाती है, उसकी खोज में निडर रहें।",
+    "author": "Jennifer Lee",
+    "category": "general"
+  },
+  {
+    "quote": "आप जितना सोचते हैं उससे कहीं अधिक कठिन हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "हर दिन मजबूत होने का एक और मौका है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "द्रव्यमान प्राप्त करें। सम्मान प्राप्त करें।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "परिवर्तन अब से पाँच मिनट दूर नहीं है। यह एक वर्तमान गतिविधि है। इस क्षण में आप एक अलग विकल्प चुन सकते हैं।",
+    "author": "Jillian Michaels",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "शरीर को शारीरिक और आध्यात्मिक रूप से पोषित किया जाना चाहिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "शुक्रवार का, गर्मियों का, किसी के आपके प्यार में पड़ने का, जीवन का इंतज़ार करना बंद करें। ख़ुशी तब मिलती है जब आप उसका इंतज़ार करना बंद कर देते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं चीजों को ऊपर उठाता हूं और नीचे रखता हूं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "ताकत दी नहीं जाती, लेनी पड़ती है।",
+    "author": "Beyonce",
+    "category": "strength"
+  },
+  {
+    "quote": "असली वर्कआउट तब शुरू होता है जब आप रुकना चाहते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर छोटी जीत का जश्न मनाएं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मजबूत दिमाग। मजबूत शरीर। सशक्त जीवन।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आपकी क्षमता अनंत है। जाओ वही करो जिसके लिए तुम्हें बनाया गया है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कैलोरी जलाइए, दिन नहीं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "भारी सामान उठाना। स्वच्छ खाना। दयालु हों।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "चमत्कार यह नहीं है कि मैंने ख़त्म कर दिया। चमत्कार यह है कि मुझमें शुरुआत करने का साहस था।",
+    "author": "John Bingham",
+    "category": "general"
+  },
+  {
+    "quote": "अपने लक्ष्य तय कीजिए। योजना बनाइए। फिर पूरी ताकत से लग जाइए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "झुक जाओ। गहराई तक खोदो। प्रक्रिया पर विश्वास करें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपके द्वारा किया गया प्रत्येक स्क्वाट अजेय बनने की दिशा में एक और कदम जोड़ता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "पुराने तरीके दोहराकर नए नतीजों की उम्मीद नहीं की जा सकती।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मजबूत नींव के बिना शरीर किस काम का?",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "चीनी कम खायें। तुम पहले से ही काफी प्यारे हो।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "ऐसा कुछ भी नहीं है जिसे हम नीचे न जी सकें और ऊपर न उठ सकें और उस पर काबू न पा सकें।",
+    "author": "Ella Wheeler Wilcox",
+    "category": "general"
+  },
+  {
+    "quote": "ऐसा शरीर बनाएं जो आपकी आत्मा को प्रतिबिंबित करे।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "चुपचाप मेहनत करो। अपने शरीर को आवाज करने दें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जीवन आपके साहस के अनुपात में सिकुड़ता या फैलता है।",
+    "author": "Anais Nin",
+    "category": "general"
+  },
+  {
+    "quote": "अगर खाना हमेशा सस्ता और बेकार होगा, तो शरीर से महंगे नतीजे की उम्मीद मत रखिए।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "अपने भविष्य के लिए लड़ो। आपका वर्तमान स्व आपको धन्यवाद देगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपने दिल से उठाओ। बाकी लोग अनुसरण करेंगे।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मजबूत महिलाएं एक-दूसरे को ऊपर उठाती हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "स्क्वाट रैक शक्ति की वेदी है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "प्रत्येक चैंपियन एक बार ऐसा दावेदार था जिसने हार मानने से इनकार कर दिया था।",
+    "author": "Rocky Balboa",
+    "category": "general"
+  },
+  {
+    "quote": "अथक रहो। कभी नहीं बसा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "धैर्य और दृढ़ता परिवर्तन की कुंजी हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मुझे अपने दोस्त दिखाओ, और मैं तुम्हें तुम्हारा भविष्य दिखाऊंगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जब आप अपनी योग्यता देखना शुरू कर देंगे, तो आपके लिए उन लोगों के साथ रहना कठिन हो जाएगा जो ऐसा नहीं करते।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं अपने लिए ट्रेनिंग लेता हूं, किसी और के लिए नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप जिस दौर से गुजरते हैं, उससे आगे बढ़ें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "इसके पीछे जाओ। हर दिन।",
+    "author": "Jocko Willink",
+    "category": "general"
+  },
+  {
+    "quote": "कैलोरी अंदर। कैलोरी बाहर। यही कानून है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आप कल से अधिक मजबूत हैं। इसे साबित करो।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "यदि यह आपके लिए महत्वपूर्ण है, तो आपको एक रास्ता मिल जाएगा। नहीं तो बहाना मिल जाएगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपना दिमाग खाली करो। पानी की तरह निराकार, निराकार हो जाओ।",
+    "author": "Bruce Lee",
+    "category": "general"
+  },
+  {
+    "quote": "स्क्वाट राजा है। डेडलिफ्ट रानी है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "नेचुरल बॉडी बनाना सबसे ईमानदार मेहनतों में से एक है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मजबूत पैर। मजबूत दिल। मजबूत दिमाग।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "वजन कम करना मुश्किल है। ओवरवेट रहना भी मुश्किल है। अपनी मुश्किल चुनिए।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "खुद में निवेश कीजिए। इसका रिटर्न सबसे अच्छा होता है।",
+    "author": "Benjamin Franklin",
+    "category": "general"
+  },
+  {
+    "quote": "मेरे पीछे दोहराएँ: मैं इसके लायक हूँ।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सफलता उद्देश्य की एकता की मांग करती है।",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "हर स्थिति में अच्छाई देखने के लिए अपने मन को ट्रेन कीजिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "खुद को मोटिवेट कीजिए, क्योंकि यह काम आपके लिए कोई और नहीं करेगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "तुम सागर में एक बूंद नहीं हो। तुम एक बूँद में पूरा सागर हो।",
+    "author": "Rumi",
+    "category": "general"
+  },
+  {
+    "quote": "आपका वाइब आपके समुदाय को आकर्षित करता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "यह कठिन होने वाला है, लेकिन कठिन का मतलब असंभव नहीं है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "इससे कोई फर्क नहीं पड़ता कि आप कितनी धीमी गति से चलते हैं, फिर भी आप सोफे पर सभी को थप्पड़ मार रहे हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "डेडलिफ्ट शरीर की संपूर्ण ताकत की सच्ची परीक्षा है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "दर्द शरीर से कमजोरी का अहसास है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "राजा की तरह खाओ। एक योद्धा की तरह ट्रेनिंग लें।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मजबूत हो जाओ। विनम्र रहो।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "सबसे अच्छा बदला भारी सफलता है।",
+    "author": "Frank Sinatra",
+    "category": "general"
+  },
+  {
+    "quote": "दृढ़ता। परफेक्शन। धैर्य। शक्ति। अपने जुनून को प्राथमिकता दें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कल कहना बंद करो। आज ही कहना शुरू करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जिम वह चिकित्सक है जिसके लिए आपको किसी पैसे की आवश्यकता नहीं है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "महानता कभी भी आराम क्षेत्र से नहीं आती।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपेक्षा से अधिक करो। इसी तरह चैंपियन बनते हैं'",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "लोहा सदैव तुम्हें सत्य की लात मारेगा।",
+    "author": "Henry Rollins",
+    "category": "strength"
+  },
+  {
+    "quote": "प्रदर्शन के लिए खाओ, भागने के लिए नहीं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "एक-एक रेप से अपना साम्राज्य बनाइए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "अपने वर्कआउट को दिन का सबसे अच्छा हिस्सा बनाइए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अच्छा स्वास्थ्य कोई ऐसी चीज़ नहीं है जिसे हम खरीद सकें। हालाँकि, यह एक अत्यंत मूल्यवान बचत खाता हो सकता है।",
+    "author": "Anne Wilson Schaef",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "शक्ति ट्रेनिंग आत्म-देखभाल का एक रूप है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "तुम वहां पहुंच जाओगे। बस रुकना मत।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "खुद पर और अपने अंदर की ताकत पर भरोसा रखें। आपके भीतर कुछ ऐसा है जो हर रुकावट से बड़ा है।",
+    "author": "Christian D. Larson",
+    "category": "general"
+  },
+  {
+    "quote": "जिस रेप को छोड़ने का मन होता है, वही सबसे ज्यादा मायने रखता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "किसी बुरे दिन को ऐसा महसूस न होने दें कि आपका जीवन ख़राब है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "फैट जलाइए, मसल्स को पोषण दीजिए।",
+    "author": "Tom Venuto",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "चलते रहो। आपका सबसे कठिन समय अक्सर आपके जीवन के सबसे महान क्षणों में बदल जाता है।",
+    "author": "Roy Bennett",
+    "category": "general"
+  },
+  {
+    "quote": "लक्ष्य तय कीजिए। उन्हें तोड़िए। फिर दोहराइए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपको नए दिन की शुरुआत करने के लिए किसी नए दिन की आवश्यकता नहीं है। आपको केवल एक नई मानसिकता की आवश्यकता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "वह व्यक्ति बनें जो आपके इच्छित परिणामों को आकर्षित करेगा।",
+    "author": "Jim Cathcart",
+    "category": "general"
+  },
+  {
+    "quote": "अपने सबसे मजबूत रूप में आइए।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "जिम बाल, परवाह मत करो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "वजन उठाने से पहले खुद को ऊपर उठाएं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "एक बार में एक पाउंड। एक बार में एक दिन। आपको वहां मिलेगा।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "जब पैर जवाब दे दें, तो दिल से खुद को आगे बढ़ाइए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "खेल शुरू होने पर चैंपियन नहीं बनते। तभी उनकी पहचान होती है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बात यह नहीं है कि तुम्हें गिरा दिया जायेगा। यह है कि क्या आप वापस उठते हैं।",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "उस शरीर के लिए ट्रेनिंग लें जिसे आप चाहते हैं, न कि उस शरीर के लिए जो आपके पास है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपको महान बनने की चाहत होनी चाहिए।",
+    "author": "Dexter Jackson",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "सिर्फ एक चीज छोड़िए: हार मानना।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "ऊर्जा और दृढ़ता सभी चीजों पर विजय प्राप्त करती है।",
+    "author": "Benjamin Franklin",
+    "category": "general"
+  },
+  {
+    "quote": "फैड डाइट छोड़िए। असली खाना खाइए।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "हर दिन जब आप व्यायाम नहीं करते हैं तो वह दिन आप कमजोर हो जाते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जब दुनिया कहती है कि हार मान लो, आशा फुसफुसाती है कि एक बार और कोशिश करो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "धक्का। खींचो। स्क्वाट। काज। ढोना। आपको बस यही चाहिए।",
+    "author": "Dan John",
+    "category": "strength"
+  },
+  {
+    "quote": "शरीर देखने के लिए है, ढकने के लिए नहीं।",
+    "author": "Marilyn Monroe",
+    "category": "general"
+  },
+  {
+    "quote": "बड़ा सोचो। बड़ा उठाओ। बडे हो।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "दुनिया का सबसे बड़ा कमरा आत्म-सुधार का कमरा है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रत्येक दिन समाप्त करें और इसे पूरा करें। कल एक नया दिन है।",
+    "author": "Ralph Waldo Emerson",
+    "category": "general"
+  },
+  {
+    "quote": "तब तक काम करें जब तक आपके आदर्श आपके प्रतिद्वंद्वी न बन जाएं।",
+    "author": "Drake",
+    "category": "general"
+  },
+  {
+    "quote": "आज मजबूत। कल और भी मजबूत।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "गेन्स शुरू होने दीजिए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "सफलता काम से पहले सिर्फ डिक्शनरी में आती है।",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "शेप में वापस आने से आसान है शेप में बने रहना।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मुझसे ज़्यादा काम नहीं लिया जाएगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सफलता को कभी अपने सिर पर चढ़ने न दें। असफलता को कभी अपने दिल पर हावी न होने दें।",
+    "author": "Drake",
+    "category": "general"
+  },
+  {
+    "quote": "कठिन विकल्प आसान जीवन की ओर ले जाते हैं। आसान विकल्प कठिन जीवन की ओर ले जाते हैं।",
+    "author": "Jerzy Gregorek",
+    "category": "general"
+  },
+  {
+    "quote": "हर सुबह आपके पास दो विकल्प होते हैं: अपने सपनों के साथ सोते रहना, या जागना और उनका पीछा करना।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "पंप थोड़ी देर का है, गेन्स टिकते हैं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मैं किसी से प्रतिस्पर्धा नहीं करता। मैं उस व्यक्ति से बेहतर बनने की कोशिश करता हूं जो मैं कल था।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मास मशीनों पर नहीं बनता। वह आयरन और इच्छाशक्ति से बनता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "वॉल्यूम मसल ग्रोथ की भाषा है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "प्रगतिशील अधिभार लोहे के खेल का नियम है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "यदि आप असफल होने के इच्छुक नहीं हैं तो आप आगे नहीं बढ़ सकते।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "पंप एक संकेत है कि कुछ बड़ा घटित हो रहा है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "अधिक प्लेटें, महानता के साथ अधिक खजूर।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "हाइपरट्रॉफी एक मैराथन है, स्प्रिंट नहीं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "प्रत्येक सेट आपके मसल बैंक में एक जमा राशि है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "कर्ल्स के बारे में सोचने से आर्म्स नहीं बढ़ेंगे।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "बड़ा खाओ, बड़ा उठाओ, बड़ा बनो। और कोई रास्ता नहीं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "दर्पण झूठ नहीं बोलता। न ही बारबेल।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "विकास असुविधा की सीमा पर होता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "यदि आप बड़ा बनना चाहते हैं तो आपको बड़ा बनना होगा।",
+    "author": "Ronnie Coleman",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आराम तब होता है जब मसल्स बढ़ती हैं। ट्रेनिंग तब होता है जब उन्हें चुनौती दी जाती है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "सर्वोत्तम शरीर को तराशा जाता है, ठोकर नहीं खाई जाती।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मेहनत कीजिए, गेन्स आएंगे।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "यौगिक हलचलें यौगिक परिणाम बनाती हैं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आप ओवरट्रेनिंग नहीं कर रहे, आप कम खा रहे हैं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "टेंशन में बिताया समय ही तराशा हुआ शरीर बनाता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मसल्स अर्जित की जाती हैं। कभी नहीं दिया।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "बढ़ो या घर जाओ।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "एकमात्र पूरक जिसकी आपको वास्तव में आवश्यकता है वह है कड़ी मेहनत।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "बार की हर प्लेट खुद से किया गया वादा है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "रेप दर रेप, सेट दर सेट, दिन दर दिन। चैंपियन ऐसे ही बनते हैं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "तुला राशि वालों को आपकी भावनाओं की कोई परवाह नहीं है। उन्हें आपके प्रयास की परवाह है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "शेप के लिए ट्रेन कीजिए, जिंदगी के लिए फिट रहिए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपकी काया आपकी आत्मकथा है। बेस्टसेलर लिखें।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आसानी से आगे बढ़ने से कभी कोई बड़ा नहीं हुआ।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "ज्यादा वजन। ज्यादा रेप्स। ज्यादा ग्रोथ।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "बेहतरीन काया बनाना आत्म-अभिव्यक्ति का शानदार तरीका है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आप पटरी पर वापस आने से एक मील दूर हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "एकमात्र ख़राब भोजन वह है जिसकी आपने योजना नहीं बनाई थी।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आगे बढ़ने वाला प्रत्येक कदम आपके पुराने स्व से एक कदम दूर है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "जब फैट हानि की बात आती है तो स्थिरता तीव्रता को मात देती है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मोटापा कम करना कोई दौड़ नहीं है। यह जीवनशैली में बदलाव है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपकी कमर आपके अनुशासन का परिणाम है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "हर कैलोरी मायने रखती है। उन्हें किसी चीज़ के लिए गिनें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "सबसे अच्छा कार्डियो वह है जो आप वास्तव में करते हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "सेहत सिर्फ घटे हुए वजन की बात नहीं, बढ़ी हुई जिंदगी की बात है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "रसोई वह जगह है जहां परिवर्तन शुरू होते हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "अपनी भावनाओं को मत खाओ। उन पर काम करो।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "एक बार में एक पाउंड। इसी तरह आप पहाड़ों पर विजय प्राप्त करते हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "पानी सबसे सस्ती दवा है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "भोजन की तैयारी स्वयं की देखभाल है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपका पेट कूड़े का डिब्बा नहीं है। इसके साथ सम्मानपूर्वक व्यवहार करें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "होठों पर एक पल, कूल्हों पर हमेशा के लिए। बुद्धिमानी से चुनें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "किराने की दुकान में परिवर्तन शुरू होता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "लीन और मजबूत, पतले और कमजोर से हमेशा बेहतर है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "स्वच्छ भोजन करें ताकि आपका शरीर एक मशीन बन सके।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "पानी ऐसे पियें जैसे यह आपका काम है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपका शरीर आपकी जीवनशैली का प्रतिबिंब है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "पसीना तरल इच्छाशक्ति है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मोटापा आपकी पहचान नहीं है। उससे लड़ाई आपकी पहचान बन सकती है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "लीन बनने की राह एक छोटे कदम से शुरू होती है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "धोखा खाना कमाया जाता है, दिया नहीं जाता।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "कबाड़ काटो। आत्मा रखो।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "अनुशासन आपके लक्ष्यों और नतीजों के बीच का पुल है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "प्रत्येक स्वच्छ भोजन आपके इच्छित शरीर के लिए एक वोट है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "सबसे अच्छा एब्स व्यायाम जंक फूड खाना बंद करने के पांच सेट हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "पसीना आपकी फैट को पिघलाने वाला है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "भारी वजन मजबूत चरित्र बनाता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "शक्ति मौन में अर्जित की जाती है और कार्य में दिखाई जाती है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बारबेल को आपके बहानों की परवाह नहीं है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "एक और रेप। एक और पाउंड। एक कदम और आगे।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "पकड़ो। पूरी ताकत से खींचो। दोहराओ।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "सच्ची ताकत सिर्फ शारीरिक नहीं होती। यह मानसिक है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आज आपने जिस PR को छुआ वह छह महीने पहले एक सपना था।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "शक्ति ट्रेनिंग में कोई अंतिम रेखा नहीं है। केवल मील के पत्थर।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "स्टील स्टील को तेज़ करता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "तब तक उठाओ जब तक धरती हिल न जाए।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आप काफी मजबूत हों, तो गुरुत्वाकर्षण भी बस एक सुझाव लगता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "रैक वह जगह है जहां बहाने खत्म हो जाते हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "सिर्फ वजन न उठाएं। इसे अपना बनाओ।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ऐसी ताकत बनिए जिसे रोका न जा सके।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बार पर नंबर झूठ नहीं बोलते।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "फर्श आपका विश्राम स्थल नहीं है। यह आपका लॉन्चिंग पैड है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "जब आप सबसे कमजोर स्थिति में होते हैं, तभी आपको सबसे मजबूत बनने की जरूरत होती है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आप बेहतर मूड से एक कदम दूर हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "मजबूत जीवित रहते हैं। सबसे मजबूत पनपे।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "मजबूत पकड़ का मतलब है मजबूत दिमाग।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "दर्पण के लिए ट्रेनिंग न लें। प्लेटफार्म के लिए ट्रेन।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "प्रत्येक PR इस विश्वास के साथ शुरू होता है कि यह संभव है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "इससे पहले कि बार आपको झुकाए, बार को मोड़ें।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "भारी लोड के नीचे ही दृढ़ता बनती है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "चॉक अप। लॉक इन करें, उतारें।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "एक भरा हुआ बारबेल सबसे ईमानदार चिकित्सक होता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "अगर वजन हल्का लगे तो और डालें। इसी तरह आप बढ़ते हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आपका वन-रेप मैक्स आपकी सीमा नहीं, आपका आज का सच है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "भारी स्क्वैट्स सब कुछ ठीक कर देते हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ताकत ही है जो कोशिश करने वालों को कोशिश करने वालों से अलग करती है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "तूफ़ान से ऊपर उठो और तुम्हें धूप मिलेगी।",
+    "author": "Mario Fernandez",
+    "category": "general"
+  },
+  {
+    "quote": "मैं यहां औसत बनने के लिए नहीं आया हूं। मैं यहां अद्भुत बनने के लिए हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका अगला अध्याय अद्भुत होने वाला है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "योद्धा बनो, चिंता करने वाला नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "वापसी हमेशा असफलता से अधिक मजबूत होती है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं अपने शेष जीवन को अपने जीवन से सर्वश्रेष्ठ बनाना चुनता हूँ।",
+    "author": "Louise Hay",
+    "category": "general"
+  },
+  {
+    "quote": "महान चीज़ें कभी भी आराम क्षेत्र से नहीं आतीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मेरा मुकाबला किसी से नहीं है। मैं अपनी दौड़ खुद चलाता हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी अनंत क्षमता पर विश्वास रखें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जब आपको रुकने का मन हो तो सोचें कि आपने शुरुआत क्यों की।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप पीड़ित नहीं, योद्धा हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं इतना सकारात्मक हूं कि संदेह नहीं कर सकता, इतना आशावादी हूं कि भयभीत नहीं हो सकता, और इतना दृढ़ हूं कि पराजित नहीं हो सकता।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "तब तक काम करें जब तक आपका बैंक खाता एक फ़ोन नंबर जैसा न दिखने लगे।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी नज़रें पुरस्कार पर और अपने पैर ज़मीन पर रखें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "खुद वह बदलाव बनें जो आप दुनिया में देखना चाहते हैं।",
+    "author": "Mahatma Gandhi",
+    "category": "general"
+  },
+  {
+    "quote": "यह एक लंबी सड़क है, लेकिन यह इसके लायक है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "केंद्रित रहें और कभी हार न मानें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं इस बात का सबूत हूं कि कड़ी मेहनत का फल मिलता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "किसी दूसरे के आपकी कीमत न देख पाने से आपकी कीमत कम नहीं हो जाती।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "ज़्यादा सोचना बंद करो। अति उपलब्धि हासिल करना शुरू करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप जिस चीज़ पर ध्यान केंद्रित करते हैं उसका विस्तार होता है।",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "सबसे अच्छा दृश्य सबसे कठिन चढ़ाई के बाद आता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "उस प्रकार का व्यक्ति बनें जिससे आप मिलना चाहते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "छोटी शुरुआत करना ठीक है। कुंजी आरंभ करना है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "थक जाएं तो आराम करना सीखिए, हार मानना नहीं।",
+    "author": "Banksy",
+    "category": "general"
+  },
+  {
+    "quote": "आपका जन्म सिर्फ बिल चुकाने और मरने के लिए नहीं हुआ है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर मास्टर कभी शुरुआत में बिखरा हुआ था।",
+    "author": "T. Harv Eker",
+    "category": "general"
+  },
+  {
+    "quote": "अच्छी चीज़ें उन्हीं को मिलती हैं जो दौड़ते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं लगातार विकसित हो रहा हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आज का दर्द कल की ताकत बनता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बस इसका सपना मत देखो। उसके लिए काम करो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं वही हूं जो मैं हूं। आपकी स्वीकृति की आवश्यकता नहीं है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "भूखे रहो। मूर्ख रहो।",
+    "author": "Steve Jobs",
+    "category": "general"
+  },
+  {
+    "quote": "सभी तूफान आपके जीवन को बाधित करने के लिए नहीं आते हैं। कुछ लोग आपका रास्ता साफ करने आते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बेहतरीन बनने की कीमत अनुशासन है। औसत बने रहने की कीमत निराशा।",
+    "author": "William Arthur Ward",
+    "category": "general"
+  },
+  {
+    "quote": "जितना अधिक आप अपने जीवन की प्रशंसा करते हैं और उसका जश्न मनाते हैं, उतना ही अधिक जीवन में जश्न मनाने के लिए कुछ है।",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "प्रत्येक संत का एक अतीत होता है, और प्रत्येक पापी का एक भविष्य होता है।",
+    "author": "Oscar Wilde",
+    "category": "general"
+  },
+  {
+    "quote": "आप जो हैं उससे आकर्षित होते हैं, उससे नहीं जो आप चाहते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "धैर्य रखें और अपनी यात्रा पर भरोसा रखें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं तूफान हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मेरी दयालुता को कमजोरी मत समझना।",
+    "author": "Al Capone",
+    "category": "general"
+  },
+  {
+    "quote": "कड़ी मेहनत लोगों के चरित्र को उजागर करती है।",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "मैं तब तक मेहनत करता रहूंगा जब तक परिचय देने की जरूरत न रहे।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "ऐसा जीवन बनाएं जो अंदर से अच्छा लगे।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सबसे बड़ा जोखिम कोई जोखिम न लेना है।",
+    "author": "Mark Zuckerberg",
+    "category": "general"
+  },
+  {
+    "quote": "आप जीतने के लिए पैदा हुए हैं, लेकिन विजेता बनने के लिए योजना और तैयारी दोनों चाहिए।",
+    "author": "Zig Ziglar",
+    "category": "general"
+  },
+  {
+    "quote": "मैं इतनी दूर सिर्फ यहीं तक आने के लिए नहीं आया हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपने आसपास ऐसे लोग रखिए जो आपको चुनौती दें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर प्रो कभी नौसिखिया था। हर एक्सपर्ट कभी शुरुआत करने वाला था।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका जीवन संयोग से बेहतर नहीं बनता। बदलाव से यह बेहतर हो जाता है।",
+    "author": "Jim Rohn",
+    "category": "general"
+  },
+  {
+    "quote": "लगन बनाए रखिए। यह एक रात में नहीं होगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अवसर नहीं मिलते। आप उन्हें बनाएं।",
+    "author": "Chris Grosser",
+    "category": "general"
+  },
+  {
+    "quote": "मैं चुपचाप आपका फॉर्म ठीक कर रहा हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कम बात करें। और अधिक उठाओ।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपकी एकमात्र प्रतिस्पर्धा यह है कि आप कल कौन थे।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "चैंपियंस समायोजित करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जब आप गंभीर होते हैं तो कोई ऑफ-सीज़न नहीं होता।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "ऊँचे मानक रखने के लिए कभी माफ़ी न माँगें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "नौकरी छोड़ने वाले कभी पीछे मुड़कर नहीं देखते कि वे जीत के कितने करीब थे।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "गेम चेंजर बनें। दुनिया पहले से ही खिलाड़ियों से भरी हुई है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "एक साल की निरंतरता सब कुछ बदल देगी।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मोटिवेशन से ऊपर अनुशासन चुनिए।",
+    "author": "Jocko Willink",
+    "category": "general"
+  },
+  {
+    "quote": "चुपचाप उन्हें ग़लत साबित करो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका वर्कआउट खुद से की गई अपॉइंटमेंट है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप जो करते हैं उसमें इतने अच्छे बनें कि लोग आपको नज़रअंदाज़ न कर सकें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "इसे अभी चूसो ताकि तुम्हें बाद में इसे चूसना न पड़े।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "चैंपियन वह सब कुछ पाने के लिए सामने नहीं आते जो वे चाहते हैं। वे अपना सब कुछ देने के लिए प्रकट होते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "यदि योजना ए काम नहीं करती है, तो वर्णमाला में पच्चीस और अक्षर हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अहंकार उठाने से अहंकार को चोट पहुंचती है। अपना फॉर्म जांचें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बाकी दिन विकास के दिन हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बात पर ध्यान दो। अगर आप बुरा न मानें तो कोई बात नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "किसी अलार्म घड़ी की आवश्यकता नहीं। जुनून मुझे जगाता है।",
+    "author": "Eric Thomas",
+    "category": "general"
+  },
+  {
+    "quote": "फिटनेस को प्राथमिकता बनाएं, विकल्प नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जिम आपसे आपके दिन के बारे में नहीं पूछता। यह सिर्फ आपको दिखाने के लिए कहता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप पूरी तरह से अलग जीवन से दूर एक अच्छी आदत हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अनुशासन स्वतंत्रता के बराबर है।",
+    "author": "Jocko Willink",
+    "category": "general"
+  },
+  {
+    "quote": "जब कुछ भी ठीक न हो, तो लिफ्ट लें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जो जल्दी उठता है, गेन्स वही ले जाता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप थके नहीं हैं, बस मोटिवेशन खो बैठे हैं। अपनी आग फिर खोजिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "असफलता से कहीं अधिक सपनों को संदेह नष्ट कर देता है।",
+    "author": "Suzy Kassem",
+    "category": "general"
+  },
+  {
+    "quote": "विनम्र और भूखे रहो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जीवन में एकमात्र विकलांगता बुरा रवैया है।",
+    "author": "Scott Hamilton",
+    "category": "general"
+  },
+  {
+    "quote": "अपना सिर ऊपर रखें। ईश्वर अपनी सबसे कठिन लड़ाई अपने सबसे मजबूत सैनिकों को देता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप किसी भी बहाने से अधिक मजबूत हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जैसा आप चाहते हैं वैसा ही ट्रेनिंग लें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपने सबसे अच्छे रूप में आइए। यह काम कोई और नहीं कर सकता।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मेहनत के बिना लक्ष्य सिर्फ इच्छाएं हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर दिन सुधार करने का एक मौका है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रयास न करना ही एकमात्र विफलता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "इसे साकार करें। सबको चौंका दो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कल आप कौन होंगे इसकी शुरुआत इस बात से होती है कि आप आज क्या करते हैं।",
+    "author": "Tim Fargo",
+    "category": "general"
+  },
+  {
+    "quote": "सिर्फ व्यस्त नहीं, असरदार बनिए।",
+    "author": "Tim Ferriss",
+    "category": "general"
+  },
+  {
+    "quote": "शरीर बनाइए। मन बनाइए। जीवन बनाइए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "तुम्हें बचाने कोई नहीं आ रहा। अपने हीरो खुद बनो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर दिन आयरन की एक डोज डॉक्टर को दूर रखती है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जो रास्ते में खड़ा होता है वही रास्ता बन जाता है।",
+    "author": "Marcus Aurelius",
+    "category": "general"
+  },
+  {
+    "quote": "अपने लक्ष्यों के प्रति दीवाने बनिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जुनून के साथ ट्रेनिंग लें। उद्देश्य के साथ आराम करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "रास्ते पर रहो। चक्कर विकर्षण हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "यह शरीर मुझे चाहकर नहीं मिला।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर सूर्योदय दिन को वर्कआउट से रोशन करने का निमंत्रण है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बेचैनी विकास की मुद्रा है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर एक परियोजना है। इसे एक जैसा समझो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "चैंपियंस की पहचान उनके ट्रेनिंग से होती है, उनकी ट्रॉफियों से नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जीत ही सब कुछ नहीं, लेकिन जीतने की चाह बहुत मायने रखती है।",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "अतिरिक्त मील पर कोई यातायात नहीं है।",
+    "author": "Roger Staubach",
+    "category": "general"
+  },
+  {
+    "quote": "आपके लक्ष्य आपकी भावनाओं की परवाह नहीं करते।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अर्थपूर्ण जिंदगी चाहिए, तो दर्द उसका टिकट है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर रेप आपके आज और भविष्य वाले आप के बीच बातचीत है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सही काम करने का कोई गलत समय नहीं होता।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रगति का पीछा करो, परफेक्शन का नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रत्येक दिन की थोड़ी सी प्रगति बड़े परिणामों को जन्म देती है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "दिखाओ। कड़ी मेहनत करो। दोहराना।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "परिणामों को किसी स्पष्टीकरण की आवश्यकता नहीं है। विफलताओं के लिए किसी बहाना की अनुमति नहीं होती।",
+    "author": "Napoleon Hill",
+    "category": "general"
+  },
+  {
+    "quote": "आपकी सबसे मजबूत मसल आपका दृढ़ संकल्प है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "निरंतरता की शक्ति को कभी कम मत आंकिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप जिस जादू की तलाश कर रहे हैं वह उस काम में है जिसे आप टाल रहे हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "यह मत चाहो कि यह आसान होता। काश आप बेहतर होते।",
+    "author": "Jim Rohn",
+    "category": "general"
+  },
+  {
+    "quote": "आप स्वस्थ और मजबूत रहने के पात्र हैं। वैसा ही व्यवहार करो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सामान्य लोग जब पूर्ण रूप से प्रतिबद्ध होते हैं तो असाधारण परिणाम प्राप्त करते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मुझे कोई ऐसा व्यक्ति दिखाओ जिसने कुछ सार्थक किया हो, और मैं तुम्हें कोई ऐसा व्यक्ति दिखाऊंगा जिसने प्रतिकूल परिस्थितियों पर विजय प्राप्त की है।",
+    "author": "Lou Holtz",
+    "category": "general"
+  },
+  {
+    "quote": "आज आप जिस संघर्ष में हैं वह वह ताकत विकसित कर रहा है जिसकी आपको कल के लिए आवश्यकता है।",
+    "author": "Robert Tew",
+    "category": "general"
+  },
+  {
+    "quote": "नतीजे शब्दों से ज़्यादा ज़ोर से बोलते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "वर्कआउट करने का अफसोस किसी को नहीं होता।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मन ही सीमा है। जब तक मन मानता है कि आप कर सकते हैं, आप कर सकते हैं।",
+    "author": "Arnold Schwarzenegger",
+    "category": "general"
+  },
+  {
+    "quote": "मजबूत रहो। तुम्हारी कहानी अभी ख़त्म नहीं हुई है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जब तक आप वह नहीं कर पाते जो आप करना चाहते हैं तब तक वही करें जो आपको करना है।",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "अपने घावों को ज्ञान में बदलो।",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "यदि अवसर दस्तक न दे तो एक दरवाजा बनाओ।",
+    "author": "Milton Berle",
+    "category": "general"
+  },
+  {
+    "quote": "दृढ़ता गारंटी देती है कि परिणाम अपरिहार्य हैं।",
+    "author": "Paramahansa Yogananda",
+    "category": "general"
+  },
+  {
+    "quote": "उस व्यक्ति को हराना कठिन है जो कभी हार नहीं मानता।",
+    "author": "Babe Ruth",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर तर्क देगा कि जारी रखने का कोई उचित कारण नहीं है। आपका दिमाग उस तर्क से निपटने के लिए तैयार रहना चाहिए।",
+    "author": "David Goggins",
+    "category": "general"
+  },
+  {
+    "quote": "जो चीज आपको नहीं मारती वह आपको मजबूत बनाती है।",
+    "author": "Friedrich Nietzsche",
+    "category": "general"
+  },
+  {
+    "quote": "महानता प्राप्त करने के लिए, आपको पहले यह विश्वास करना होगा कि आप महानता के लिए सक्षम हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आज आपने जो पसीना बहाया है वह आपके भविष्य के बगीचे को सींचता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "केवल वे ही जो बहुत दूर जाने का जोखिम उठाते हैं, संभवतः यह पता लगा सकते हैं कि कोई कितनी दूर तक जा सकता है।",
+    "author": "T.S. Eliot",
+    "category": "general"
+  },
+  {
+    "quote": "अनुशासन मतलब जरूरी काम करना, भले ही मन बिल्कुल न हो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "परिणाम उनको मिलते हैं जो काम करते हैं जबकि बाकी लोग सोते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जितनी मेहनत बढ़ती है, किस्मत उतनी साथ देने लगती है।",
+    "author": "Gary Player",
+    "category": "general"
+  },
+  {
+    "quote": "न्यूनतम वेतन वाली कार्य नीति के साथ आप एक मिलियन डॉलर का सपना नहीं देख सकते।",
+    "author": "Stephen Hogan",
+    "category": "general"
+  },
+  {
+    "quote": "आपके शरीर को चलने के लिए डिज़ाइन किया गया था। उस डिज़ाइन का सम्मान करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सवाल यह नहीं है कि मुझे कौन जाने देगा। यह वही है जो मुझे रोकने वाला है।",
+    "author": "Ayn Rand",
+    "category": "general"
+  },
+  {
+    "quote": "परफेक्ट पल का इंतज़ार मत कीजिए। इसी पल को पकड़िए और उसे परफेक्ट बनाइए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "चैंपियन उनके अंदर की किसी गहरी चीज़ से बनते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "किसी चीज़ को शुरू करने और असफल होने से भी बदतर एकमात्र चीज़ कुछ शुरू न करना है।",
+    "author": "Seth Godin",
+    "category": "general"
+  },
+  {
+    "quote": "आराम कर सकते हैं, रुककर सांस ले सकते हैं, पर हार मत मानिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सबसे अच्छा एब्स व्यायाम दूसरी सर्विंग को कम करना है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "चीनी कोई इनाम नहीं है। यह एक सज़ा है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मजबूत सुंदर है। स्वस्थ रहना जरूरी है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "चाहे आप लिखें या नहीं, आपका शरीर एक पत्रिका रखता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "नाश्ता राजा की तरह, दोपहर का खाना राजकुमार की तरह, रात का खाना रंक की तरह खाओ।",
+    "author": "Adelle Davis",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "भोजन को अपनी औषधि बनने दें।",
+    "author": "Hippocrates",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आप जो खाते हैं उस पर नियंत्रण रखें। अपने जीवन पर नियंत्रण रखें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "कांटा आपका सबसे शक्तिशाली उपकरण है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "छोटे-छोटे बदलाव समय के साथ बड़े पैमाने पर परिणाम लाते हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "रसोई में अनुशासन दर्पण में स्वतंत्रता पैदा करता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "एक स्वस्थ बाहरी वातावरण अंदर से शुरू होता है।",
+    "author": "Robert Urich",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आप केवल उतने ही मजबूत हैं जितनी आपकी सबसे कमजोर लिफ्ट।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बेंच, स्क्वाट, डेडलिफ्ट। पवित्र त्रिमूर्ति।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ताकत सबसे ज्यादा उठाने के बारे में नहीं है। यह कभी हार न मानने के बारे में है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "इरादे से उठाओ। उद्देश्य के साथ जियो।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बार के नीचे वह जगह है जहां चरित्र गढ़ा जाता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "एक नया PR सिर्फ इस बात का प्रमाण है कि कल वाले आप कमज़ोर थे।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "इससे पहले कि वजन आप पर हावी हो जाए, वजन पर नियंत्रण रखें।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "पावरलिफ्टिंग सिर्फ brute force नहीं है। यह भारी वजन के नीचे सही तकनीक दिखाने की कला है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ताकतवर को महान बनने के लिए अनुमति की जरूरत नहीं होती।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ताकत शांत है। असुरक्षा का बोलबाला है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "मजबूत होने का एकमात्र तरीका बार के नीचे जाना है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "असली ताकत इस बात से मापी जाती है कि जब कोई नहीं देख रहा हो तो आप क्या करते हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "वजन से मत डरिए। कोशिश न करने से डरिए।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "एक मजबूत डेडलिफ्ट एक मजबूत शरीर की नींव है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ताकत इच्छाशक्ति से आती है, बार पर संख्या से नहीं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "साइज ताकत का साइड इफेक्ट है।",
+    "author": "Mark Rippetoe",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपको अतिवादी नहीं होना है, बस सुसंगत रहना है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मसल्स को पोषण देंगे, तो मसल्स बढ़ेंगी।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "एक अच्छा पंप किसी भी तारीफ से बेहतर है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपकी मसल्स रो रही हैं। उन्हें करने दो।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "द्रव्यमान की खोज अनुशासन की खोज है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "हर मसल को ऐसे ट्रेन कीजिए जैसे वही सबसे जरूरी हो।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "बड़ा बनो या कोशिश करके घर जाओ।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "बल्किंग सीज़न में कोई ऑफ स्विच नहीं है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "प्रोटीन खाइए। रेप्स कीजिए। प्रक्रिया पर भरोसा रखिए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "जब आप सहज होते हैं तो विकास नहीं होता।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "शरीर ईंट-दर-ईंट, रेप-दर-रेप बनता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "छाती का दिन सर्वोत्तम दिन है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपकी इच्छाशक्ति भी मसल है। उसे रोज ट्रेन कीजिए।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "एक समय में एक स्वस्थ विकल्प ही काफी है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपका शरीर आपके आराम का ऋणी नहीं है। आप पर अपने शरीर की देखभाल का दायित्व है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "शॉर्टकट छोड़ें। सीढ़ियाँ ले लो।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "काम वही डाइट करती है जिसे आप निभा सकें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "चीनी आपकी मित्र नहीं है। यह आपका विध्वंसक है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपकी कमर बेकार नहीं है। इसे तराशें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "लालसा बीत जाती है। पछतावा बना रहता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "प्रतिदिन तेईस घंटे जिम के बाहर सपाट पेट बनाया जाता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "कैलोरी गिनना कोई जुनून नहीं है। यह जागरूकता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "और आगे बढ़ें। जंक फूड कम खाएं। बेहतर नींद लें। दोहराना।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "कोई भी भोजन आपके लक्ष्यों का त्याग करने लायक नहीं है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपका परिवर्तन विकल्पों में मापी जाने वाली यात्रा है, पाउंड में नहीं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "ताकत अंधेरे में बनती है, रोशनी में दिखाई देती है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बार लोड करें। अपना दिमाग साफ़ करें। उठाना।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आप या तो मजबूत हो रहे हैं या कमजोर हो रहे हैं। कोई स्थिर खड़ा नहीं है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "प्रक्रिया का सम्मान करें। ताकत आएगी।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "वेट रूम महान तुल्यकारक है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "इतनी मेहनत करें कि वजन उठाना आसान हो जाए।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "ताकत एक कौशल है। इसका प्रतिदिन अभ्यास करें।",
+    "author": "Pavel Tsatsouline",
+    "category": "strength"
+  },
+  {
+    "quote": "आप भरी हुई पट्टी के नीचे ताकत का दिखावा नहीं कर सकते।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आपका सबसे मजबूत रूप आपका इंतज़ार कर रहा है। जाइए, उसे खोजिए।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "कमजोरी एक विकल्प है। ताकत एक निर्णय है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "प्रत्येक भारी भार धैर्य, धैर्य और विनम्रता सिखाता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बारबेल किसी का सम्मान नहीं करता। यह प्रयास का जवाब देता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "अपनी सीमाओं का परीक्षण करें। अपनी सीमाओं का विस्तार करें।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "परफेक्शन प्राप्य नहीं है, लेकिन यदि हम उसका पीछा करें तो हम उत्कृष्टता प्राप्त कर सकते हैं।",
+    "author": "Vince Lombardi",
+    "category": "general"
+  },
+  {
+    "quote": "उन चीज़ों के बारे में ज़ोर से बोलें जो आपके लिए महत्वपूर्ण हैं।",
+    "author": "Karen Walrond",
+    "category": "general"
+  },
+  {
+    "quote": "खुद को दूसरों के सामने साबित करें, दूसरों के सामने नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं कल को आज पर ज़्यादा हावी नहीं होने दूँगा।",
+    "author": "Will Rogers",
+    "category": "general"
+  },
+  {
+    "quote": "आपको यह जीवन इसलिए दिया गया है क्योंकि आप इसे जीने के लिए काफी मजबूत हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "दुनिया हर किसी को तोड़ देती है, और बाद में टूटे हुए स्थानों पर कुछ लोग मजबूत होते हैं।",
+    "author": "Ernest Hemingway",
+    "category": "general"
+  },
+  {
+    "quote": "हमारे पीछे क्या है और हमारे सामने क्या है, यह हमारे भीतर क्या है उसकी तुलना में छोटी बातें हैं।",
+    "author": "Ralph Waldo Emerson",
+    "category": "general"
+  },
+  {
+    "quote": "प्रैक्टिस में शोहरत नहीं होती, पर शोहरत प्रैक्टिस के बिना नहीं मिलती।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपने आप पर धैर्य रखें। आत्म-विकास कोमल है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "महत्वाकांक्षा ही सफलता का मार्ग है। दृढ़ता वह वाहन है जिसमें आप आते हैं।",
+    "author": "Bill Bradley",
+    "category": "general"
+  },
+  {
+    "quote": "अच्छाई महान का दुश्मन है।",
+    "author": "Jim Collins",
+    "category": "general"
+  },
+  {
+    "quote": "मैंने सफलता के बारे में कभी सपने में भी नहीं सोचा था। मैंने इसके लिए काम किया।",
+    "author": "Estee Lauder",
+    "category": "general"
+  },
+  {
+    "quote": "रेलिंग पर लटकना छोड़ें। जाने दो। समर्पण। अपने जीवन की सवारी के लिए जाओ।",
+    "author": "Oprah Winfrey",
+    "category": "general"
+  },
+  {
+    "quote": "हर वह अनुभव जिसमें आप डर का सामना करते हैं, आपको ताकत, साहस और आत्मविश्वास देता है।",
+    "author": "Eleanor Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "जो लोग इतने पागल होते हैं कि सोचते हैं कि वे दुनिया बदल सकते हैं, वे ही ऐसा करते हैं।",
+    "author": "Steve Jobs",
+    "category": "general"
+  },
+  {
+    "quote": "मैं हारकर इस दुनिया में नहीं आया हूं।",
+    "author": "Og Mandino",
+    "category": "general"
+  },
+  {
+    "quote": "बड़े विचार सोचें लेकिन छोटी-छोटी खुशियों का आनंद लें।",
+    "author": "H. Jackson Brown Jr.",
+    "category": "general"
+  },
+  {
+    "quote": "असफल होना कठिन है, लेकिन सफल होने के लिए कभी प्रयास ही न करना उससे भी बुरा है।",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "हम ज्यादातर समय वही बनते हैं जिसके बारे में सोचते हैं।",
+    "author": "Earl Nightingale",
+    "category": "general"
+  },
+  {
+    "quote": "अगर सपना देख सकते हैं, तो उसे पूरा भी कर सकते हैं।",
+    "author": "Walt Disney",
+    "category": "general"
+  },
+  {
+    "quote": "परिवर्तन का रहस्य अपनी सारी ऊर्जा को पुराने से लड़ने पर नहीं बल्कि नए निर्माण पर केंद्रित करना है।",
+    "author": "Socrates",
+    "category": "general"
+  },
+  {
+    "quote": "आपको पूरी सीढ़ी देखने की ज़रूरत नहीं है। बस पहला कदम उठाओ।",
+    "author": "Martin Luther King Jr.",
+    "category": "general"
+  },
+  {
+    "quote": "मैं जानबूझकर हूं और किसी चीज से नहीं डरता।",
+    "author": "Audre Lorde",
+    "category": "general"
+  },
+  {
+    "quote": "ऐसे कार्य करें जैसे कि आप जो करते हैं उससे फर्क पड़ता है। ऐसा होता है।",
+    "author": "William James",
+    "category": "general"
+  },
+  {
+    "quote": "ऊर्जा वहीं प्रवाहित होती है जहां ध्यान जाता है।",
+    "author": "Tony Robbins",
+    "category": "general"
+  },
+  {
+    "quote": "हम आंतरिक रूप से जो हासिल करते हैं वह बाहरी वास्तविकता को बदल देगा।",
+    "author": "Plutarch",
+    "category": "general"
+  },
+  {
+    "quote": "शुरुआत करने का तरीका है बातचीत करना छोड़ें और काम करना शुरू करें।",
+    "author": "Walt Disney",
+    "category": "general"
+  },
+  {
+    "quote": "जो आप नहीं कर सकते उसे आप जो कर सकते हैं उसमें हस्तक्षेप न करने दें।",
+    "author": "John Wooden",
+    "category": "general"
+  },
+  {
+    "quote": "हमारी सबसे बड़ी जीत कभी न गिरने में नहीं, हर बार गिरकर उठने में है।",
+    "author": "Confucius",
+    "category": "general"
+  },
+  {
+    "quote": "आपको एक उत्कृष्ट कृति और प्रगतिरत कार्य दोनों बनने की अनुमति है।",
+    "author": "Sophia Bush",
+    "category": "general"
+  },
+  {
+    "quote": "प्रत्येक स्ट्राइक मुझे अगले होम रन के करीब लाती है।",
+    "author": "Babe Ruth",
+    "category": "general"
+  },
+  {
+    "quote": "मैं अपने संघर्ष के लिए आभारी हूं क्योंकि इसके बिना मैं अपनी ताकत से लड़खड़ा नहीं पाता।",
+    "author": "Alex Elle",
+    "category": "general"
+  },
+  {
+    "quote": "यदि लोगों को संदेह है कि आप कितनी दूर तक जा सकते हैं, तो इतनी दूर जाएँ कि आप उन्हें सुन न सकें।",
+    "author": "Michele Ruiz",
+    "category": "general"
+  },
+  {
+    "quote": "हम बैठते समय भय उत्पन्न करते हैं। हम कार्रवाई से उन पर काबू पाते हैं।",
+    "author": "Henry Link",
+    "category": "general"
+  },
+  {
+    "quote": "मैं हर सुबह उठता हूं और मन ही मन सोचता हूं कि आज मैं खुद को कितना आगे बढ़ा सकता हूं?",
+    "author": "Leah LaBelle",
+    "category": "general"
+  },
+  {
+    "quote": "इसे करने का सबसे प्रभावी तरीका यह करना है।",
+    "author": "Amelia Earhart",
+    "category": "general"
+  },
+  {
+    "quote": "जीवन खुद को खोजने के बारे में नहीं है। जिंदगी से तात्पर्य अपने आप को बनाना होता है।",
+    "author": "George Bernard Shaw",
+    "category": "general"
+  },
+  {
+    "quote": "मैं उठना चुनता हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "किसी भी ऐसी चीज़ के करीब रहें जिससे आपको खुशी हो कि आप जीवित हैं।",
+    "author": "Hafiz",
+    "category": "general"
+  },
+  {
+    "quote": "अपने अतीत को भूल जाओ, खुद को माफ कर दो और फिर से शुरुआत करो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जो कुछ भी आपने कभी चाहा है वह डर के दूसरी तरफ है।",
+    "author": "George Addair",
+    "category": "general"
+  },
+  {
+    "quote": "जो आपका दिमाग खाता है वह आपके जीवन को नियंत्रित करता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मेरी नजर में, इंद्रधनुष चाहिए तो बारिश भी झेलनी पड़ेगी।",
+    "author": "Dolly Parton",
+    "category": "general"
+  },
+  {
+    "quote": "कल के बारे में हमारी अनुभूति की एकमात्र सीमा आज के बारे में हमारे संदेह होंगे।",
+    "author": "Franklin D. Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "मैं अपनी सफलता का श्रेय इस बात को देता हूं: मैंने कभी कोई बहाना नहीं दिया या लिया।",
+    "author": "Florence Nightingale",
+    "category": "general"
+  },
+  {
+    "quote": "आगे बढ़ने की शक्ति न होना ही साहस है। यह तब चल रहा है जब आपके पास ताकत नहीं है।",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "यदि यह आपको डराता है, तो इसे आज़माना अच्छी बात हो सकती है।",
+    "author": "Seth Godin",
+    "category": "general"
+  },
+  {
+    "quote": "तब तक प्रयास करें जब तक आपको अपना परिचय देने की आवश्यकता न रह जाए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जो प्रयास करेंगे उनके लिए कुछ भी असंभव नहीं है।",
+    "author": "Alexander the Great",
+    "category": "general"
+  },
+  {
+    "quote": "यदि आप जानते हों कि आप असफल नहीं हो सकते तो आप क्या करने का प्रयास करेंगे?",
+    "author": "Robert Schuller",
+    "category": "general"
+  },
+  {
+    "quote": "सफलता दिन-प्रतिदिन दोहराए गए छोटे-छोटे प्रयासों का योग है।",
+    "author": "Robert Collier",
+    "category": "general"
+  },
+  {
+    "quote": "मैं कर सकता हूं और मैं करूंगा। मुझे देखो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कठिनाइयाँ अक्सर सामान्य लोगों को असाधारण नियति के लिए तैयार करती हैं।",
+    "author": "C.S. Lewis",
+    "category": "general"
+  },
+  {
+    "quote": "शुरुआत हमेशा आज से होती है।",
+    "author": "Mary Shelley",
+    "category": "general"
+  },
+  {
+    "quote": "नदी अपनी शक्ति के कारण नहीं बल्कि अपनी दृढ़ता के कारण चट्टान को काटती है।",
+    "author": "James Watkins",
+    "category": "general"
+  },
+  {
+    "quote": "आत्म-अनुशासन से लगभग कुछ भी संभव है।",
+    "author": "Theodore Roosevelt",
+    "category": "general"
+  },
+  {
+    "quote": "योजना के बिना लक्ष्य बस एक इच्छा है।",
+    "author": "Antoine de Saint-Exupery",
+    "category": "general"
+  },
+  {
+    "quote": "मैंने खुश रहने का फैसला किया है क्योंकि यह मेरे स्वास्थ्य के लिए अच्छा है।",
+    "author": "Voltaire",
+    "category": "general"
+  },
+  {
+    "quote": "प्रगति तो प्रगति है, चाहे वह कितनी ही छोटी क्यों न हो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "किसी को आपके बहानों की परवाह नहीं है। और मेहनत करें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका वर्कआउट आपके मूड के सुधरने का इंतज़ार नहीं करेगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जिम तुम्हें याद करता है। वापस जाओ।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "दिन-ब-दिन, आप जो चुनते हैं और जो करते हैं वही आप बन जाते हैं।",
+    "author": "Heraclitus",
+    "category": "general"
+  },
+  {
+    "quote": "मन जो तैयार करता है शरीर उसे पूरा करता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "पसीना बहाएं, मुस्कुराएं और दोहराएं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "फिटनेस कोई सज़ा नहीं है। यह एक इनाम है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "छोड़ना बंद कीजिए। पूरा करना शुरू कीजिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "संघर्ष जितना कठिन होगा, जीत उतनी ही शानदार होगी।",
+    "author": "Thomas Paine",
+    "category": "general"
+  },
+  {
+    "quote": "व्यायाम को हृदय के प्रति श्रद्धांजलि के रूप में माना जाना चाहिए।",
+    "author": "Gene Tunney",
+    "category": "general"
+  },
+  {
+    "quote": "एक-एक वर्कआउट से अपना आत्म-सम्मान बनाइए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "इंच दर इंच, जीवन एक चिंच है।",
+    "author": "Robert Schuller",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी कमजोरियों पर ट्रेनिंग कीजिए। अपनी ताकतों से रेस जीतिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "गतिमान पिंड गति में ही रहता है।",
+    "author": "Isaac Newton",
+    "category": "general"
+  },
+  {
+    "quote": "ताकत भिन्नता में निहित है, समानता में नहीं।",
+    "author": "Stephen Covey",
+    "category": "general"
+  },
+  {
+    "quote": "अपने आप को महान बनने की अनुमति दें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "क्या होगा अगर की तुलना में उफ़ बेहतर है।",
+    "author": "Beau Taplin",
+    "category": "general"
+  },
+  {
+    "quote": "दुनिया को मजबूत लोगों की जरूरत है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "इच्छाशक्ति मसल जैसी है। जितना ट्रेन करेंगे, उतनी मजबूत होगी।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "स्वस्थ शरीर आत्मा के लिए अतिथि कक्ष है।",
+    "author": "Francis Bacon",
+    "category": "general"
+  },
+  {
+    "quote": "आपका भविष्य स्वयं अभी आप पर निर्भर है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "दर्द मिट जाता है, पर जीत की चमक बनी रहती है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपके पास पहले से ही वह सब कुछ है जो आपको शुरू करने के लिए चाहिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "डटे रहिए। इसी डटे रहने से ताकत बनती है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आज मैं अपने लक्ष्य के एक कदम और करीब हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सकारात्मक रहें। कड़ी मेहनत करो। इसे करना ही होगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "महान शरीर कड़ी मेहनत की आग में बनते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "परिणामों के बारे में भूल जाओ। प्रक्रिया पर ध्यान दें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप संभवतः सर्वश्रेष्ठ बनने के लिए अपने प्रति उत्तरदायी हैं।",
+    "author": "Pete Rose",
+    "category": "general"
+  },
+  {
+    "quote": "एक घंटे की तकलीफ, जिंदगी भर का गर्व।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर आपकी सबसे अमूल्य संपत्ति है। इसका ध्यान रखना।",
+    "author": "Jack LaLanne",
+    "category": "general"
+  },
+  {
+    "quote": "जब बारिश हो तो इंद्रधनुष की तलाश करें। जब अंधेरा हो तो तारों की तलाश करो।",
+    "author": "Oscar Wilde",
+    "category": "general"
+  },
+  {
+    "quote": "याद रखें कि आपने शुरुआत क्यों की।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आज वर्कआउट के लिए बेहतरीन दिन है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप घुलने-मिलने के लिए नहीं बने हैं। आपका जन्म अलग दिखने के लिए हुआ है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "ठोस रहो। शांत रहना। केंद्रित रहो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रत्येक वर्कआउट को गिनें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं नौ से पांच की गुलामी करने के बजाय चौबीस सात की दौड़ लगाना पसंद करूंगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कोई दबाव नहीं, कोई हीरा नहीं।",
+    "author": "Thomas Carlyle",
+    "category": "general"
+  },
+  {
+    "quote": "असंभव छोटे लोगों द्वारा फैलाया गया एक बड़ा शब्द है।",
+    "author": "Muhammad Ali",
+    "category": "general"
+  },
+  {
+    "quote": "अपने विश्वास को अपने डर से बड़ा होने दें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मैं अजेय हूं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका नजरिया ही आपकी दिशा तय करता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हो सकता है कि हर दिन अच्छा न हो, लेकिन हर दिन में कुछ न कुछ अच्छा होता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मजबूत रहो। उन्हें आश्चर्यचकित करें कि आप अभी भी कैसे मुस्कुरा रहे हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "जिस पर शक करना हो कीजिए, पर खुद पर कभी नहीं।",
+    "author": "Christine Bovee",
+    "category": "general"
+  },
+  {
+    "quote": "हार मानने के लिए हमेशा बहुत जल्दी होती है।",
+    "author": "Norman Vincent Peale",
+    "category": "general"
+  },
+  {
+    "quote": "जीवन कठिन है, लेकिन आप भी हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "पसीना सिद्धि का इत्र है।",
+    "author": "Heywood Hale Broun",
+    "category": "general"
+  },
+  {
+    "quote": "डरिए, और फिर भी कीजिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका कम्फर्ट जोन आपके सपनों को मार देगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "दुनिया उन लोगों के लिए किनारे हट जाती है जो जानते हैं कि वे कहाँ जा रहे हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बेहतरीन बनने की कीमत इंटेंसिटी है।",
+    "author": "Warren Buffett",
+    "category": "general"
+  },
+  {
+    "quote": "यदि आप कुछ नहीं बदलते तो कुछ भी नहीं बदलेगा।",
+    "author": "Tony Robbins",
+    "category": "general"
+  },
+  {
+    "quote": "अपना सिर कभी न झुकाएं। इसे हमेशा ऊंचा रखें।",
+    "author": "Helen Keller",
+    "category": "general"
+  },
+  {
+    "quote": "हमें कई पराजयों का सामना करना पड़ सकता है, लेकिन हमें पराजित नहीं होना चाहिए।",
+    "author": "Maya Angelou",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी खुद की धूप बनाएं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपकी क्षमता असीमित है। अपने सपनों के पीछे जाओ।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "यदि आप अपनी समस्याओं से भागते हैं तो हर दिन लेग डे है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "ऐसे चलिए जैसे जगह आपकी हो। ऐसे ट्रेन कीजिए जैसे आपने उसे बनाया हो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपने स्क्वैट्स को कम रखें और अपने मानकों को ऊंचा रखें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर चिल्लाने से पहले फुसफुसाता है। जल्दी सुनो।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "हाइड्रेट या डाई-ड्रेट करें।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "कांटा ट्रेडमिल से भी अधिक शक्तिशाली है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "जब आप स्वच्छ भोजन करते हैं, तो आप स्वच्छ महसूस करते हैं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "कैलोरी की कमी भुखमरी नहीं है। यह रणनीति है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपका सिक्स-पैक आपकी डाइट के नीचे छिपा है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपके शरीर का सबसे अच्छा रूप वही है जो सबसे स्वस्थ है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "यदि भूख समस्या नहीं है, तो भोजन समाधान भी नहीं है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "अपनी कब्र अपने ही चाकू और कांटे से मत खोदो।",
+    "author": "English Proverb",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "जीने के लिए खाइए, खाने के लिए मत जीइए।",
+    "author": "Benjamin Franklin",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "खराब डाइट को दौड़कर पीछे नहीं छोड़ा जा सकता।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "अपने भोजन को बिल्डिंग ब्लॉक्स के रूप में सोचें, आरामदायक कंबल के रूप में नहीं।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "मेज पर अनुशासन का मतलब दर्पण में स्वतंत्रता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "लीन रहना चौबीसों घंटे का काम है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपके सपनों का शरीर अनुशासन के दूसरी तरफ है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "स्कीनी लक्ष्य नहीं है। स्वस्थ एवं बलवान है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "पैमाना सिर्फ एक संख्या है। आप कैसा महसूस करते हैं यह मायने रखता है।",
+    "author": "Unknown",
+    "category": "fat_loss"
+  },
+  {
+    "quote": "आपकी पीठ पर भरी हुई पट्टी आपको लंबा खड़ा होना सिखाती है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आप एक बेहतर दिन से बस एक कदम दूर हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "मंच को आपकी भावनाओं की परवाह नहीं है। यह आपकी तैयारी की परवाह करता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "मूवमेंट्स को ट्रेन कीजिए, सिर्फ मसल्स को नहीं।",
+    "author": "Gray Cook",
+    "category": "strength"
+  },
+  {
+    "quote": "धैर्य और बारबेल उन लोगों को पुरस्कृत करते हैं जो सुसंगत हैं।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "सबसे मजबूत स्टील विपरीत परिस्थितियों की आग से ही बनता है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "बार के नीचे जाइए और हर दिन खुद को साबित कीजिए।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "शक्ति ट्रेनिंग युवाओं के स्रोत के सबसे करीब है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "आपकी डेडलिफ्ट आपके बहानों की परवाह नहीं करती।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "सफलता का बार पथ ऊपर की ओर एक सीधी रेखा है।",
+    "author": "Unknown",
+    "category": "strength"
+  },
+  {
+    "quote": "पीठ बनाइए। अपने शरीर की नींव मजबूत कीजिए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आप वह चीज़ नहीं बना सकते जिसे आपने नहीं बनाया है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "पुनर्प्राप्ति वह जगह है जहां जादू होता है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपकी मसल्स सब याद रखती हैं। उन्हें सही ट्रेन कीजिए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "खूब खाओ। बड़ी ट्रेनिंग करो। बड़े सपने देखो।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "मन-मसल्स का संबंध वास्तविक है। इसका इस्तेमाल करें।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आपकी काया आपके समर्पण का प्रतिबिंब है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "पोषण ही आधार है। ट्रेनिंग वास्तुकला है।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "गेन्स चुप रहते हैं। उन्हें आपके लिए बोलने दीजिए।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "आप बेहतर मूड में रहने से हमेशा एक वर्कआउट दूर रहते हैं।",
+    "author": "Unknown",
+    "category": "muscle_gain"
+  },
+  {
+    "quote": "पछतावे की तकलीफ से बेहतर अनुशासन की तकलीफ चुनिए। हर एक दिन।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपके बहाने पुराने होते जा रहे हैं। कुछ नया आज़माएँ, जैसे परिणाम।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर झटका वापसी की तैयारी है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "ऐसे बनें जैसा किसी ने नहीं सोचा था कि आप बन सकते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर यह कर सकता है। यह आपका दिमाग है जिसे आपको समझाना है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी लेन में रहो। अपनी मेहनत पर डटे रहो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपने जो खाया उसके लिए जिम सज़ा नहीं है। यह इस बात का उत्सव है कि आपका शरीर क्या कर सकता है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "हर दिन छोटे कदम।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप एक उत्कृष्ट कृति गढ़ रहे हैं। तराशते रहो।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपके दिमाग में जो आवाज़ आती है कि आप यह नहीं कर सकते, वह झूठी है।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आप जो डालते हैं वही बाहर निकालते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "कड़ी मेहनत के लिए कभी माफी न मांगें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "प्रत्येक चैंपियन कभी नौसिखिया था।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर बाद में आपको धन्यवाद देगा।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "चैंपियंस ट्रेनिंग। दावेदार शिकायत करते हैं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "सफलता मैराथन है, स्प्रिंट नहीं।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी सीमा से अधिक ज़ोर लगाओ।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "अपनी कहानी के नायक स्वयं बनें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "आपका शरीर महानता के लिए बनाया गया था।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "नतीजों को बात करने दीजिए।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "बेहतर कल के लिए आज ही ट्रेनिंग लें।",
+    "author": "Unknown",
+    "category": "general"
+  },
+  {
+    "quote": "मेहनत में ही जीत की चमक छिपी है।",
+    "author": "Unknown",
+    "category": "general"
+  }
+]

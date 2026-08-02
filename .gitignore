@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Local env (never commit secrets)
+.env
+.env.local
+server/.env
+mobile/.env
+
+# Node
+mobile/node_modules/
+.DS_Store
+server/.env

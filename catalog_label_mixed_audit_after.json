@@ -1,0 +1,95 @@
+{
+  "hi": [],
+  "hinglish": [
+    {
+      "kind": "food",
+      "id": 3,
+      "english": "Brown rice (cooked)",
+      "label": "brown chawal (paka hua)",
+      "reason": "partial English hybrid: brown"
+    },
+    {
+      "kind": "food",
+      "id": 168,
+      "english": "Chicken breast (raw)",
+      "label": "chicken breast (kaccha)",
+      "reason": "partial English hybrid: chicken"
+    },
+    {
+      "kind": "food",
+      "id": 170,
+      "english": "Chicken thigh (raw)",
+      "label": "chicken thigh (kaccha)",
+      "reason": "partial English hybrid: chicken"
+    },
+    {
+      "kind": "food",
+      "id": 172,
+      "english": "Chicken wings (raw)",
+      "label": "chicken wings (kaccha)",
+      "reason": "partial English hybrid: chicken"
+    },
+    {
+      "kind": "food",
+      "id": 201,
+      "english": "Egg white (raw)",
+      "label": "anda white (kaccha)",
+      "reason": "partial English hybrid: white"
+    },
+    {
+      "kind": "food",
+      "id": 263,
+      "english": "Fried rice (chicken)",
+      "label": "fried chawal (chicken)",
+      "reason": "partial English hybrid: chicken"
+    }
+  ],
+  "es": [
+    {
+      "kind": "exercise",
+      "id": 14,
+      "english": "Smith Machine Bench Press",
+      "label": "press de banca en máquina Smith",
+      "reason": "partial English hybrid: smith"
+    }
+  ],
+  "fr": [
+    {
+      "kind": "exercise",
+      "id": 13,
+      "english": "Machine Chest Press",
+      "label": "presse pectorale à la machine",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 14,
+      "english": "Smith Machine Bench Press",
+      "label": "développé couché à la Smith machine",
+      "reason": "partial English hybrid: machine, smith"
+    },
+    {
+      "kind": "exercise",
+      "id": 54,
+      "english": "Machine Row",
+      "label": "rowing à la machine",
+      "reason": "partial English hybrid: machine"
+    },
+    {
+      "kind": "exercise",
+      "id": 60,
+      "english": "Machine Shoulder Press",
+      "label": "développé épaules à la machine",
+      "reason": "partial English hybrid: machine"
+    }
+  ],
+  "de": [
+    {
+      "kind": "exercise",
+      "id": 14,
+      "english": "Smith Machine Bench Press",
+      "label": "Bankdrücken an der Smith-Maschine",
+      "reason": "partial English hybrid: smith"
+    }
+  ]
+}

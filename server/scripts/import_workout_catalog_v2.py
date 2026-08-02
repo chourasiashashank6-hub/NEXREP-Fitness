@@ -33,14 +33,15 @@ def normalize_float(value):
 
 def main():
     parser = argparse.ArgumentParser(description="Import exercise catalog into workout_catalog_v2")
+    server_root = Path(__file__).resolve().parents[1]
     parser.add_argument(
         "--json-path",
-        default="/Users/vishay_11/Downloads/Final_281_Exercises .json",
+        default=str(server_root / "workout_catalog_v2_clean.json"),
         help="Path to source JSON file",
     )
     parser.add_argument(
         "--database-url",
-        default="postgresql://postgres:postgres@localhost:5432/fitnessdb",
+        default="postgresql://postgres:postgres@localhost:5434/fitnessdb",
         help="PostgreSQL connection URL",
     )
     args = parser.parse_args()

@@ -1,0 +1,10 @@
+Generic single-database configuration for NexRep.
+
+Run from `server/`:
+
+```bash
+alembic upgrade head
+alembic revision --autogenerate -m "describe change"
+```
+
+`DATABASE_URL` is read from `src.core.config.settings` (environment / `.env`).

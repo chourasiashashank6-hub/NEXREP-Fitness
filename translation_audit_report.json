@@ -1,0 +1,1768 @@
+{
+  "identical_strings": {
+    "hi": {
+      "counts": {
+        "mobile": 100,
+        "server": 1,
+        "quote": 0
+      },
+      "total": 101,
+      "samples": [
+        {
+          "type": "mobile",
+          "key": "tabs.workout",
+          "value": "Workout"
+        },
+        {
+          "type": "mobile",
+          "key": "home.remaining",
+          "value": "REMAINING"
+        },
+        {
+          "type": "mobile",
+          "key": "home.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "home.brandTagline",
+          "value": "TRACK · TRAIN · TRANSFORM"
+        },
+        {
+          "type": "mobile",
+          "key": "home.tdee",
+          "value": "TDEE"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.paceValue",
+          "value": "{{pace}} kg/w"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.progress.progressWithKg",
+          "value": "{{percent}}% · {{kg}} kg {{direction}}"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.activityOverview",
+          "value": "ACTIVITY OVERVIEW"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.workouts",
+          "value": "Workouts"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.proTitle",
+          "value": "NexRep PRO"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.sessionMilestone",
+          "value": "SESSION MILESTONE"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.musclesWorked",
+          "value": "🎯 MUSCLES WORKED"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.formCues",
+          "value": "✋ FORM CUES"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.cautions",
+          "value": "⚠️ CAUTIONS"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.workout",
+          "value": "Workout"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.caloriesToday",
+          "value": "CALORIES TODAY"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.macros",
+          "value": "MACROS"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.addFood",
+          "value": "ADD FOOD"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.quickAdd",
+          "value": "⚡ QUICK ADD"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.todaysMeals",
+          "value": "TODAY'S MEALS"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.mealLabels.preWorkout",
+          "value": "Pre-workout"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.mealLabels.postWorkout",
+          "value": "Post-workout"
+        },
+        {
+          "type": "mobile",
+          "key": "auth.emailPlaceholder",
+          "value": "you@example.com"
+        },
+        {
+          "type": "mobile",
+          "key": "components.planCard.yearlyPeriod",
+          "value": "/yr"
+        },
+        {
+          "type": "mobile",
+          "key": "components.planCard.monthlyPeriod",
+          "value": "/mo"
+        },
+        {
+          "type": "mobile",
+          "key": "components.notificationPermission.icon",
+          "value": "!"
+        },
+        {
+          "type": "mobile",
+          "key": "components.proGate.eliteFeature",
+          "value": "ELITE FEATURE"
+        },
+        {
+          "type": "mobile",
+          "key": "components.proGate.proFeature",
+          "value": "PRO FEATURE"
+        },
+        {
+          "type": "mobile",
+          "key": "components.proGate.elitePrice",
+          "value": "₹1,999/mo"
+        },
+        {
+          "type": "mobile",
+          "key": "components.proGate.proPrice",
+          "value": "₹999/mo"
+        },
+        {
+          "type": "mobile",
+          "key": "components.dailyQuote.refresh",
+          "value": "↻"
+        },
+        {
+          "type": "mobile",
+          "key": "components.todaysFocusEyebrow",
+          "value": "TODAY'S FOCUS"
+        },
+        {
+          "type": "mobile",
+          "key": "components.dev",
+          "value": "DEV"
+        },
+        {
+          "type": "mobile",
+          "key": "mediaPipe.unknown",
+          "value": "UNKNOWN"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.planSubtitle",
+          "value": "NexRep {{planName}}"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.planBadge",
+          "value": "{{planName}} PLAN"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.razorpay",
+          "value": "Razorpay"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.googlePay",
+          "value": "Google Pay"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.upi",
+          "value": "UPI"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.gst",
+          "value": "GST (18%)"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.overview.eyebrow",
+          "value": "SUBSCRIPTIONS"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.overview.free",
+          "value": "FREE"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.overview.yearlyPeriod",
+          "value": "/yr"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.overview.monthlyPeriod",
+          "value": "/mo"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.overview.freePrice",
+          "value": "Free"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.timeline.dateRange",
+          "value": "{{reason}} · {{startDate}}"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.timeline.dateRangeWithEnd",
+          "value": "{{reason}} · {{startDate}} → {{endDate}}"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.planPicker.chooseYourPlan",
+          "value": "CHOOSE YOUR PLAN"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.planPicker.legalSuffix",
+          "value": "."
+        }
+      ]
+    },
+    "hinglish": {
+      "counts": {
+        "mobile": 1191,
+        "server": 6,
+        "quote": 0
+      },
+      "total": 1197,
+      "samples": [
+        {
+          "type": "mobile",
+          "key": "tabs.home",
+          "value": "Home"
+        },
+        {
+          "type": "mobile",
+          "key": "tabs.workout",
+          "value": "Workout"
+        },
+        {
+          "type": "mobile",
+          "key": "tabs.calories",
+          "value": "Calories"
+        },
+        {
+          "type": "mobile",
+          "key": "tabs.coach",
+          "value": "Coach"
+        },
+        {
+          "type": "mobile",
+          "key": "tabs.profile",
+          "value": "Profile"
+        },
+        {
+          "type": "mobile",
+          "key": "home.alerts.error",
+          "value": "Error"
+        },
+        {
+          "type": "mobile",
+          "key": "home.alerts.invalid",
+          "value": "Invalid"
+        },
+        {
+          "type": "mobile",
+          "key": "home.alerts.logged",
+          "value": "Logged!"
+        },
+        {
+          "type": "mobile",
+          "key": "home.goalLabels.fatLoss",
+          "value": "Fat Loss"
+        },
+        {
+          "type": "mobile",
+          "key": "home.goalLabels.muscleGain",
+          "value": "Muscle Gain"
+        },
+        {
+          "type": "mobile",
+          "key": "home.goalLabels.strength",
+          "value": "Strength"
+        },
+        {
+          "type": "mobile",
+          "key": "home.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "home.deficit",
+          "value": "Deficit"
+        },
+        {
+          "type": "mobile",
+          "key": "home.surplus",
+          "value": "Surplus"
+        },
+        {
+          "type": "mobile",
+          "key": "home.maintenance",
+          "value": "Maintenance"
+        },
+        {
+          "type": "mobile",
+          "key": "home.pace",
+          "value": "~{{value}} kg / week"
+        },
+        {
+          "type": "mobile",
+          "key": "home.defaultPace",
+          "value": "~0.18 kg / week"
+        },
+        {
+          "type": "mobile",
+          "key": "home.fatLossProgress",
+          "value": "Fat loss progress"
+        },
+        {
+          "type": "mobile",
+          "key": "home.trainingProgress",
+          "value": "Training progress: {{percent}}%"
+        },
+        {
+          "type": "mobile",
+          "key": "home.trainingStimulus",
+          "value": "Training stimulus"
+        },
+        {
+          "type": "mobile",
+          "key": "home.balancedDay",
+          "value": "Balanced day"
+        },
+        {
+          "type": "mobile",
+          "key": "home.dailyBalance",
+          "value": "Daily balance"
+        },
+        {
+          "type": "mobile",
+          "key": "home.brandTagline",
+          "value": "TRACK · TRAIN · TRANSFORM"
+        },
+        {
+          "type": "mobile",
+          "key": "home.streakLine",
+          "value": "{{count}} day{{plural}} streak"
+        },
+        {
+          "type": "mobile",
+          "key": "home.best",
+          "value": "Best"
+        },
+        {
+          "type": "mobile",
+          "key": "home.foodLogged",
+          "value": "Food logged"
+        },
+        {
+          "type": "mobile",
+          "key": "home.workoutDone",
+          "value": "Workout done"
+        },
+        {
+          "type": "mobile",
+          "key": "home.missed",
+          "value": "Missed"
+        },
+        {
+          "type": "mobile",
+          "key": "home.logAction",
+          "value": "Log →"
+        },
+        {
+          "type": "mobile",
+          "key": "home.tdee",
+          "value": "TDEE"
+        },
+        {
+          "type": "mobile",
+          "key": "home.tdeeFull",
+          "value": "Total Daily Energy Expenditure"
+        },
+        {
+          "type": "mobile",
+          "key": "home.kcalPerDay",
+          "value": "kcal / day"
+        },
+        {
+          "type": "mobile",
+          "key": "home.caloriesEaten",
+          "value": "🍽️ Calories eaten"
+        },
+        {
+          "type": "mobile",
+          "key": "home.caloriesBurnt",
+          "value": "🔥 Calories burnt"
+        },
+        {
+          "type": "mobile",
+          "key": "home.strengthGoal",
+          "value": "🏋️ Strength goal"
+        },
+        {
+          "type": "mobile",
+          "key": "home.eightWeekGoal",
+          "value": "🏆 8-week goal"
+        },
+        {
+          "type": "mobile",
+          "key": "home.goalFooter",
+          "value": "{{weeks}} weeks left · {{pace}}"
+        },
+        {
+          "type": "mobile",
+          "key": "home.lastLogged",
+          "value": "Last logged: {{weight}}kg"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.alerts.error",
+          "value": "Error"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.alerts.invalid",
+          "value": "Invalid"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.alerts.logged",
+          "value": "Logged!"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.alerts.rangeAdjusted",
+          "value": "Date range adjusted"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.alerts.validation",
+          "value": "Validation"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.title",
+          "value": "Profile 👤"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.member",
+          "value": "Member"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.edit",
+          "value": "Edit ✏️"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.goal",
+          "value": "Goal"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.deficit",
+          "value": "Deficit"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.surplus",
+          "value": "Surplus"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.pace",
+          "value": "Pace"
+        }
+      ]
+    },
+    "es": {
+      "counts": {
+        "mobile": 45,
+        "server": 0,
+        "quote": 0
+      },
+      "total": 45,
+      "samples": [
+        {
+          "type": "mobile",
+          "key": "tabs.coach",
+          "value": "Coach"
+        },
+        {
+          "type": "mobile",
+          "key": "home.alerts.error",
+          "value": "Error"
+        },
+        {
+          "type": "mobile",
+          "key": "home.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "home.tdee",
+          "value": "TDEE"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.alerts.error",
+          "value": "Error"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.th",
+          "value": "Th"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.su",
+          "value": "Su"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.alerts.error",
+          "value": "Error"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.alerts.error",
+          "value": "Error"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.macros",
+          "value": "MACROS"
+        },
+        {
+          "type": "mobile",
+          "key": "common.error",
+          "value": "Error"
+        },
+        {
+          "type": "mobile",
+          "key": "components.notificationPermission.icon",
+          "value": "!"
+        },
+        {
+          "type": "mobile",
+          "key": "components.dailyQuote.categories.general",
+          "value": "General"
+        },
+        {
+          "type": "mobile",
+          "key": "components.dailyQuote.refresh",
+          "value": "↻"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.upi",
+          "value": "UPI"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.planPicker.legalSuffix",
+          "value": "."
+        },
+        {
+          "type": "mobile",
+          "key": "settings.notifications.quietStartPlaceholder",
+          "value": "22:00"
+        },
+        {
+          "type": "mobile",
+          "key": "settings.notifications.quietEndPlaceholder",
+          "value": "07:00"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.common.pro",
+          "value": "Pro"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.login.passwordPlaceholder",
+          "value": "••••••••"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.dashboard.mrr",
+          "value": "MRR"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.userDetail.plan",
+          "value": "Plan"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.aiUsage.periodDays",
+          "value": "{{days}}d"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.aiUsage.groq",
+          "value": "Groq"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.subscriptions.plan",
+          "value": "Plan"
+        },
+        {
+          "type": "mobile",
+          "key": "coach.components.restMarker",
+          "value": "R"
+        },
+        {
+          "type": "mobile",
+          "key": "coach.workout.fallback.general",
+          "value": "General"
+        },
+        {
+          "type": "mobile",
+          "key": "coach.home.heroTitle",
+          "value": "Coach"
+        },
+        {
+          "type": "mobile",
+          "key": "coach.home.proBadge",
+          "value": "PRO"
+        },
+        {
+          "type": "mobile",
+          "key": "coach.home.calorieCoach.auto",
+          "value": "Auto"
+        },
+        {
+          "type": "mobile",
+          "key": "coach.home.workoutPlanner.plan",
+          "value": "plan"
+        },
+        {
+          "type": "mobile",
+          "key": "coach.workoutPlannerScreen.alerts.error",
+          "value": "Error"
+        },
+        {
+          "type": "mobile",
+          "key": "coach.mealPlannerScreen.budgets.flexible",
+          "value": "Flexible"
+        },
+        {
+          "type": "mobile",
+          "key": "coach.mealPlannerScreen.alerts.error",
+          "value": "Error"
+        },
+        {
+          "type": "mobile",
+          "key": "onboarding.options.workoutTypes.cardio",
+          "value": "Cardio"
+        },
+        {
+          "type": "mobile",
+          "key": "onboarding.options.workoutTypes.hiit",
+          "value": "HIIT"
+        },
+        {
+          "type": "mobile",
+          "key": "onboarding.options.workoutTypes.yoga",
+          "value": "Yoga"
+        },
+        {
+          "type": "mobile",
+          "key": "onboarding.options.allergies.gluten",
+          "value": "Gluten"
+        },
+        {
+          "type": "mobile",
+          "key": "onboarding.options.regions.india",
+          "value": "India"
+        },
+        {
+          "type": "mobile",
+          "key": "onboarding.options.regions.australia",
+          "value": "Australia"
+        },
+        {
+          "type": "mobile",
+          "key": "onboarding.results.tdee",
+          "value": "TDEE"
+        },
+        {
+          "type": "mobile",
+          "key": "onboarding.results.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "legacy.calorie.macros",
+          "value": "Macros"
+        },
+        {
+          "type": "mobile",
+          "key": "legacy.homeV2.tdee",
+          "value": "TDEE"
+        }
+      ]
+    },
+    "fr": {
+      "counts": {
+        "mobile": 124,
+        "server": 1,
+        "quote": 0
+      },
+      "total": 125,
+      "samples": [
+        {
+          "type": "mobile",
+          "key": "tabs.calories",
+          "value": "Calories"
+        },
+        {
+          "type": "mobile",
+          "key": "tabs.coach",
+          "value": "Coach"
+        },
+        {
+          "type": "mobile",
+          "key": "home.remaining",
+          "value": "REMAINING"
+        },
+        {
+          "type": "mobile",
+          "key": "home.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "home.maintenance",
+          "value": "Maintenance"
+        },
+        {
+          "type": "mobile",
+          "key": "home.brandTagline",
+          "value": "TRACK · TRAIN · TRANSFORM"
+        },
+        {
+          "type": "mobile",
+          "key": "home.tdee",
+          "value": "TDEE"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.alerts.validation",
+          "value": "Validation"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.paceValue",
+          "value": "{{pace}} kg/w"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.progress.progressWithKg",
+          "value": "{{percent}}% · {{kg}} kg {{direction}}"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.activityOverview",
+          "value": "ACTIVITY OVERVIEW"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.proTitle",
+          "value": "NexRep PRO"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.version",
+          "value": "Version {{version}}"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.mo",
+          "value": "Mo"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.tu",
+          "value": "Tu"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.th",
+          "value": "Th"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.sa",
+          "value": "Sa"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.su",
+          "value": "Su"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.sessionMilestone",
+          "value": "SESSION MILESTONE"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.musclesWorked",
+          "value": "🎯 MUSCLES WORKED"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.posture",
+          "value": "🧍 POSTURE"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.formCues",
+          "value": "✋ FORM CUES"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.cautions",
+          "value": "⚠️ CAUTIONS"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.caloriesToday",
+          "value": "CALORIES TODAY"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.macros",
+          "value": "MACROS"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.fibre",
+          "value": "Fibre"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.addFood",
+          "value": "ADD FOOD"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.calPer100",
+          "value": "Cal/100g"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.quickAdd",
+          "value": "⚡ QUICK ADD"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.todaysMeals",
+          "value": "TODAY'S MEALS"
+        },
+        {
+          "type": "mobile",
+          "key": "components.planCard.yearlyPeriod",
+          "value": "/yr"
+        },
+        {
+          "type": "mobile",
+          "key": "components.planCard.monthlyPeriod",
+          "value": "/mo"
+        },
+        {
+          "type": "mobile",
+          "key": "components.notificationPermission.icon",
+          "value": "!"
+        },
+        {
+          "type": "mobile",
+          "key": "components.proGate.eliteFeature",
+          "value": "ELITE FEATURE"
+        },
+        {
+          "type": "mobile",
+          "key": "components.proGate.proFeature",
+          "value": "PRO FEATURE"
+        },
+        {
+          "type": "mobile",
+          "key": "components.proGate.elitePrice",
+          "value": "₹1,999/mo"
+        },
+        {
+          "type": "mobile",
+          "key": "components.proGate.proPrice",
+          "value": "₹999/mo"
+        },
+        {
+          "type": "mobile",
+          "key": "components.dailyQuote.refresh",
+          "value": "↻"
+        },
+        {
+          "type": "mobile",
+          "key": "components.score",
+          "value": "Score"
+        },
+        {
+          "type": "mobile",
+          "key": "components.dev",
+          "value": "DEV"
+        },
+        {
+          "type": "mobile",
+          "key": "mediaPipe.posture",
+          "value": "Posture"
+        },
+        {
+          "type": "mobile",
+          "key": "mediaPipe.phase",
+          "value": "Phase"
+        },
+        {
+          "type": "mobile",
+          "key": "mediaPipe.unknown",
+          "value": "UNKNOWN"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.planSubtitle",
+          "value": "NexRep {{planName}}"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.planBadge",
+          "value": "{{planName}} PLAN"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.razorpay",
+          "value": "Razorpay"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.googlePay",
+          "value": "Google Pay"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.upi",
+          "value": "UPI"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.overview.eyebrow",
+          "value": "SUBSCRIPTIONS"
+        }
+      ]
+    },
+    "de": {
+      "counts": {
+        "mobile": 84,
+        "server": 0,
+        "quote": 0
+      },
+      "total": 84,
+      "samples": [
+        {
+          "type": "mobile",
+          "key": "tabs.home",
+          "value": "Home"
+        },
+        {
+          "type": "mobile",
+          "key": "home.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "home.tdee",
+          "value": "TDEE"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.paceValue",
+          "value": "{{pace}} kg/w"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.progress.progressWithKg",
+          "value": "{{percent}}% · {{kg}} kg {{direction}}"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.proTitle",
+          "value": "NexRep PRO"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.version",
+          "value": "Version {{version}}"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.mo",
+          "value": "Mo"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.th",
+          "value": "Th"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.fr",
+          "value": "Fr"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.sa",
+          "value": "Sa"
+        },
+        {
+          "type": "mobile",
+          "key": "profile.weekdays.su",
+          "value": "Su"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.sets",
+          "value": "Sets"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.set",
+          "value": "Set"
+        },
+        {
+          "type": "mobile",
+          "key": "workoutLog.isolation",
+          "value": "Isolation"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.kcal",
+          "value": "kcal"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.cal",
+          "value": "Cal"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.proteinPer100",
+          "value": "Protein/100g"
+        },
+        {
+          "type": "mobile",
+          "key": "calorieLog.mealLabels.snacks",
+          "value": "Snacks"
+        },
+        {
+          "type": "mobile",
+          "key": "auth.email",
+          "value": "Email"
+        },
+        {
+          "type": "mobile",
+          "key": "auth.emailPlaceholder",
+          "value": "you@example.com"
+        },
+        {
+          "type": "mobile",
+          "key": "components.notificationPermission.icon",
+          "value": "!"
+        },
+        {
+          "type": "mobile",
+          "key": "components.dailyQuote.refresh",
+          "value": "↻"
+        },
+        {
+          "type": "mobile",
+          "key": "mediaPipe.phase",
+          "value": "Phase"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.planSubtitle",
+          "value": "NexRep {{planName}}"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.razorpay",
+          "value": "Razorpay"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.googlePay",
+          "value": "Google Pay"
+        },
+        {
+          "type": "mobile",
+          "key": "payment.checkout.upi",
+          "value": "UPI"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.overview.free",
+          "value": "FREE"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.timeline.dateRange",
+          "value": "{{reason}} · {{startDate}}"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.timeline.dateRangeWithEnd",
+          "value": "{{reason}} · {{startDate}} → {{endDate}}"
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.planPicker.legalSuffix",
+          "value": "."
+        },
+        {
+          "type": "mobile",
+          "key": "subscription.manage.pricePerCycle",
+          "value": "₹{{price}}/{{cycle}}"
+        },
+        {
+          "type": "mobile",
+          "key": "settings.notifications.quietStartPlaceholder",
+          "value": "22:00"
+        },
+        {
+          "type": "mobile",
+          "key": "settings.notifications.quietEndPlaceholder",
+          "value": "07:00"
+        },
+        {
+          "type": "mobile",
+          "key": "settings.notifications.meditation",
+          "value": "Meditation"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.common.elite",
+          "value": "Elite"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.login.email",
+          "value": "Email"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.login.emailPlaceholder",
+          "value": "admin@example.com"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.login.passwordPlaceholder",
+          "value": "••••••••"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.dashboard.fallbackName",
+          "value": "Admin"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.dashboard.mrr",
+          "value": "MRR"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.dashboard.dauMau",
+          "value": "DAU / MAU"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.userDetail.weightValue",
+          "value": "{{age}} · {{weight}} kg"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.aiUsage.periodDays",
+          "value": "{{days}}d"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.aiUsage.groq",
+          "value": "Groq"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.aiUsage.gemini",
+          "value": "Gemini"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.subscriptions.activePro",
+          "value": "Active Pro"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.subscriptions.status",
+          "value": "Status"
+        },
+        {
+          "type": "mobile",
+          "key": "admin.subscriptions.rowMeta",
+          "value": "{{plan}} · {{billingCycle}} · {{status}}"
+        }
+      ]
+    }
+  },
+  "quote_sample_indices": [
+    130,
+    884,
+    678,
+    1006,
+    206,
+    544,
+    786,
+    755,
+    267,
+    442,
+    762,
+    432,
+    535,
+    957,
+    823
+  ],
+  "quote_samples": {
+    "hi": [
+      {
+        "index": 130,
+        "english": "Believe you can and you are halfway there.",
+        "translated": "विश्वास करें कि आप कर सकते हैं और आप आधे रास्ते पर हैं।",
+        "author": "Theodore Roosevelt"
+      },
+      {
+        "index": 884,
+        "english": "A goal without a plan is just a wish.",
+        "translated": "बिना योजना के लक्ष्य महज़ एक इच्छा है।",
+        "author": "Antoine de Saint-Exupery"
+      },
+      {
+        "index": 678,
+        "english": "Choose discipline over motivation.",
+        "translated": "प्रेरणा के स्थान पर अनुशासन चुनें.",
+        "author": "Jocko Willink"
+      },
+      {
+        "index": 1006,
+        "english": "The grind includes the glory.",
+        "translated": "पीस में महिमा शामिल है.",
+        "author": "Unknown"
+      },
+      {
+        "index": 206,
+        "english": "Rest when you are dead.",
+        "translated": "जब तुम मर जाओ तो आराम करो.",
+        "author": "Unknown"
+      },
+      {
+        "index": 544,
+        "english": "You are not overtraining. You are under-eating.",
+        "translated": "आप अतिप्रशिक्षण नहीं कर रहे हैं. आप कम खा रहे हैं.",
+        "author": "Unknown"
+      },
+      {
+        "index": 786,
+        "english": "Never fear the weight. Fear never trying.",
+        "translated": "वजन से कभी न डरें. कभी प्रयास न करने से डर लगता है.",
+        "author": "Unknown"
+      },
+      {
+        "index": 755,
+        "english": "The harder you work, the luckier you get.",
+        "translated": "आप जितनी अधिक मेहनत करेंगे, आप उतने ही अधिक भाग्यशाली होंगे।",
+        "author": "Gary Player"
+      },
+      {
+        "index": 267,
+        "english": "Do something today that your future self will thank you for.",
+        "translated": "आज कुछ ऐसा करें जिसके लिए आपका भविष्य आपको धन्यवाद देगा।",
+        "author": "Sean Patrick Flanery"
+      },
+      {
+        "index": 442,
+        "english": "You can not expect to look like a million bucks if you eat from the dollar menu.",
+        "translated": "यदि आप डॉलर मेनू से खाते हैं तो आप दस लाख रुपये की तरह दिखने की उम्मीद नहीं कर सकते।",
+        "author": "Unknown"
+      },
+      {
+        "index": 762,
+        "english": "You can rest. You can pause. But do not quit.",
+        "translated": "आप आराम कर सकते हैं. आप रुक सकते हैं. लेकिन मत छोड़ो.",
+        "author": "Unknown"
+      },
+      {
+        "index": 432,
+        "english": "Define your goals. Outline a plan. Then go all in.",
+        "translated": "अपने लक्ष्य परिभाषित करें. एक योजना की रूपरेखा तैयार करें. फिर सब अंदर जाओ.",
+        "author": "Unknown"
+      },
+      {
+        "index": 535,
+        "english": "Your arms will not grow by thinking about curls.",
+        "translated": "कर्ल्स के बारे में सोचने से आपकी भुजाएं नहीं बढ़ेंगी।",
+        "author": "Unknown"
+      },
+      {
+        "index": 957,
+        "english": "Eat to live. Do not live to eat.",
+        "translated": "जीने के लिए खाओ. खाने के लिए नहीं जीते.",
+        "author": "Benjamin Franklin"
+      },
+      {
+        "index": 823,
+        "english": "The strongest version of yourself is waiting. Go find it.",
+        "translated": "आपका सबसे मजबूत संस्करण प्रतीक्षा कर रहा है। जाओ इसे ढूंढो.",
+        "author": "Unknown"
+      }
+    ],
+    "hinglish": [
+      {
+        "index": 130,
+        "english": "Believe you can and you are halfway there.",
+        "translated": "Believe karo aap can and aap are halfway there.",
+        "author": "Theodore Roosevelt"
+      },
+      {
+        "index": 884,
+        "english": "A goal without a plan is just a wish.",
+        "translated": "Yaad rakho: A goal without a plan is just a wish.",
+        "author": "Antoine de Saint-Exupery"
+      },
+      {
+        "index": 678,
+        "english": "Choose discipline over motivation.",
+        "translated": "Yaad rakho: Choose discipline over motivation.",
+        "author": "Jocko Willink"
+      },
+      {
+        "index": 1006,
+        "english": "The grind includes the glory.",
+        "translated": "Grind mein hi glory chhupi hai.",
+        "author": "Unknown"
+      },
+      {
+        "index": 206,
+        "english": "Rest when you are dead.",
+        "translated": "Rest when aap are dead.",
+        "author": "Unknown"
+      },
+      {
+        "index": 544,
+        "english": "You are not overtraining. You are under-eating.",
+        "translated": "Aap ho not overtraining. Aap ho under-eating.",
+        "author": "Unknown"
+      },
+      {
+        "index": 786,
+        "english": "Never fear the weight. Fear never trying.",
+        "translated": "Kabhi nahi fear the weight. Fear kabhi nahi trying.",
+        "author": "Unknown"
+      },
+      {
+        "index": 755,
+        "english": "The harder you work, the luckier you get.",
+        "translated": "The harder aap work, the luckier aap get.",
+        "author": "Gary Player"
+      },
+      {
+        "index": 267,
+        "english": "Do something today that your future self will thank you for.",
+        "translated": "Do something aaj that aapka future self will thank aap for.",
+        "author": "Sean Patrick Flanery"
+      },
+      {
+        "index": 442,
+        "english": "You can not expect to look like a million bucks if you eat from the dollar menu.",
+        "translated": "Aap can not expect to look like a million bucks if aap eat from the dollar menu.",
+        "author": "Unknown"
+      },
+      {
+        "index": 762,
+        "english": "You can rest. You can pause. But do not quit.",
+        "translated": "Aap can rest. Aap can pause. But do not quit.",
+        "author": "Unknown"
+      },
+      {
+        "index": 432,
+        "english": "Define your goals. Outline a plan. Then go all in.",
+        "translated": "Define aapka goals. Outline a plan. Then go all in.",
+        "author": "Unknown"
+      },
+      {
+        "index": 535,
+        "english": "Your arms will not grow by thinking about curls.",
+        "translated": "Aapka arms will not grow by thinking about curls.",
+        "author": "Unknown"
+      },
+      {
+        "index": 957,
+        "english": "Eat to live. Do not live to eat.",
+        "translated": "Yaad rakho: Eat to live. Do not live to eat.",
+        "author": "Benjamin Franklin"
+      },
+      {
+        "index": 823,
+        "english": "The strongest version of yourself is waiting. Go find it.",
+        "translated": "Yaad rakho: The strongest version of yourself is waiting. Go find it.",
+        "author": "Unknown"
+      }
+    ],
+    "es": [
+      {
+        "index": 130,
+        "english": "Believe you can and you are halfway there.",
+        "translated": "Cree que puedes y estarás a medio camino.",
+        "author": "Theodore Roosevelt"
+      },
+      {
+        "index": 884,
+        "english": "A goal without a plan is just a wish.",
+        "translated": "Una meta sin un plan es sólo un deseo.",
+        "author": "Antoine de Saint-Exupery"
+      },
+      {
+        "index": 678,
+        "english": "Choose discipline over motivation.",
+        "translated": "Elija la disciplina sobre la motivación.",
+        "author": "Jocko Willink"
+      },
+      {
+        "index": 1006,
+        "english": "The grind includes the glory.",
+        "translated": "La rutina incluye la gloria.",
+        "author": "Unknown"
+      },
+      {
+        "index": 206,
+        "english": "Rest when you are dead.",
+        "translated": "Descansa cuando estés muerto.",
+        "author": "Unknown"
+      },
+      {
+        "index": 544,
+        "english": "You are not overtraining. You are under-eating.",
+        "translated": "No estás sobreentrenando. Estás comiendo poco.",
+        "author": "Unknown"
+      },
+      {
+        "index": 786,
+        "english": "Never fear the weight. Fear never trying.",
+        "translated": "Nunca temas al peso. No temas nunca intentarlo.",
+        "author": "Unknown"
+      },
+      {
+        "index": 755,
+        "english": "The harder you work, the luckier you get.",
+        "translated": "Cuanto más trabajas, más suerte tienes.",
+        "author": "Gary Player"
+      },
+      {
+        "index": 267,
+        "english": "Do something today that your future self will thank you for.",
+        "translated": "Haz algo hoy que tu yo futuro te agradecerá.",
+        "author": "Sean Patrick Flanery"
+      },
+      {
+        "index": 442,
+        "english": "You can not expect to look like a million bucks if you eat from the dollar menu.",
+        "translated": "No puedes esperar parecer un millón de dólares si comes del menú de un dólar.",
+        "author": "Unknown"
+      },
+      {
+        "index": 762,
+        "english": "You can rest. You can pause. But do not quit.",
+        "translated": "Puedes descansar. Puedes hacer una pausa. Pero no te rindas.",
+        "author": "Unknown"
+      },
+      {
+        "index": 432,
+        "english": "Define your goals. Outline a plan. Then go all in.",
+        "translated": "Define tus objetivos. Describe un plan. Entonces hazlo todo.",
+        "author": "Unknown"
+      },
+      {
+        "index": 535,
+        "english": "Your arms will not grow by thinking about curls.",
+        "translated": "Tus brazos no crecerán pensando en rizos.",
+        "author": "Unknown"
+      },
+      {
+        "index": 957,
+        "english": "Eat to live. Do not live to eat.",
+        "translated": "Comer para vivir. No vivas para comer.",
+        "author": "Benjamin Franklin"
+      },
+      {
+        "index": 823,
+        "english": "The strongest version of yourself is waiting. Go find it.",
+        "translated": "La versión más fuerte de ti mismo te está esperando. Ve a buscarlo.",
+        "author": "Unknown"
+      }
+    ],
+    "fr": [
+      {
+        "index": 130,
+        "english": "Believe you can and you are halfway there.",
+        "translated": "Croyez que vous le pouvez et vous êtes à mi-chemin.",
+        "author": "Theodore Roosevelt"
+      },
+      {
+        "index": 884,
+        "english": "A goal without a plan is just a wish.",
+        "translated": "Un objectif sans plan n'est qu'un souhait.",
+        "author": "Antoine de Saint-Exupery"
+      },
+      {
+        "index": 678,
+        "english": "Choose discipline over motivation.",
+        "translated": "Choisissez la discipline plutôt que la motivation.",
+        "author": "Jocko Willink"
+      },
+      {
+        "index": 1006,
+        "english": "The grind includes the glory.",
+        "translated": "Le travail inclut la gloire.",
+        "author": "Unknown"
+      },
+      {
+        "index": 206,
+        "english": "Rest when you are dead.",
+        "translated": "Repose-toi quand tu es mort.",
+        "author": "Unknown"
+      },
+      {
+        "index": 544,
+        "english": "You are not overtraining. You are under-eating.",
+        "translated": "Vous ne vous entraînez pas trop. Vous sous-alimentez.",
+        "author": "Unknown"
+      },
+      {
+        "index": 786,
+        "english": "Never fear the weight. Fear never trying.",
+        "translated": "Ne craignez jamais le poids. Peur de ne jamais essayer.",
+        "author": "Unknown"
+      },
+      {
+        "index": 755,
+        "english": "The harder you work, the luckier you get.",
+        "translated": "Plus vous travaillez dur, plus vous avez de chance.",
+        "author": "Gary Player"
+      },
+      {
+        "index": 267,
+        "english": "Do something today that your future self will thank you for.",
+        "translated": "Faites quelque chose aujourd’hui pour lequel votre futur vous vous remerciera.",
+        "author": "Sean Patrick Flanery"
+      },
+      {
+        "index": 442,
+        "english": "You can not expect to look like a million bucks if you eat from the dollar menu.",
+        "translated": "Vous ne pouvez pas vous attendre à ressembler à un million de dollars si vous mangez au menu à un dollar.",
+        "author": "Unknown"
+      },
+      {
+        "index": 762,
+        "english": "You can rest. You can pause. But do not quit.",
+        "translated": "Vous pouvez vous reposer. Vous pouvez faire une pause. Mais n'abandonnez pas.",
+        "author": "Unknown"
+      },
+      {
+        "index": 432,
+        "english": "Define your goals. Outline a plan. Then go all in.",
+        "translated": "Définissez vos objectifs. Décrivez un plan. Alors allez-y à fond.",
+        "author": "Unknown"
+      },
+      {
+        "index": 535,
+        "english": "Your arms will not grow by thinking about curls.",
+        "translated": "Vos bras ne grandiront pas en pensant aux boucles.",
+        "author": "Unknown"
+      },
+      {
+        "index": 957,
+        "english": "Eat to live. Do not live to eat.",
+        "translated": "Manger pour vivre. Ne vivez pas pour manger.",
+        "author": "Benjamin Franklin"
+      },
+      {
+        "index": 823,
+        "english": "The strongest version of yourself is waiting. Go find it.",
+        "translated": "La version la plus forte de vous-même attend. Allez le trouver.",
+        "author": "Unknown"
+      }
+    ],
+    "de": [
+      {
+        "index": 130,
+        "english": "Believe you can and you are halfway there.",
+        "translated": "Glauben Sie, dass Sie es können, und Du hast die Hälfte geschafft.",
+        "author": "Theodore Roosevelt"
+      },
+      {
+        "index": 884,
+        "english": "A goal without a plan is just a wish.",
+        "translated": "Ein Ziel ohne Plan ist nur ein Wunsch.",
+        "author": "Antoine de Saint-Exupery"
+      },
+      {
+        "index": 678,
+        "english": "Choose discipline over motivation.",
+        "translated": "Wähle Disziplin statt Motivation.",
+        "author": "Jocko Willink"
+      },
+      {
+        "index": 1006,
+        "english": "The grind includes the glory.",
+        "translated": "Der Grind beinhaltet den Ruhm.",
+        "author": "Unknown"
+      },
+      {
+        "index": 206,
+        "english": "Rest when you are dead.",
+        "translated": "Ruhe dich aus, wenn du tot bist.",
+        "author": "Unknown"
+      },
+      {
+        "index": 544,
+        "english": "You are not overtraining. You are under-eating.",
+        "translated": "Du übertrainierst nicht. Du isst zu wenig.",
+        "author": "Unknown"
+      },
+      {
+        "index": 786,
+        "english": "Never fear the weight. Fear never trying.",
+        "translated": "Keine Angst vor dem Gewicht. Angst, es niemals zu versuchen.",
+        "author": "Unknown"
+      },
+      {
+        "index": 755,
+        "english": "The harder you work, the luckier you get.",
+        "translated": "Je härter Sie arbeiten, desto mehr Glück haben Sie.",
+        "author": "Gary Player"
+      },
+      {
+        "index": 267,
+        "english": "Do something today that your future self will thank you for.",
+        "translated": "Tun Sie heute etwas, wofür dein zukünftiges Ich dir danken wird.",
+        "author": "Sean Patrick Flanery"
+      },
+      {
+        "index": 442,
+        "english": "You can not expect to look like a million bucks if you eat from the dollar menu.",
+        "translated": "Du kannst nicht erwarten, wie eine Million Dollar auszusehen, wenn Sie von der Dollar-Speisekarte essen.",
+        "author": "Unknown"
+      },
+      {
+        "index": 762,
+        "english": "You can rest. You can pause. But do not quit.",
+        "translated": "Du kannst dich ausruhen. Du kannst pausieren. Aber gib nicht auf.",
+        "author": "Unknown"
+      },
+      {
+        "index": 432,
+        "english": "Define your goals. Outline a plan. Then go all in.",
+        "translated": "Definieren Sie deine Ziele. Skizzieren Sie einen Plan. Dann gehen Sie All-In.",
+        "author": "Unknown"
+      },
+      {
+        "index": 535,
+        "english": "Your arms will not grow by thinking about curls.",
+        "translated": "Deine Arme werden nicht wachsen, wenn du an Locken denkst.",
+        "author": "Unknown"
+      },
+      {
+        "index": 957,
+        "english": "Eat to live. Do not live to eat.",
+        "translated": "Essen, um zu leben. Lebe nicht, um zu essen.",
+        "author": "Benjamin Franklin"
+      },
+      {
+        "index": 823,
+        "english": "The strongest version of yourself is waiting. Go find it.",
+        "translated": "Die stärkste Version von dir wartet auf dich. Geh und finde es.",
+        "author": "Unknown"
+      }
+    ]
+  },
+  "font_check": {
+    "font_family_matches_in_mobile_tree": 0,
+    "custom_font_loading_matches_in_mobile_tree": 0,
+    "package_font_dependencies": [
+      "@expo-google-fonts/bebas-neue",
+      "@expo-google-fonts/dm-sans",
+      "expo-font"
+    ],
+    "conclusion": "No fontFamily/useFonts/Font.loadAsync usage found in fitness/mobile; text uses React Native/system default fonts. Devanagari is not blocked by a bundled Latin-only app font, but no Devanagari font is explicitly bundled, so web rendering depends on host/browser fallback fonts."
+  }
+}

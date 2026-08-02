@@ -1,0 +1,3860 @@
+[
+  {
+    "name": "Barbell Bench Press",
+    "aliases": [
+      "Flat Bench Press",
+      "Bench Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Triceps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Incline Barbell Bench Press",
+    "aliases": [
+      "Incline Bench Press",
+      "Incline Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Upper Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Triceps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Decline Barbell Bench Press",
+    "aliases": [
+      "Decline Bench Press",
+      "Decline Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Lower Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Triceps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Dumbbell Bench Press",
+    "aliases": [
+      "DB Bench Press",
+      "Dumbbell Flat Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Triceps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Incline Dumbbell Press",
+    "aliases": [
+      "Incline DB Press",
+      "Incline Dumbbell Bench Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Upper Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Triceps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Decline Dumbbell Press",
+    "aliases": [
+      "Decline DB Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Lower Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Triceps"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Dumbbell Chest Fly",
+    "aliases": [
+      "DB Fly",
+      "Dumbbell Fly",
+      "Chest Fly"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Incline Dumbbell Fly",
+    "aliases": [
+      "Incline DB Fly",
+      "Incline Fly"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Upper Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Cable Chest Fly",
+    "aliases": [
+      "Cable Fly",
+      "Low Cable Fly"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "High Cable Fly",
+    "aliases": [
+      "Cable Crossover High",
+      "Decline Cable Fly"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Lower Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Serratus Anterior"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Cable Crossover",
+    "aliases": [
+      "Cross Cable Fly",
+      "Cable Cross"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Pec Deck Machine",
+    "aliases": [
+      "Pec Dec",
+      "Machine Fly",
+      "Chest Machine Fly"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Machine Chest Press",
+    "aliases": [
+      "Chest Press Machine",
+      "Seated Chest Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Triceps"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Smith Machine Bench Press",
+    "aliases": [
+      "Smith Bench",
+      "Smith Machine Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Triceps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Push-Up",
+    "aliases": [
+      "Pushup",
+      "Press-Up",
+      "Standard Push Up"
+    ],
+    "body_part": "Chest",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Triceps",
+      "Core"
+    ],
+    "met_value": 3.8,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Wide Push-Up",
+    "aliases": [
+      "Wide Grip Push Up",
+      "Wide Pushup"
+    ],
+    "body_part": "Chest",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid"
+    ],
+    "met_value": 3.8,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Diamond Push-Up",
+    "aliases": [
+      "Triangle Push Up",
+      "Close Grip Push Up",
+      "Narrow Push Up"
+    ],
+    "body_part": "Chest",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Pectoralis Major",
+      "Anterior Deltoid"
+    ],
+    "met_value": 3.8,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Decline Push-Up",
+    "aliases": [
+      "Feet Elevated Push Up",
+      "Decline Pushup"
+    ],
+    "body_part": "Chest",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Upper Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Triceps"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Incline Push-Up",
+    "aliases": [
+      "Hands Elevated Push Up",
+      "Incline Pushup"
+    ],
+    "body_part": "Chest",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Lower Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Triceps"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Plyometric Push-Up",
+    "aliases": [
+      "Explosive Push Up",
+      "Clap Push Up"
+    ],
+    "body_part": "Chest",
+    "category": "Plyometric",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Triceps",
+      "Anterior Deltoid"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Spiderman Push-Up",
+    "aliases": [
+      "Spider Push Up",
+      "Spiderman Pushup"
+    ],
+    "body_part": "Chest",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Pectoralis Major",
+      "Obliques"
+    ],
+    "muscles_secondary": [
+      "Triceps",
+      "Hip Flexors"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Dips",
+    "aliases": [
+      "Chest Dips",
+      "Parallel Bar Dips",
+      "Body Dips"
+    ],
+    "body_part": "Chest",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Pectoralis Major",
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Weighted Dips",
+    "aliases": [
+      "Belt Dips",
+      "Loaded Dips"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Pectoralis Major",
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Floor Press",
+    "aliases": [
+      "Barbell Floor Press",
+      "Floor Bench Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Pectoralis Major",
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Dumbbell Pullover",
+    "aliases": [
+      "DB Pullover",
+      "Chest Pullover"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Pectoralis Major",
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Serratus Anterior",
+      "Triceps Long Head"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Svend Press",
+    "aliases": [
+      "Plate Squeeze Press",
+      "Plate Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Other",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Resistance Band Chest Press",
+    "aliases": [
+      "Band Press",
+      "Band Chest Press"
+    ],
+    "body_part": "Chest",
+    "category": "Strength",
+    "equipment": "Resistance Band",
+    "muscles_primary": [
+      "Pectoralis Major"
+    ],
+    "muscles_secondary": [
+      "Triceps",
+      "Anterior Deltoid"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Deadlift",
+    "aliases": [
+      "Conventional Deadlift",
+      "Barbell Deadlift"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Erector Spinae",
+      "Glutes",
+      "Hamstrings"
+    ],
+    "muscles_secondary": [
+      "Traps",
+      "Lats",
+      "Quads"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Romanian Deadlift",
+    "aliases": [
+      "RDL",
+      "Romanian DL",
+      "Straight Leg Deadlift"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Hamstrings",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Erector Spinae",
+      "Lats"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Sumo Deadlift",
+    "aliases": [
+      "Wide Stance Deadlift",
+      "Sumo DL"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Glutes",
+      "Adductors",
+      "Quads"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Erector Spinae"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Trap Bar Deadlift",
+    "aliases": [
+      "Hex Bar Deadlift",
+      "Trap Bar DL"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Glutes",
+      "Quads",
+      "Hamstrings"
+    ],
+    "muscles_secondary": [
+      "Erector Spinae",
+      "Traps"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Barbell Row",
+    "aliases": [
+      "Barbell Bent Over Row",
+      "Overhand Row",
+      "Pronated Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Lats",
+      "Rhomboids"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Rear Deltoid",
+      "Erector Spinae"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Pendlay Row",
+    "aliases": [
+      "Pendlay Barbell Row",
+      "Dead Stop Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Lats",
+      "Rhomboids"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Erector Spinae"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Dumbbell Row",
+    "aliases": [
+      "DB Row",
+      "One Arm DB Row",
+      "Single Arm Dumbbell Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Lats",
+      "Rhomboids"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Rear Deltoid"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "T-Bar Row",
+    "aliases": [
+      "T Bar Row",
+      "Landmine Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Lats",
+      "Rhomboids"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Erector Spinae"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Seated Cable Row",
+    "aliases": [
+      "Cable Row",
+      "Low Cable Row",
+      "Seated Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Lats",
+      "Rhomboids"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Rear Deltoid"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Lat Pulldown",
+    "aliases": [
+      "Cable Pulldown",
+      "Wide Grip Pulldown"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Rhomboids"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Close Grip Lat Pulldown",
+    "aliases": [
+      "Neutral Grip Pulldown",
+      "Close Grip Pulldown"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Lower Traps"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Pull-Up",
+    "aliases": [
+      "Pullup",
+      "Overhand Pull Up",
+      "Pronated Pull Up"
+    ],
+    "body_part": "Back",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Rhomboids",
+      "Core"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Chin-Up",
+    "aliases": [
+      "Chinup",
+      "Underhand Pull Up",
+      "Supinated Pull Up"
+    ],
+    "body_part": "Back",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Lats",
+      "Biceps"
+    ],
+    "muscles_secondary": [
+      "Rhomboids",
+      "Core"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Weighted Pull-Up",
+    "aliases": [
+      "Weighted Pullup",
+      "Belt Pull Up"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Rhomboids"
+    ],
+    "met_value": 7.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Wide Grip Pull-Up",
+    "aliases": [
+      "Wide Pull Up",
+      "Wide Pullup"
+    ],
+    "body_part": "Back",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Rear Deltoid",
+      "Rhomboids"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Assisted Pull-Up",
+    "aliases": [
+      "Band Assisted Pull Up",
+      "Machine Assisted Pull Up"
+    ],
+    "body_part": "Back",
+    "category": "Calisthenics",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Rhomboids"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Inverted Row",
+    "aliases": [
+      "Australian Pull Up",
+      "Bodyweight Row",
+      "TRX Row"
+    ],
+    "body_part": "Back",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Lats",
+      "Rhomboids"
+    ],
+    "muscles_secondary": [
+      "Biceps",
+      "Core"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Chest-Supported Row",
+    "aliases": [
+      "Incline DB Row",
+      "Chest Support Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Rhomboids",
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Rear Deltoid",
+      "Biceps"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Seal Row",
+    "aliases": [
+      "Prone Row",
+      "Seal Barbell Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Rhomboids",
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Rear Deltoid"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Meadows Row",
+    "aliases": [
+      "Dumbbell Meadows Row",
+      "Landmine Single Arm Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Lats",
+      "Upper Traps"
+    ],
+    "muscles_secondary": [
+      "Rear Deltoid",
+      "Biceps"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Barbell Shrug",
+    "aliases": [
+      "Trap Shrug",
+      "Power Shrug"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Upper Trapezius"
+    ],
+    "muscles_secondary": [
+      "Levator Scapulae"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Dumbbell Shrug",
+    "aliases": [
+      "DB Shrug",
+      "Shoulder Shrug"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Upper Trapezius"
+    ],
+    "muscles_secondary": [
+      "Levator Scapulae"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Face Pull",
+    "aliases": [
+      "Cable Face Pull",
+      "Rope Face Pull"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Rear Deltoid",
+      "Rhomboids",
+      "Rotator Cuff"
+    ],
+    "muscles_secondary": [
+      "Upper Traps"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Rack Pull",
+    "aliases": [
+      "Partial Deadlift",
+      "Block Pull"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Erector Spinae",
+      "Traps"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Deficit Deadlift",
+    "aliases": [
+      "Elevated Deadlift",
+      "Platform Deadlift"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Hamstrings",
+      "Glutes",
+      "Erector Spinae"
+    ],
+    "muscles_secondary": [
+      "Quads",
+      "Lats"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Cable Straight Arm Pulldown",
+    "aliases": [
+      "Straight Arm Pulldown",
+      "Lat Pushdown",
+      "Cable Pullover"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Lats"
+    ],
+    "muscles_secondary": [
+      "Serratus Anterior",
+      "Triceps Long Head"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Machine Row",
+    "aliases": [
+      "Seated Machine Row",
+      "Hammer Strength Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Lats",
+      "Rhomboids"
+    ],
+    "muscles_secondary": [
+      "Biceps"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Yates Row",
+    "aliases": [
+      "Underhand Barbell Row",
+      "Reverse Grip Row"
+    ],
+    "body_part": "Back",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Lower Lats",
+      "Biceps"
+    ],
+    "muscles_secondary": [
+      "Rhomboids"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Muscle-Up",
+    "aliases": [
+      "Muscle Up",
+      "Bar Muscle Up",
+      "Ring Muscle Up"
+    ],
+    "body_part": "Back",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Lats",
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Chest",
+      "Core",
+      "Biceps"
+    ],
+    "met_value": 8.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Barbell Overhead Press",
+    "aliases": [
+      "Military Press",
+      "Standing Press",
+      "OHP",
+      "Overhead Barbell Press"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Anterior Deltoid",
+      "Lateral Deltoid"
+    ],
+    "muscles_secondary": [
+      "Triceps",
+      "Upper Traps",
+      "Core"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Dumbbell Shoulder Press",
+    "aliases": [
+      "DB Shoulder Press",
+      "Seated DB Press",
+      "Overhead DB Press"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Anterior Deltoid",
+      "Lateral Deltoid"
+    ],
+    "muscles_secondary": [
+      "Triceps",
+      "Upper Traps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Arnold Press",
+    "aliases": [
+      "Arnold Dumbbell Press",
+      "Rotating Press"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Anterior Deltoid",
+      "Lateral Deltoid"
+    ],
+    "muscles_secondary": [
+      "Rotator Cuff",
+      "Triceps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Machine Shoulder Press",
+    "aliases": [
+      "Seated Machine Press",
+      "Overhead Machine Press"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Anterior Deltoid",
+      "Lateral Deltoid"
+    ],
+    "muscles_secondary": [
+      "Triceps"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Seated Dumbbell Press",
+    "aliases": [
+      "Seated DB Shoulder Press",
+      "Seated OHP"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Anterior Deltoid"
+    ],
+    "muscles_secondary": [
+      "Lateral Deltoid",
+      "Triceps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Push Press",
+    "aliases": [
+      "Barbell Push Press",
+      "Power Press"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Anterior Deltoid",
+      "Lateral Deltoid",
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Quads",
+      "Glutes",
+      "Traps"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Dumbbell Lateral Raise",
+    "aliases": [
+      "Lateral Raise",
+      "Side Raise",
+      "DB Lateral Raise"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Lateral Deltoid"
+    ],
+    "muscles_secondary": [
+      "Supraspinatus"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Cable Lateral Raise",
+    "aliases": [
+      "Cable Side Raise",
+      "Low Cable Lateral Raise"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Lateral Deltoid"
+    ],
+    "muscles_secondary": [
+      "Supraspinatus"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Front Raise",
+    "aliases": [
+      "Dumbbell Front Raise",
+      "Anterior Raise",
+      "Barbell Front Raise"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Anterior Deltoid"
+    ],
+    "muscles_secondary": [
+      "Upper Pectoralis",
+      "Serratus Anterior"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Rear Delt Fly",
+    "aliases": [
+      "Reverse Fly",
+      "Bent Over Rear Delt Fly",
+      "Rear Delt Raise"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Posterior Deltoid"
+    ],
+    "muscles_secondary": [
+      "Rhomboids",
+      "Infraspinatus"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Cable Rear Delt Fly",
+    "aliases": [
+      "Cable Reverse Fly",
+      "Cross Cable Rear Delt"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Posterior Deltoid"
+    ],
+    "muscles_secondary": [
+      "Rhomboids"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Upright Row",
+    "aliases": [
+      "Barbell Upright Row",
+      "DB Upright Row"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Lateral Deltoid",
+      "Upper Traps"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid",
+      "Biceps"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Barbell Z-Press",
+    "aliases": [
+      "Z Press",
+      "Seated Floor Press"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Anterior Deltoid",
+      "Lateral Deltoid"
+    ],
+    "muscles_secondary": [
+      "Core",
+      "Triceps"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Cable Y-Raise",
+    "aliases": [
+      "Y Raise",
+      "Band Y Raise"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Lower Trapezius",
+      "Serratus Anterior"
+    ],
+    "muscles_secondary": [
+      "Posterior Deltoid"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Cable Front Raise",
+    "aliases": [
+      "Low Cable Front Raise"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Anterior Deltoid"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Dumbbell Cuban Press",
+    "aliases": [
+      "Cuban Press",
+      "Cuban Rotation Press"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Rotator Cuff",
+      "Anterior Deltoid"
+    ],
+    "muscles_secondary": [
+      "Upper Traps"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Resistance Band Lateral Raise",
+    "aliases": [
+      "Band Lateral Raise",
+      "Band Side Raise"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Resistance Band",
+    "muscles_primary": [
+      "Lateral Deltoid"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Explosive Shoulder Press",
+    "aliases": [
+      "Power Shoulder Press",
+      "Ballistic Press"
+    ],
+    "body_part": "Shoulders",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Anterior Deltoid",
+      "Lateral Deltoid",
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Traps"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Barbell Curl",
+    "aliases": [
+      "Straight Bar Curl",
+      "Barbell Bicep Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [
+      "Brachialis",
+      "Brachioradialis"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "EZ Bar Curl",
+    "aliases": [
+      "EZ Curl",
+      "EZ Bicep Curl",
+      "Cambered Bar Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [
+      "Brachialis",
+      "Brachioradialis"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Dumbbell Curl",
+    "aliases": [
+      "DB Curl",
+      "Dumbbell Bicep Curl",
+      "Alternating DB Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [
+      "Brachialis"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Hammer Curl",
+    "aliases": [
+      "Neutral Grip Curl",
+      "Dumbbell Hammer Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Brachialis",
+      "Brachioradialis"
+    ],
+    "muscles_secondary": [
+      "Biceps Brachii"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Concentration Curl",
+    "aliases": [
+      "Seated Concentration Curl",
+      "One Arm Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Preacher Curl",
+    "aliases": [
+      "Scott Curl",
+      "Incline Preacher Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [
+      "Brachialis"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Cable Curl",
+    "aliases": [
+      "Low Cable Curl",
+      "Cable Bicep Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [
+      "Brachialis"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Incline Dumbbell Curl",
+    "aliases": [
+      "Incline DB Curl",
+      "Incline Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Spider Curl",
+    "aliases": [
+      "Prone Incline Curl",
+      "Spider Bench Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Reverse Barbell Curl",
+    "aliases": [
+      "Overhand Curl",
+      "Reverse Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Brachioradialis",
+      "Wrist Extensors"
+    ],
+    "muscles_secondary": [
+      "Biceps Brachii"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Cable Hammer Curl",
+    "aliases": [
+      "Rope Hammer Curl",
+      "Cable Neutral Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Brachialis",
+      "Brachioradialis"
+    ],
+    "muscles_secondary": [
+      "Biceps Brachii"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Barbell 21s",
+    "aliases": [
+      "21s Curl",
+      "Seven Seven Seven Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [
+      "Brachialis"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Dumbbell Zottman Curl",
+    "aliases": [
+      "Zottman Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Biceps Brachii",
+      "Brachioradialis"
+    ],
+    "muscles_secondary": [
+      "Brachialis"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Cross Body Hammer Curl",
+    "aliases": [
+      "Cross Body Curl",
+      "Across Body Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Brachialis",
+      "Brachioradialis"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Resistance Band Curl",
+    "aliases": [
+      "Band Curl",
+      "Band Bicep Curl"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Resistance Band",
+    "muscles_primary": [
+      "Biceps Brachii"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Close Grip Bench Press",
+    "aliases": [
+      "Narrow Grip Bench Press",
+      "CGBP"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Pectoralis Major",
+      "Anterior Deltoid"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Skull Crusher",
+    "aliases": [
+      "Lying Tricep Extension",
+      "EZ Bar Skull Crusher",
+      "French Press"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Triceps"
+    ],
+    "muscles_secondary": [],
+    "met_value": 4.0,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Tricep Pushdown",
+    "aliases": [
+      "Cable Tricep Pushdown",
+      "Rope Pushdown",
+      "Bar Pushdown"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Triceps"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Rope Tricep Pushdown",
+    "aliases": [
+      "Rope Pushdown",
+      "Cable Rope Extension"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Triceps"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Tricep Overhead Extension",
+    "aliases": [
+      "Overhead Tricep Extension",
+      "Dumbbell Overhead Tricep Extension"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Triceps Long Head"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Cable Overhead Tricep Extension",
+    "aliases": [
+      "Overhead Cable Extension",
+      "Overhead Rope Extension"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Triceps Long Head"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Tricep Dips",
+    "aliases": [
+      "Bench Dips",
+      "Chair Dips",
+      "Tricep Bench Dips"
+    ],
+    "body_part": "Arms",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Anterior Deltoid"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Tricep Kickback",
+    "aliases": [
+      "DB Tricep Kickback",
+      "Dumbbell Kickback"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Triceps"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "JM Press",
+    "aliases": [
+      "JM Barbell Press",
+      "Tricep JM Press"
+    ],
+    "body_part": "Arms",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Pectoralis Major"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Advanced",
+    "is_compound": false
+  },
+  {
+    "name": "Barbell Back Squat",
+    "aliases": [
+      "Back Squat",
+      "Barbell Squat",
+      "High Bar Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Adductors",
+      "Erector Spinae"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Barbell Front Squat",
+    "aliases": [
+      "Front Squat",
+      "Olympic Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Quadriceps"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Core",
+      "Upper Back"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Goblet Squat",
+    "aliases": [
+      "Goblet KB Squat",
+      "Kettlebell Goblet Squat",
+      "Dumbbell Goblet Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Kettlebell",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Core",
+      "Adductors"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Bodyweight Squat",
+    "aliases": [
+      "Air Squat",
+      "BW Squat",
+      "Bodyweight Squats"
+    ],
+    "body_part": "Legs",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Core"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Jump Squat",
+    "aliases": [
+      "Squat Jump",
+      "Plyometric Squat",
+      "Explosive Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Plyometric",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Hamstrings"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Bulgarian Split Squat",
+    "aliases": [
+      "Rear Foot Elevated Split Squat",
+      "RFESS",
+      "Split Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Hip Flexors"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Lunges",
+    "aliases": [
+      "Forward Lunge",
+      "Walking Lunge",
+      "Barbell Lunge"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Calves"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Dumbbell Lunges",
+    "aliases": [
+      "DB Lunges",
+      "Weighted Lunges"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Calves"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Leg Press",
+    "aliases": [
+      "Machine Leg Press",
+      "Plate Loaded Leg Press"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Calves"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Leg Extension",
+    "aliases": [
+      "Quad Extension",
+      "Machine Leg Extension"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Quadriceps"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Leg Curl",
+    "aliases": [
+      "Hamstring Curl",
+      "Lying Leg Curl",
+      "Seated Leg Curl"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Hamstrings"
+    ],
+    "muscles_secondary": [
+      "Gastrocnemius"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Nordic Hamstring Curl",
+    "aliases": [
+      "Nordic Curl",
+      "Nordic Ham Curl",
+      "GHR"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hamstrings"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Calves"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Advanced",
+    "is_compound": false
+  },
+  {
+    "name": "Hip Thrust",
+    "aliases": [
+      "Barbell Hip Thrust",
+      "BB Hip Thrust",
+      "Glute Bridge Barbell"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Core"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Glute Bridge",
+    "aliases": [
+      "Bodyweight Glute Bridge",
+      "Floor Hip Thrust"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Core"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Step-Up",
+    "aliases": [
+      "Box Step Up",
+      "Dumbbell Step Up",
+      "Weighted Step Up"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Calves"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Box Jump",
+    "aliases": [
+      "Plyometric Box Jump",
+      "Jump To Box"
+    ],
+    "body_part": "Legs",
+    "category": "Plyometric",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Hamstrings"
+    ],
+    "met_value": 7.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Hack Squat",
+    "aliases": [
+      "Machine Hack Squat",
+      "Plate Loaded Hack Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Quadriceps"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Hamstrings"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Sumo Squat",
+    "aliases": [
+      "Wide Stance Squat",
+      "Sumo Bodyweight Squat",
+      "Plie Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Glutes",
+      "Adductors"
+    ],
+    "muscles_secondary": [
+      "Quadriceps"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Wall Sit",
+    "aliases": [
+      "Wall Squat Hold",
+      "Static Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Quadriceps"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Calves"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Pistol Squat",
+    "aliases": [
+      "Single Leg Squat",
+      "One Leg Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Core"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Dumbbell Romanian Deadlift",
+    "aliases": [
+      "DB RDL",
+      "Dumbbell RDL"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Hamstrings",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Erector Spinae"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Barbell Romanian Deadlift",
+    "aliases": [
+      "Barbell RDL",
+      "BB RDL"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Hamstrings",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Erector Spinae"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Lateral Lunge",
+    "aliases": [
+      "Side Lunge",
+      "Lateral Step Lunge"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Glutes",
+      "Adductors",
+      "Quadriceps"
+    ],
+    "muscles_secondary": [
+      "Hamstrings"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Jump Lunge",
+    "aliases": [
+      "Split Jump",
+      "Plyometric Lunge",
+      "Jumping Lunge"
+    ],
+    "body_part": "Legs",
+    "category": "Plyometric",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Hamstrings"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Depth Jump",
+    "aliases": [
+      "Drop Jump",
+      "Box Drop Jump"
+    ],
+    "body_part": "Legs",
+    "category": "Plyometric",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Quadriceps",
+      "Calves",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings"
+    ],
+    "met_value": 7.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Broad Jump",
+    "aliases": [
+      "Standing Long Jump",
+      "Horizontal Jump"
+    ],
+    "body_part": "Legs",
+    "category": "Plyometric",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Glutes",
+      "Quadriceps",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Hamstrings"
+    ],
+    "met_value": 7.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Standing Calf Raise",
+    "aliases": [
+      "Calf Raise",
+      "Bodyweight Calf Raise",
+      "Machine Calf Raise"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Gastrocnemius",
+      "Soleus"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Seated Calf Raise",
+    "aliases": [
+      "Machine Seated Calf Raise",
+      "Soleus Raise"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Soleus"
+    ],
+    "muscles_secondary": [
+      "Gastrocnemius"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Donkey Calf Raise",
+    "aliases": [
+      "Bent Over Calf Raise",
+      "Hip Hinged Calf Raise"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Gastrocnemius"
+    ],
+    "muscles_secondary": [
+      "Soleus"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Tibialis Raise",
+    "aliases": [
+      "Tibialis Anterior Raise",
+      "Tib Raise"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Tibialis Anterior"
+    ],
+    "muscles_secondary": [],
+    "met_value": 2.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Overhead Squat",
+    "aliases": [
+      "OHS",
+      "Barbell OHS"
+    ],
+    "body_part": "Legs",
+    "category": "Olympic",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Shoulders",
+      "Core",
+      "Upper Back"
+    ],
+    "met_value": 6.5,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Zercher Squat",
+    "aliases": [
+      "Zercher"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Upper Back",
+      "Biceps"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Suitcase Deadlift",
+    "aliases": [
+      "Single Arm Deadlift",
+      "One Arm Deadlift"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Obliques",
+      "Erector Spinae"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Sandbag Squat",
+    "aliases": [
+      "Sandbag Front Squat",
+      "Sandbag Bear Squat"
+    ],
+    "body_part": "Legs",
+    "category": "Strength",
+    "equipment": "Other",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Core",
+      "Upper Back"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Plank",
+    "aliases": [
+      "Forearm Plank",
+      "Standard Plank",
+      "Prone Plank"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Transverse Abdominis",
+      "Core Stabilisers"
+    ],
+    "muscles_secondary": [
+      "Shoulders",
+      "Glutes"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Side Plank",
+    "aliases": [
+      "Lateral Plank",
+      "Side Bridge"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Obliques",
+      "Transverse Abdominis"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Hip Abductors"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Crunch",
+    "aliases": [
+      "Ab Crunch",
+      "Standard Crunch",
+      "Abdominal Crunch"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Rectus Abdominis"
+    ],
+    "muscles_secondary": [
+      "Obliques"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Bicycle Crunch",
+    "aliases": [
+      "Bicycle Ab",
+      "Alternating Crunch",
+      "Pedal Crunch"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Obliques",
+      "Rectus Abdominis"
+    ],
+    "muscles_secondary": [
+      "Hip Flexors"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Leg Raise",
+    "aliases": [
+      "Lying Leg Raise",
+      "Floor Leg Raise",
+      "Straight Leg Raise"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hip Flexors",
+      "Rectus Abdominis"
+    ],
+    "muscles_secondary": [
+      "Obliques"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Hanging Leg Raise",
+    "aliases": [
+      "Hanging Knee Raise",
+      "Hanging Ab Raise"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hip Flexors",
+      "Rectus Abdominis"
+    ],
+    "muscles_secondary": [
+      "Obliques",
+      "Lats"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Toes to Bar",
+    "aliases": [
+      "TTB",
+      "Toes 2 Bar",
+      "Hanging Toes to Bar"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Rectus Abdominis",
+      "Hip Flexors"
+    ],
+    "muscles_secondary": [
+      "Obliques",
+      "Lats"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Advanced",
+    "is_compound": false
+  },
+  {
+    "name": "V-Up",
+    "aliases": [
+      "Jackknife Sit Up",
+      "Pike Sit Up"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Rectus Abdominis",
+      "Hip Flexors"
+    ],
+    "muscles_secondary": [
+      "Obliques"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Russian Twist",
+    "aliases": [
+      "Seated Twist",
+      "Medicine Ball Twist"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Obliques"
+    ],
+    "muscles_secondary": [
+      "Rectus Abdominis",
+      "Hip Flexors"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Dead Bug",
+    "aliases": [
+      "Dead Bug Exercise"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Transverse Abdominis",
+      "Rectus Abdominis"
+    ],
+    "muscles_secondary": [
+      "Hip Flexors"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Bird Dog",
+    "aliases": [
+      "Bird Dog Exercise",
+      "Quadruped Arm Leg Raise"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Erector Spinae",
+      "Glutes",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Shoulders"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Mountain Climbers",
+    "aliases": [
+      "Mountain Climber",
+      "Running Plank",
+      "Plank Knee Drive"
+    ],
+    "body_part": "Core",
+    "category": "Cardio",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Core",
+      "Hip Flexors"
+    ],
+    "muscles_secondary": [
+      "Shoulders",
+      "Quads"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Ab Wheel Rollout",
+    "aliases": [
+      "Ab Wheel",
+      "Ab Roller Rollout",
+      "Wheel Rollout"
+    ],
+    "body_part": "Core",
+    "category": "Strength",
+    "equipment": "Other",
+    "muscles_primary": [
+      "Rectus Abdominis",
+      "Transverse Abdominis"
+    ],
+    "muscles_secondary": [
+      "Lats",
+      "Shoulders"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Cable Crunch",
+    "aliases": [
+      "Kneeling Cable Crunch",
+      "Rope Crunch"
+    ],
+    "body_part": "Core",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Rectus Abdominis"
+    ],
+    "muscles_secondary": [
+      "Obliques"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Weighted Cable Crunch",
+    "aliases": [
+      "Heavy Cable Crunch"
+    ],
+    "body_part": "Core",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Rectus Abdominis"
+    ],
+    "muscles_secondary": [],
+    "met_value": 4.0,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Dragon Flag",
+    "aliases": [
+      "Dragon Flag Ab",
+      "Bruce Lee Exercise"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Rectus Abdominis",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Hip Flexors",
+      "Lats"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Advanced",
+    "is_compound": false
+  },
+  {
+    "name": "Hollow Body Hold",
+    "aliases": [
+      "Hollow Hold",
+      "Hollow Rock"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Rectus Abdominis",
+      "Transverse Abdominis"
+    ],
+    "muscles_secondary": [
+      "Hip Flexors"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Intermediate",
+    "is_compound": false
+  },
+  {
+    "name": "Pallof Press",
+    "aliases": [
+      "Anti Rotation Press",
+      "Core Pallof"
+    ],
+    "body_part": "Core",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Obliques",
+      "Transverse Abdominis"
+    ],
+    "muscles_secondary": [
+      "Rectus Abdominis"
+    ],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Flutter Kicks",
+    "aliases": [
+      "Flutter Kick",
+      "Alternating Leg Raise",
+      "Scissor Kick"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hip Flexors",
+      "Rectus Abdominis"
+    ],
+    "muscles_secondary": [],
+    "met_value": 3.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Superman Hold",
+    "aliases": [
+      "Superman Exercise",
+      "Back Extension Hold"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Erector Spinae",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Upper Back"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Hanging Windshield Wiper",
+    "aliases": [
+      "Windshield Wiper",
+      "Bar Windshield Wiper"
+    ],
+    "body_part": "Core",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Obliques",
+      "Hip Flexors"
+    ],
+    "muscles_secondary": [
+      "Rectus Abdominis",
+      "Lats"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Advanced",
+    "is_compound": false
+  },
+  {
+    "name": "Woodchop Cable",
+    "aliases": [
+      "Cable Woodchop",
+      "High to Low Cable",
+      "Diagonal Cable Pull"
+    ],
+    "body_part": "Core",
+    "category": "Strength",
+    "equipment": "Cable",
+    "muscles_primary": [
+      "Obliques",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Shoulders",
+      "Hips"
+    ],
+    "met_value": 4.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Power Clean",
+    "aliases": [
+      "Clean",
+      "Barbell Power Clean"
+    ],
+    "body_part": "Full Body",
+    "category": "Olympic",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Traps",
+      "Glutes",
+      "Hamstrings"
+    ],
+    "muscles_secondary": [
+      "Shoulders",
+      "Quads",
+      "Core"
+    ],
+    "met_value": 7.5,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Barbell Clean and Press",
+    "aliases": [
+      "Clean and Press",
+      "Clean and Jerk (Press variant)"
+    ],
+    "body_part": "Full Body",
+    "category": "Olympic",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Full Body"
+    ],
+    "muscles_secondary": [],
+    "met_value": 8.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Snatch",
+    "aliases": [
+      "Barbell Snatch",
+      "Olympic Snatch"
+    ],
+    "body_part": "Full Body",
+    "category": "Olympic",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Full Body"
+    ],
+    "muscles_secondary": [],
+    "met_value": 9.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Kettlebell Swing",
+    "aliases": [
+      "KB Swing",
+      "Russian KB Swing",
+      "American KB Swing"
+    ],
+    "body_part": "Full Body",
+    "category": "Strength",
+    "equipment": "Kettlebell",
+    "muscles_primary": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Shoulders",
+      "Lats"
+    ],
+    "met_value": 7.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Barbell Hang Clean",
+    "aliases": [
+      "Hang Clean",
+      "Hang Power Clean"
+    ],
+    "body_part": "Full Body",
+    "category": "Olympic",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Traps",
+      "Glutes",
+      "Hamstrings"
+    ],
+    "muscles_secondary": [
+      "Shoulders",
+      "Core"
+    ],
+    "met_value": 7.5,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Thruster",
+    "aliases": [
+      "Barbell Thruster",
+      "DB Thruster",
+      "Dumbbell Thruster"
+    ],
+    "body_part": "Full Body",
+    "category": "Strength",
+    "equipment": "Barbell",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes",
+      "Shoulders",
+      "Triceps"
+    ],
+    "muscles_secondary": [
+      "Core"
+    ],
+    "met_value": 8.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Burpees",
+    "aliases": [
+      "Burpee",
+      "Full Body Burpee"
+    ],
+    "body_part": "Full Body",
+    "category": "Cardio",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Full Body"
+    ],
+    "muscles_secondary": [],
+    "met_value": 8.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Man Maker",
+    "aliases": [
+      "Dumbbell Man Maker"
+    ],
+    "body_part": "Full Body",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Full Body"
+    ],
+    "muscles_secondary": [],
+    "met_value": 8.0,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Renegade Row",
+    "aliases": [
+      "Push Up Row",
+      "Plank Row"
+    ],
+    "body_part": "Full Body",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Lats",
+      "Core",
+      "Chest"
+    ],
+    "muscles_secondary": [
+      "Triceps",
+      "Biceps"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Farmer's Walk",
+    "aliases": [
+      "Farmer Walk",
+      "Farmers Carry",
+      "Loaded Carry"
+    ],
+    "body_part": "Full Body",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Traps",
+      "Core",
+      "Grip"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Calves"
+    ],
+    "met_value": 5.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Sled Push",
+    "aliases": [
+      "Prowler Push",
+      "Weighted Sled Push"
+    ],
+    "body_part": "Full Body",
+    "category": "Cardio",
+    "equipment": "Other",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Core",
+      "Shoulders"
+    ],
+    "met_value": 8.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Turkish Get-Up",
+    "aliases": [
+      "TGU",
+      "KB Turkish Get Up"
+    ],
+    "body_part": "Full Body",
+    "category": "Strength",
+    "equipment": "Kettlebell",
+    "muscles_primary": [
+      "Core",
+      "Shoulders",
+      "Glutes"
+    ],
+    "muscles_secondary": [
+      "Hips",
+      "Triceps",
+      "Quads"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Windmill",
+    "aliases": [
+      "Kettlebell Windmill",
+      "KB Windmill"
+    ],
+    "body_part": "Full Body",
+    "category": "Strength",
+    "equipment": "Kettlebell",
+    "muscles_primary": [
+      "Obliques",
+      "Glutes",
+      "Shoulders"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Hip Flexors"
+    ],
+    "met_value": 4.5,
+    "difficulty": "Advanced",
+    "is_compound": true
+  },
+  {
+    "name": "Bear Crawl",
+    "aliases": [
+      "Bear Crawl Exercise",
+      "Quadruped Crawl"
+    ],
+    "body_part": "Full Body",
+    "category": "Calisthenics",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Core",
+      "Shoulders",
+      "Hip Flexors"
+    ],
+    "muscles_secondary": [
+      "Quads",
+      "Triceps"
+    ],
+    "met_value": 5.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Medicine Ball Slam",
+    "aliases": [
+      "Ball Slam",
+      "Med Ball Slam"
+    ],
+    "body_part": "Full Body",
+    "category": "Plyometric",
+    "equipment": "Other",
+    "muscles_primary": [
+      "Lats",
+      "Core",
+      "Shoulders"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Quads"
+    ],
+    "met_value": 6.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Battle Ropes",
+    "aliases": [
+      "Battle Rope",
+      "Rope Waves",
+      "Heavy Rope"
+    ],
+    "body_part": "Full Body",
+    "category": "Cardio",
+    "equipment": "Other",
+    "muscles_primary": [
+      "Shoulders",
+      "Core",
+      "Forearms"
+    ],
+    "muscles_secondary": [
+      "Legs",
+      "Back"
+    ],
+    "met_value": 8.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Dumbbell Squat to Press",
+    "aliases": [
+      "Squat to Press",
+      "Dumbbell Thruster",
+      "DB Squat Press"
+    ],
+    "body_part": "Full Body",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Quadriceps",
+      "Glutes",
+      "Shoulders"
+    ],
+    "muscles_secondary": [
+      "Core",
+      "Triceps"
+    ],
+    "met_value": 6.5,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Push-Up to Renegade Row",
+    "aliases": [
+      "Renegade Row Push Up",
+      "Push Up Row Combo"
+    ],
+    "body_part": "Full Body",
+    "category": "Strength",
+    "equipment": "Dumbbell",
+    "muscles_primary": [
+      "Chest",
+      "Lats",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Triceps",
+      "Biceps"
+    ],
+    "met_value": 6.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Jumping Jacks",
+    "aliases": [
+      "Star Jump",
+      "Side Straddle Hop"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Calves",
+      "Deltoids",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Hip Abductors"
+    ],
+    "met_value": 7.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "High Knees",
+    "aliases": [
+      "High Knee Run",
+      "Running High Knees"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hip Flexors",
+      "Quads",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Calves"
+    ],
+    "met_value": 7.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Butt Kicks",
+    "aliases": [
+      "Butt Kick",
+      "Heel to Glute Run"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hamstrings",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Hip Flexors"
+    ],
+    "met_value": 6.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Jump Rope",
+    "aliases": [
+      "Skipping",
+      "Skip Rope",
+      "Jump Rope Cardio"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Other",
+    "muscles_primary": [
+      "Calves",
+      "Shoulders",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Forearms",
+      "Quads"
+    ],
+    "met_value": 9.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Sprint Intervals",
+    "aliases": [
+      "Sprint",
+      "400m Sprint",
+      "Running Intervals"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Glutes",
+      "Hamstrings",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Hip Flexors",
+      "Core"
+    ],
+    "met_value": 12.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Treadmill Running",
+    "aliases": [
+      "Treadmill Jog",
+      "Treadmill Cardio"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Glutes",
+      "Hamstrings",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Quads",
+      "Core"
+    ],
+    "met_value": 9.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Rowing Machine",
+    "aliases": [
+      "Erg",
+      "Rowing Ergometer",
+      "Indoor Rowing"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Back",
+      "Legs",
+      "Core"
+    ],
+    "muscles_secondary": [
+      "Arms",
+      "Shoulders"
+    ],
+    "met_value": 8.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Assault Bike Sprint",
+    "aliases": [
+      "Airbike Sprint",
+      "Fan Bike Sprint"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Full Body"
+    ],
+    "muscles_secondary": [],
+    "met_value": 12.0,
+    "difficulty": "Intermediate",
+    "is_compound": true
+  },
+  {
+    "name": "Stair Climbing",
+    "aliases": [
+      "Stair Stepper",
+      "Step Machine",
+      "StairMaster"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Glutes",
+      "Quads",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Core"
+    ],
+    "met_value": 8.0,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Cycling",
+    "aliases": [
+      "Bike",
+      "Stationary Bike",
+      "Spin Bike",
+      "Elliptical"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Machine",
+    "muscles_primary": [
+      "Quads",
+      "Glutes",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Hamstrings",
+      "Core"
+    ],
+    "met_value": 7.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Shadow Boxing",
+    "aliases": [
+      "Air Boxing",
+      "Boxing Cardio"
+    ],
+    "body_part": "Cardio",
+    "category": "Cardio",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Shoulders",
+      "Core",
+      "Calves"
+    ],
+    "muscles_secondary": [
+      "Triceps",
+      "Obliques"
+    ],
+    "met_value": 7.5,
+    "difficulty": "Beginner",
+    "is_compound": true
+  },
+  {
+    "name": "Cat-Cow Stretch",
+    "aliases": [
+      "Cat Cow",
+      "Spine Flex",
+      "Cat Camel"
+    ],
+    "body_part": "Core",
+    "category": "Flexibility",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Erector Spinae"
+    ],
+    "muscles_secondary": [
+      "Rectus Abdominis"
+    ],
+    "met_value": 2.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Hip 90-90 Stretch",
+    "aliases": [
+      "90-90 Stretch",
+      "Piriformis Stretch"
+    ],
+    "body_part": "Legs",
+    "category": "Flexibility",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hip External Rotators",
+      "Piriformis"
+    ],
+    "muscles_secondary": [
+      "Hip Flexors"
+    ],
+    "met_value": 2.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Inchworm Stretch",
+    "aliases": [
+      "Inchworm",
+      "Walk Out",
+      "Plank Walk Out"
+    ],
+    "body_part": "Full Body",
+    "category": "Flexibility",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hamstrings",
+      "Shoulders"
+    ],
+    "muscles_secondary": [
+      "Core",
+      "Calves"
+    ],
+    "met_value": 3.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Leg Swings",
+    "aliases": [
+      "Leg Swing",
+      "Hip Swing",
+      "Pendulum Leg Swing"
+    ],
+    "body_part": "Legs",
+    "category": "Flexibility",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hip Flexors",
+      "Hamstrings"
+    ],
+    "muscles_secondary": [
+      "Glutes",
+      "Adductors"
+    ],
+    "met_value": 2.5,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Thoracic Spine Rotations",
+    "aliases": [
+      "Thoracic Rotation",
+      "T-Spine Rotation"
+    ],
+    "body_part": "Core",
+    "category": "Flexibility",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Thoracic Rotators",
+      "Obliques"
+    ],
+    "muscles_secondary": [],
+    "met_value": 2.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  },
+  {
+    "name": "Hip Circles",
+    "aliases": [
+      "Hip Circle",
+      "Hip Rotation",
+      "Hip CARs"
+    ],
+    "body_part": "Legs",
+    "category": "Flexibility",
+    "equipment": "Bodyweight",
+    "muscles_primary": [
+      "Hip Flexors",
+      "Hip Abductors"
+    ],
+    "muscles_secondary": [
+      "Glutes"
+    ],
+    "met_value": 2.0,
+    "difficulty": "Beginner",
+    "is_compound": false
+  }
+]

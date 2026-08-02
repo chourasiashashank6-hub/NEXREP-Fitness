@@ -1,9 +1,34 @@
-from src.db.session import SessionLocal
-from src.models.models import User, Workout, Meal, Activity
+from src.db.session import Base, SessionLocal, engine
+from src.models.models import Activity, Meal, MotivationalQuote, User, Workout
+from src.models.nutrition_calories import (  # noqa: F401 — register tables
+    AIFoodMealEntry,
+    DailyNutritionLog,
+    MealEntry,
+    WaterIntakeLog,
+)
 from src.services.auth_service import hash_password
+from src.services.food_catalog_service import ensure_food_catalog_schema, load_food_catalog_from_sql_if_empty
+from src.services.quote_seed_service import load_motivational_quotes_if_needed
+from src.services.workout_catalog_service import load_workout_catalog_if_empty
+
+
+def ensure_tables() -> None:
+    """Create tables if missing (same as API startup). Safe to run before or after uvicorn."""
+    Base.metadata.create_all(bind=engine)
 
 
 def run_seed():
+    ensure_tables()
+    ensure_food_catalog_schema(engine)
+    food_count = load_food_catalog_from_sql_if_empty(engine)
+    if food_count:
+        print(f"Food catalog loaded: {food_count} items")
+    imported = load_workout_catalog_if_empty(engine)
+    if imported:
+        print(f"Workout catalog loaded: {imported} exercises")
+    quotes_imported = load_motivational_quotes_if_needed(engine)
+    if quotes_imported:
+        print(f"Motivational quotes loaded: {quotes_imported} quotes")
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.email == "demo@fit.com").first()

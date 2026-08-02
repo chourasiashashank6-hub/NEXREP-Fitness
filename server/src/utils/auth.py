@@ -9,6 +9,18 @@ from src.models.models import User
 security = HTTPBearer()
 
 
+def decode_user_id_from_token(token: str) -> int | None:
+    """Decode JWT subject to user id. Returns None if invalid."""
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
+        sub = payload.get("sub")
+        if sub is None:
+            return None
+        return int(sub)
+    except (JWTError, ValueError, TypeError):
+        return None
+
+
 def get_current_user(
     creds: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)
 ):

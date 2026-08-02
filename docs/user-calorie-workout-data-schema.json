@@ -1,0 +1,599 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fitness-app.local/schemas/user-calorie-workout-data.json",
+  "title": "Fitness App — User, Calorie & Workout Data",
+  "description": "Exact API and client data shapes collected from users and used for calories and workouts.",
+  "user": {
+    "signup": {
+      "endpoint": "POST /signup",
+      "request": {
+        "name": "string",
+        "email": "user@example.com",
+        "password": "string"
+      }
+    },
+    "profile": {
+      "endpoint": "PUT /profile",
+      "request": {
+        "name": "string",
+        "age": 25,
+        "weight": 70.0,
+        "goals": "string",
+        "goalTag": "string",
+        "difficulty": "string"
+      }
+    },
+    "onboarding": {
+      "endpoint": "PUT /onboarding/me",
+      "request": {
+        "onboarding": {
+          "personal": {
+            "name": "string",
+            "age": 25,
+            "sex": "male | female | other",
+            "unit_system": "metric | imperial",
+            "height_cm": 175,
+            "height_in": 69,
+            "weight_kg": 70,
+            "weight_lb": 154,
+            "body_fat_percentage": 18,
+            "bf_measurement_method": "smart_scale | calipers | dexa_scan | visual_estimate"
+          },
+          "goal": {
+            "type": "fat_loss | muscle_gain | strength | recomp | maintain",
+            "pace": "slow | moderate | aggressive",
+            "difficulty": "beginner | intermediate | advanced",
+            "target_weight_kg": 65,
+            "target_weight_lb": 143,
+            "target_date": "2026-08-01"
+          },
+          "activity": {
+            "level": "sedentary | lightly_active | moderately_active | very_active | extremely_active",
+            "workouts_per_week": 4,
+            "workout_types": ["strength", "cardio"]
+          },
+          "dietary": {
+            "diet_type": "string",
+            "allergies": ["peanuts"],
+            "meals_per_day": 3
+          },
+          "app_setup": {
+            "weigh_in_reminder_enabled": true,
+            "reminder_time": "08:00",
+            "water_intake_goal_liters": 2.5,
+            "notifications": {
+              "meal_logging": true,
+              "coach_insights": true,
+              "weekly_summary": true,
+              "streak_alerts": true
+            },
+            "region": "IN"
+          }
+        },
+        "targets": {
+          "calculated_at": "ISO-8601 string",
+          "formula_version": "string",
+          "bmr": {
+            "formula_used": "mifflin_st_jeor | katch_mcardle",
+            "value_kcal": 1650
+          },
+          "tdee": {
+            "activity_multiplier": 1.55,
+            "value_kcal": 2550
+          },
+          "target_kcal": 2200,
+          "macros": {
+            "protein_g": 158,
+            "protein_kcal": 632,
+            "protein_pct": 30,
+            "carbs_g": 210,
+            "carbs_kcal": 840,
+            "carbs_pct": 50,
+            "fat_g": 70,
+            "fat_kcal": 630,
+            "fat_pct": 20,
+            "fiber_g": 30,
+            "water_l": 2.5
+          },
+          "timeline": {
+            "weeks_to_goal": 12,
+            "estimated_completion_date": "2026-08-01",
+            "weekly_change_kg": -0.5,
+            "daily_delta_kcal": -300,
+            "exercise_share": 0.3,
+            "diet_share": 0.7,
+            "exercise_delta_kcal": -90,
+            "diet_delta_kcal": -210,
+            "pace_label": "moderate"
+          },
+          "safety": {
+            "floor_kcal": 1500,
+            "is_safe": true,
+            "was_clamped": false,
+            "warning": null
+          },
+          "coach_message": "string"
+        }
+      },
+      "response": {
+        "onboarding": {},
+        "targets": {}
+      }
+    },
+    "database": {
+      "table": "users",
+      "fields": {
+        "id": "integer",
+        "name": "string(120)",
+        "email": "string(255)",
+        "password_hash": "string(255)",
+        "age": "integer",
+        "weight": "float (kg)",
+        "goals": "string(255)",
+        "goal_tag": "string(128)",
+        "difficulty": "string(64)",
+        "created_at": "datetime"
+      }
+    }
+  },
+  "calories": {
+    "mealCreate": {
+      "endpoint": "POST /api/calories/meals",
+      "request": {
+        "log_date": "2026-05-16",
+        "meal_type": "Breakfast | Lunch | Dinner | Snack | Pre_Workout | Post_Workout",
+        "source_type": "database | camera_ai",
+        "food_name": "Oats (cooked)",
+        "quantity_g": 300,
+        "calories_per_100g": 71,
+        "protein_per_100g": 2.5,
+        "carbs_per_100g": 12,
+        "fat_per_100g": 1.5,
+        "fiber_per_100g": 1.7
+      }
+    },
+    "aiMealCreate": {
+      "endpoint": "POST /api/calories/ai-meals",
+      "request": {
+        "log_date": "2026-05-16",
+        "meal_type": "Lunch",
+        "food_name": "Chole masala",
+        "quantity_g": 200,
+        "calories": 540,
+        "protein": 30,
+        "carbs": 70,
+        "fat": 15,
+        "fibre": 8,
+        "confidence": "medium",
+        "estimated_serving_size": "1 bowl"
+      }
+    },
+    "waterPatch": {
+      "endpoint": "PATCH /api/calories/water",
+      "request": {
+        "water_l": 1.5,
+        "date": "2026-05-16"
+      }
+    },
+    "dailyLog": {
+      "endpoint": "GET|POST /api/calories/daily-log",
+      "response": {
+        "date": "2026-05-16",
+        "macro_split_label": "string",
+        "log": {
+          "log_id": 1,
+          "user_id": 1,
+          "log_date": "2026-05-16",
+          "total_calories": 1480,
+          "total_protein_g": 68,
+          "total_carbs_g": 190,
+          "total_fat_g": 42,
+          "total_fiber_g": 9,
+          "total_water_l": 1.2,
+          "target_calories": 2697,
+          "target_protein_g": 158,
+          "target_carbs_g": 210,
+          "target_fat_g": 70,
+          "target_fiber_g": 30,
+          "target_water_l": 2.5,
+          "calories_remaining": 1217,
+          "is_goal_met": false
+        },
+        "water": {
+          "total_water_l": 1.2,
+          "target_water_l": 2.5,
+          "is_target_met": false
+        },
+        "meals": [
+          {
+            "meal_id": 1,
+            "log_id": 1,
+            "meal_type": "Breakfast",
+            "source_type": "database",
+            "food_name": "Oats (cooked)",
+            "quantity_g": 300,
+            "calories_per_100g": 71,
+            "protein_per_100g": 2.5,
+            "carbs_per_100g": 12,
+            "fat_per_100g": 1.5,
+            "fiber_per_100g": 1.7,
+            "total_calories": 550,
+            "total_protein_g": 25,
+            "total_carbs_g": 90,
+            "total_fat_g": 15,
+            "total_fiber_g": 5,
+            "logged_at": "2026-05-16T08:30:00"
+          }
+        ]
+      }
+    },
+    "legacyMeal": {
+      "endpoint": "POST /meal",
+      "request": {
+        "name": "Chicken Bowl",
+        "calories": 540,
+        "protein": 35,
+        "carbs": 52,
+        "fat": 18
+      }
+    },
+    "clientNutritionData": {
+      "description": "Built on mobile for AI Calorie Coach",
+      "shape": {
+        "goal": "maintain | loss | gain",
+        "tdee": 2697,
+        "caloriesConsumed": 0,
+        "proteinG": 0,
+        "carbsG": 0,
+        "fatG": 0,
+        "fiberG": 0,
+        "waterMl": 0,
+        "burnedKcal": 340,
+        "mealsLogged": 0,
+        "proteinTargetG": 158,
+        "carbsTargetG": 210,
+        "fatTargetG": 70,
+        "waterTargetMl": 2500
+      }
+    },
+    "aiCoachInput": {
+      "description": "Payload sent to Groq/Gemini for calorie coach",
+      "shape": {
+        "time_of_day": "11:50 AM",
+        "consumed_calories": 0,
+        "daily_goal": 2697,
+        "remaining_calories": 2697,
+        "protein_g": 0,
+        "protein_target_g": 158,
+        "carbs_g": 0,
+        "carbs_target_g": 210,
+        "fat_g": 0,
+        "fat_target_g": 70,
+        "fibre_g": 0,
+        "water_ml": 0,
+        "water_target_ml": 2500,
+        "meals_logged": 0,
+        "meals_target": 3,
+        "user_weight_kg": 70,
+        "activity_level": "moderately_active",
+        "goal": "maintain",
+        "food_dataset_reference": [
+          {
+            "food": "Oats (cooked)",
+            "cal_per_100g": 71,
+            "protein_per_100g": 2.5,
+            "carbs_per_100g": 12,
+            "fat_per_100g": 1.5
+          }
+        ],
+        "meals_eaten_today": [
+          {
+            "name": "Oats (cooked)",
+            "calories": 550,
+            "time": "08:30 AM"
+          }
+        ],
+        "rules": ["string"]
+      }
+    },
+    "aiCoachResponse": {
+      "endpoint": "GET /api/calories/coach/insight",
+      "shape": {
+        "insight": "string",
+        "bodyImpact": "string",
+        "mealPlan": [
+          {
+            "meal": "Breakfast",
+            "items": "300g of Oats (cooked), 100g of Banana",
+            "calories": 550,
+            "protein": 25,
+            "carbs": 90,
+            "fat": 15
+          }
+        ],
+        "macroVerdict": {
+          "protein": { "status": "low | on_track | high", "tip": "string" },
+          "carbs": { "status": "low | on_track | high", "tip": "string" },
+          "fat": { "status": "low | on_track | high", "tip": "string" }
+        },
+        "hydrationPlan": {
+          "currentMl": 0,
+          "targetMl": 2500,
+          "remainingMl": 2500,
+          "nextAction": "string"
+        },
+        "dailyScore": 0,
+        "scoreLabel": "Needs Work",
+        "alerts": [
+          {
+            "type": "calorie | hydration | meal | nutrition | critical | warning | success | info",
+            "icon": "string",
+            "title": "string",
+            "subtitle": "string"
+          }
+        ],
+        "source": "groq | gemini | fallback"
+      }
+    },
+    "database": {
+      "daily_nutrition_logs": {
+        "log_id": "integer",
+        "user_id": "integer",
+        "log_date": "date",
+        "total_calories": "numeric",
+        "total_protein_g": "numeric",
+        "total_carbs_g": "numeric",
+        "total_fat_g": "numeric",
+        "total_fiber_g": "numeric",
+        "total_water_l": "numeric",
+        "target_calories": "integer",
+        "target_protein_g": "numeric",
+        "target_carbs_g": "numeric",
+        "target_fat_g": "numeric",
+        "target_fiber_g": "numeric",
+        "target_water_l": "numeric",
+        "calories_remaining": "numeric",
+        "is_goal_met": "boolean"
+      },
+      "meal_entries": {
+        "meal_id": "integer",
+        "log_id": "integer",
+        "user_id": "integer",
+        "meal_type": "string(32)",
+        "source_type": "database | camera_ai",
+        "food_name": "string(200)",
+        "quantity_g": "numeric",
+        "calories_per_100g": "numeric",
+        "protein_per_100g": "numeric",
+        "carbs_per_100g": "numeric",
+        "fat_per_100g": "numeric",
+        "fiber_per_100g": "numeric",
+        "total_calories": "numeric",
+        "total_protein_g": "numeric",
+        "total_carbs_g": "numeric",
+        "total_fat_g": "numeric",
+        "total_fiber_g": "numeric",
+        "logged_at": "datetime"
+      },
+      "ai_food_meal_entries": {
+        "ai_meal_id": "integer",
+        "user_id": "integer",
+        "log_date": "date",
+        "meal_type": "string(32)",
+        "food_name": "string(200)",
+        "quantity_g": "numeric",
+        "calories": "numeric",
+        "protein": "numeric",
+        "carbs": "numeric",
+        "fat": "numeric",
+        "fibre": "numeric",
+        "confidence": "string(16)",
+        "estimated_serving_size": "string(120)",
+        "created_at": "datetime"
+      },
+      "water_intake_log": {
+        "water_id": "integer",
+        "user_id": "integer",
+        "log_date": "date",
+        "total_water_l": "numeric",
+        "target_water_l": "numeric",
+        "is_target_met": "boolean"
+      }
+    }
+  },
+  "workouts": {
+    "create": {
+      "endpoint": "POST /workout",
+      "request": {
+        "type": "stability | hiit | compound",
+        "exerciseName": "Barbell Bench Press",
+        "sets": 4,
+        "reps": 10,
+        "duration": 45,
+        "difficulty": "Intermediate",
+        "metValue": 6.0,
+        "timeTaken": "45:00",
+        "notes": "body_part=Chest;equipment=barbell"
+      },
+      "response": {
+        "id": 1
+      }
+    },
+    "update": {
+      "endpoint": "PATCH /workout/{workout_id}",
+      "request": {
+        "sets": 4,
+        "reps": 10,
+        "duration": 45,
+        "timeTaken": "45:00"
+      },
+      "response": {
+        "updated": true,
+        "id": 1,
+        "sets": 4,
+        "reps": 10,
+        "duration": 45,
+        "caloriesBurned": 180,
+        "timeTaken": "45:00"
+      }
+    },
+    "history": {
+      "endpoint": "GET /workout/history?hours=336",
+      "response": {
+        "items": [
+          {
+            "id": 1,
+            "type": "compound",
+            "exerciseName": "Dumbbell Shoulder Press",
+            "sets": 3,
+            "reps": 12,
+            "duration": 45,
+            "notes": "body_part=Shoulders",
+            "bodyPart": "Shoulders",
+            "caloriesBurned": 180,
+            "date": "2026-05-16T10:00:00"
+          }
+        ]
+      }
+    },
+    "totalBurn": {
+      "endpoint": "GET /workout/total-burn",
+      "response": {
+        "totalCaloriesBurned": 1250,
+        "sessionCount": 15
+      }
+    },
+    "coachData": {
+      "endpoint": "GET /workout/coach/data?days=14",
+      "response": {
+        "recentWorkouts": [
+          {
+            "date": "Today",
+            "type": "compound",
+            "musclesTrained": ["Shoulders", "Triceps"],
+            "durationMin": 45
+          }
+        ],
+        "weeklyVolume": [
+          {
+            "muscle": "Chest",
+            "sets": 0,
+            "targetSets": 14,
+            "color": "#4ADE80"
+          }
+        ],
+        "muscleGroups": [
+          {
+            "name": "Chest",
+            "status": "fresh | ready | tired | sore",
+            "recoveryPercent": 90,
+            "lastTrainedLabel": "4 days ago"
+          }
+        ],
+        "lastWorkoutDate": "Today",
+        "totalWeeklySets": 45,
+        "targetWeeklySets": 84
+      }
+    },
+    "coachInsightRequest": {
+      "endpoint": "POST /workout/coach/insight",
+      "request": {
+        "workoutData": {
+          "recentWorkouts": [],
+          "weeklyVolume": [],
+          "muscleGroups": [],
+          "lastWorkoutDate": "No workout yet",
+          "totalWeeklySets": 0,
+          "targetWeeklySets": 84
+        }
+      }
+    },
+    "coachInsightResponse": {
+      "shape": {
+        "insightText": "string",
+        "todaysPlan": {
+          "splitName": "Push Day",
+          "focusMuscles": ["Shoulders", "Triceps"],
+          "avoidMuscles": ["Chest", "Back", "Biceps"],
+          "exercises": [
+            {
+              "name": "Dumbbell Shoulder Press",
+              "sets": 3,
+              "reps": "8-12",
+              "muscle": "Shoulders",
+              "note": "Keep your core engaged"
+            }
+          ],
+          "estimatedDuration": "45-55 min"
+        },
+        "readinessScore": 72,
+        "readinessLabel": "Train moderately",
+        "readinessDescription": "string",
+        "readinessFactors": [
+          {
+            "label": "Shoulders fresh",
+            "type": "good | warning | bad | info"
+          }
+        ],
+        "weeklyProgress": {
+          "completedSets": 45,
+          "targetSets": 84,
+          "percentComplete": 54,
+          "insight": "Weekly volume is at 54% of target."
+        },
+        "recoveryTips": [
+          {
+            "icon": "sleep | water | stretch | food | rest",
+            "title": "string",
+            "description": "string"
+          }
+        ],
+        "coachingTips": [
+          {
+            "icon": "lightning | repeat | droplet | moon | target | fire | clock | shield | chart | dumbbell",
+            "title": "string",
+            "body": "string",
+            "category": "recovery | volume | technique | nutrition | mindset | programming",
+            "priority": "high | medium | low"
+          }
+        ],
+        "source": "groq | fallback"
+      }
+    },
+    "linkedActivity": {
+      "description": "Created automatically when a workout is saved",
+      "table": "activities",
+      "shape": {
+        "kind": "exercise",
+        "title": "Compound: Barbell Bench Press",
+        "calories": 180,
+        "duration": 45,
+        "intensity": "moderate | high | low"
+      }
+    },
+    "database": {
+      "table": "workouts",
+      "fields": {
+        "id": "integer",
+        "user_id": "integer",
+        "type": "string(32)",
+        "exercise_name": "string(120)",
+        "sets": "integer",
+        "reps": "integer",
+        "duration": "integer (minutes)",
+        "notes": "string(255)",
+        "date": "datetime"
+      }
+    }
+  },
+  "summary": {
+    "userInputs": {
+      "calories": ["food_name", "quantity_g", "macros per 100g", "meal_type", "water_l", "log_date"],
+      "workouts": ["type", "exerciseName", "sets", "reps", "duration", "difficulty", "metValue", "timeTaken", "notes"]
+    },
+    "aiCoachUses": {
+      "calories": ["consumed vs target calories", "macros", "water", "meals logged", "weight_kg", "goal", "activity_level", "meals_eaten_today"],
+      "workouts": ["muscle recovery status", "weekly sets per muscle", "recent workouts", "readiness score"]
+    }
+  }
+}

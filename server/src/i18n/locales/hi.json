@@ -1,0 +1,31 @@
+{
+  "notifications": {
+    "macroCheckin": {
+      "title": "मैक्रो चेक-इन",
+      "body": "आपका {{checkpoint}} चेक-इन ऑफ-ट्रैक है: {{summary}}। अगला भोजन गिनें।",
+      "lowCalories": "{{calories}} का {{targetCalories}} kcal",
+      "lowProtein": "{{protein}} का {{targetProtein}}g प्रोटीन",
+      "highCalories": "{{calories}} kcal पहले से ही लॉग इन है"
+    },
+    "missingMeal": {
+      "title": "अपना {{meal}} लॉग करें",
+      "body": "ऐसा लगता है कि {{meal}} अभी तक लॉग नहीं किया गया है। ताजा होने पर इसे अभी डालें।"
+    },
+    "missingWorkout": {
+      "title": "Workout लॉग गायब है",
+      "body": "आज कोई workout लॉग नहीं किया गया है। अपना सत्र लॉग करें या इसे अपनी योजना में विश्राम दिवस के रूप में चिह्नित करें।"
+    },
+    "streakRisk": {
+      "title": "अपनी लकीर को सुरक्षित रखें",
+      "body": "आपने आज भोजन या प्रशिक्षण लॉग नहीं किया है। दिन ख़त्म होने से पहले एक त्वरित प्रविष्टि जोड़ें।"
+    },
+    "quoteOfDay": {
+      "title": "दिन का उद्धरण",
+      "body": "\"{{quote}}\" - {{author}}"
+    },
+    "weeklyDigest": {
+      "title": "आपका NexRep साप्ताहिक डाइजेस्ट",
+      "body": "इस सप्ताह: {{mealsLogged}} पोषण दिवस, {{workoutsLogged}} वर्कआउट, {{strengthLifts}} शक्ति लिफ्ट लॉग इन। अगली योजना बनाने के लिए NexRep खोलें।"
+    }
+  }
+}
