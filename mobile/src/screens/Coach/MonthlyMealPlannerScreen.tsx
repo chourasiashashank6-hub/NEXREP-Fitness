@@ -39,9 +39,11 @@ import {
 } from "../../api/caloriesLog";
 import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
+import { PlannerLockedUpsell } from "../../components/PlannerLockedUpsell";
 import { StalePlanBanner } from "../../components/StalePlanBanner";
 import { MEAL_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import { auth } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 import { notifyUser } from "../../utils/notify";
@@ -262,6 +264,8 @@ type Props = {
 
 export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
   const { t } = useTranslation();
+  const { hasFeatureAccess } = useFeatureAccess();
+  const hasMealPlannerAccess = hasFeatureAccess("meal_plan_generation");
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
   const now = new Date();
   const month = now.getMonth() + 1;
@@ -941,6 +945,20 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
   const showMonthlyGeneratePanel = plannerMode === "monthly" && !plan && !generating;
   const showWeekEmptyFallback =
     plannerMode === "weekly" && !plan && !generating && !showWeekGeneratePanel && Boolean(selectedWeekMeta);
+
+  if (!hasMealPlannerAccess) {
+    return (
+      <ScreenContainer bg={SCREEN_BG} embedded={embedded}>
+        <PlannerLockedUpsell
+          feature="meal_plan_generation"
+          featureName={t("coach.home.mealPlanner.name")}
+          featureDescription={t("coach.home.mealPlanner.gateDescription")}
+          featureEmoji="🍽️"
+          accentColor={BLUE}
+        />
+      </ScreenContainer>
+    );
+  }
 
   if (loading) {
     return (

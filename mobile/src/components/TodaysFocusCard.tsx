@@ -6,6 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { fetchWorkoutPlanCurrent, fetchWorkoutPlanDay } from "../api/workoutPlanner";
 import { AppCard } from "./AppCard";
+import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { useAppTheme } from "../theme";
 import type { WorkoutDayPlan, WorkoutExercise } from "../types/planner";
 import { isWorkoutRestDay } from "../utils/workoutRestDay";
@@ -31,6 +32,8 @@ export function dedupeMusclesFromExercises(exercises: WorkoutExercise[]): string
 export function TodaysFocusCard() {
   const { t } = useTranslation();
   const { colors } = useAppTheme();
+  const { hasFeatureAccess } = useFeatureAccess();
+  const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
   const [dayPlan, setDayPlan] = useState<WorkoutDayPlan | null>(null);
   const [hasPlan, setHasPlan] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -39,6 +42,13 @@ export function TodaysFocusCard() {
   const initialLoadDoneRef = useRef(false);
 
   const syncFromPlanner = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!hasWorkoutPlannerAccess) {
+      setHasPlan(false);
+      setDayPlan(null);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     const seq = ++loadSeqRef.current;
     if (!opts?.silent) setRefreshing(true);
     try {
@@ -79,7 +89,7 @@ export function TodaysFocusCard() {
         setRefreshing(false);
       }
     }
-  }, []);
+  }, [hasWorkoutPlannerAccess]);
 
   useFocusEffect(
     useCallback(() => {

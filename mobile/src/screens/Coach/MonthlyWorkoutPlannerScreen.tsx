@@ -28,9 +28,11 @@ import {
 import { addWorkout, deleteWorkout, getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
 import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
+import { PlannerLockedUpsell } from "../../components/PlannerLockedUpsell";
 import { StalePlanBanner } from "../../components/StalePlanBanner";
 import { EXERCISE_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
+import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import { auth } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 import { formatApiDetail, notifyUser } from "../../utils/notify";
@@ -259,6 +261,8 @@ type Props = {
 
 export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props) {
   const { t } = useTranslation();
+  const { hasFeatureAccess } = useFeatureAccess();
+  const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
   const now = new Date();
 
@@ -749,6 +753,21 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const headerTitle = monthYearLabel(now.getMonth() + 1, now.getFullYear());
   const activeFocusMuscles = plan ? planFocusMuscles(plan) : selectedMuscles;
   const showFocusBadge = activeFocusMuscles.length > 0;
+
+  if (!hasWorkoutPlannerAccess) {
+    return (
+      <ScreenContainer bg={SCREEN_BG} embedded={embedded}>
+        <PlannerLockedUpsell
+          feature="workout_plan_generation"
+          featureName={t("coach.home.workoutPlanner.name")}
+          featureDescription={t("coach.home.workoutPlanner.gateDescription")}
+          featureEmoji="💪"
+          accentColor={PURPLE_MID}
+        />
+      </ScreenContainer>
+    );
+  }
+
   if (loading) {
     return (
       <ScreenContainer bg={SCREEN_BG} embedded={embedded} contentStyle={styles.loadingContent}>
