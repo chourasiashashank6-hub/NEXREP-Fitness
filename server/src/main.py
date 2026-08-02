@@ -222,7 +222,7 @@ async def track_user_activity(request: Request, call_next):
 
 @app.get("/")
 def root():
-    """Open http://127.0.0.1:8000 in a browser — redirects to interactive API docs."""
+    """Redirect to interactive API docs."""
     return RedirectResponse(url="/docs")
 
 

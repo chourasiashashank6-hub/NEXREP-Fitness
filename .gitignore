@@ -13,11 +13,23 @@ venv/
 
 # Local env (never commit secrets)
 .env
-.env.local
+.env.*
+!.env.example
 server/.env
 mobile/.env
+mobile/.env.development
+mobile/.env.production
 
 # Node
 mobile/node_modules/
-.DS_Store
-server/.env
+
+# Python / test artifacts
+.pytest_cache/
+*.db
+*.sqlite3
+
+# User uploads (local dev only)
+server/uploads/
+
+# Archives / review bundles
+for-review.zip

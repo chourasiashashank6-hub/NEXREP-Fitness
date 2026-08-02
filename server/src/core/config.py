@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 logger = logging.getLogger(__name__)
@@ -17,9 +18,20 @@ _INSECURE_JWT_DEFAULTS = frozenset(
 )
 
 
+def normalize_database_url(url: str) -> str:
+    """Render/Heroku provide postgres://; SQLAlchemy + psycopg needs postgresql+psycopg://."""
+    raw = (url or "").strip()
+    if raw.startswith("postgres://"):
+        return "postgresql+psycopg://" + raw[len("postgres://") :]
+    if raw.startswith("postgresql://"):
+        return "postgresql+psycopg://" + raw[len("postgresql://") :]
+    return raw
+
+
 class Settings(BaseSettings):
+    PORT: int = 8000
     DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/fitnessdb"
-    JWT_SECRET: str = "super-secret-key"
+    JWT_SECRET: str = ""
     # Same Web API key as Expo EXPO_PUBLIC_FIREBASE_API_KEY — used to verify ID tokens for password sync.
     FIREBASE_WEB_API_KEY: str = ""
     FIREBASE_PROJECT_ID: str = ""
@@ -52,6 +64,13 @@ class Settings(BaseSettings):
     # Comma-separated emails allowed to use /dev/subscription-toggle (development only)
     DEV_TIER_TOGGLE_EMAILS: str = "shashank1@gmail.com"
     DEV_TOGGLE_SECRET: str = "nexrep-dev-toggle-2026"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _normalize_database_url(cls, value: object) -> object:
+        if isinstance(value, str):
+            return normalize_database_url(value)
+        return value
 
     class Config:
         env_file = str(ENV_FILE)
