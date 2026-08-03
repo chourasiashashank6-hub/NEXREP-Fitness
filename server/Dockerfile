@@ -11,6 +11,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY alembic.ini .
 COPY alembic/ ./alembic/
+# Seed data read at startup (workout catalog, global exercises, food DB, quotes)
+COPY workout_catalog_v2_clean.json .
+COPY global_exercises_seed.json .
+COPY sql/ ./sql/
+COPY seeds/ ./seeds/
 
 ENV PORT=8000
 EXPOSE 8000
