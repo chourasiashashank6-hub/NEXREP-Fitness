@@ -1,7 +1,7 @@
 """initial schema
 
 Revision ID: 001_initial
-Revises:
+Revises: 000_baseline_schema
 Create Date: 2026-05-25
 
 """
@@ -11,12 +11,13 @@ from alembic import op
 import sqlalchemy as sa
 
 revision: str = "001_initial"
-down_revision: Union[str, None] = None
+down_revision: Union[str, None] = "000_baseline_schema"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    op.execute(sa.text("ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(64)"))
     op.execute(
         sa.text(
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS needs_password_reset BOOLEAN NOT NULL DEFAULT FALSE"
