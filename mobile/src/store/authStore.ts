@@ -144,7 +144,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ cachedProfile: null });
       } else if (profile) {
         // Reused by OnboardingContext's initial fetch so it doesn't re-request /profile.
-        set({ cachedProfile: profile });
+        // Also syncs plan_id immediately so planner/feature gates reflect the real tier
+        // from app launch, instead of sitting on the "free" default until ProfileScreen mounts.
+        set({ cachedProfile: profile, plan_id: String(profile.plan_id || "free") });
       }
     }
 

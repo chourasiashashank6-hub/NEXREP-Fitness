@@ -79,6 +79,7 @@ export const OnboardingProvider = ({ children }: PropsWithChildren) => {
     if (stillCurrentSession()) {
       hydrateRef.current(normalized);
       setTargetsRef.current(remote?.targets ?? null);
+      if (profile) useAuthStore.getState().setPlanId(String(profile.plan_id || "free"));
     }
 
     return { onboarding: normalized, targets: remote?.targets ?? null };
