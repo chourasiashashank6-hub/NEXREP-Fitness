@@ -398,6 +398,9 @@
       "threads": "Threads",
       "messages": "Messages"
     },
+    "header": {
+      "title": "NexFam"
+    },
     "home": {
       "eyebrow": "Squad",
       "fallbackName": "there",
@@ -1027,7 +1030,9 @@
     "centreBody": "Centre your body in the frame",
     "noBodyDetected": "No body detected",
     "noFullBody": "No full body detected - step back slightly",
-    "notDetected": "{{label}} not detected"
+    "notDetected": "{{label}} not detected",
+    "loadingTracker": "Pose tracker load ho raha hai…",
+    "loadingTrackerHint": "First load mein kuch seconds lag sakte hain"
   },
   "payment": {
     "checkout": {

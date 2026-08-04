@@ -5,9 +5,9 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Dimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { BODY_DATA, BodyGender, slotKey, GOAL_TYPE_TO_BODY_ID } from "../../data/bodyTypeData";

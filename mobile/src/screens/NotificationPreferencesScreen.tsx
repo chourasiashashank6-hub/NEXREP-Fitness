@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../components/BottomSheetPicker";
 import { ToggleRow } from "../components/ToggleRow";
@@ -81,7 +82,7 @@ export function NotificationPreferencesScreen({ navigation }: any) {
     savePrefs({ ...prefs, categories: { ...prefs.categories, [key]: value } });
 
   return (
-    <View style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>‹</Text>
@@ -169,7 +170,7 @@ export function NotificationPreferencesScreen({ navigation }: any) {
           {saving ? <Text style={styles.saving}>{t("settings.notifications.saving")}</Text> : null}
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

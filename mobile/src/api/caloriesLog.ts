@@ -210,6 +210,26 @@ export const getDailyCalorieLog = async (date: string = todayLocal()) => {
   });
 };
 
+export interface CalorieStreakResponse {
+  days: Array<{ date: string; total_calories: number }>;
+  start_date: string;
+  end_date: string;
+}
+
+/**
+ * Bulk-fetch `total_calories` for the last `days` calendar days ending on `endDate`
+ * (defaults to today) in a single request — replaces looping `getDailyCalorieLog(date)`
+ * once per day, which previously fired one request per day (e.g. 59 for a 60-day streak).
+ */
+export const getCalorieStreak = async (days: number, endDate: string = todayLocal()) => {
+  return withCaloriesRoute("/streak", async (path) => {
+    const { data } = await apiClient.get<CalorieStreakResponse>(path, {
+      params: { days, end_date: endDate },
+    });
+    return data;
+  });
+};
+
 export const getCalorieMealHistory = async (params: {
   range?: "today" | "all";
   limit?: number;

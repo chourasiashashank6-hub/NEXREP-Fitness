@@ -7,7 +7,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Modal,
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -15,6 +14,7 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
 import {
   BODY_DATA,

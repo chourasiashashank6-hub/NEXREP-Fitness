@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { DEFAULT_ONBOARDING_DATA } from "../constants/onboarding";
-import { BodyTypeData, OnboardingData } from "../types/onboarding";
+import { BodyTypeData, NutritionTargets, OnboardingData } from "../types/onboarding";
 
 export const useOnboarding = () => {
   const [data, setData] = useState<OnboardingData>(DEFAULT_ONBOARDING_DATA);
+  // Populated alongside `data` by OnboardingContext's fetch so consumers that need the
+  // last-fetched server targets (e.g. HomeScreen) don't have to fetch onboarding/me again.
+  const [targets, setTargets] = useState<NutritionTargets | null>(null);
 
   const updatePersonal = (updates: Partial<OnboardingData["personal"]>) => {
     setData((prev) => ({ ...prev, personal: { ...prev.personal, ...updates } }));
@@ -33,11 +36,16 @@ export const useOnboarding = () => {
     }));
   };
 
-  const reset = () => setData(DEFAULT_ONBOARDING_DATA);
+  const reset = () => {
+    setData(DEFAULT_ONBOARDING_DATA);
+    setTargets(null);
+  };
   const hydrate = (next: OnboardingData) => setData(next);
 
   return {
     data,
+    targets,
+    setTargets,
     updatePersonal,
     updateGoal,
     updateActivity,

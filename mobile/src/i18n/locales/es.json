@@ -397,6 +397,9 @@
       "threads": "Hilos",
       "messages": "Mensajes"
     },
+    "header": {
+      "title": "NexFam"
+    },
     "home": {
       "eyebrow": "Squad",
       "fallbackName": "ahi",
@@ -1026,7 +1029,9 @@
     "centreBody": "Centra tu cuerpo en el marco.",
     "noBodyDetected": "No se detectó ningún cuerpo",
     "noFullBody": "No se ha detectado ningún cuerpo completo: retroceda un poco",
-    "notDetected": "{{label}}no detectado"
+    "notDetected": "{{label}}no detectado",
+    "loadingTracker": "Cargando el rastreador de postura…",
+    "loadingTrackerHint": "La primera carga puede tardar unos segundos"
   },
   "payment": {
     "checkout": {

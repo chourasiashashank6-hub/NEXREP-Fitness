@@ -1,5 +1,5 @@
-import { memo, useEffect, useRef } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { memo, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
 import i18n from "../i18n";
@@ -75,6 +75,8 @@ const MP_TEXT = {
   unknown: i18n.t("mediaPipe.unknown"),
   rightPosture: i18n.t("mediaPipe.rightPosture"),
   wrongPosture: i18n.t("mediaPipe.wrongPosture"),
+  loadingTracker: i18n.t("mediaPipe.loadingTracker"),
+  loadingTrackerHint: i18n.t("mediaPipe.loadingTrackerHint"),
 };
 
 type JointRule = {
@@ -1216,12 +1218,24 @@ function MediaPipeGuidanceView({
   onTrackingUpdateRef.current = onTrackingUpdate;
   countingPausedRef.current = countingPaused;
 
+  // Tracks MediaPipe init on native so we can show a loading indicator instead of a
+  // frozen-looking view while the WASM runtime + pose model download on first use.
+  const [initStatus, setInitStatus] = useState<"loading" | "ready" | "error">("loading");
+
   useEffect(() => {
     if (Platform.OS === "web") return;
     webViewRef.current?.injectJavaScript(
       `COUNTING_PAUSED=${countingPaused ? "true" : "false"};true;`,
     );
   }, [countingPaused]);
+
+  // Reset the loading indicator whenever the WebView remounts (same deps as its `key`) or
+  // the camera view is reopened, so a stale "ready" state doesn't hide a fresh init.
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    if (!isActive) return;
+    setInitStatus("loading");
+  }, [isActive, facingMode, selectedExerciseName, sessionMode]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -2120,13 +2134,22 @@ function MediaPipeGuidanceView({
         style={styles.webview}
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
+        // Android WebViews need explicit permission to grant camera access requested via
+        // getUserMedia() inside the page; without this the request can silently hang.
+        mediaCapturePermissionGrantType="grant"
         javaScriptEnabled
         domStorageEnabled
         onMessage={(event) => {
           try {
             const parsed = JSON.parse(event.nativeEvent.data || "{}") as Record<string, unknown>;
-            if (parsed.type === "ready") onReady?.();
-            if (parsed.type === "error") onError?.(String(parsed.message || "MediaPipe failed to start."));
+            if (parsed.type === "ready") {
+              setInitStatus("ready");
+              onReady?.();
+            }
+            if (parsed.type === "error") {
+              setInitStatus("error");
+              onError?.(String(parsed.message || "MediaPipe failed to start."));
+            }
             if (parsed.type === "tracking") {
               onTrackingUpdate?.(parseTrackingPayload(parsed));
             }
@@ -2134,8 +2157,18 @@ function MediaPipeGuidanceView({
             // ignore malformed bridge messages
           }
         }}
-        onError={() => onError?.("MediaPipe WebView failed to load.")}
+        onError={() => {
+          setInitStatus("error");
+          onError?.("MediaPipe WebView failed to load.");
+        }}
       />
+      {initStatus === "loading" ? (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingTitle}>{MP_TEXT.loadingTracker}</Text>
+          <Text style={styles.loadingSubtitle}>{MP_TEXT.loadingTrackerHint}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -2143,6 +2176,30 @@ function MediaPipeGuidanceView({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   webview: { flex: 1, backgroundColor: "#050b16" },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#050b16",
+    gap: 10,
+    paddingHorizontal: 32,
+  },
+  loadingTitle: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  loadingSubtitle: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+  },
 });
 
 const MemoizedMediaPipeGuidanceView = memo(MediaPipeGuidanceView) as typeof MediaPipeGuidanceView;

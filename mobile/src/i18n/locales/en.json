@@ -398,6 +398,9 @@
       "threads": "Threads",
       "messages": "Messages"
     },
+    "header": {
+      "title": "NexFam"
+    },
     "common": {
       "comingSoon": "Coming soon"
     },
@@ -1027,7 +1030,9 @@
     "centreBody": "Centre your body in the frame",
     "noBodyDetected": "No body detected",
     "noFullBody": "No full body detected - step back slightly",
-    "notDetected": "{{label}} not detected"
+    "notDetected": "{{label}} not detected",
+    "loadingTracker": "Loading pose tracker…",
+    "loadingTrackerHint": "First load can take a few seconds while it downloads"
   },
   "payment": {
     "checkout": {

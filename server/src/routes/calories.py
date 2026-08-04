@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 import json
 from typing import Any
@@ -1588,6 +1588,47 @@ def get_daily_log_history(
 def get_daily_log(log_date: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     d = _parse_log_date(log_date)
     return _serialize_day(db, current_user, d)
+
+
+@router.get("/streak")
+def get_calorie_streak(
+    days: int = Query(60, ge=1, le=366),
+    end_date: str | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Bulk replacement for fetching `/daily-log/{date}` once per day in a loop.
+    Returns total_calories for each of the last `days` calendar days (oldest → newest,
+    `end_date` inclusive) in a single query — used by the Home screen streak/last-7-days
+    calculations, which previously issued one request per day.
+
+    Days with no logged meals are not backed by a `daily_nutrition_log` row (that row is
+    only created when a meal is added — see `_get_or_create_daily_log`), so any date missing
+    from the query result is reported as `total_calories: 0`, matching what
+    `GET /daily-log/{date}` would have returned for that same day.
+    """
+    end = _parse_log_date(end_date)
+    start = end - timedelta(days=days - 1)
+
+    rows = (
+        db.query(DailyNutritionLog.log_date, DailyNutritionLog.total_calories)
+        .filter(
+            DailyNutritionLog.user_id == current_user.id,
+            DailyNutritionLog.log_date >= start,
+            DailyNutritionLog.log_date <= end,
+        )
+        .all()
+    )
+    totals_by_date = {r.log_date.isoformat(): float(r.total_calories or 0) for r in rows}
+
+    out = []
+    for i in range(days):
+        d = start + timedelta(days=i)
+        key = d.isoformat()
+        out.append({"date": key, "total_calories": totals_by_date.get(key, 0.0)})
+
+    return {"days": out, "start_date": start.isoformat(), "end_date": end.isoformat()}
 
 
 @router.post("/meals")

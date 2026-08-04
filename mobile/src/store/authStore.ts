@@ -7,6 +7,7 @@ import {
   setPendingSignupOnboarding,
 } from "../storage/onboarding";
 import { decodeJwtSub } from "../utils/jwt";
+import type { UserProfile } from "../api/user";
 
 type AuthState = {
   token: string | null;
@@ -15,11 +16,18 @@ type AuthState = {
   needsOnboarding: boolean;
   returnToProfileAfterOnboarding: boolean;
   hydrated: boolean;
+  /**
+   * Profile fetched once during bootstrap()'s session-email validation. Consumers (e.g.
+   * OnboardingContext) should call consumeCachedProfile() to read+clear it in one step,
+   * avoiding a redundant GET /profile right after bootstrap already fetched it.
+   */
+  cachedProfile: UserProfile | null;
   setToken: (token: string | null, opts?: { fromSignup?: boolean }) => Promise<void>;
   setPlanId: (plan: string) => void;
   setNeedsOnboarding: (value: boolean) => void;
   setReturnToProfileAfterOnboarding: (value: boolean) => void;
   bootstrap: () => Promise<void>;
+  consumeCachedProfile: () => UserProfile | null;
 };
 
 const KEY = "fitness_jwt";
@@ -72,7 +80,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   needsOnboarding: false,
   returnToProfileAfterOnboarding: false,
   hydrated: false,
+  cachedProfile: null,
   setPlanId: (plan_id) => set({ plan_id }),
+  consumeCachedProfile: () => {
+    const profile = get().cachedProfile;
+    if (profile) set({ cachedProfile: null });
+    return profile;
+  },
   setToken: async (token, opts) => {
     if (!token) {
       const { useSubscriptionStore } = await import("./subscriptionStore");
@@ -84,6 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         plan_id: "free",
         needsOnboarding: false,
         returnToProfileAfterOnboarding: false,
+        cachedProfile: null,
       });
       return;
     }
@@ -121,11 +136,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (token) {
       set({ token, sessionUserId: sessionIdFromToken(token) });
       const { validateStoredSessionEmail } = await import("../utils/sessionValidation");
-      const check = await validateStoredSessionEmail();
-      if (check === "mismatch" || check === "invalid") {
+      const { status, profile } = await validateStoredSessionEmail();
+      if (status === "mismatch" || status === "invalid") {
         const { signOutSession } = await import("../services/authService");
         await signOutSession();
         token = null;
+        set({ cachedProfile: null });
+      } else if (profile) {
+        // Reused by OnboardingContext's initial fetch so it doesn't re-request /profile.
+        set({ cachedProfile: profile });
       }
     }
 

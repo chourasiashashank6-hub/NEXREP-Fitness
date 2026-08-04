@@ -1,6 +1,7 @@
 import type { PropsWithChildren, ReactElement } from "react";
 import type { RefreshControlProps, StyleProp, ViewStyle } from "react-native";
-import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const SCREEN_BG = "#FFFFFF";
 
@@ -38,7 +39,11 @@ export const ScreenContainer = ({
     return <View style={[styles.safeArea, { backgroundColor: bg }, style]}>{body}</View>;
   }
 
-  return <SafeAreaView style={[styles.safeArea, { backgroundColor: bg }, style]}>{body}</SafeAreaView>;
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: bg }, style]} edges={["top", "left", "right"]}>
+      {body}
+    </SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({

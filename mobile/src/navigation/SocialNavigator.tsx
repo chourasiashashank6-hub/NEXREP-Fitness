@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -27,11 +28,24 @@ const BG = "#F7F6F3";
 const MUTED = "#6F766F";
 const BORDER = "#ECEAE5";
 const WHITE = "#FFFFFF";
+const TEXT = "#1A1A18";
 
 type SocialRouteName = keyof Pick<
   SocialStackParamList,
   "SocialHome" | "SocialLeaderboard" | "SocialFriends" | "SocialThreads" | "SocialMessages"
 >;
+
+/** Brand header shown above the tab row on every Social screen — mirrors the
+ * "Calorie Log" page-title treatment (bold dark title + small icon, same line). */
+function SocialBrandHeader() {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.brandHeader}>
+      <Text style={styles.brandHeaderText}>{t("social.header.title")}</Text>
+      <Ionicons name="people-outline" size={19} color={GREEN} style={styles.brandHeaderIcon} />
+    </View>
+  );
+}
 
 function SocialSectionTabs({ active }: { active: SocialRouteName }) {
   const { t } = useTranslation();
@@ -84,36 +98,43 @@ function SocialSectionTabs({ active }: { active: SocialRouteName }) {
     { route: "SocialMessages", label: t("social.nav.messages") },
   ];
   return (
-    <View style={styles.tabs}>
-      {tabs.map((tab) => {
-        const selected = tab.route === active;
-        return (
-          <Pressable
-            key={tab.route}
-            accessibilityRole="button"
-            style={[styles.tab, selected ? styles.tabActive : null]}
-            onPress={() => navigation.navigate(tab.route)}
-          >
-            <Text style={[styles.tabText, selected ? styles.tabTextActive : null]}>{tab.label}</Text>
-            {tab.route === "SocialMessages" && unreadTotal > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadTotal}</Text>
-              </View>
-            ) : null}
-            {tab.route === "SocialThreads" && pendingJoinRequests > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{pendingJoinRequests}</Text>
-              </View>
-            ) : null}
-            {tab.route === "SocialFriends" && incomingFriendRequests > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{incomingFriendRequests}</Text>
-              </View>
-            ) : null}
-          </Pressable>
-        );
-      })}
-    </View>
+    <>
+      <SocialBrandHeader />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabs}
+      >
+        {tabs.map((tab) => {
+          const selected = tab.route === active;
+          return (
+            <Pressable
+              key={tab.route}
+              accessibilityRole="button"
+              style={[styles.tab, selected ? styles.tabActive : null]}
+              onPress={() => navigation.navigate(tab.route)}
+            >
+              <Text style={[styles.tabText, selected ? styles.tabTextActive : null]}>{tab.label}</Text>
+              {tab.route === "SocialMessages" && unreadTotal > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadTotal}</Text>
+                </View>
+              ) : null}
+              {tab.route === "SocialThreads" && pendingJoinRequests > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{pendingJoinRequests}</Text>
+                </View>
+              ) : null}
+              {tab.route === "SocialFriends" && incomingFriendRequests > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{incomingFriendRequests}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </>
   );
 }
 
@@ -187,11 +208,25 @@ export default function SocialNavigator() {
 }
 
 const styles = StyleSheet.create({
+  brandHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 12,
+  },
+  brandHeaderText: {
+    color: TEXT,
+    fontSize: 25,
+    fontWeight: "800",
+  },
+  brandHeaderIcon: {
+    marginTop: 2,
+  },
   tabs: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
     marginBottom: 16,
+    paddingRight: 4,
   },
   tab: {
     alignItems: "center",
@@ -202,6 +237,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     flexDirection: "row",
+    flexShrink: 0,
     gap: 6,
   },
   tabActive: {

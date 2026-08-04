@@ -15,6 +15,20 @@ export async function fetchOnboardingMe(): Promise<OnboardingMeResponse | null> 
   }
 }
 
+/** Shared in-flight request so concurrent callers (e.g. OnboardingContext's own
+ * fetch-on-mount effect and a screen refreshing at the same moment right after login)
+ * collapse into a single GET /onboarding/me instead of firing one each. */
+let inFlightOnboardingMeFetch: Promise<OnboardingMeResponse | null> | null = null;
+
+export function fetchOnboardingMeShared(): Promise<OnboardingMeResponse | null> {
+  if (!inFlightOnboardingMeFetch) {
+    inFlightOnboardingMeFetch = fetchOnboardingMe().finally(() => {
+      inFlightOnboardingMeFetch = null;
+    });
+  }
+  return inFlightOnboardingMeFetch;
+}
+
 export async function upsertOnboardingMe(payload: {
   onboarding: OnboardingData;
   targets: NutritionTargets;

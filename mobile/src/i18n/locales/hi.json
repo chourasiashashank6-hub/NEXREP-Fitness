@@ -397,6 +397,9 @@
       "threads": "थ्रेड्स",
       "messages": "संदेश"
     },
+    "header": {
+      "title": "NexFam"
+    },
     "home": {
       "eyebrow": "Squad",
       "fallbackName": "दोस्त",
@@ -1026,7 +1029,9 @@
     "centreBody": "अपने शरीर को फ्रेम में केन्द्रित करें",
     "noBodyDetected": "किसी शव का पता नहीं चला",
     "noFullBody": "पूरे शरीर का पता नहीं चला - थोड़ा पीछे हटें",
-    "notDetected": "{{label}} का पता नहीं चला"
+    "notDetected": "{{label}} का पता नहीं चला",
+    "loadingTracker": "पोज़ ट्रैकर लोड हो रहा है…",
+    "loadingTrackerHint": "पहली बार लोड होने में कुछ सेकंड लग सकते हैं"
   },
   "payment": {
     "checkout": {

@@ -397,6 +397,9 @@
       "threads": "Threads",
       "messages": "Nachrichten"
     },
+    "header": {
+      "title": "NexFam"
+    },
     "home": {
       "eyebrow": "Squad",
       "fallbackName": "du",
@@ -1026,7 +1029,9 @@
     "centreBody": "Zentriere deinen Körper im Rahmen",
     "noBodyDetected": "Keine Leiche entdeckt",
     "noFullBody": "Kein vollständiger Körper erkannt – tritt etwas zurück",
-    "notDetected": "{{label}} nicht erkannt"
+    "notDetected": "{{label}} nicht erkannt",
+    "loadingTracker": "Posen-Tracker wird geladen…",
+    "loadingTrackerHint": "Der erste Ladevorgang kann einige Sekunden dauern"
   },
   "payment": {
     "checkout": {

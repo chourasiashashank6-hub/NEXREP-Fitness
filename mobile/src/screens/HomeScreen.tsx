@@ -17,9 +17,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
 import type { CalorieDayPayload } from "../api/caloriesLog";
-import { getDailyCalorieLog, todayLocal } from "../api/caloriesLog";
+import { getCalorieStreak, getDailyCalorieLog, todayLocal } from "../api/caloriesLog";
 import { resolveApiBaseUrl } from "../api/client";
-import { fetchOnboardingMe } from "../api/onboarding";
 import { getStrengthProgress, type StrengthProgress } from "../api/strength";
 import { getWorkoutHistory } from "../api/workout";
 import { DailyQuoteCard } from "../components/DailyQuoteCard";
@@ -27,6 +26,7 @@ import { MilestoneBoxes } from "../components/MilestoneBoxes";
 import { TodaysGoalRing } from "../components/TodaysGoalRing";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "../store/authStore";
+import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
 import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
@@ -36,7 +36,6 @@ import {
   computeCombinedStreak,
   getLast7DaysMeta,
   getStreakMeta,
-  listPastDateKeys,
   type DayMeta,
 } from "../utils/streakEngine";
 import { isHomeRestDayActive, isWorkoutRestDay } from "../utils/workoutRestDay";
@@ -213,6 +212,7 @@ function ProgressBar({ percent, color }: { percent: number; color: string }) {
 export const HomeScreen = () => {
   const { t } = useTranslation();
   const token = useAuthStore((s) => s.token);
+  const { refresh: refreshOnboarding } = useOnboardingContext();
   const { hasFeatureAccess } = useFeatureAccess();
   const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
   const [calorieDay, setCalorieDay] = useState<CalorieDayPayload | null>(null);
@@ -278,7 +278,9 @@ export const HomeScreen = () => {
       const [dayRes, onboardingRes, historyRes, weightLatestRes, weightHistoryRes, goalProgressRes, strengthProgressRes, workoutPlanRes] =
         await Promise.all([
           getDailyCalorieLog(todayLocal()).catch(() => null),
-          fetchOnboardingMe().catch(() => null),
+          // Shared with OnboardingContext (and every other screen using it) instead of an
+          // independent fetchOnboardingMe() call — see OnboardingContext.refresh().
+          refreshOnboarding().catch(() => null),
           getWorkoutHistory(24 * 7).catch(() => ({ items: [] })),
           fetch(`${apiBase}/api/weight/latest`, { headers: authHeaders })
             .then((r) => (r.ok ? r.json() : null))
@@ -309,22 +311,17 @@ export const HomeScreen = () => {
       setStrengthProgress(strengthProgressRes);
 
       const todayKey = todayLocal();
-      const streakDates = listPastDateKeys(STREAK_LOOKBACK_DAYS);
-      const datesExceptToday = streakDates.filter((d) => d !== todayKey);
-      const [streakWorkoutRes, storedBestRaw, ...pastDayLogs] = await Promise.all([
+      const [streakWorkoutRes, storedBestRaw, streakRes] = await Promise.all([
         getWorkoutHistory(24 * STREAK_LOOKBACK_DAYS).catch(() => ({ items: [] })),
         AsyncStorage.getItem(BEST_STREAK_KEY).catch(() => null),
-        ...datesExceptToday.map((date) => getDailyCalorieLog(date).catch(() => null)),
+        // Single bulk call replacing what used to be one getDailyCalorieLog() request per day.
+        getCalorieStreak(STREAK_LOOKBACK_DAYS, todayKey).catch(() => null),
       ]);
 
-      const calorieLogsForStreak = streakDates.map((date) => {
-        if (date === todayKey) {
-          return { date, total_calories: Number(dayRes?.log?.total_calories ?? 0) };
-        }
-        const idx = datesExceptToday.indexOf(date);
-        const payload = pastDayLogs[idx];
-        return { date, total_calories: Number(payload?.log?.total_calories ?? 0) };
-      });
+      const calorieLogsForStreak = (streakRes?.days ?? []).map((d) => ({
+        date: d.date,
+        total_calories: Number(d.total_calories ?? 0),
+      }));
 
       const workoutItems = (streakWorkoutRes.items ?? []).map((item) => ({
         date: item.date,
@@ -355,7 +352,7 @@ export const HomeScreen = () => {
     } catch {
       Alert.alert(t("home.alerts.error"), t("home.alerts.loadFailed"));
     }
-  }, [token, t]);
+  }, [token, t, refreshOnboarding]);
 
   const handleLogWeight = async () => {
     const kg = parseFloat(weighInValue);
