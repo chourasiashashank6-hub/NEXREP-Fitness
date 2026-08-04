@@ -14,10 +14,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from src.db.session import SessionLocal
 from src.models.recipes import Recipe
+
+_SERVER_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_RECIPE_SEED_PATH = _SERVER_ROOT / "nexrep_recipes_seed.json"
 
 CATEGORY_SLOTS: dict[str, list[str]] = {
     "Cottage Cheese & Breakfast": ["breakfast"],
@@ -139,6 +144,32 @@ def upsert_recipes(db: Session, rows: list[dict[str, Any]]) -> dict[str, Any]:
         "by_diet": dict(sorted(by_diet.items())),
         "by_slot": dict(sorted(by_slot.items())),
     }
+
+
+def load_recipe_seed_if_empty(engine: Engine, json_path: str | Path | None = None) -> int:
+    """
+    Seed the recipes table (meal engine v3) from bundled JSON when the table has no rows.
+
+    Without this, `recipes` stays empty on any freshly created database (e.g. a new
+    production deploy that only ran Alembic migrations), and meal plan generation fails
+    with "Empty recipe pool" for every user/diet/slot. Mirrors load_workout_catalog_if_empty
+    / load_food_catalog_from_sql_if_empty. Returns the number of rows inserted.
+    """
+    path = Path(json_path or DEFAULT_RECIPE_SEED_PATH)
+    with engine.begin() as conn:
+        count = conn.execute(text("SELECT COUNT(*) FROM recipes")).scalar() or 0
+    if count > 0:
+        return 0
+    if not path.is_file():
+        return 0
+
+    rows = load_seed(path)
+    db = SessionLocal()
+    try:
+        summary = upsert_recipes(db, rows)
+    finally:
+        db.close()
+    return int(summary.get("inserted", 0))
 
 
 def main(argv: list[str] | None = None) -> int:

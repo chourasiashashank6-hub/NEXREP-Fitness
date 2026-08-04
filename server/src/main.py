@@ -29,6 +29,7 @@ from src.models.meal_plan import (  # noqa: F401
     MonthlyWorkoutPlan,
 )
 from src.models.recipes import Recipe, UserMealPlan  # noqa: F401
+from src.scripts.import_recipe_seed import load_recipe_seed_if_empty
 from src.models.weight_log import WeightLog  # noqa: F401
 from src.routes.meal_planner import router as meal_planner_router
 from src.routes.workout_planner import router as workout_planner_router
@@ -247,6 +248,7 @@ def startup():
     load_food_catalog_from_sql_if_empty(engine)
     load_workout_catalog_if_empty(engine)
     load_global_exercises_if_empty(engine)
+    load_recipe_seed_if_empty(engine)
     seed_catalog_labels(engine)
     start_notification_scheduler()
 
