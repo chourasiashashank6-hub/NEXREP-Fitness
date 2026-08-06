@@ -18,7 +18,10 @@ import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { postSessionComplete } from "../api/workoutSessions";
 import { getProfile } from "../api/user";
 import { EndEarlySheet } from "../components/EndEarlySheet";
-import MediaPipeGuidanceView from "../components/MediaPipeGuidanceView";
+import { CameraWorkoutShell } from "../components/aiTrainer/CameraWorkoutShell";
+import { useCameraTracking } from "../hooks/useCameraTracking";
+import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
+import { navigationRef } from "../navigation/navigationRef";
 import { scheduleRestEndNotification } from "../services/notificationService";
 import {
   type SessionExercise,
@@ -85,7 +88,8 @@ export default function ActiveWorkoutScreen() {
   const [showSessionCamera, setShowSessionCamera] = useState(false);
   const [sessionCameraError, setSessionCameraError] = useState<string | null>(null);
   const [sessionCameraPermission, requestSessionCameraPermission] = useCameraPermissions();
-  const [detectedMismatch, setDetectedMismatch] = useState<string | null>(null);
+  const needsCalBanner = usePoseCalibrationStore((s) => s.skipped && !s.hasCalibration());
+  const needsRecalibration = usePoseCalibrationStore((s) => s.needsRecalibration);
   const bootstrapped = useRef(false);
 
   useEffect(() => {
@@ -204,6 +208,18 @@ export default function ActiveWorkoutScreen() {
   const totalVolume = session?.set_logs.reduce((s, l) => s + l.reps * (l.weight_kg ?? 0), 0) ?? 0;
   const upcoming = session ? session.exercises.slice(session.current_exercise_index + 1) : [];
   const exercisesLeft = upcoming.length + (currentExercise ? 1 : 0);
+  const cameraTargetReps = currentExercise ? parseReps(currentExercise.reps) : 10;
+  const cameraTracking = useCameraTracking({
+    exerciseName: currentExercise?.exercise_name ?? "",
+    targetReps: cameraTargetReps,
+    enableAudio: true,
+  });
+
+  useEffect(() => {
+    if (showSessionCamera) cameraTracking.resetTracking();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSessionCamera, currentExercise?.exercise_name]);
+
   const estimatedMinutesLeft = Math.max(
     1,
     Math.round(
@@ -257,7 +273,6 @@ export default function ActiveWorkoutScreen() {
       kcal,
       tracking_method: "manual",
     });
-    setDetectedMismatch(null);
 
     const isLastSet = session.current_set >= currentExercise.sets;
     const isLastExercise = session.current_exercise_index >= session.exercises.length - 1;
@@ -393,12 +408,6 @@ export default function ActiveWorkoutScreen() {
             <Text style={styles.repsTxt}> kg</Text>
           </View>
 
-          {detectedMismatch ? (
-            <Text style={styles.mismatch}>
-              ⚠ Detected: {detectedMismatch} — expected {currentExercise.exercise_name}
-            </Text>
-          ) : null}
-
           {sessionCameraError ? <Text style={styles.mismatch}>{sessionCameraError}</Text> : null}
 
           <Pressable style={styles.cameraRow} onPress={openSessionCamera}>
@@ -483,23 +492,56 @@ export default function ActiveWorkoutScreen() {
         </Text>
       </ScrollView>
 
-      {showSessionCamera ? (
-        <View style={styles.cameraOverlay}>
-          <MediaPipeGuidanceView
-            selectedExerciseName={currentExercise.exercise_name}
+      {showSessionCamera && currentExercise ? (
+        <View style={styles.cameraOverlayFull}>
+          <CameraWorkoutShell
+            exerciseName={currentExercise.exercise_name}
+            exerciseSubtitle={`Set ${session.current_set} of ${currentExercise.sets} · Guided session`}
+            targetReps={cameraTargetReps}
+            poseSpec={cameraTracking.poseSpec}
+            calibration={cameraTracking.calibrationPayload}
             isActive={showSessionCamera}
+            countingPaused={cameraTracking.countingPaused}
+            sessionPaused={cameraTracking.sessionPaused}
+            facingMode={cameraTracking.facingMode}
+            repCount={cameraTracking.repCount}
+            formScore={cameraTracking.formScore}
+            verdicts={cameraTracking.verdicts}
+            liveRom01={cameraTracking.liveRom01}
+            liveInZone={cameraTracking.liveInZone}
+            zoneStart01={cameraTracking.zoneStart01}
+            zoneEnd01={cameraTracking.zoneEnd01}
+            orientationOk={cameraTracking.orientationOk}
+            liveStatus={cameraTracking.liveStatus}
+            coachText={
+              cameraTracking.bannerCue?.text ||
+              cameraTracking.liveCorrection ||
+              "Tracking locked — start when ready"
+            }
+            coachWarn={
+              cameraTracking.bannerCue?.priority === "correction" ||
+              cameraTracking.bannerCue?.priority === "safety" ||
+              cameraTracking.liveStatus === "no_body" ||
+              !cameraTracking.orientationOk
+            }
+            trackingRunning={cameraTracking.trackingRunning}
+            cameraError={sessionCameraError}
+            showCalibrateBanner={needsCalBanner || needsRecalibration}
+            relaxTrackingGates
+            onClose={() => setShowSessionCamera(false)}
+            onCalibrate={() => {
+              setShowSessionCamera(false);
+              navigationRef.navigate("AITrainerCalibration" as never, { planId } as never);
+            }}
+            onPauseToggle={cameraTracking.handlePauseToggle}
+            onFlipCam={cameraTracking.handleFlipCam}
+            onZoomIn={cameraTracking.handleZoomIn}
+            onZoomOut={cameraTracking.handleZoomOut}
+            zoomLevel={cameraTracking.zoomLevel}
+            onTrackingUpdate={cameraTracking.handleTrackingUpdate}
             onReady={handleSessionCameraReady}
             onError={handleSessionCameraError}
           />
-          <Pressable
-            style={styles.closeCam}
-            onPress={() => {
-              // Treat close as a soft "result" using planned name (no mismatch)
-              setShowSessionCamera(false);
-            }}
-          >
-            <Text style={styles.closeCamTxt}>Close camera</Text>
-          </Pressable>
         </View>
       ) : null}
 
@@ -636,17 +678,12 @@ const styles = StyleSheet.create({
   endEarlyCap: { textAlign: "center", color: MUTED, fontSize: 11, marginTop: 8 },
   cameraOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000",
-    zIndex: 20,
+    zIndex: 50,
+    backgroundColor: "#050b16",
   },
-  closeCam: {
-    position: "absolute",
-    bottom: 40,
-    alignSelf: "center",
-    backgroundColor: GREEN,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 999,
+  cameraOverlayFull: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 50,
+    backgroundColor: "#050b16",
   },
-  closeCamTxt: { color: "#fff", fontWeight: "800" },
 });

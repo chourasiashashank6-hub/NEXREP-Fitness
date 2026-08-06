@@ -20,12 +20,8 @@ import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { postSessionComplete } from "../api/workoutSessions";
 import { getProfile } from "../api/user";
 import { EndEarlySheet } from "../components/EndEarlySheet";
-import MediaPipeGuidanceView, {
-  type MediaPipeTrackingUpdate,
-} from "../components/MediaPipeGuidanceView";
-import { DepthRomGauge } from "../components/aiTrainer/DepthRomGauge";
-import { GlassPanel } from "../components/aiTrainer/GlassPanel";
-import { WaveformBars } from "../components/aiTrainer/WaveformBars";
+import type { MediaPipeTrackingUpdate } from "../components/MediaPipeGuidanceView";
+import { CameraWorkoutShell } from "../components/aiTrainer/CameraWorkoutShell";
 import { AI_C } from "../components/aiTrainer/aiTrainerTokens";
 import { getExerciseTrackingConfig } from "../constants/exerciseTrackingConfig";
 import { scoreSetFromReps } from "../data/aiTrainer/formScore";
@@ -38,13 +34,10 @@ import type { AiRepEvent } from "../data/aiTrainer/types";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 import {
   sharedAudioCoach,
-  speakBypassTestAudio,
-  speakTestUtterance,
   speechLocaleForAppLang,
   unlockWebSpeech,
   isWebSpeechUnlocked,
   onWebSpeechUnlockChange,
-  voiceModeLabel,
   type CoachPriority,
   type VoiceMode,
 } from "../services/aiTrainer/audioCoach";
@@ -149,6 +142,7 @@ export default function AICameraWorkoutScreen() {
   const { t, i18n } = useTranslation();
   const i18nLang = i18n.language;
   const needsCalBanner = usePoseCalibrationStore((s) => s.skipped && !s.hasCalibration());
+  const needsRecalibration = usePoseCalibrationStore((s) => s.needsRecalibration);
 
   const session = useWorkoutSessionStore((s) => s.session);
   const startSession = useWorkoutSessionStore((s) => s.startSession);
@@ -186,6 +180,7 @@ export default function AICameraWorkoutScreen() {
   const [sessionPaused, setSessionPaused] = useState(false);
   const [countingPaused, setCountingPaused] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [zoomLevel, setZoomLevel] = useState(1);
   const [liveRom01, setLiveRom01] = useState(0);
   const [liveInZone, setLiveInZone] = useState(false);
   const [zoneStart01, setZoneStart01] = useState(0.74);
@@ -763,12 +758,15 @@ export default function AICameraWorkoutScreen() {
   }, [sessionPaused]);
 
   const handleFlipCam = useCallback(() => {
-    setCountingPaused(true);
     setFacingMode((f) => (f === "user" ? "environment" : "user"));
-    if (flipStabilizeTimer.current) clearTimeout(flipStabilizeTimer.current);
-    flipStabilizeTimer.current = setTimeout(() => {
-      if (!pauseStartedAt.current) setCountingPaused(false);
-    }, 1000);
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel((z) => Math.min(3, Math.round((z + 0.25) * 100) / 100));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel((z) => Math.max(1, Math.round((z - 0.25) * 100) / 100));
   }, []);
 
   const handleCalibratePress = useCallback(() => {
@@ -914,62 +912,87 @@ export default function AICameraWorkoutScreen() {
       <SafeAreaView style={styles.safeDark} edges={["top", "left", "right"]}>
         <View style={styles.cameraShell}>
           {trackable ? (
-            <MediaPipeGuidanceView
-              selectedExerciseName={poseExerciseName || currentExercise.exercise_name}
+            <CameraWorkoutShell
+              exerciseName={poseExerciseName || currentExercise.exercise_name}
+              exerciseSubtitle={`Set ${session.current_set} of ${currentExercise.sets} · Rest`}
+              targetReps={parseReps(currentExercise.reps)}
+              poseSpec={livePoseSpec}
+              calibration={calibrationPayload}
               isActive
-              sessionMode
+              countingPaused
+              sessionPaused
+              seedRepCount={session.current_rep_count}
+              facingMode={facingMode}
+              repCount={session.current_rep_count}
+              formScore={Math.round(session.live_form_score ?? 100)}
+              verdicts={session.live_rep_verdicts || []}
+              liveRom01={liveRom01}
+              liveInZone={liveInZone}
+              zoneStart01={zoneStart01}
+              zoneEnd01={zoneEnd01}
+              orientationOk={orientationOk}
+              liveStatus={liveStatus}
+              coachText={t("aiTrainer.rest_camera_on", {
+                defaultValue: "Camera stays on — next set starts automatically",
+              })}
+              coachWarn={false}
+              hideBottomControls
+              onClose={() => setShowEndSheet(true)}
+              onTrackingUpdate={() => undefined}
               onReady={() => setCameraError(null)}
               onError={(m) => setCameraError(m)}
+              overlay={
+                <View style={[styles.hud, styles.restHud]} pointerEvents="box-none">
+                  <View style={styles.topRow}>
+                    <Pressable
+                      style={styles.circleBtn}
+                      onPress={() => setShowEndSheet(true)}
+                      accessibilityLabel="Cancel session"
+                    >
+                      <Ionicons name="close" size={20} color="#fff" />
+                    </Pressable>
+                    <View style={styles.livePill}>
+                      <View style={styles.liveDot} />
+                      <Text style={styles.livePillTxt}>{formatElapsed(elapsedSec)}</Text>
+                    </View>
+                    <View style={styles.circleBtnPlaceholder} />
+                  </View>
+
+                  <View style={styles.restBodyOverlay}>
+                    <View style={styles.restRingRow}>
+                      <Pressable style={styles.restAdjustBtn} onPress={() => handleAdjustRest(-15)}>
+                        <Ionicons name="remove" size={22} color="#fff" />
+                        <Text style={styles.restAdjustLbl}>15s</Text>
+                      </Pressable>
+
+                      <RestCountdownRing remainingSec={restRemainingSec} totalSec={restTotalSec} />
+
+                      <Pressable style={styles.restAdjustBtn} onPress={() => handleAdjustRest(15)}>
+                        <Ionicons name="add" size={22} color="#fff" />
+                        <Text style={styles.restAdjustLbl}>15s</Text>
+                      </Pressable>
+                    </View>
+
+                    <Text style={[styles.restTitle, { color: "#fff" }]}>Rest</Text>
+                    <Text style={[styles.restSub, { color: "rgba(255,255,255,0.85)" }]}>
+                      Camera stays on — next set starts automatically
+                    </Text>
+
+                    <Pressable style={styles.skipRestBtn} onPress={handleSkipRest}>
+                      <Text style={styles.skipRestTxt}>Skip rest</Text>
+                    </Pressable>
+
+                    <View style={[styles.upNextCard, { backgroundColor: "rgba(241,239,232,0.95)" }]}>
+                      <Text style={styles.upNextLbl}>Up next</Text>
+                      <Text style={styles.upNextName}>{restUpNext}</Text>
+                    </View>
+                  </View>
+                </View>
+              }
             />
           ) : (
             <View style={styles.cameraPlaceholder} />
           )}
-          <View style={[styles.hud, styles.restHud]}>
-            <View style={styles.topRow}>
-              <Pressable
-                style={styles.circleBtn}
-                onPress={() => setShowEndSheet(true)}
-                accessibilityLabel="Cancel session"
-              >
-                <Ionicons name="close" size={20} color="#fff" />
-              </Pressable>
-              <View style={styles.livePill}>
-                <View style={styles.liveDot} />
-                <Text style={styles.livePillTxt}>{formatElapsed(elapsedSec)}</Text>
-              </View>
-              <View style={styles.circleBtnPlaceholder} />
-            </View>
-
-            <View style={styles.restBodyOverlay}>
-              <View style={styles.restRingRow}>
-                <Pressable style={styles.restAdjustBtn} onPress={() => handleAdjustRest(-15)}>
-                  <Ionicons name="remove" size={22} color="#fff" />
-                  <Text style={styles.restAdjustLbl}>15s</Text>
-                </Pressable>
-
-                <RestCountdownRing remainingSec={restRemainingSec} totalSec={restTotalSec} />
-
-                <Pressable style={styles.restAdjustBtn} onPress={() => handleAdjustRest(15)}>
-                  <Ionicons name="add" size={22} color="#fff" />
-                  <Text style={styles.restAdjustLbl}>15s</Text>
-                </Pressable>
-              </View>
-
-              <Text style={[styles.restTitle, { color: "#fff" }]}>Rest</Text>
-              <Text style={[styles.restSub, { color: "rgba(255,255,255,0.85)" }]}>
-                Camera stays on — next set starts automatically
-              </Text>
-
-              <Pressable style={styles.skipRestBtn} onPress={handleSkipRest}>
-                <Text style={styles.skipRestTxt}>Skip rest</Text>
-              </Pressable>
-
-              <View style={[styles.upNextCard, { backgroundColor: "rgba(241,239,232,0.95)" }]}>
-                <Text style={styles.upNextLbl}>Up next</Text>
-                <Text style={styles.upNextName}>{restUpNext}</Text>
-              </View>
-            </View>
-          </View>
         </View>
         <EndEarlySheet
           visible={showEndSheet}
@@ -1067,8 +1090,6 @@ export default function AICameraWorkoutScreen() {
   // —— Live tracking ——
   const formScore = Math.round(session.live_form_score ?? 100);
   const verdicts = session.live_rep_verdicts || [];
-  const cleanCount = verdicts.filter((v) => v === "clean").length;
-  const flaggedCount = verdicts.filter((v) => v === "flagged").length;
   const voiceMode = (session.voice_mode || "full") as VoiceMode;
   const coachWarn =
     bannerCue?.priority === "correction" ||
@@ -1079,227 +1100,61 @@ export default function AICameraWorkoutScreen() {
     bannerCue?.text ||
     liveCorrection ||
     t("aiTrainer.tracking_ready", { defaultValue: "Tracking locked — start when ready" });
-  const coachOnLabel =
-    voiceMode === "muted" ? "COACH OFF" : voiceMode === "corrections_only" ? "COACH FIXES" : "COACH ON";
   const trackingRunning = cameraActive && !sessionPaused && !countingPaused;
 
   return (
     <SafeAreaView style={styles.safeDark} edges={["top", "left", "right"]}>
       <View style={styles.cameraShell}>
         {cameraActive ? (
-          <MediaPipeGuidanceView
-            key={`pose-${poseExerciseName}-${session.current_exercise_index}-${session.current_set}-${facingMode}`}
-            selectedExerciseName={poseExerciseName || currentExercise.exercise_name}
-            isActive
-            sessionMode
-            facingMode={facingMode}
+          <CameraWorkoutShell
+            key={`pose-${poseExerciseName}-${session.current_exercise_index}-${session.current_set}`}
+            exerciseName={poseExerciseName || currentExercise.exercise_name}
+            exerciseSubtitle={`Set ${session.current_set} of ${currentExercise.sets} · ${session.day_name}`}
+            targetReps={parseReps(currentExercise.reps)}
             poseSpec={livePoseSpec}
             calibration={calibrationPayload}
-            seedRepCount={session.current_rep_count}
+            isActive
             countingPaused={countingPaused || sessionPaused}
+            sessionPaused={sessionPaused}
+            seedRepCount={session.current_rep_count}
+            facingMode={facingMode}
+            repCount={session.current_rep_count}
+            formScore={formScore}
+            verdicts={verdicts}
+            liveRom01={liveRom01}
+            liveInZone={liveInZone}
+            zoneStart01={zoneStart01}
+            zoneEnd01={zoneEnd01}
+            orientationOk={orientationOk}
+            liveStatus={liveStatus}
+            coachText={coachText}
+            coachWarn={coachWarn}
+            ttsSpeaking={ttsSpeaking}
+            trackingRunning={trackingRunning}
+            voiceMode={voiceMode}
+            cameraError={cameraError}
+            showCalibrateBanner={needsCalBanner || needsRecalibration}
+            webAudioReady={webAudioReady}
+            onClose={() => setShowEndSheet(true)}
+            onCalibrate={handleCalibratePress}
+            onPauseToggle={handlePauseToggle}
+            onVoiceModeCycle={() => {
+              if (Platform.OS === "web") unlockWebSpeech();
+              cycleVoiceMode();
+            }}
+            onFlipCam={handleFlipCam}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            zoomLevel={zoomLevel}
+            onTrackingUpdate={handleTrackingUpdate}
             onReady={() => setCameraError(null)}
             onError={(m) => setCameraError(m)}
-            onTrackingUpdate={handleTrackingUpdate}
           />
         ) : (
           <View style={styles.cameraPlaceholder}>
             <ActivityIndicator color="#fff" />
           </View>
         )}
-
-        {cameraError ? (
-          <View style={styles.cameraErrorBanner}>
-            <Text style={styles.cameraErrorTxt}>{cameraError}</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.hud} pointerEvents="box-none">
-          {needsCalBanner ? (
-            <Pressable style={styles.calBanner} onPress={handleCalibratePress}>
-              <Text style={styles.calBannerTxt}>
-                {t("aiTrainer.calibrate_banner", { defaultValue: "Calibrate for accuracy" })}
-              </Text>
-            </Pressable>
-          ) : null}
-
-          {/* Top bar — exercise + COACH ON + close */}
-          <View style={styles.liveTopBar}>
-            <GlassPanel style={styles.topGlass}>
-              <View style={[styles.livePulse, !trackingRunning && styles.livePulseIdle]} />
-              <View style={styles.topCopy}>
-                <Text style={styles.topExName} numberOfLines={1}>
-                  {currentExercise.exercise_name}
-                </Text>
-                <Text style={styles.topExSub} numberOfLines={1}>
-                  Set {session.current_set} of {currentExercise.sets} · {session.day_name}
-                </Text>
-              </View>
-              <View style={styles.coachOn}>
-                <WaveformBars active={ttsSpeaking} />
-                <Text style={styles.coachOnLbl}>{coachOnLabel}</Text>
-              </View>
-            </GlassPanel>
-            <Pressable
-              style={styles.closeGlass}
-              onPress={() => setShowEndSheet(true)}
-              accessibilityLabel="Cancel session"
-            >
-              <Text style={styles.closeX}>✕</Text>
-            </Pressable>
-          </View>
-
-          {/* Left column — clean reps + form score */}
-          <View style={styles.leftCol} pointerEvents="none">
-            <GlassPanel style={styles.repCard}>
-              <Text style={styles.repBig}>
-                {session.current_rep_count}
-                <Text style={styles.repSlash}>/{currentExercise.reps}</Text>
-              </Text>
-              <Text style={styles.cleanLbl}>CLEAN REPS</Text>
-              <Text style={styles.cleanSub}>
-                {cleanCount} perfect · {flaggedCount} flagged
-              </Text>
-            </GlassPanel>
-            <GlassPanel style={styles.scoreCard}>
-              <Text style={[styles.scoreBig, { color: formScore >= 89 ? AI_C.mint : AI_C.orange }]}>
-                {formScore}
-              </Text>
-              <Text style={styles.scoreLbl}>FORM SCORE</Text>
-            </GlassPanel>
-          </View>
-
-          {/* Right — depth gauge */}
-          <View style={styles.depthCol} pointerEvents="none">
-            <DepthRomGauge
-              progress01={liveStatus === "no_body" ? 0 : liveRom01}
-              inZone={liveInZone && orientationOk && liveStatus !== "no_body"}
-              zoneStart01={zoneStart01}
-              zoneEnd01={zoneEnd01}
-            />
-          </View>
-
-          {/* Rep quality dots */}
-          <View style={styles.dotsRow} pointerEvents="none">
-            {verdicts.slice(-12).map((v, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.dot,
-                  {
-                    backgroundColor: v === "clean" ? AI_C.mint : AI_C.orange,
-                    opacity: 0.5 + 0.5 * (i / 12),
-                  },
-                ]}
-              />
-            ))}
-          </View>
-
-          {/* Coach banner */}
-          <GlassPanel
-            style={[
-              styles.coachBanner,
-              {
-                borderColor: coachWarn ? "rgba(255,122,69,0.55)" : "rgba(139,92,246,0.45)",
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.coachIcon,
-                {
-                  backgroundColor: coachWarn ? "rgba(255,122,69,0.18)" : "rgba(139,92,246,0.2)",
-                },
-              ]}
-            >
-              <Text style={{ fontSize: 18 }}>{coachWarn ? "⚠️" : "🎧"}</Text>
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[styles.coachKicker, { color: coachWarn ? AI_C.orange : AI_C.purple }]}>
-                {coachWarn ? "AUDIO CUE · CORRECTION" : "AUDIO CUE · COACH"}
-              </Text>
-              <Text style={styles.coachBody} numberOfLines={2}>
-                {coachText}
-              </Text>
-            </View>
-            <WaveformBars
-              active={ttsSpeaking}
-              color={coachWarn ? AI_C.orange : AI_C.purple}
-            />
-          </GlassPanel>
-
-          {sessionPaused ? (
-            <View style={styles.pauseOverlay}>
-              <Text style={styles.pauseTitle}>Paused</Text>
-              <Text style={styles.pauseSub}>Rep counting and audio are frozen</Text>
-              <Pressable style={styles.resumeBtn} onPress={handlePauseToggle}>
-                <Text style={styles.resumeBtnTxt}>▶ Resume</Text>
-              </Pressable>
-            </View>
-          ) : null}
-
-          {!sessionPaused && !orientationOk && liveStatus !== "no_body" ? (
-            <View style={styles.orientOverlay} pointerEvents="none">
-              <Text style={styles.orientTxt}>{liveCorrection}</Text>
-            </View>
-          ) : null}
-
-          {/* Bottom controls */}
-          <View style={styles.bottomControls}>
-            <Pressable style={styles.ctrlBtn} onPress={handlePauseToggle}>
-              <Text style={styles.ctrlTxt}>{sessionPaused ? "▶ Resume" : "⏸ Pause"}</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.ctrlBtn, voiceMode !== "muted" && styles.ctrlBtnActive]}
-              onPress={() => {
-                if (Platform.OS === "web") unlockWebSpeech();
-                cycleVoiceMode();
-              }}
-            >
-              <Text
-                style={[styles.ctrlTxt, voiceMode !== "muted" && { color: AI_C.purple }]}
-              >
-                {voiceModeLabel(voiceMode)}
-              </Text>
-            </Pressable>
-            <Pressable style={styles.ctrlBtn} onPress={handleFlipCam}>
-              <Text style={styles.ctrlTxt}>↻ Flip cam</Text>
-            </Pressable>
-          </View>
-
-          {Platform.OS === "web" && !webAudioReady ? (
-            <Pressable
-              style={styles.enableAudioBanner}
-              onPress={() => {
-                console.log("[TestAudio] enable-audio banner clicked");
-                // Sync speak in the same gesture — marks unlocked
-                speakTestUtterance("Coach audio is on");
-              }}
-            >
-              <Text style={styles.enableAudioTxt}>
-                🔊 Tap to enable coach audio (browser requires a click)
-              </Text>
-            </Pressable>
-          ) : null}
-
-          {Platform.OS === "web" ? (
-            <Pressable
-              style={styles.testAudioBtn}
-              onPress={() => {
-                console.log("[TestAudio] button clicked");
-                console.log("[TestAudio] platform check", Platform.OS);
-                // Module-held utterance + onstart/onend/onerror + speaking polls
-                // (Chrome can GC a local SpeechSynthesisUtterance → silent speak).
-                const ok = speakBypassTestAudio("bypass test");
-                if (!ok) {
-                  console.warn("[TestAudio] raw synth missing — falling back to speakTestUtterance");
-                  speakTestUtterance("Test audio one two three");
-                }
-              }}
-            >
-              <Text style={styles.testAudioTxt}>Test Audio</Text>
-            </Pressable>
-          ) : null}
-        </View>
       </View>
 
       <EndEarlySheet

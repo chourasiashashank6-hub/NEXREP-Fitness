@@ -41,7 +41,7 @@ import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
 import AllTimeHistoryModal from "../components/AllTimeHistoryModal";
 import { AppInput } from "../components/AppInput";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
-import MediaPipeGuidanceView from "../components/MediaPipeGuidanceView";
+import { CameraWorkoutShell } from "../components/aiTrainer/CameraWorkoutShell";
 import { LogPlannerSegment, type LogPlannerMode } from "../components/LogPlannerSegment";
 import { PlannerLockedUpsell } from "../components/PlannerLockedUpsell";
 import { SessionTypePickerModal } from "../components/SessionTypePickerModal";
@@ -52,7 +52,7 @@ import {
   type ExerciseGuidance,
 } from "../constants/ExerciseGuidanceData";
 import { useLanguageStore } from "../i18n/languageStore";
-import type { MediaPipeGuidanceViewProps } from "../components/MediaPipeGuidanceView";
+import { useCameraTracking } from "../hooks/useCameraTracking";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import { useAuthStore } from "../store/authStore";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
@@ -410,6 +410,8 @@ export const WorkoutScreen = () => {
   const [editTopSetReps, setEditTopSetReps] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const needsCalBanner = usePoseCalibrationStore((s) => s.skipped && !s.hasCalibration());
+  const needsRecalibration = usePoseCalibrationStore((s) => s.needsRecalibration);
   const [showSessionPicker, setShowSessionPicker] = useState(false);
   const [mediaPipeReady, setMediaPipeReady] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -1230,13 +1232,28 @@ export const WorkoutScreen = () => {
     }
   };
   const closeCameraTracker = () => {
-    // Ensure detection/camera stream shuts down with the view.
     setShowCamera(false);
     setMediaPipeReady(false);
     setCameraError(null);
+    cameraTracking.resetTracking();
   };
 
   const canOpenCamera = exerciseName !== SELECT_CHOICE;
+  const cameraTargetReps = useMemo(() => {
+    const n = Number(performedRepsPerSet);
+    return Number.isInteger(n) && n > 0 ? n : 10;
+  }, [performedRepsPerSet]);
+
+  const cameraTracking = useCameraTracking({
+    exerciseName: canOpenCamera ? exerciseName : "",
+    targetReps: cameraTargetReps,
+    enableAudio: true,
+  });
+
+  useEffect(() => {
+    if (showCamera) cameraTracking.resetTracking();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCamera, exerciseName]);
   const todayHistory = useMemo(() => {
     if (!todayKey) return [];
     return history.filter((item) => toDateKey(item?.date) === todayKey);
@@ -1271,18 +1288,20 @@ export const WorkoutScreen = () => {
     setShowHistory((prev) => !prev);
   };
 
-  const mediaPipeProps: MediaPipeGuidanceViewProps = {
-    selectedExerciseName: canOpenCamera ? exerciseName : undefined,
-    isActive: showCamera,
-    onReady: () => {
-      setMediaPipeReady(true);
-      setCameraError(null);
-    },
-    onError: (message: string) => {
-      setCameraError(message);
-      setMediaPipeReady(false);
-    },
+  const handleCameraCalibrate = () => {
+    closeCameraTracker();
+    navigationRef.navigate("AITrainerCalibration" as never);
   };
+
+  const cameraCoachText =
+    cameraTracking.bannerCue?.text ||
+    cameraTracking.liveCorrection ||
+    t("aiTrainer.tracking_ready", { defaultValue: "Tracking locked — start when ready" });
+  const cameraCoachWarn =
+    cameraTracking.bannerCue?.priority === "correction" ||
+    cameraTracking.bannerCue?.priority === "safety" ||
+    cameraTracking.liveStatus === "no_body" ||
+    !cameraTracking.orientationOk;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -2095,47 +2114,68 @@ export const WorkoutScreen = () => {
         </View>
       </Modal>
 
-      <Modal visible={showCamera} transparent animationType="slide" onRequestClose={closeCameraTracker}>
-        <View style={styles.cameraModalBackdrop}>
-          <View style={[styles.cameraModalCard, { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: radius.lg }]}>
-            <View style={styles.cameraHeaderRow}>
-              <Text style={[styles.cameraTitle, { color: colors.text }]}>{t("workoutLog.cameraTitle")}</Text>
+      <Modal visible={showCamera} animationType="slide" onRequestClose={closeCameraTracker}>
+        <SafeAreaView style={styles.cameraFullScreen} edges={["top", "left", "right", "bottom"]}>
+          {cameraPermission?.granted ? (
+            <CameraWorkoutShell
+              exerciseName={exerciseName}
+              exerciseSubtitle={t("workoutLog.cameraTitle", { defaultValue: "Camera tracker" })}
+              targetReps={cameraTargetReps}
+              poseSpec={cameraTracking.poseSpec}
+              calibration={cameraTracking.calibrationPayload}
+              isActive={showCamera}
+              countingPaused={cameraTracking.countingPaused}
+              sessionPaused={cameraTracking.sessionPaused}
+              facingMode={cameraTracking.facingMode}
+              repCount={cameraTracking.repCount}
+              formScore={cameraTracking.formScore}
+              verdicts={cameraTracking.verdicts}
+              liveRom01={cameraTracking.liveRom01}
+              liveInZone={cameraTracking.liveInZone}
+              zoneStart01={cameraTracking.zoneStart01}
+              zoneEnd01={cameraTracking.zoneEnd01}
+              orientationOk={cameraTracking.orientationOk}
+              liveStatus={cameraTracking.liveStatus}
+              coachText={cameraCoachText}
+              coachWarn={cameraCoachWarn}
+              trackingRunning={cameraTracking.trackingRunning}
+              cameraError={cameraError}
+              showCalibrateBanner={needsCalBanner || needsRecalibration}
+              relaxTrackingGates
+              onClose={closeCameraTracker}
+              onCalibrate={handleCameraCalibrate}
+              onPauseToggle={cameraTracking.handlePauseToggle}
+              onFlipCam={cameraTracking.handleFlipCam}
+              onZoomIn={cameraTracking.handleZoomIn}
+              onZoomOut={cameraTracking.handleZoomOut}
+              zoomLevel={cameraTracking.zoomLevel}
+              onTrackingUpdate={cameraTracking.handleTrackingUpdate}
+              onReady={() => {
+                setMediaPipeReady(true);
+                setCameraError(null);
+              }}
+              onError={(message) => {
+                setCameraError(message);
+                setMediaPipeReady(false);
+              }}
+            />
+          ) : (
+            <View style={styles.cameraPermissionFull}>
+              <Text style={styles.cameraPermissionFullTxt}>
+                {cameraError || t("workoutLog.cameraPermission")}
+              </Text>
               <Pressable
-                style={[styles.cameraCloseBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
-                onPress={closeCameraTracker}
+                style={styles.cameraAllowBtn}
+                onPress={() => void openCameraTracker()}
               >
-                <Text style={[styles.cameraCloseText, { color: colors.text }]}>{t("profile.close")}</Text>
+                <Text style={styles.cameraAllowText}>{t("workoutLog.allowCamera")}</Text>
+              </Pressable>
+              <Pressable style={styles.cameraCloseLink} onPress={closeCameraTracker}>
+                <Text style={styles.cameraCloseLinkTxt}>{t("profile.close")}</Text>
               </Pressable>
             </View>
-            {cameraPermission?.granted ? (
-              <View style={[styles.cameraPreviewWrap, { borderColor: colors.border }]}>
-                <MediaPipeGuidanceView
-                  {...mediaPipeProps}
-                />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t("workoutLog.closeCamera")}
-                  style={[styles.cameraFloatingCloseBtn, { borderColor: colors.border, backgroundColor: "rgba(0,0,0,0.6)" }]}
-                  onPress={closeCameraTracker}
-                >
-                  <Text style={styles.cameraFloatingCloseText}>✕</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <View style={[styles.cameraPermissionBox, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
-                <Text style={[styles.cameraPermissionText, { color: colors.text }]}>
-                  {cameraError || t("workoutLog.cameraPermission")}
-                </Text>
-                <Pressable
-                  style={[styles.cameraAllowBtn, { borderColor: colors.primary, backgroundColor: colors.primary }]}
-                  onPress={() => void openCameraTracker()}
-                >
-                  <Text style={[styles.cameraAllowText, { color: colors.background }]}>{t("workoutLog.allowCamera")}</Text>
-                </Pressable>
-              </View>
-            )}
-          </View>
-        </View>
+          )}
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
@@ -2873,4 +2913,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   cameraAllowText: { fontSize: 13, fontWeight: "800" },
+  cameraFullScreen: { flex: 1, backgroundColor: "#050b16" },
+  cameraPermissionFull: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    gap: 16,
+    backgroundColor: "#050b16",
+  },
+  cameraPermissionFullTxt: { color: "#fff", textAlign: "center", fontWeight: "600", lineHeight: 22 },
+  cameraCloseLink: { marginTop: 8, padding: 12 },
+  cameraCloseLinkTxt: { color: "rgba(255,255,255,0.7)", fontWeight: "600", textDecorationLine: "underline" },
 });
