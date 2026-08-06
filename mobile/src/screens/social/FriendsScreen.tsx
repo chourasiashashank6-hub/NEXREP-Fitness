@@ -212,6 +212,8 @@ export default function FriendsScreen({ initialView = "friends" }: Props) {
       navigation.navigate("SocialChat", {
         dmConversationId: conversation.id,
         title: conversation.other_user?.name ?? user.name,
+        profilePhotoUrl: conversation.other_user?.profile_photo_url ?? user.profile_photo_url,
+        initials: conversation.other_user?.initials ?? user.initials,
       });
     } catch {
       Alert.alert(t("common.error"), t("social.messages.alerts.loadConversationsFailed"));
@@ -238,7 +240,12 @@ export default function FriendsScreen({ initialView = "friends" }: Props) {
         },
       });
       setSelectedUser(null);
-      navigation.navigate("SocialChat", { dmConversationId: conversation.id, title: conversation.other_user?.name ?? user.name });
+      navigation.navigate("SocialChat", {
+        dmConversationId: conversation.id,
+        title: conversation.other_user?.name ?? user.name,
+        profilePhotoUrl: conversation.other_user?.profile_photo_url ?? user.profile_photo_url,
+        initials: conversation.other_user?.initials ?? user.initials,
+      });
     } catch {
       Alert.alert(t("common.error"), t("social.messages.alerts.sendFailed"));
     }

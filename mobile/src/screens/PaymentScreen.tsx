@@ -17,7 +17,7 @@ import { WebView } from "react-native-webview";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { auth } from "../services/authService";
+import { getFirebaseAuth } from "../config/firebase";
 import { devActivatePlan } from "../api/payments";
 import {
   CHECKOUT_COUPONS,
@@ -118,14 +118,14 @@ export function PaymentScreen({ route, navigation }: Props) {
       try {
         const profile = await getProfile();
         setPrefill({
-          email: String(profile?.email ?? auth.currentUser?.email ?? ""),
-          name: String(profile?.name ?? auth.currentUser?.displayName ?? ""),
+          email: String(profile?.email ?? getFirebaseAuth().currentUser?.email ?? ""),
+          name: String(profile?.name ?? getFirebaseAuth().currentUser?.displayName ?? ""),
           contact: String(profile?.phone ?? ""),
         });
       } catch {
         setPrefill({
-          email: auth.currentUser?.email ?? "",
-          name: auth.currentUser?.displayName ?? "",
+          email: getFirebaseAuth().currentUser?.email ?? "",
+          name: getFirebaseAuth().currentUser?.displayName ?? "",
           contact: "",
         });
       }

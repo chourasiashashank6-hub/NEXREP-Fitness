@@ -1,4 +1,4 @@
-import { PropsWithChildren, createContext, useCallback, useContext, useEffect, useRef } from "react";
+import { PropsWithChildren, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { DEFAULT_ONBOARDING_DATA } from "../constants/onboarding";
 import { UseOnboardingReturn, useOnboarding } from "./useOnboarding";
 import { fetchOnboardingMeShared, type OnboardingMeResponse } from "../api/onboarding";
@@ -7,8 +7,15 @@ import { getOnboardingData } from "../storage/onboarding";
 import { useAuthStore } from "../store/authStore";
 import { mergeOnboardingWithProfile } from "../utils/onboardingProfileMerge";
 import { normalizeGoalFocusFields } from "../utils/onboardingFocusMuscles";
+import type { OnboardingData } from "../types/onboarding";
+
+function cloneOnboarding(data: OnboardingData): OnboardingData {
+  return JSON.parse(JSON.stringify(data)) as OnboardingData;
+}
 
 export type OnboardingContextValue = UseOnboardingReturn & {
+  /** True while onboarding data is being fetched and hydrated on mount/refresh. */
+  isHydrating: boolean;
   /**
    * Re-fetches onboarding data (profile + /onboarding/me, with local-storage fallback),
    * hydrates the shared `data`/`targets` state, and returns the merged result. Screens that
@@ -17,6 +24,9 @@ export type OnboardingContextValue = UseOnboardingReturn & {
    * other consumer of this context rather than duplicated.
    */
   refresh: () => Promise<OnboardingMeResponse | null>;
+  /** Snapshot taken when onboarding data was last loaded — used for cancel/discard diffing. */
+  getBaseline: () => OnboardingData;
+  revertToBaseline: () => void;
 };
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
@@ -25,16 +35,33 @@ export const OnboardingProvider = ({ children }: PropsWithChildren) => {
   const value = useOnboarding();
   const token = useAuthStore((s) => s.token);
   const returnToProfile = useAuthStore((s) => s.returnToProfileAfterOnboarding);
+  const [isHydrating, setIsHydrating] = useState(false);
   const hydrateRef = useRef(value.hydrate);
   const resetRef = useRef(value.reset);
   const setTargetsRef = useRef(value.setTargets);
+  const baselineRef = useRef<OnboardingData>(cloneOnboarding(DEFAULT_ONBOARDING_DATA));
   hydrateRef.current = value.hydrate;
   resetRef.current = value.reset;
   setTargetsRef.current = value.setTargets;
 
+  const setBaseline = (data: OnboardingData) => {
+    baselineRef.current = cloneOnboarding(data);
+  };
+
+  const getBaseline = useCallback(() => baselineRef.current, []);
+
+  const revertToBaseline = useCallback(() => {
+    hydrateRef.current(cloneOnboarding(baselineRef.current));
+  }, []);
+
   const refresh = useCallback(async (): Promise<OnboardingMeResponse | null> => {
     const tokenAtStart = useAuthStore.getState().token;
-    if (!tokenAtStart) return null;
+    if (!tokenAtStart) {
+      setIsHydrating(false);
+      return null;
+    }
+    setIsHydrating(true);
+    try {
     // Guards against applying a stale result if the session changes (login/logout) while
     // this fetch is still in flight — mirrors the old effect's `cancelled` flag.
     const stillCurrentSession = () => useAuthStore.getState().token === tokenAtStart;
@@ -78,22 +105,32 @@ export const OnboardingProvider = ({ children }: PropsWithChildren) => {
     const normalized = { ...next, goal: normalizeGoalFocusFields(next.goal) };
     if (stillCurrentSession()) {
       hydrateRef.current(normalized);
+      setBaseline(normalized);
       setTargetsRef.current(remote?.targets ?? null);
       if (profile) useAuthStore.getState().setPlanId(String(profile.plan_id || "free"));
     }
 
     return { onboarding: normalized, targets: remote?.targets ?? null };
+    } finally {
+      setIsHydrating(false);
+    }
   }, []);
 
   useEffect(() => {
     resetRef.current();
+    setBaseline(DEFAULT_ONBOARDING_DATA);
     if (token) {
+      setIsHydrating(true);
       void refresh();
+    } else {
+      setIsHydrating(false);
     }
   }, [token, returnToProfile, refresh]);
 
   return (
-    <OnboardingContext.Provider value={{ ...value, refresh }}>{children}</OnboardingContext.Provider>
+    <OnboardingContext.Provider value={{ ...value, isHydrating, refresh, getBaseline, revertToBaseline }}>
+      {children}
+    </OnboardingContext.Provider>
   );
 };
 

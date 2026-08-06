@@ -80,7 +80,13 @@
     "todaysGoal": "META DE HOY",
     "goalComplete": "¡Meta cumplida!",
     "mealsLoggedToday": "🍽️ Comidas registradas hoy",
+    "mealSource": {
+      "planner": "Planificador de comidas",
+      "manual": "Manual",
+      "scan": "Escaneo"
+    },
     "sessionsDoneToday": "🔥 Sesiones de hoy",
+    "emptySessions": "Aún no hay sesiones registradas",
     "sessionBoxLabel": "Sesión",
     "restDayNoSession": "Hoy es día de descanso 🛌 — no hay sesión programada"
   },
@@ -1031,7 +1037,9 @@
     "noFullBody": "No se ha detectado ningún cuerpo completo: retroceda un poco",
     "notDetected": "{{label}}no detectado",
     "loadingTracker": "Cargando el rastreador de postura…",
-    "loadingTrackerHint": "La primera carga puede tardar unos segundos"
+    "loadingTrackerHint": "La primera carga puede tardar unos segundos",
+    "serverError": "Guía de cámara no disponible",
+    "retry": "Reintentar"
   },
   "payment": {
     "checkout": {
@@ -1946,7 +1954,22 @@
       "screenCounter": "PANTALLA{{step}}DE 6",
       "stepCounter": "{{step}}/ 6",
       "nextArrow": "{{label}}→",
-      "saveAndExit": "Guardar y salir ✓"
+      "saveAndExit": "Guardar y salir ✓",
+      "loading": "Cargando tu información…"
+    },
+    "unsaved": {
+      "title": "¿Descartar cambios sin guardar?",
+      "body": "Editaste los siguientes campos pero aún no guardaste:",
+      "keepEditing": "Seguir editando",
+      "discard": "Descartar cambios",
+      "empty": "—",
+      "fields": {
+        "name": "Nombre completo",
+        "unitSystem": "Preferencia de unidades",
+        "targetLifts": "Levantamientos objetivo",
+        "weighInReminder": "Recordatorio de peso",
+        "waterGoal": "Meta de agua"
+      }
     },
     "fieldTypes": {
       "textInput": "Entrada de texto",

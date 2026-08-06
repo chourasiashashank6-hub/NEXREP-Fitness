@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { BodyTypeSelectionModal } from "../../components/BodyTypeSelectionModal";
@@ -37,12 +37,25 @@ const SUGGESTED_STRENGTH_LIFTS = [
 
 export default function Screen2Goal({ navigation }: any) {
   const { t } = useTranslation();
-  const { data, updateGoal } = useOnboardingContext();
+  const { data, updateGoal, isHydrating } = useOnboardingContext();
   const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCustomLift, setShowCustomLift] = useState(false);
   const [customLiftName, setCustomLiftName] = useState("");
   const [showBodyTypeModal, setShowBodyTypeModal] = useState(false);
+
+  const clearError = (key: string) => {
+    setErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!isHydrating) setErrors({});
+  }, [isHydrating]);
 
   const isPaceNeeded = data.goal.type === "fat_loss" || data.goal.type === "muscle_gain";
   const isStrengthGoal = data.goal.type === "strength";
@@ -132,7 +145,7 @@ export default function Screen2Goal({ navigation }: any) {
           <Text style={styles.labelInline}>{t("onboarding.screen2.difficulty")}</Text>
           <RequiredBadge />
         </RequiredLabelRow>
-        <TapCards options={DIFFICULTY_OPTIONS as any} value={data.goal.difficulty} onChange={(v) => updateGoal({ difficulty: v as any })} />
+        <TapCards options={DIFFICULTY_OPTIONS as any} value={data.goal.difficulty} onChange={(v) => { updateGoal({ difficulty: v as any }); clearError("difficulty"); }} />
         {errors.difficulty ? <Text style={styles.error}>{errors.difficulty}</Text> : null}
       </View>
 
@@ -142,7 +155,7 @@ export default function Screen2Goal({ navigation }: any) {
             <Text style={styles.labelInline}>{t("onboarding.screen2.goalPace")}</Text>
             <RequiredBadge />
           </RequiredLabelRow>
-          <BottomSheetPicker label={t("onboarding.screen2.goalPace")} value={data.goal.pace} options={GOAL_PACE_OPTIONS} onChange={(v) => updateGoal({ pace: v as any })} placeholder={t("onboarding.screen2.goalPacePlaceholder")} error={errors.pace} />
+          <BottomSheetPicker label={t("onboarding.screen2.goalPace")} value={data.goal.pace} options={GOAL_PACE_OPTIONS} onChange={(v) => { updateGoal({ pace: v as any }); clearError("pace"); }} placeholder={t("onboarding.screen2.goalPacePlaceholder")} error={errors.pace} />
 
           <View style={styles.targetWeightLabelWrap}>
             <RequiredLabelRow>
@@ -156,9 +169,10 @@ export default function Screen2Goal({ navigation }: any) {
             label={t("onboarding.screen2.targetWeight")}
             value={targetWeight}
             options={options}
-            onChange={(v) =>
-              data.personal.unit_system === "metric" ? updateGoal({ target_weight_kg: Number(v) }) : updateGoal({ target_weight_lb: Number(v) })
-            }
+            onChange={(v) => {
+              data.personal.unit_system === "metric" ? updateGoal({ target_weight_kg: Number(v) }) : updateGoal({ target_weight_lb: Number(v) });
+              clearError("target");
+            }}
             placeholder={t("onboarding.screen2.targetWeightPlaceholder")}
             error={errors.target}
           />

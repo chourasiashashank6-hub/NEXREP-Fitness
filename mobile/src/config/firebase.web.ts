@@ -1,10 +1,6 @@
 /**
- * Web / Expo web — use default browser persistence (IndexedDB). Do not use
- * getReactNativePersistence here (not in the web SDK; breaks the bundle).
+ * Web — browser persistence via default Firebase Auth.
  */
-import { getAuth } from "firebase/auth";
-import { getOrCreateFirebaseApp } from "./firebaseApp";
-
-const app = getOrCreateFirebaseApp();
-export const auth = getAuth(app);
-export default app;
+export { getFirebaseAuth } from "./getFirebaseAuth.web";
+export { getFirebaseAuth as auth } from "./getFirebaseAuth.web";
+export { getOrCreateFirebaseApp as default } from "./firebaseApp";

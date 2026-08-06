@@ -1,13 +1,24 @@
 /** @type {import('expo/config').ExpoConfig} */
+const path = require("path");
+
+require("dotenv").config();
+// EAS Build does not upload gitignored `.env`; use committed public client keys.
+if (process.env.EAS_BUILD === "true") {
+  require("dotenv").config({ path: path.resolve(__dirname, ".env.production"), override: true });
+}
+
+const isDevClientBuild = process.env.EAS_BUILD_PROFILE === "development";
+
 module.exports = {
   expo: {
     name: "NexRep",
     slug: "nexrep-fitness",
-    version: "1.0.0",
+    owner: "nexrep_5",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
-    newArchEnabled: false,
+    newArchEnabled: true,
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",
@@ -17,6 +28,7 @@ module.exports = {
       supportsTablet: true,
       bundleIdentifier: "com.nexrep.fitness",
       infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
         NSCameraUsageDescription:
           "NexRep needs camera access to scan food and track workouts.",
         NSPhotoLibraryUsageDescription:
@@ -43,6 +55,25 @@ module.exports = {
       favicon: "./assets/favicon.png",
     },
     plugins: [
+      ...(isDevClientBuild ? ["expo-dev-client"] : []),
+      [
+        "expo-build-properties",
+        {
+          android: {
+            // Required for the local MediaPipe HTTP server (http://127.0.0.1) on Android 9+.
+            usesCleartextTraffic: true,
+          },
+        },
+      ],
+      [
+        "expo-camera",
+        {
+          cameraPermission:
+            "NexRep needs camera access to scan food and track workouts with pose guidance.",
+          microphonePermission: false,
+          recordAudioAndroid: false,
+        },
+      ],
       "@react-native-community/datetimepicker",
       "expo-image-picker",
       "expo-font",

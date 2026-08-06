@@ -14,6 +14,8 @@ export type MilestoneItem = {
   key: string;
   label: string;
   filled: boolean;
+  /** e.g. "Meal Planner", "Manual", "Scan" — shown under the meal label when filled */
+  sourceLabel?: string;
 };
 
 type Props = {
@@ -97,6 +99,11 @@ export function MilestoneBoxes({ title, items, accent = "green", emptyMessage }:
             <Text style={styles.boxLabel} numberOfLines={2}>
               {item.label}
             </Text>
+            {item.filled && item.sourceLabel ? (
+              <Text style={styles.sourceLabel} numberOfLines={1}>
+                {item.sourceLabel}
+              </Text>
+            ) : null}
           </View>
         ))}
       </View>
@@ -171,6 +178,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 13,
     width: "100%",
+  },
+  sourceLabel: {
+    color: MUTED,
+    fontSize: 9,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 11,
+    width: "100%",
+    opacity: 0.85,
+    marginTop: 1,
   },
   restBanner: {
     borderRadius: 12,

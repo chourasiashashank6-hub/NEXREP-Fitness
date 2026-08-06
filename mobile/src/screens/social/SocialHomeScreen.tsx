@@ -119,6 +119,8 @@ export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
       navigation.navigate("SocialChat", {
         dmConversationId: conversation.id,
         title: conversation.other_user?.name ?? user.name,
+        profilePhotoUrl: user.profile_photo_url,
+        initials: user.initials,
       });
     } catch {
       Alert.alert(t("common.error"), t("social.messages.alerts.loadConversationsFailed"));

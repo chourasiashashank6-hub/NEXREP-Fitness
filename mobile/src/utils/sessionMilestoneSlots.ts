@@ -30,3 +30,14 @@ export function fillSessionSlots(
     };
   });
 }
+
+/** Free tier: one milestone box per manually logged exercise (no planner plan slots). */
+export function buildManualSessionMilestones(
+  logs: Array<{ id: number; exerciseName: string }>,
+): SessionSlotFill[] {
+  return logs.map((log) => ({
+    key: `manual-session-${log.id}`,
+    label: String(log.exerciseName || "").trim() || "Exercise",
+    filled: true,
+  }));
+}

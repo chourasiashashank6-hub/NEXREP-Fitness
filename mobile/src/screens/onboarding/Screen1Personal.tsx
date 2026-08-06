@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
@@ -28,9 +28,22 @@ const SCREEN_BG = "#FFFFFF";
 
 export default function Screen1Personal({ navigation }: any) {
   const { t } = useTranslation();
-  const { data, updatePersonal } = useOnboardingContext();
+  const { data, updatePersonal, isHydrating } = useOnboardingContext();
   const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const clearError = (key: string) => {
+    setErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!isHydrating) setErrors({});
+  }, [isHydrating]);
 
   const heightOptions = useMemo(
     () => (data.personal.unit_system === "metric" ? getMetricHeightOptions() : getImperialHeightOptions()),
@@ -89,7 +102,10 @@ export default function Screen1Personal({ navigation }: any) {
       <FieldCard title={t("onboarding.screen1.fullName")} badge={t("common.required")} type={t("onboarding.fieldTypes.textInput")} required description={t("onboarding.screen1.fullNameDescription")} error={errors.name}>
         <TextInput
           value={data.personal.name}
-          onChangeText={(v) => updatePersonal({ name: v })}
+          onChangeText={(v) => {
+            updatePersonal({ name: v });
+            if (v.trim()) clearError("name");
+          }}
           autoCapitalize="words"
           placeholder={t("onboarding.screen1.fullNamePlaceholder")}
           placeholderTextColor={MUTED}
@@ -113,14 +129,16 @@ export default function Screen1Personal({ navigation }: any) {
           label={t("onboarding.screen1.age")}
           value={data.personal.age}
           options={AGE_OPTIONS}
-          onChange={(v) => updatePersonal({ age: Number(v) })}
+          onChange={(v) => {
+            updatePersonal({ age: Number(v) });
+            clearError("age");
+          }}
           placeholder={t("onboarding.screen1.agePlaceholder")}
-          error={errors.age}
         />
       </FieldCard>
 
       <FieldCard title={t("onboarding.screen1.biologicalSex")} badge={t("common.required")} type={t("onboarding.fieldTypes.dropdownPicker")} required description={t("onboarding.screen1.biologicalSexDescription")} error={errors.sex}>
-        <BottomSheetPicker label={t("onboarding.screen1.biologicalSex")} value={data.personal.sex} options={SEX_OPTIONS} onChange={(v) => updatePersonal({ sex: v as any })} placeholder={t("common.select")} error={errors.sex} />
+        <BottomSheetPicker label={t("onboarding.screen1.biologicalSex")} value={data.personal.sex} options={SEX_OPTIONS} onChange={(v) => { updatePersonal({ sex: v as any }); clearError("sex"); }} placeholder={t("common.select")} />
       </FieldCard>
 
       <FieldCard title={t("onboarding.screen1.height")} badge={t("common.required")} type={t("onboarding.fieldTypes.dropdownPicker")} required error={errors.height}>
@@ -128,11 +146,11 @@ export default function Screen1Personal({ navigation }: any) {
           label={t("onboarding.screen1.height")}
           value={selectedHeight}
           options={heightOptions}
-          onChange={(v) =>
-            data.personal.unit_system === "metric" ? updatePersonal({ height_cm: Number(v) }) : updatePersonal({ height_in: Number(v) })
-          }
+          onChange={(v) => {
+            data.personal.unit_system === "metric" ? updatePersonal({ height_cm: Number(v) }) : updatePersonal({ height_in: Number(v) });
+            clearError("height");
+          }}
           placeholder={t("onboarding.screen1.heightPlaceholder")}
-          error={errors.height}
         />
       </FieldCard>
 
@@ -141,11 +159,11 @@ export default function Screen1Personal({ navigation }: any) {
           label={t("onboarding.screen1.currentWeight")}
           value={selectedWeight}
           options={weightOptions}
-          onChange={(v) =>
-            data.personal.unit_system === "metric" ? updatePersonal({ weight_kg: Number(v) }) : updatePersonal({ weight_lb: Number(v) })
-          }
+          onChange={(v) => {
+            data.personal.unit_system === "metric" ? updatePersonal({ weight_kg: Number(v) }) : updatePersonal({ weight_lb: Number(v) });
+            clearError("weight");
+          }}
           placeholder={t("onboarding.screen1.weightPlaceholder")}
-          error={errors.weight}
         />
       </FieldCard>
     </OnboardingLayout>

@@ -1,7 +1,7 @@
 /**
  * Run: npx --yes tsx src/utils/sessionMilestoneSlots.test.ts
  */
-import { fillSessionSlots } from "./sessionMilestoneSlots";
+import { buildManualSessionMilestones, fillSessionSlots } from "./sessionMilestoneSlots";
 
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(msg);
@@ -28,6 +28,15 @@ assert(fillSessionSlots(null, ["Pull-Up"]).length === 0, "null plan");
   assert(six[0].filled, "case-insensitive match");
   assert(six[4].filled, "Curl filled");
   assert(six.filter((s) => s.filled).length === 2, "two filled");
+}
+
+{
+  const manual = buildManualSessionMilestones([
+    { id: 1, exerciseName: "Bench Press" },
+    { id: 2, exerciseName: "Squat" },
+  ]);
+  assert(manual.length === 2, "manual session boxes");
+  assert(manual.every((s) => s.filled), "all manual sessions filled");
 }
 
 console.log("sessionMilestoneSlots.test.ts: all assertions passed");

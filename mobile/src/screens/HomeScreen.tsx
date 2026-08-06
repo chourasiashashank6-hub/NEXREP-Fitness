@@ -30,8 +30,9 @@ import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
 import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
-import { fillMealSlots } from "../utils/mealSlotSchedule";
-import { fillSessionSlots } from "../utils/sessionMilestoneSlots";
+import { fillMealSlots, buildLoggedMealMilestones } from "../utils/mealSlotSchedule";
+import { buildManualSessionMilestones, fillSessionSlots } from "../utils/sessionMilestoneSlots";
+import { isPlannerLoggedWorkout } from "../utils/workoutPlannerLog";
 import {
   computeCombinedStreak,
   getLast7DaysMeta,
@@ -214,6 +215,7 @@ export const HomeScreen = () => {
   const token = useAuthStore((s) => s.token);
   const { refresh: refreshOnboarding } = useOnboardingContext();
   const { hasFeatureAccess } = useFeatureAccess();
+  const hasMealPlannerAccess = hasFeatureAccess("meal_plan_generation");
   const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
   const [calorieDay, setCalorieDay] = useState<CalorieDayPayload | null>(null);
   const [burnProfile, setBurnProfile] = useState<BurnProfile | null>(null);
@@ -229,7 +231,7 @@ export const HomeScreen = () => {
   const [weighInValue, setWeighInValue] = useState("");
   const [isLoggingWeight, setIsLoggingWeight] = useState(false);
   const [workoutHistory, setWorkoutHistory] = useState<
-    { date: string; caloriesBurned: number; exerciseName?: string }[]
+    { date: string; caloriesBurned: number; exerciseName?: string; id?: number; notes?: string | null }[]
   >([]);
   const [streakCalorieLogs, setStreakCalorieLogs] = useState<{ date: string; total_calories: number }[]>([]);
   const [personalBestStreak, setPersonalBestStreak] = useState(0);
@@ -327,6 +329,8 @@ export const HomeScreen = () => {
         date: item.date,
         caloriesBurned: Number(item.caloriesBurned) || 0,
         exerciseName: String(item.exerciseName || ""),
+        id: item.id,
+        notes: item.notes,
       }));
 
       // Merge the 7-day history fetch so today's workouts always match the burn bar.
@@ -336,6 +340,8 @@ export const HomeScreen = () => {
           date: item.date,
           caloriesBurned: Number(item.caloriesBurned) || 0,
           exerciseName: String(item.exerciseName || ""),
+          id: item.id,
+          notes: item.notes,
         });
       }
 
@@ -543,10 +549,39 @@ export const HomeScreen = () => {
   const tdeeValue = burnPlan?.tdee ?? 1690;
   const milestonePct = Math.round(goalWeeksProgress * 100);
 
-  const mealMilestoneItems = useMemo(
-    () => fillMealSlots(mealsPerDay, calorieDay?.meals ?? []),
-    [mealsPerDay, calorieDay?.meals],
-  );
+  const mealMilestoneItems = useMemo(() => {
+    const allMeals = calorieDay?.meals ?? [];
+    const meals = hasMealPlannerAccess
+      ? allMeals
+      : allMeals.filter((m) => m.source_type !== "meal_planner");
+    const sourceLabel = (sourceType?: "database" | "camera_ai" | "meal_planner") => {
+      if (!sourceType) return undefined;
+      if (sourceType === "meal_planner") return t("home.mealSource.planner");
+      if (sourceType === "camera_ai") return t("home.mealSource.scan");
+      return t("home.mealSource.manual");
+    };
+    const extraMealLabel = (mealType: string) => {
+      if (mealType === "Snack") return t("calorieLog.mealLabels.snacks");
+      if (mealType === "Breakfast") return t("calorieLog.mealLabels.breakfast");
+      if (mealType === "Lunch") return t("calorieLog.mealLabels.lunch");
+      if (mealType === "Dinner") return t("calorieLog.mealLabels.dinner");
+      if (mealType === "Pre_Workout") return t("calorieLog.mealLabels.preWorkout");
+      if (mealType === "Post_Workout") return t("calorieLog.mealLabels.postWorkout");
+      return mealType.replace(/_/g, " ");
+    };
+    const mapSlots = (slots: ReturnType<typeof fillMealSlots>) =>
+      slots.map((item) => ({
+        key: item.key,
+        label: item.isExtra ? extraMealLabel(item.mealType ?? item.label) : item.label,
+        filled: item.filled,
+        sourceLabel: item.filled ? sourceLabel(item.sourceType) : undefined,
+      }));
+
+    if (!hasMealPlannerAccess) {
+      return mapSlots(buildLoggedMealMilestones(meals));
+    }
+    return mapSlots(fillMealSlots(mealsPerDay, meals));
+  }, [hasMealPlannerAccess, mealsPerDay, calorieDay?.meals, t]);
 
   const restDayActive = useMemo(
     () =>
@@ -559,14 +594,29 @@ export const HomeScreen = () => {
 
   const sessionMilestoneItems = useMemo(() => {
     const today = new Date();
+    const todayLogs = workoutHistory.filter(
+      (item) => item?.date && item.exerciseName && isSameLocalDay(item.date, today),
+    );
+
+    if (!hasWorkoutPlannerAccess) {
+      const manualLogs = todayLogs
+        .filter((item) => !isPlannerLoggedWorkout(item))
+        .map((item, index) => ({
+          id: item.id ?? index,
+          exerciseName: String(item.exerciseName),
+        }));
+      return buildManualSessionMilestones(manualLogs).map((item) => ({
+        ...item,
+        sourceLabel: t("home.mealSource.manual"),
+      }));
+    }
+
     const todayPlanDay = todayWorkoutPlan?.today ?? null;
     const planned =
       todayPlanDay && !isWorkoutRestDay(todayPlanDay) ? todayPlanDay.exercises ?? [] : [];
-    const loggedNames = workoutHistory
-      .filter((item) => item?.date && item.exerciseName && isSameLocalDay(item.date, today))
-      .map((item) => String(item.exerciseName));
+    const loggedNames = todayLogs.map((item) => String(item.exerciseName));
     return fillSessionSlots(planned, loggedNames);
-  }, [todayWorkoutPlan, workoutHistory]);
+  }, [hasWorkoutPlannerAccess, todayWorkoutPlan, workoutHistory, t]);
 
   // Only show rest-day empty state when Elite + generated plan + today rest —
   // not merely because there are 0 scheduled exercises (e.g. no plan yet).
@@ -732,12 +782,16 @@ export const HomeScreen = () => {
             title={t("home.mealsLoggedToday")}
             items={mealMilestoneItems}
             accent="green"
+            emptyMessage={mealMilestoneItems.length === 0 ? t("calorieLog.emptyMeals") : null}
           />
           <MilestoneBoxes
             title={t("home.sessionsDoneToday")}
             items={sessionMilestoneItems}
             accent="orange"
-            emptyMessage={sessionsRestMessage}
+            emptyMessage={
+              sessionsRestMessage ??
+              (sessionMilestoneItems.length === 0 ? t("home.emptySessions") : null)
+            }
           />
         </Animated.View>
 

@@ -12,17 +12,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { UnsavedOnboardingModal } from "./UnsavedOnboardingModal";
+import { useOnboardingCancel } from "../hooks/useOnboardingCancel";
+import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { logicalRow, textAlignStart } from "../utils/rtl";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
-const ORANGE_LIGHT = "#FFF1EE";
-const BLUE = "#4A90D9";
-const BLUE_LIGHT = "#EEF4FB";
-const PURPLE = "#7B68CC";
-const PURPLE_LIGHT = "#F0EEF9";
-const GOLD = "#FFD700";
 const BG = "#F7F6F3";
 const WHITE = "#FFFFFF";
 const TEXT = "#1A1A18";
@@ -62,6 +59,9 @@ export const OnboardingLayout = ({
   saveDisabled?: boolean;
 }>) => {
   const { t } = useTranslation();
+  const { isHydrating } = useOnboardingContext();
+  const { requestCancel, discardAndExit, keepEditing, modalVisible, changes } = useOnboardingCancel();
+
   const handleNext = () => {
     Keyboard.dismiss();
     const result = onNext();
@@ -94,24 +94,7 @@ export const OnboardingLayout = ({
               return <View key={i} style={[styles.segment, { backgroundColor: bg }]} />;
             })}
           </View>
-          <View style={styles.kickerRow}>
-            <Text style={styles.kicker}>{t("onboarding.layout.screenCounter", { step })}</Text>
-            {onSaveExit ? (
-              <Pressable
-                style={[styles.saveBtn, (saveDisabled || saveLoading) && styles.saveBtnDisabled]}
-                onPress={handleSaveExit}
-                disabled={saveDisabled || saveLoading}
-              >
-                {saveLoading ? (
-                  <ActivityIndicator size="small" color={GREEN} />
-                ) : (
-                  <Text style={styles.saveText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
-                    {t("common.save")}
-                  </Text>
-                )}
-              </Pressable>
-            ) : null}
-          </View>
+          <Text style={styles.kicker}>{t("onboarding.layout.screenCounter", { step })}</Text>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
@@ -122,41 +105,79 @@ export const OnboardingLayout = ({
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          {children}
+          {isHydrating ? (
+            <View style={styles.hydratingWrap}>
+              <ActivityIndicator color={GREEN} size="large" />
+              <Text style={styles.hydratingText}>{t("onboarding.layout.loading")}</Text>
+            </View>
+          ) : (
+            children
+          )}
         </ScrollView>
 
         <View style={styles.footer}>
           {extraFooter}
           <View style={styles.navRow}>
-            {hideBack ? (
-              <View style={styles.spacer} />
-            ) : (
-              <Pressable style={styles.backBtn} onPress={onBack}>
-                <Text style={styles.backText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
-                  {t("common.back")}
-                </Text>
+            <View style={styles.leftCol}>
+              <Pressable style={styles.cancelBtn} onPress={requestCancel} hitSlop={8}>
+                <Text style={styles.cancelText}>{t("common.cancel")}</Text>
               </Pressable>
-            )}
-            <Text style={styles.counter} pointerEvents="none">{t("onboarding.layout.stepCounter", { step })}</Text>
-            <Pressable
-              style={[styles.nextBtn, (nextDisabled || nextLoading) && styles.nextBtnDisabled]}
-              onPress={handleNext}
-              disabled={nextDisabled || nextLoading}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: Boolean(nextDisabled || nextLoading) }}
-            >
-              {nextLoading ? (
-                <ActivityIndicator color={WHITE} />
-              ) : (
-                <Text style={styles.nextText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
-                  {step === 6 ? t("onboarding.layout.saveAndExit") : t("onboarding.layout.nextArrow", { label: nextLabel ?? t("common.next") })}
-                </Text>
-              )}
-            </Pressable>
+              {!hideBack && onBack ? (
+                <Pressable style={styles.backBtn} onPress={onBack} hitSlop={8}>
+                  <Text style={styles.backText}>{t("common.back")}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+
+            <Text style={styles.counter} pointerEvents="none">
+              {t("onboarding.layout.stepCounter", { step })}
+            </Text>
+
+            <View style={styles.rightCol}>
+              {onSaveExit ? (
+                <Pressable
+                  style={[styles.saveBtn, (saveDisabled || saveLoading) && styles.actionBtnDisabled]}
+                  onPress={handleSaveExit}
+                  disabled={saveDisabled || saveLoading}
+                >
+                  {saveLoading ? (
+                    <ActivityIndicator size="small" color={GREEN} />
+                  ) : (
+                    <Text style={styles.saveText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                      {t("common.save")}
+                    </Text>
+                  )}
+                </Pressable>
+              ) : null}
+              <Pressable
+                style={[styles.nextBtn, (nextDisabled || nextLoading) && styles.nextBtnDisabled]}
+                onPress={handleNext}
+                disabled={nextDisabled || nextLoading}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: Boolean(nextDisabled || nextLoading) }}
+              >
+                {nextLoading ? (
+                  <ActivityIndicator color={WHITE} />
+                ) : (
+                  <Text style={styles.nextText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
+                    {step === 6
+                      ? t("onboarding.layout.saveAndExit")
+                      : t("onboarding.layout.nextArrow", { label: nextLabel ?? t("common.next") })}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <UnsavedOnboardingModal
+        visible={modalVisible}
+        changes={changes}
+        onDiscard={discardAndExit}
+        onKeepEditing={keepEditing}
+      />
     </SafeAreaView>
   );
 };
@@ -165,26 +186,22 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SCREEN_BG },
   topPad: { paddingHorizontal: 16, paddingTop: 8 },
   progressRow: { flexDirection: logicalRow, gap: 3, marginBottom: 14 },
-  kickerRow: { flexDirection: logicalRow, alignItems: "center", justifyContent: "space-between", gap: 10 },
   segment: { flex: 1, height: 4, borderRadius: 99 },
-  kicker: { flex: 1, minWidth: 0, fontSize: 13, color: MUTED, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: "700", textAlign: textAlignStart },
-  saveBtn: {
-    minWidth: 64,
-    minHeight: 32,
-    maxWidth: "42%",
-    borderRadius: 99,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: GREEN_LIGHT,
+  kicker: {
+    fontSize: 13,
+    color: MUTED,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    fontWeight: "700",
+    textAlign: textAlignStart,
+    marginBottom: 4,
   },
-  saveBtnDisabled: { opacity: 0.7 },
-  saveText: { color: GREEN, fontWeight: "800", fontSize: 13, textAlign: "center" },
-  title: { marginTop: 10, fontSize: 20, fontWeight: "800", color: TEXT, marginBottom: 5 },
+  title: { marginTop: 6, fontSize: 20, fontWeight: "800", color: TEXT, marginBottom: 5 },
   subtitle: { fontSize: 11, color: MUTED, lineHeight: 17, marginBottom: 14 },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, paddingBottom: 18 },
+  hydratingWrap: { alignItems: "center", justifyContent: "center", paddingVertical: 48, gap: 12 },
+  hydratingText: { color: MUTED, fontSize: 14, fontWeight: "700" },
   footer: {
     borderTopWidth: 1,
     borderTopColor: BORDER,
@@ -193,20 +210,37 @@ const styles = StyleSheet.create({
     zIndex: 20,
     elevation: 12,
   },
-  navRow: { flexDirection: logicalRow, alignItems: "center", justifyContent: "space-between", gap: 8, zIndex: 21 },
-  backBtn: {
+  navRow: { flexDirection: logicalRow, alignItems: "flex-end", justifyContent: "space-between", gap: 8, zIndex: 21 },
+  leftCol: { flex: 1, minWidth: 0, gap: 4, alignItems: "flex-start" },
+  rightCol: { flex: 1.35, minWidth: 0, flexDirection: logicalRow, gap: 8, justifyContent: "flex-end" },
+  cancelBtn: { minHeight: 40, justifyContent: "center", paddingHorizontal: 2 },
+  cancelText: { color: ORANGE, fontSize: 15, fontWeight: "800" },
+  backBtn: { minHeight: 32, justifyContent: "center", paddingHorizontal: 2 },
+  backText: { color: MUTED, fontSize: 13, fontWeight: "700" },
+  saveBtn: {
+    minWidth: 68,
     minHeight: 48,
+    maxWidth: "46%",
     borderRadius: 12,
+    paddingHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent",
+    backgroundColor: GREEN_LIGHT,
     flex: 1,
-    minWidth: 0,
   },
-  backText: { color: MUTED, fontSize: 15, fontWeight: "800", textAlign: "center" },
-  nextBtn: { minHeight: 48, borderRadius: 12, backgroundColor: GREEN, alignItems: "center", justifyContent: "center", flex: 1, minWidth: 0, paddingHorizontal: 8 },
+  saveText: { color: GREEN, fontWeight: "800", fontSize: 14, textAlign: "center" },
+  actionBtnDisabled: { opacity: 0.7 },
+  nextBtn: {
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1.2,
+    minWidth: 0,
+    paddingHorizontal: 8,
+  },
   nextBtnDisabled: { opacity: 0.65 },
   nextText: { color: WHITE, fontSize: 15, fontWeight: "800", textAlign: "center" },
-  counter: { color: MUTED, fontSize: 14, minWidth: 34, flexShrink: 0, textAlign: "center", fontWeight: "700" },
-  spacer: { flex: 1, minWidth: 0 },
+  counter: { color: MUTED, fontSize: 14, minWidth: 34, flexShrink: 0, textAlign: "center", fontWeight: "700", paddingBottom: 14 },
 });

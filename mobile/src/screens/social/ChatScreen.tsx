@@ -4,6 +4,8 @@ import {
   Alert,
   AppState,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -13,6 +15,7 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   deleteMessage,
   editMessage,
@@ -24,7 +27,7 @@ import {
 } from "../../api/messages";
 import { blockSocialUser, submitUserReport, type ReportReason } from "../../api/social";
 import { incrementThreadReferralCopy, shareThreadReferral } from "../../api/threads";
-import { ScreenContainer } from "../../components/ScreenContainer";
+import { UserAvatar } from "../../components/UserAvatar";
 import { notifySocialUnreadChanged } from "../../utils/socialUnreadEvents";
 
 const GREEN = "#0F6E56";
@@ -61,6 +64,8 @@ export default function ChatScreen() {
   const threadId = route.params?.threadId ? Number(route.params.threadId) : undefined;
   const dmConversationId = route.params?.dmConversationId ? Number(route.params.dmConversationId) : undefined;
   const title = route.params?.title || t("social.messages.chat");
+  const profilePhotoUrl = route.params?.profilePhotoUrl as string | undefined;
+  const initials = route.params?.initials as string | undefined;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
@@ -297,62 +302,82 @@ export default function ChatScreen() {
   };
 
   return (
-    <ScreenContainer bg={BG} contentStyle={styles.screenContent}>
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{t("common.back")}</Text>
-        </Pressable>
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
-      </View>
-      {loading ? (
-        <ActivityIndicator color={GREEN} style={styles.loader} />
-      ) : (
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderMessage}
-          ListEmptyComponent={<Text style={styles.emptyChatText}>{t("social.messages.emptyChat")}</Text>}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
-      {replyTo || editing ? (
-        <View style={styles.composerContext}>
-          <Text style={styles.contextLabel}>
-            {editing ? t("social.messages.editing") : t("social.messages.replyingTo", { name: replyTo?.sender.name })}
-          </Text>
-          <Pressable onPress={() => { setReplyTo(null); setEditing(null); setInput(""); }}>
-            <Text style={styles.clearContext}>{t("common.cancel")}</Text>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={Platform.OS === "ios" ? 4 : 0}>
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.backText}>{t("common.back")}</Text>
+          </Pressable>
+          {dmConversationId ? (
+            <UserAvatar
+              name={title}
+              initials={initials}
+              profilePhotoUrl={profilePhotoUrl}
+              size={36}
+              style={styles.headerAvatar}
+              textStyle={styles.headerAvatarText}
+            />
+          ) : null}
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        </View>
+        {loading ? (
+          <ActivityIndicator color={GREEN} style={styles.loader} />
+        ) : (
+          <FlatList
+            style={styles.flex}
+            data={messages}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={renderMessage}
+            ListEmptyComponent={<Text style={styles.emptyChatText}>{t("social.messages.emptyChat")}</Text>}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+          />
+        )}
+        {replyTo || editing ? (
+          <View style={styles.composerContext}>
+            <Text style={styles.contextLabel}>
+              {editing ? t("social.messages.editing") : t("social.messages.replyingTo", { name: replyTo?.sender.name })}
+            </Text>
+            <Pressable onPress={() => { setReplyTo(null); setEditing(null); setInput(""); }}>
+              <Text style={styles.clearContext}>{t("common.cancel")}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        <View style={styles.composer}>
+          <Pressable style={styles.attachButton} onPress={openAttachmentMenu}>
+            <Text style={styles.attachText}>+</Text>
+          </Pressable>
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            placeholder={t("social.messages.placeholder")}
+            placeholderTextColor={TERTIARY}
+            style={styles.input}
+            multiline
+          />
+          <Pressable style={[styles.sendButton, sending ? styles.disabled : null]} disabled={sending} onPress={() => submit()}>
+            <Text style={styles.sendText}>{t("social.messages.send")}</Text>
           </Pressable>
         </View>
-      ) : null}
-      <View style={styles.composer}>
-        <Pressable style={styles.attachButton} onPress={openAttachmentMenu}>
-          <Text style={styles.attachText}>+</Text>
-        </Pressable>
-        <TextInput
-          value={input}
-          onChangeText={setInput}
-          placeholder={t("social.messages.placeholder")}
-          placeholderTextColor={TERTIARY}
-          style={styles.input}
-          multiline
-        />
-        <Pressable style={[styles.sendButton, sending ? styles.disabled : null]} disabled={sending} onPress={() => submit()}>
-          <Text style={styles.sendText}>{t("social.messages.send")}</Text>
-        </Pressable>
-      </View>
-    </ScreenContainer>
+      </KeyboardAvoidingView>
+      <SafeAreaView edges={["bottom"]} style={styles.bottomInset} />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContent: { flexGrow: 1 },
-  header: { alignItems: "center", flexDirection: "row", gap: 10, marginBottom: 12 },
+  safe: { flex: 1, backgroundColor: BG },
+  flex: { flex: 1 },
+  bottomInset: { backgroundColor: BG },
+  header: { alignItems: "center", flexDirection: "row", gap: 10, marginBottom: 12, paddingHorizontal: 16, paddingTop: 4 },
+  headerAvatar: { backgroundColor: GREEN_LIGHT },
+  headerAvatarText: { color: GREEN, fontSize: 13, fontWeight: "900" },
   backButton: { backgroundColor: GREEN_LIGHT, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   backText: { color: GREEN, fontSize: 13, fontWeight: "900" },
   title: { color: TEXT, flex: 1, fontSize: 20, fontWeight: "900" },
   loader: { marginTop: 40 },
-  listContent: { paddingBottom: 12 },
+  listContent: { flexGrow: 1, paddingHorizontal: 16, paddingBottom: 12 },
   emptyChatText: { alignSelf: "center", color: TERTIARY, fontSize: 13, fontWeight: "800", marginTop: 40, textAlign: "center" },
   systemText: { alignSelf: "center", color: MUTED, fontSize: 12, fontWeight: "700", marginVertical: 8, textAlign: "center" },
   messageWrap: { marginBottom: 9, maxWidth: "84%" },
@@ -383,10 +408,10 @@ const styles = StyleSheet.create({
   copyButton: { alignSelf: "flex-start", backgroundColor: GREEN_LIGHT, borderRadius: 999, marginTop: 9, paddingHorizontal: 10, paddingVertical: 7 },
   copyButtonOwn: { backgroundColor: "rgba(255,255,255,0.16)" },
   copyText: { color: GREEN, fontSize: 11, fontWeight: "900" },
-  composerContext: { alignItems: "center", backgroundColor: WHITE, borderColor: BORDER, borderRadius: 14, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", marginBottom: 8, padding: 10 },
+  composerContext: { alignItems: "center", backgroundColor: WHITE, borderColor: BORDER, borderRadius: 14, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", marginBottom: 8, marginHorizontal: 16, padding: 10 },
   contextLabel: { color: MUTED, flex: 1, fontSize: 12, fontWeight: "800" },
   clearContext: { color: GREEN, fontSize: 12, fontWeight: "900" },
-  composer: { alignItems: "flex-end", flexDirection: "row", gap: 8 },
+  composer: { alignItems: "flex-end", flexDirection: "row", gap: 8, marginHorizontal: 16, paddingBottom: 8 },
   attachButton: { alignItems: "center", backgroundColor: GREEN_LIGHT, borderRadius: 18, height: 36, justifyContent: "center", width: 36 },
   attachText: { color: GREEN, fontSize: 24, fontWeight: "700", lineHeight: 26 },
   input: { backgroundColor: WHITE, borderColor: BORDER, borderRadius: 18, borderWidth: 1, color: TEXT, flex: 1, maxHeight: 110, minHeight: 42, paddingHorizontal: 12, paddingVertical: 10 },

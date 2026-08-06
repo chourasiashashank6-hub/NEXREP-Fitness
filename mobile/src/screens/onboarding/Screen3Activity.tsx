@@ -47,9 +47,13 @@ function workoutsLabel(count: number, t: (key: string, opts?: object) => string)
 
 export default function Screen3Activity({ navigation }: any) {
   const { t } = useTranslation();
-  const { data, updateActivity, updateGoal } = useOnboardingContext();
+  const { data, updateActivity, updateGoal, isHydrating } = useOnboardingContext();
   const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!isHydrating) setErrors({});
+  }, [isHydrating]);
 
   const selectedFocus = getGoalFocusMuscles(data.goal);
   const workoutsCount = data.activity.workouts_per_week ?? 0;

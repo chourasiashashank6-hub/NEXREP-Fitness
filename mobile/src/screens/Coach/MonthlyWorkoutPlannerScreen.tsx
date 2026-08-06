@@ -33,7 +33,7 @@ import { StalePlanBanner } from "../../components/StalePlanBanner";
 import { EXERCISE_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
-import { auth } from "../../services/authService";
+import { getFirebaseAuth } from "../../config/firebase";
 import { useAuthStore } from "../../store/authStore";
 import { formatApiDetail, notifyUser } from "../../utils/notify";
 import {
@@ -293,7 +293,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const [loggedExerciseIds, setLoggedExerciseIds] = useState<Record<string, number>>({});
   const [loggingExerciseKey, setLoggingExerciseKey] = useState<string | null>(null);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
-  const signedInEmail = String(auth.currentUser?.email || "")
+  const signedInEmail = String(getFirebaseAuth().currentUser?.email || "")
     .trim()
     .toLowerCase();
   const plannerDaysUnlockedByIdentity =

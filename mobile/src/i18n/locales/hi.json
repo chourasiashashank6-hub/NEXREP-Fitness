@@ -80,7 +80,13 @@
     "todaysGoal": "आज का लक्ष्य",
     "goalComplete": "लक्ष्य पूरा!",
     "mealsLoggedToday": "🍽️ आज लॉग किए गए भोजन",
+    "mealSource": {
+      "planner": "भोजन योजनाकार",
+      "manual": "मैन्युअल",
+      "scan": "स्कैन"
+    },
     "sessionsDoneToday": "🔥 आज के सेशन",
+    "emptySessions": "अभी तक कोई सेशन लॉग नहीं किया गया",
     "sessionBoxLabel": "सेशन",
     "restDayNoSession": "आज रेस्ट डे है 🛌 — कोई सेशन शेड्यूल नहीं"
   },
@@ -1031,7 +1037,9 @@
     "noFullBody": "पूरे शरीर का पता नहीं चला - थोड़ा पीछे हटें",
     "notDetected": "{{label}} का पता नहीं चला",
     "loadingTracker": "पोज़ ट्रैकर लोड हो रहा है…",
-    "loadingTrackerHint": "पहली बार लोड होने में कुछ सेकंड लग सकते हैं"
+    "loadingTrackerHint": "पहली बार लोड होने में कुछ सेकंड लग सकते हैं",
+    "serverError": "कैमरा गाइडेंस उपलब्ध नहीं है",
+    "retry": "पुनः प्रयास करें"
   },
   "payment": {
     "checkout": {
@@ -1946,7 +1954,22 @@
       "screenCounter": "SCREEN {{step}} 6 में से",
       "stepCounter": "{{step}} / 6",
       "nextArrow": "{{label}} →",
-      "saveAndExit": "सहेजें और बाहर निकलें ✓"
+      "saveAndExit": "सहेजें और बाहर निकलें ✓",
+      "loading": "आपकी जानकारी लोड हो रही है…"
+    },
+    "unsaved": {
+      "title": "बिना सहेजे बदलाव छोड़ें?",
+      "body": "आपने निम्न फ़ील्ड संपादित किए हैं लेकिन अभी तक सहेजा नहीं:",
+      "keepEditing": "संपादन जारी रखें",
+      "discard": "बदलाव छोड़ें",
+      "empty": "—",
+      "fields": {
+        "name": "पूरा नाम",
+        "unitSystem": "इकाई वरीयता",
+        "targetLifts": "लक्ष्य लिफ्ट",
+        "weighInReminder": "वज़न रिमाइंडर",
+        "waterGoal": "पानी का लक्ष्य"
+      }
     },
     "fieldTypes": {
       "textInput": "पाठ इनपुट",

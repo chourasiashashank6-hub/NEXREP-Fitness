@@ -71,7 +71,13 @@
     "caloriesEaten": "🍽️ Calories eaten",
     "caloriesBurnt": "🔥 Calories burnt",
     "mealsLoggedToday": "🍽️ Meals logged today",
+    "mealSource": {
+      "planner": "Meal Planner",
+      "manual": "Manual",
+      "scan": "Scan"
+    },
     "sessionsDoneToday": "🔥 Sessions done today",
+    "emptySessions": "No sessions logged yet",
     "sessionBoxLabel": "Session",
     "restDayNoSession": "Today is a rest day 🛌 — no session scheduled",
     "strengthGoal": "🏋️ Strength goal",
@@ -1032,7 +1038,9 @@
     "noFullBody": "No full body detected - step back slightly",
     "notDetected": "{{label}} not detected",
     "loadingTracker": "Loading pose tracker…",
-    "loadingTrackerHint": "First load can take a few seconds while it downloads"
+    "loadingTrackerHint": "First load can take a few seconds while it downloads",
+    "serverError": "Camera guidance unavailable",
+    "retry": "Retry"
   },
   "payment": {
     "checkout": {
@@ -1956,7 +1964,22 @@
       "screenCounter": "SCREEN {{step}} OF 6",
       "stepCounter": "{{step}} / 6",
       "nextArrow": "{{label}} →",
-      "saveAndExit": "Save & exit ✓"
+      "saveAndExit": "Save & exit ✓",
+      "loading": "Loading your info…"
+    },
+    "unsaved": {
+      "title": "Discard unsaved changes?",
+      "body": "You edited the following fields but haven't saved yet:",
+      "keepEditing": "Keep editing",
+      "discard": "Discard changes",
+      "empty": "—",
+      "fields": {
+        "name": "Full name",
+        "unitSystem": "Unit preference",
+        "targetLifts": "Target lifts",
+        "weighInReminder": "Weigh-in reminder",
+        "waterGoal": "Water goal"
+      }
     },
     "fieldTypes": {
       "textInput": "Text input",

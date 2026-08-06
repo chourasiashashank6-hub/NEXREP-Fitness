@@ -74,6 +74,8 @@ export default function MessagesScreen() {
               navigation.navigate("SocialChat", {
                 dmConversationId: conversation.id,
                 title: conversation.other_user?.name ?? t("social.messages.chat"),
+                profilePhotoUrl: conversation.other_user?.profile_photo_url,
+                initials: conversation.other_user?.initials,
               })
             }
           >

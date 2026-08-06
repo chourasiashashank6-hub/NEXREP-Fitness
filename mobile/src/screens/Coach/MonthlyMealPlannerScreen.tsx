@@ -44,7 +44,7 @@ import { StalePlanBanner } from "../../components/StalePlanBanner";
 import { MEAL_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
-import { auth } from "../../services/authService";
+import { getFirebaseAuth } from "../../config/firebase";
 import { useAuthStore } from "../../store/authStore";
 import { notifyUser } from "../../utils/notify";
 import {
@@ -308,7 +308,7 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
   const [staleFields, setStaleFields] = useState<string[]>([]);
   const [isRegeneratingStale, setIsRegeneratingStale] = useState(false);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
-  const signedInEmail = String(auth.currentUser?.email || "")
+  const signedInEmail = String(getFirebaseAuth().currentUser?.email || "")
     .trim()
     .toLowerCase();
   const plannerDaysUnlockedByIdentity =

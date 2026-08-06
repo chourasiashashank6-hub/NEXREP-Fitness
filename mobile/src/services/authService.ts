@@ -8,17 +8,15 @@ import {
   type User,
 } from "firebase/auth";
 import type { ActionCodeSettings } from "firebase/auth";
-import { auth } from "../config/firebase";
+import { getFirebaseAuth } from "../config/firebase";
 import { useAuthStore } from "../store/authStore";
 import i18n from "../i18n";
-
-export { auth };
 
 export type AuthResult = { user: User | null; error: string | null };
 
 export const signUp = async (name: string, email: string, password: string): Promise<AuthResult> => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(getFirebaseAuth(), email, password);
     await updateProfile(userCredential.user, { displayName: name });
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
@@ -29,7 +27,7 @@ export const signUp = async (name: string, email: string, password: string): Pro
 
 export const signIn = async (email: string, password: string): Promise<AuthResult> => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
     const code = error && typeof error === "object" && "code" in error ? String((error as { code: string }).code) : "";
@@ -39,7 +37,7 @@ export const signIn = async (email: string, password: string): Promise<AuthResul
 
 export const signOutFirebaseOnly = async (): Promise<{ error: string | null }> => {
   try {
-    await firebaseSignOut(auth);
+    await firebaseSignOut(getFirebaseAuth());
     return { error: null };
   } catch (error: unknown) {
     const code = error && typeof error === "object" && "code" in error ? String((error as { code: string }).code) : "";
@@ -47,14 +45,15 @@ export const signOutFirebaseOnly = async (): Promise<{ error: string | null }> =
   }
 };
 
-export const subscribeToAuthChanges = (callback: (user: User | null) => void) => onAuthStateChanged(auth, callback);
+export const subscribeToAuthChanges = (callback: (user: User | null) => void) =>
+  onAuthStateChanged(getFirebaseAuth(), callback);
 
 /**
  * Continue URL inside the reset email — must appear under Authorized domains.
  * Default `https://<authDomain>/__/auth/action` is always valid for your Firebase project.
  */
 function getPasswordResetActionCodeSettings(): ActionCodeSettings | undefined {
-  const domain = auth.app.options.authDomain?.trim();
+  const domain = getFirebaseAuth().app.options.authDomain?.trim();
   if (!domain) {
     return undefined;
   }
@@ -77,6 +76,7 @@ export const sendPasswordReset = async (email: string): Promise<{ error: string 
   }
   try {
     const settings = getPasswordResetActionCodeSettings();
+    const auth = getFirebaseAuth();
     if (settings) {
       await sendPasswordResetEmail(auth, trimmed, settings);
     } else {
@@ -92,7 +92,7 @@ export const sendPasswordReset = async (email: string): Promise<{ error: string 
 /** Clears Firebase session and the app JWT (SecureStore / web storage). */
 export const signOutSession = async () => {
   try {
-    await firebaseSignOut(auth);
+    await firebaseSignOut(getFirebaseAuth());
   } catch {
     /* ignore */
   }

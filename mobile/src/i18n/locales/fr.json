@@ -80,7 +80,13 @@
     "todaysGoal": "OBJECTIF DU JOUR",
     "goalComplete": "Objectif atteint !",
     "mealsLoggedToday": "🍽️ Repas enregistrés aujourd'hui",
+    "mealSource": {
+      "planner": "Planificateur de repas",
+      "manual": "Manuel",
+      "scan": "Scan"
+    },
     "sessionsDoneToday": "🔥 Séances d'aujourd'hui",
+    "emptySessions": "Aucune séance enregistrée pour le moment",
     "sessionBoxLabel": "Séance",
     "restDayNoSession": "Aujourd'hui c'est un jour de repos 🛌 — aucune séance prévue"
   },
@@ -1031,7 +1037,9 @@
     "noFullBody": "Aucun corps entier détecté - reculez légèrement",
     "notDetected": "{{label}} non détecté",
     "loadingTracker": "Chargement du détecteur de posture…",
-    "loadingTrackerHint": "Le premier chargement peut prendre quelques secondes"
+    "loadingTrackerHint": "Le premier chargement peut prendre quelques secondes",
+    "serverError": "Guidage caméra indisponible",
+    "retry": "Réessayer"
   },
   "payment": {
     "checkout": {
@@ -1946,7 +1954,22 @@
       "screenCounter": "SCREEN {{step}} DE 6",
       "stepCounter": "{{step}} / 6",
       "nextArrow": "{{label}} →",
-      "saveAndExit": "Enregistrer et quitter ✓"
+      "saveAndExit": "Enregistrer et quitter ✓",
+      "loading": "Chargement de vos informations…"
+    },
+    "unsaved": {
+      "title": "Abandonner les modifications non enregistrées ?",
+      "body": "Vous avez modifié les champs suivants sans enregistrer :",
+      "keepEditing": "Continuer à modifier",
+      "discard": "Abandonner les modifications",
+      "empty": "—",
+      "fields": {
+        "name": "Nom complet",
+        "unitSystem": "Préférence d'unités",
+        "targetLifts": "Charges cibles",
+        "weighInReminder": "Rappel de pesée",
+        "waterGoal": "Objectif d'eau"
+      }
     },
     "fieldTypes": {
       "textInput": "Saisie de texte",

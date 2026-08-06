@@ -54,27 +54,82 @@ export function slotsForMealsPerDay(mealsPerDay: unknown): MealSlotDef[] {
   return MEAL_SLOT_SCHEDULES[clampMealsPerDay(mealsPerDay)];
 }
 
+export type MealLogEntry = {
+  meal_id: number;
+  meal_type: string;
+  source_type?: "database" | "camera_ai" | "meal_planner";
+};
+
 export type MealSlotFill = {
   key: string;
   label: string;
   filled: boolean;
+  sourceType?: "database" | "camera_ai" | "meal_planner";
+  /** Raw meal_type for i18n on extra meals. */
+  mealType?: string;
+  /** Meals logged outside the user's scheduled slots (e.g. a snack on a 3-meal day). */
+  isExtra?: boolean;
 };
 
-/** Greedy assign today's calorie-log meals to schedule slots (one meal per slot). */
-export function fillMealSlots(
-  mealsPerDay: unknown,
-  meals: Array<{ meal_id: number; meal_type: string }>,
-): MealSlotFill[] {
+const MEAL_TYPE_LABELS: Record<string, string> = {
+  Breakfast: "Breakfast",
+  Lunch: "Lunch",
+  Dinner: "Dinner",
+  Snack: "Snack",
+  Pre_Workout: "Pre-Workout",
+  Post_Workout: "Post-Workout",
+};
+
+function labelForMealType(mealType: string): string {
+  return MEAL_TYPE_LABELS[mealType] ?? mealType.replace(/_/g, " ");
+}
+
+/** Greedy assign today's calorie-log meals to schedule slots; append any leftovers as extras. */
+export function fillMealSlots(mealsPerDay: unknown, meals: MealLogEntry[]): MealSlotFill[] {
   const slots = slotsForMealsPerDay(mealsPerDay);
   const used = new Set<number>();
-  return slots.map((slot) => {
+
+  const scheduled = slots.map((slot) => {
     const match = meals.find(
       (m) => !used.has(m.meal_id) && slot.calorieTypes.includes(m.meal_type as MealType),
     );
     if (match) {
       used.add(match.meal_id);
-      return { key: slot.key, label: slot.label, filled: true };
+      return {
+        key: slot.key,
+        label: slot.label,
+        filled: true,
+        sourceType: match.source_type,
+      };
     }
     return { key: slot.key, label: slot.label, filled: false };
   });
+
+  const extras: MealSlotFill[] = [];
+  for (const meal of meals) {
+    if (used.has(meal.meal_id)) continue;
+    extras.push({
+      key: `extra-${meal.meal_id}`,
+      label: labelForMealType(meal.meal_type),
+      mealType: meal.meal_type,
+      filled: true,
+      sourceType: meal.source_type,
+      isExtra: true,
+    });
+    used.add(meal.meal_id);
+  }
+
+  return [...scheduled, ...extras];
+}
+
+/** Free tier: one milestone box per logged meal (no scheduled empty slots). */
+export function buildLoggedMealMilestones(meals: MealLogEntry[]): MealSlotFill[] {
+  return meals.map((meal) => ({
+    key: `logged-${meal.meal_id}`,
+    label: labelForMealType(meal.meal_type),
+    mealType: meal.meal_type,
+    filled: true,
+    sourceType: meal.source_type,
+    isExtra: true,
+  }));
 }

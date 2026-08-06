@@ -2,7 +2,7 @@
  * Run: npx --yes tsx src/utils/mealSlotSchedule.test.ts
  * (from mobile/)
  */
-import { clampMealsPerDay, fillMealSlots, slotsForMealsPerDay } from "./mealSlotSchedule";
+import { clampMealsPerDay, fillMealSlots, slotsForMealsPerDay, buildLoggedMealMilestones } from "./mealSlotSchedule";
 
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(msg);
@@ -42,6 +42,29 @@ assert(clampMealsPerDay(null) === 3, "clamp default");
   assert(!filled[2].filled && filled[2].label === "Lunch", "lunch empty");
   assert(filled[3].filled && filled[3].label === "Evening Snack", "second snack → evening");
   assert(!filled[4].filled, "dinner empty");
+}
+
+// Extra meal beyond scheduled slots (3-meal day + manual snack)
+{
+  const filled = fillMealSlots(3, [
+    { meal_id: 1, meal_type: "Breakfast", source_type: "meal_planner" },
+    { meal_id: 2, meal_type: "Lunch", source_type: "meal_planner" },
+    { meal_id: 3, meal_type: "Dinner", source_type: "meal_planner" },
+    { meal_id: 4, meal_type: "Snack", source_type: "database" },
+  ]);
+  assert(filled.length === 4, "3 scheduled slots + 1 extra");
+  assert(filled[0].filled && filled[0].sourceType === "meal_planner", "breakfast planner");
+  assert(filled[3].isExtra && filled[3].label === "Snack" && filled[3].sourceType === "database", "extra snack manual");
+}
+
+// Free tier: only manual / scan meals become boxes
+{
+  const manual = buildLoggedMealMilestones([
+    { meal_id: 10, meal_type: "Snack", source_type: "database" },
+    { meal_id: 11, meal_type: "Breakfast", source_type: "camera_ai" },
+  ]);
+  assert(manual.length === 2, "one box per logged meal");
+  assert(manual.every((m) => m.filled), "all filled");
 }
 
 console.log("mealSlotSchedule.test.ts: all assertions passed");

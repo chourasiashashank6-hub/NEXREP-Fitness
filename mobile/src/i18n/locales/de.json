@@ -80,7 +80,13 @@
     "todaysGoal": "HEUTIGES ZIEL",
     "goalComplete": "Ziel erreicht!",
     "mealsLoggedToday": "🍽️ Heute geloggte Mahlzeiten",
+    "mealSource": {
+      "planner": "Mahlzeitenplaner",
+      "manual": "Manuell",
+      "scan": "Scan"
+    },
     "sessionsDoneToday": "🔥 Heutige Einheiten",
+    "emptySessions": "Noch keine Einheiten geloggt",
     "sessionBoxLabel": "Einheit",
     "restDayNoSession": "Heute ist Ruhetag 🛌 — keine Einheit geplant"
   },
@@ -1031,7 +1037,9 @@
     "noFullBody": "Kein vollständiger Körper erkannt – tritt etwas zurück",
     "notDetected": "{{label}} nicht erkannt",
     "loadingTracker": "Posen-Tracker wird geladen…",
-    "loadingTrackerHint": "Der erste Ladevorgang kann einige Sekunden dauern"
+    "loadingTrackerHint": "Der erste Ladevorgang kann einige Sekunden dauern",
+    "serverError": "Kameraführung nicht verfügbar",
+    "retry": "Erneut versuchen"
   },
   "payment": {
     "checkout": {
@@ -1946,7 +1954,22 @@
       "screenCounter": "BILDSCHIRM {{step}} VON 6",
       "stepCounter": "{{step}} / 6",
       "nextArrow": "{{label}} →",
-      "saveAndExit": "Speichern und beenden ✓"
+      "saveAndExit": "Speichern und beenden ✓",
+      "loading": "Deine Daten werden geladen…"
+    },
+    "unsaved": {
+      "title": "Ungespeicherte Änderungen verwerfen?",
+      "body": "Du hast folgende Felder bearbeitet, aber noch nicht gespeichert:",
+      "keepEditing": "Weiter bearbeiten",
+      "discard": "Änderungen verwerfen",
+      "empty": "—",
+      "fields": {
+        "name": "Vollständiger Name",
+        "unitSystem": "Einheiteneinstellung",
+        "targetLifts": "Zielübungen",
+        "weighInReminder": "Wiege-Erinnerung",
+        "waterGoal": "Wasserziel"
+      }
     },
     "fieldTypes": {
       "textInput": "Texteingabe",
