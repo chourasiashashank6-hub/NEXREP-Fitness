@@ -43,6 +43,7 @@ module.exports = {
     },
     android: {
       package: "com.nexrep.fitness",
+      googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",

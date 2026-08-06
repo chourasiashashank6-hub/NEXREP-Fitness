@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "186337618826",
+    "project_id": "repwise-8338b",
+    "storage_bucket": "repwise-8338b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186337618826:android:7e65c86b08d0fe96bfb673",
+        "android_client_info": {
+          "package_name": "com.nexrep.fitness"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsLkY6Y3LzspEXwyyhBqxHmBLZp3k1rfA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
