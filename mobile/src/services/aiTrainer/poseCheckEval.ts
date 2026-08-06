@@ -36,10 +36,10 @@ export function torsoMetrics(lms: Lm[]) {
 }
 
 /** Return best-visibility side angle for hip–knee–ankle / etc. */
-export function jointAngle(lms: Lm[], joint: string | null): number | null {
+export function jointAngle(lms: Lm[], joint: string | null, minVis = MIN_LANDMARK_VISIBILITY): number | null {
   const pick = (la: number, lb: number, lc: number, ra: number, rb: number, rc: number) => {
-    const L = visOk(lms[la]) && visOk(lms[lb]) && visOk(lms[lc]) ? angle3(lms[la], lms[lb], lms[lc]) : null;
-    const R = visOk(lms[ra]) && visOk(lms[rb]) && visOk(lms[rc]) ? angle3(lms[ra], lms[rb], lms[rc]) : null;
+    const L = visOk(lms[la], minVis) && visOk(lms[lb], minVis) && visOk(lms[lc], minVis) ? angle3(lms[la], lms[lb], lms[lc]) : null;
+    const R = visOk(lms[ra], minVis) && visOk(lms[rb], minVis) && visOk(lms[rc], minVis) ? angle3(lms[ra], lms[rb], lms[rc]) : null;
     if (L == null) return R;
     if (R == null) return L;
     const lVis = Math.min(lms[la].visibility ?? 0, lms[lb].visibility ?? 0, lms[lc].visibility ?? 0);
@@ -55,8 +55,8 @@ export function jointAngle(lms: Lm[], joint: string | null): number | null {
       return pick(11, 13, 15, 12, 14, 16);
     case "shoulder":
     case "shoulder_abduction": {
-      const L = visOk(lms[13]) && visOk(lms[11]) && visOk(lms[23]) ? angle3(lms[13], lms[11], lms[23]) : null;
-      const R = visOk(lms[14]) && visOk(lms[12]) && visOk(lms[24]) ? angle3(lms[14], lms[12], lms[24]) : null;
+      const L = visOk(lms[13], minVis) && visOk(lms[11], minVis) && visOk(lms[23], minVis) ? angle3(lms[13], lms[11], lms[23]) : null;
+      const R = visOk(lms[14], minVis) && visOk(lms[12], minVis) && visOk(lms[24], minVis) ? angle3(lms[14], lms[12], lms[24]) : null;
       if (L == null) return R;
       if (R == null) return L;
       return ((L ?? 0) + (R ?? 0)) / 2;
@@ -66,11 +66,11 @@ export function jointAngle(lms: Lm[], joint: string | null): number | null {
   }
 }
 
-export function repJointLandmarkIndex(lms: Lm[], joint: string | null): number | null {
+export function repJointLandmarkIndex(lms: Lm[], joint: string | null, minVis = MIN_LANDMARK_VISIBILITY): number | null {
   const better = (l: number, r: number) => {
     const lv = lms[l]?.visibility ?? 0;
     const rv = lms[r]?.visibility ?? 0;
-    if (lv < MIN_LANDMARK_VISIBILITY && rv < MIN_LANDMARK_VISIBILITY) return null;
+    if (lv < minVis && rv < minVis) return null;
     return lv >= rv ? l : r;
   };
   switch (joint) {

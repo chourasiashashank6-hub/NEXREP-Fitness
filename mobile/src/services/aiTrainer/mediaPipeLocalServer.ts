@@ -2,7 +2,10 @@ import { DocumentDirectoryPath } from "@dr.pogodin/react-native-fs";
 import { Platform } from "react-native";
 import { Directory, File, Paths } from "expo-file-system";
 import StaticServer from "@dr.pogodin/react-native-static-server";
-import { buildStaticMediaPipeHtml } from "./mediaPipeHtmlTemplate";
+import {
+  buildStaticMediaPipeHtml,
+  MEDIAPIPE_HTML_BUILD_STAMP,
+} from "./mediaPipeHtmlTemplate";
 import { buildStaticCalibrationHtml } from "./mediaPipeCalibrationTemplate";
 
 /**
@@ -40,6 +43,10 @@ function writeStaticAssets(): void {
   const calibrationFile = new File(dir, MEDIAPIPE_CALIBRATION_PAGE);
   calibrationFile.create({ intermediates: true, overwrite: true });
   calibrationFile.write(buildStaticCalibrationHtml());
+
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    console.log(`[MediaPipe] static assets written (${MEDIAPIPE_HTML_BUILD_STAMP})`);
+  }
 }
 
 async function startServer(): Promise<string> {
@@ -62,6 +69,11 @@ export function acquireMediaPipeServer(
 ): Promise<string> {
   if (Platform.OS === "web") {
     return Promise.reject(new Error("Local MediaPipe server is not used on web."));
+  }
+  // Metro reload reuses a running server without restarting JS — regenerate HTML in dev.
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    writeStaticAssets();
+    console.log(`[MediaPipe] dev reload: regenerated HTML (${MEDIAPIPE_HTML_BUILD_STAMP})`);
   }
   refCount += 1;
   if (releaseTimer) {

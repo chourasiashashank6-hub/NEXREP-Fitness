@@ -1,8 +1,12 @@
 import i18n from "../../i18n";
+import { WEBVIEW_CAMERA_CONTROLS_JS } from "./webviewCameraControls";
 import { WEBVIEW_SESSION_RUNTIME } from "./webviewSessionRuntime";
 
 /** Keep in sync with `@mediapipe/tasks-vision` in package.json (verified on jsDelivr). */
 export const MEDIAPIPE_VERSION = "0.10.34";
+
+/** Bump when static HTML template changes — logged at WebView startup to verify regeneration. */
+export const MEDIAPIPE_HTML_BUILD_STAMP = "2026.08.07-ai-camera";
 
 /**
  * All locale-aware strings the WebView script needs. Computed once per app
@@ -65,7 +69,11 @@ export function buildInjectedConfigScript(
   calibration: unknown,
   seedRepCount: number,
   countingPaused: boolean,
+  relaxTrackingGates = false,
+  zoomLevel = 1,
 ): string {
+  const spec = poseSpec as { repJoint?: string; view?: string; family?: string } | null;
+  const enableCameraDiagnostics = typeof __DEV__ !== "undefined" && __DEV__;
   const config = {
     EXERCISE_RULE: exerciseRule,
     MOVEMENT_CONFIG: movementConfig,
@@ -78,6 +86,12 @@ export function buildInjectedConfigScript(
     CAL: calibration,
     SEED_REPS: seedRepCount,
     COUNTING_PAUSED: countingPaused,
+    RELAX_TRACKING_GATES: relaxTrackingGates,
+    ZOOM_LEVEL: zoomLevel,
+    REP_JOINT: spec?.repJoint ?? null,
+    REQUIRED_VIEW: spec?.view ?? null,
+    POSE_FAMILY: spec?.family ?? null,
+    ENABLE_CAMERA_DIAGNOSTICS: enableCameraDiagnostics,
     TEXT: MP_TEXT,
   };
   // Serialize safely for embedding inside a <script> context (guards against a
@@ -152,12 +166,31 @@ export function buildStaticMediaPipeHtml(): string {
       const CAL=CONFIG.CAL!=null?CONFIG.CAL:null;
       const SEED_REPS=CONFIG.SEED_REPS||0;
       let COUNTING_PAUSED=!!CONFIG.COUNTING_PAUSED;
-      const TEXT=CONFIG.TEXT||{};
+      const RELAX_TRACKING_GATES=!!CONFIG.RELAX_TRACKING_GATES;
+      const REP_JOINT=CONFIG.REP_JOINT||null;
+      const REQUIRED_VIEW=CONFIG.REQUIRED_VIEW||null;
+      const POSE_FAMILY=CONFIG.POSE_FAMILY||null;
+      const ENABLE_CAMERA_DIAGNOSTICS=!!CONFIG.ENABLE_CAMERA_DIAGNOSTICS;
+      const TEXT=Object.assign({
+        posture:"Posture",phase:"Phase",exercise:"Exercise",reps:"Reps",
+        rightPosture:"Good",wrongPosture:"Adjust",adjustPosture:"Adjust your form",
+        postureBlank:"",postureAwareness:"Posture awareness",centred:"Centred",
+        adjustPosition:"Adjust position",unknown:"Unknown",cardioBanner:"",
+        keepBodyFrame:"Keep body in frame",centreBody:"Centre your body",
+        noBodyDetected:"No body detected",noFullBody:"Step back — full body visible",
+        exerciseDetecting:"Detecting…",alignBody:"Align your body",loadingTracker:"Loading…",
+        loadingTrackerHint:""
+      },CONFIG.TEXT||{});
+      ${WEBVIEW_CAMERA_CONTROLS_JS}
+      window.__mpEnableCameraDiagnostics=ENABLE_CAMERA_DIAGNOSTICS;
       ${WEBVIEW_SESSION_RUNTIME}
+      if(RELAX_TRACKING_GATES)MIN_VIS=0.45;
 
       if(FACING_MODE==="user")document.body.classList.add("mp-mirror");
       if(SESSION_MODE)document.body.classList.add("mp-chrome-hidden");
       if(IS_CARDIO&&!SESSION_MODE)document.body.classList.add("mp-cardio-banner");
+      window.__mpCamState.facing=FACING_MODE;
+      window.__mpCamState.zoom=Number(CONFIG.ZOOM_LEVEL)||1;
 
       const badgeEl=document.getElementById("badge");
       const postureEl=document.getElementById("posture");
@@ -166,6 +199,8 @@ export function buildStaticMediaPipeHtml(): string {
       const video=document.getElementById("video");
       const canvas=document.getElementById("overlay");
       const ctx=canvas.getContext("2d");
+      window.__mpCamVideo=video;
+      window.__mpCamCanvas=canvas;
 
       badgeEl.textContent=TEXT.exerciseDetecting;
       postureEl.textContent=TEXT.postureBlank;
@@ -494,7 +529,7 @@ export function buildStaticMediaPipeHtml(): string {
             failedDuringRep=[];
           }
         }
-        const repJoint=(POSE_SPEC&&POSE_SPEC.repJoint)||"knee";
+        const repJoint=REP_JOINT||(POSE_SPEC&&POSE_SPEC.repJoint)||"knee";
         const rule=(POSE_SPEC&&POSE_SPEC.repRule)||{topAngle:160,bottomAngle:95,minRepDurationSec:1.2};
         const top=rule.topAngle!=null?rule.topAngle:160;
         const formBottom=depthTarget||(rule.bottomAngle!=null?rule.bottomAngle:95);
@@ -509,11 +544,11 @@ export function buildStaticMediaPipeHtml(): string {
         const recentMotion=hasMotion(performance.now());
         const sample=classifyOri(landmarks,CAL||{});
         const detectedView=smoothOri(sample);
-        const requiredView=(POSE_SPEC&&POSE_SPEC.view)||"side";
-        const orientationOk=oriMatch(requiredView,detectedView);
+        const requiredView=REQUIRED_VIEW||(POSE_SPEC&&POSE_SPEC.view)||"side";
+        const orientationOk=RELAX_TRACKING_GATES?true:oriMatch(requiredView,detectedView);
         const gated=COUNTING_PAUSED||!orientationOk||!jointVisible;
         const atRest=sessionPhase.phase==="idle"||sessionPhase.phase==="top";
-        const idleBlocked=atRest&&!recentMotion;
+        const idleBlocked=RELAX_TRACKING_GATES?false:(atRest&&!recentMotion);
         const occluded={};
         if(POSE_SPEC&&POSE_SPEC.machineProfile&&POSE_SPEC.machineProfile.occludedLandmarks){
           const nameIdx={nose:0,left_eye:2,right_eye:5,left_ear:7,right_ear:8,left_shoulder:11,right_shoulder:12,left_elbow:13,right_elbow:14,left_wrist:15,right_wrist:16,left_hip:23,right_hip:24,left_knee:25,right_knee:26,left_ankle:27,right_ankle:28,left_heel:29,right_heel:30,left_foot_index:31,right_foot_index:32};
@@ -558,9 +593,10 @@ export function buildStaticMediaPipeHtml(): string {
         const cueKey=!orientationOk?(requiredView==="side"?"cue_turn_side":"cue_turn_front"):evald.cueKey;
         const cuePriority=!orientationOk?"safety":evald.cuePriority;
         const jIdx=jointIdx(landmarks,repJoint);
-        drawSkeleton(landmarks,formOk);
-        drawLandmarks(landmarks,formOk);
-        drawAngleTag(landmarks,primaryAngle,formOk,jIdx);
+        const drawLms=window.__mpZoomLms?window.__mpZoomLms(landmarks):landmarks;
+        drawSkeleton(drawLms,formOk);
+        drawLandmarks(drawLms,formOk);
+        drawAngleTag(drawLms,primaryAngle,formOk,jIdx);
         emitTracking({
           reps:repCount,formOk,correction:cueKey||"",phase,bodyDetected:true,
           primaryAngle, rom01:progress, inDepthZone:inZone, zoneStart01:zoneStart, zoneEnd01:zoneEnd,
@@ -581,12 +617,13 @@ export function buildStaticMediaPipeHtml(): string {
         const landmarks=rawLm?.length?smoothLandmarks(rawLm):null;
 
         if(landmarks?.length){
+          const drawLms=window.__mpZoomLms?window.__mpZoomLms(landmarks):landmarks;
           if(SESSION_MODE&&POSE_SPEC){runSessionFrame(landmarks);rafId=requestAnimationFrame(detectLoop);return}
           const centered=isCentered(landmarks);
           if(IS_CARDIO){
             drawFrame(centered);
-            drawSkeleton(landmarks,centered);
-            drawLandmarks(landmarks,centered);
+            drawSkeleton(drawLms,centered);
+            drawLandmarks(drawLms,centered);
             setText(badgeEl,TEXT.postureAwareness);
             setText(postureEl,TEXT.posture+": "+(centered?TEXT.centred:TEXT.adjustPosition));
             setBg(postureEl,centered?"rgba(34,197,94,0.45)":"rgba(239,68,68,0.45)");
@@ -599,8 +636,8 @@ export function buildStaticMediaPipeHtml(): string {
             const posture=evaluatePosture(landmarks,primaryAngle,movement.phase);
             const lineIsGood=EXERCISE_RULE?posture.isCorrect&&movement.dynamicOk:centered;
             const label=EXERCISE_RULE?EXERCISE_RULE.label:TEXT.unknown;
-            drawFrame(lineIsGood);drawSkeleton(landmarks,lineIsGood);drawLandmarks(landmarks,lineIsGood);
-            drawAngleTag(landmarks,primaryAngle,lineIsGood);
+            drawFrame(lineIsGood);drawSkeleton(drawLms,lineIsGood);drawLandmarks(drawLms,lineIsGood);
+            drawAngleTag(drawLms,primaryAngle,lineIsGood);
             setText(badgeEl,TEXT.exercise+": "+label+" · "+TEXT.reps+": "+movement.reps);
             setText(postureEl,TEXT.posture+": "+posture.status+" · "+TEXT.phase+": "+movement.phase.toUpperCase()+
               (primaryAngle?" · "+Math.round(primaryAngle)+"°":""));
@@ -627,6 +664,23 @@ export function buildStaticMediaPipeHtml(): string {
         if(rafId)cancelAnimationFrame(rafId);rafId=null;
         if(poseLandmarker){poseLandmarker.close();poseLandmarker=null}
         if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+        window.__mpCamStream=null;
+      };
+      window.__mpCamStopStream=()=>{
+        if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+        window.__mpCamStream=null;
+      };
+      window.__mpCamStartStream=async(facing)=>{
+        const fm=facing||window.__mpCamState.facing||"user";
+        window.__mpCamState.facing=fm;
+        window.__mpApplyMirror();
+        stream=await navigator.mediaDevices.getUserMedia({
+          video:{facingMode:fm,width:{ideal:1280},height:{ideal:720}},audio:false
+        });
+        window.__mpCamStream=stream;
+        video.srcObject=stream;
+        await video.play();
+        if(window.__mpSetZoom)await window.__mpSetZoom(window.__mpCamState.zoom||1);
       };
 
       document.addEventListener("visibilitychange",()=>{if(document.hidden)stop()});
@@ -634,10 +688,8 @@ export function buildStaticMediaPipeHtml(): string {
 
       (async()=>{
         try{
-          stream=await navigator.mediaDevices.getUserMedia({
-            video:{facingMode:FACING_MODE,width:{ideal:1280},height:{ideal:720}},audio:false
-          });
-          video.srcObject=stream;await video.play();
+          await window.__mpCamStartStream(FACING_MODE);
+          if(window.__mpNotifyCamStarted)window.__mpNotifyCamStarted(stream);
           const vision=await FilesetResolver.forVisionTasks(
             "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm");
           poseLandmarker=await PoseLandmarker.createFromOptions(vision,{

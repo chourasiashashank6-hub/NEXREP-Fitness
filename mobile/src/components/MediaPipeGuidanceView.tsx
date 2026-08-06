@@ -7,6 +7,10 @@ import { LiveSessionTracker } from "../services/aiTrainer/liveSessionTracker";
 import { MEDIAPIPE_VERSION, MP_TEXT, buildInjectedConfigScript } from "../services/aiTrainer/mediaPipeHtmlTemplate";
 import { acquireMediaPipeServer, releaseMediaPipeServer } from "../services/aiTrainer/mediaPipeLocalServer";
 import {
+  type CameraDiagnosticsPayload,
+  logCameraDiagnostics,
+} from "../services/aiTrainer/webviewCameraControls";
+import {
   DEFAULT_POSE_CALIBRATION,
   MIN_LANDMARK_VISIBILITY,
   type PoseCalibration,
@@ -56,6 +60,10 @@ export type MediaPipeGuidanceViewProps = {
   seedRepCount?: number;
   /** Briefly freeze counting (flip stabilize / orientation wait). */
   countingPaused?: boolean;
+  /** Relax orientation/idle/visibility gates for standalone camera workouts. */
+  relaxTrackingGates?: boolean;
+  /** Camera zoom 1–3; resets each session. */
+  zoomLevel?: number;
 };
 
 type JointRule = {
@@ -615,6 +623,8 @@ function MediaPipeGuidanceView({
   calibration = null,
   seedRepCount = 0,
   countingPaused = false,
+  relaxTrackingGates = false,
+  zoomLevel = 1,
 }: MediaPipeGuidanceViewProps) {
   const webHostRef = useRef<View | null>(null);
   const webViewRef = useRef<WebView>(null);
@@ -622,6 +632,8 @@ function MediaPipeGuidanceView({
   const onErrorRef = useRef(onError);
   const onTrackingUpdateRef = useRef(onTrackingUpdate);
   const countingPausedRef = useRef(countingPaused);
+  const skipFlipInjectRef = useRef(true);
+  const skipZoomInjectRef = useRef(true);
   onReadyRef.current = onReady;
   onErrorRef.current = onError;
   onTrackingUpdateRef.current = onTrackingUpdate;
@@ -669,13 +681,39 @@ function MediaPipeGuidanceView({
     );
   }, [countingPaused]);
 
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    if (initStatus !== "ready") return;
+    if (skipFlipInjectRef.current) {
+      skipFlipInjectRef.current = false;
+      return;
+    }
+    webViewRef.current?.injectJavaScript(
+      `if(window.__mpFlipCamera){window.__mpFlipCamera(${JSON.stringify(facingMode)});}true;`,
+    );
+  }, [facingMode, initStatus]);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    if (initStatus !== "ready") return;
+    if (skipZoomInjectRef.current) {
+      skipZoomInjectRef.current = false;
+      return;
+    }
+    webViewRef.current?.injectJavaScript(
+      `if(window.__mpSetZoom){window.__mpSetZoom(${zoomLevel});}true;`,
+    );
+  }, [zoomLevel, initStatus]);
+
   // Reset the loading indicator whenever the WebView remounts (same deps as its `key`) or
   // the camera view is reopened, so a stale "ready" state doesn't hide a fresh init.
   useEffect(() => {
     if (Platform.OS === "web") return;
     if (!isActive) return;
+    skipFlipInjectRef.current = true;
+    skipZoomInjectRef.current = true;
     setInitStatus("loading");
-  }, [isActive, facingMode, selectedExerciseName, sessionMode]);
+  }, [isActive, selectedExerciseName, sessionMode]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -699,7 +737,8 @@ function MediaPipeGuidanceView({
             cal,
             seedRepCount,
             countingPaused,
-            true,
+            typeof __DEV__ !== "undefined" ? __DEV__ : true,
+            relaxTrackingGates,
           )
         : null;
     let lastWarnIdx: number[] = [];
@@ -1541,6 +1580,7 @@ function MediaPipeGuidanceView({
     poseSpec,
     calibration,
     seedRepCount,
+    relaxTrackingGates,
   ]);
 
   const matchedRecordForWebView = findExerciseRecord(selectedExerciseName);
@@ -1589,7 +1629,7 @@ function MediaPipeGuidanceView({
   // `source.uri` (which stays constant), that implicit reload no longer happens on
   // its own — so this hash is folded into `key` to reproduce the same behavior via
   // an explicit WebView remount.
-  const dynamicConfigHash = hashConfigForKey({ poseSpec, calibration, seedRepCount });
+  const dynamicConfigHash = hashConfigForKey({ poseSpec, calibration, seedRepCount, relaxTrackingGates });
 
   return (
     <View style={styles.container}>
@@ -1608,8 +1648,10 @@ function MediaPipeGuidanceView({
           calibration,
           seedRepCount,
           countingPaused,
+          relaxTrackingGates,
+          zoomLevel,
         )}
-        key={`mp-${facingMode}-${selectedExerciseName || "x"}-${sessionMode ? "s" : "g"}-${dynamicConfigHash}`}
+        key={`mp-${selectedExerciseName || "x"}-${sessionMode ? "s" : "g"}-${dynamicConfigHash}`}
         style={styles.webview}
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
@@ -1621,6 +1663,10 @@ function MediaPipeGuidanceView({
         onMessage={(event) => {
           try {
             const parsed = JSON.parse(event.nativeEvent.data || "{}") as Record<string, unknown>;
+            if (parsed.type === "cameraDiagnostics") {
+              logCameraDiagnostics(parsed as CameraDiagnosticsPayload);
+              return;
+            }
             if (parsed.type === "ready") {
               setInitStatus("ready");
               onReady?.();

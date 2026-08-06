@@ -11,6 +11,7 @@ import type {
   TrainerView,
 } from "./types";
 import { DEFAULT_POSE_CALIBRATION } from "./types";
+import { computePersonalizedDepthTarget } from "../../utils/calibrationMerge";
 
 const families = familyTemplates as Record<string, FamilyTemplate>;
 const specs = exerciseSpecs as ExerciseSpecEntry[];
@@ -142,13 +143,21 @@ export function hasPoseSpec(exerciseName?: string | null): boolean {
   return resolvePoseSpec(exerciseName) != null;
 }
 
-/** Remap calibrated depth / mobility into a resolved spec. */
+/** Families that use calibrated squat depth for rep bottom / depth checks. */
+const DEPTH_CALIBRATED_FAMILIES = new Set(["squat_lunge"]);
+
+/** Remap calibrated depth / mobility into a resolved spec (squat/lunge only). */
 export function remapSpecWithCalibration(
   spec: ResolvedPoseSpec,
   calibration: PoseCalibration | null | undefined,
 ): ResolvedPoseSpec {
+  if (!DEPTH_CALIBRATED_FAMILIES.has(spec.family)) {
+    return spec;
+  }
   const cal = calibration?.torsoLen ? calibration : DEFAULT_POSE_CALIBRATION;
-  const depth = Math.max(80, Math.min(105, cal.mobility.depthTargetDeg || 95));
+  const standing = cal.standingKneeDeg ?? 168;
+  const squatRaw = cal.squatDepthDeg ?? cal.mobility.depthTargetDeg ?? 95;
+  const depth = computePersonalizedDepthTarget(squatRaw, standing);
   const checks = spec.checks.map((c) => {
     if (c.id === "depth" || c.calibrated) {
       const limited = depth >= 100;

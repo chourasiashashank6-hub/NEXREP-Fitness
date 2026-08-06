@@ -96,7 +96,7 @@ function classifyOri(lms,cal){
   var midS={x:(lS.x+rS.x)/2,y:(lS.y+rS.y)/2}, midH={x:(lH.x+rH.x)/2,y:(lH.y+rH.y)/2};
   var torsoLen=Math.max(0.05,Math.hypot(midS.x-midH.x,midS.y-midH.y));
   var ratio=apparent/torsoLen;
-  var calRatio=(cal.shoulderWidth||0.19)/Math.max(0.05,cal.torsoLen||0.31);
+  var calRatio=(cal.frontShoulderRatio!=null)?cal.frontShoulderRatio:((cal.shoulderWidth||0.19)/Math.max(0.05,cal.torsoLen||0.31));
   var relative=ratio/Math.max(0.01,calRatio);
   var orientation="unknown";
   if(lVis>=0.6&&rVis>=0.6&&relative>=0.8) orientation="front";

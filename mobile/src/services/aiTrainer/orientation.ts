@@ -41,7 +41,9 @@ export function classifyOrientationFrame(
     Math.hypot(midShoulder.x - midHip.x, midShoulder.y - midHip.y),
   );
   const ratio = apparent / torsoLen;
-  const calRatio = cal.shoulderWidth / Math.max(0.05, cal.torsoLen);
+  const calRatio =
+    cal.frontShoulderRatio ??
+    cal.shoulderWidth / Math.max(0.05, cal.torsoLen);
   const relative = ratio / Math.max(0.01, calRatio);
 
   let orientation: TrainerView = "unknown";

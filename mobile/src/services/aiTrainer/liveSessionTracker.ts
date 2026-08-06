@@ -27,6 +27,7 @@ import {
 const IDLE_NOISE_DEG = 4;
 const IDLE_WINDOW_MS = 1000;
 const DEBUG_EVERY_MS = 500;
+const RELAXED_MIN_VISIBILITY = 0.45;
 
 export type LiveSessionFrameResult = {
   reps: number;
@@ -90,6 +91,7 @@ export class LiveSessionTracker {
   private angleHistory: Array<{ t: number; a: number }> = [];
   private failedDuringRep: string[] = [];
   private countingPaused = false;
+  private relaxGates = false;
   private lastDebugAt = 0;
   private debugEnabled: boolean;
 
@@ -99,10 +101,12 @@ export class LiveSessionTracker {
     seedRepCount = 0,
     countingPaused = false,
     debugEnabled = typeof __DEV__ !== "undefined" ? __DEV__ : true,
+    relaxGates = false,
   ) {
     this.phase = createPhaseMachine();
     this.phase.repCount = Math.max(0, seedRepCount);
     this.countingPaused = countingPaused;
+    this.relaxGates = relaxGates;
     this.debugEnabled = debugEnabled;
   }
 
@@ -151,7 +155,8 @@ export class LiveSessionTracker {
     const inverted = rule.direction === "inverted";
     const countBottom = inverted ? formBottom : Math.max(formBottom, top - 45);
 
-    const rawAng = jointAngle(landmarks, repJoint);
+    const minVis = this.relaxGates ? RELAXED_MIN_VISIBILITY : undefined;
+    const rawAng = jointAngle(landmarks, repJoint, minVis);
     const jointVisible = rawAng != null;
     this.emaPrimary = jointVisible ? emaAngle(this.emaPrimary, rawAng!) : this.emaPrimary;
     const primaryAngle = jointVisible ? this.emaPrimary : null;
@@ -164,12 +169,14 @@ export class LiveSessionTracker {
     const oriSample = classifyOrientationFrame(landmarks, this.calibration);
     const detectedView = this.ori.push(oriSample);
     const requiredView = (this.poseSpec.view || "side") as TrainerView;
-    const orientationOk = orientationMatches(requiredView, detectedView);
+    const orientationOk = this.relaxGates
+      ? true
+      : orientationMatches(requiredView, detectedView);
 
     const gated = this.countingPaused || !orientationOk || !jointVisible;
     const atRestPhase = this.phase.phase === "idle" || this.phase.phase === "top";
     // Idle gate: no new descent without recent joint motion (kills lying-still phantom reps)
-    const idleBlocked = atRestPhase && !recentMotion;
+    const idleBlocked = this.relaxGates ? false : atRestPhase && !recentMotion;
 
     const occluded = new Set<number>();
     for (const name of this.poseSpec.machineProfile?.occludedLandmarks || []) {
@@ -238,7 +245,7 @@ export class LiveSessionTracker {
     if (this.debugEnabled && nowMs - this.lastDebugAt >= DEBUG_EVERY_MS) {
       this.lastDebugAt = nowMs;
       const visCount = landmarks.filter((l) => (l.visibility ?? 0) >= 0.6).length;
-      // Temporary diagnostics for live-session fake-tracking investigation
+      // Dev-only diagnostics when tracking appears stuck.
       console.log("[LiveSessionTracker]", {
         visCount,
         primaryAngle: primaryAngle != null ? Math.round(primaryAngle) : null,
@@ -274,7 +281,7 @@ export class LiveSessionTracker {
       repVerdict,
       failedChecksThisRep,
       countingGated: gated || idleBlocked,
-      jointIndex: repJointLandmarkIndex(landmarks, repJoint),
+      jointIndex: repJointLandmarkIndex(landmarks, repJoint, minVis),
     };
   }
 
