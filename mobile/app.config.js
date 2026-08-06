@@ -35,6 +35,10 @@ module.exports = {
           "NexRep needs photo library access to analyze meal photos.",
         NSLocationWhenInUseUsageDescription:
           "NexRep uses your location to suggest nearby gyms when you search.",
+        // Allow WKWebView to load the on-device MediaPipe server at http://127.0.0.1:<port>.
+        NSAppTransportSecurity: {
+          NSAllowsLocalNetworking: true,
+        },
       },
     },
     android: {

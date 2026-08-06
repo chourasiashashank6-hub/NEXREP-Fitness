@@ -1,3 +1,4 @@
+import { DocumentDirectoryPath } from "@dr.pogodin/react-native-fs";
 import { Platform } from "react-native";
 import { Directory, File, Paths } from "expo-file-system";
 import StaticServer from "@dr.pogodin/react-native-static-server";
@@ -8,17 +9,19 @@ import { buildStaticCalibrationHtml } from "./mediaPipeCalibrationTemplate";
  * Local HTTP server serving MediaPipe WebView pages from a secure
  * `http://127.0.0.1:<port>/...` origin.
  *
- * Files are written under the app document directory using a **relative**
- * `fileDir` (`mediapipe-webroot`) so they match what
- * `@dr.pogodin/react-native-static-server` serves on Android
- * (DocumentDirectoryPath). Writing to Paths.cache previously caused 404s
- * because the server only reads from the document directory.
+ * HTML is written under the app document directory (`Paths.document`) and
+ * served via an **absolute** `fileDir` so both platforms read the same
+ * folder. Relative `fileDir` only resolves to DocumentDirectory on Android;
+ * on iOS it incorrectly resolves to MainBundlePath and 404s.
  */
 
 export const MEDIAPIPE_GUIDANCE_PAGE = "index.html";
 export const MEDIAPIPE_CALIBRATION_PAGE = "calibration.html";
 
 const SERVER_DIR_NAME = "mediapipe-webroot";
+
+/** Absolute webroot path — must match where `writeStaticAssets()` writes files. */
+const getServerWebrootPath = () => `${DocumentDirectoryPath}/${SERVER_DIR_NAME}`;
 
 let serverInstance: StaticServer | null = null;
 let originPromise: Promise<string> | null = null;
@@ -42,8 +45,7 @@ function writeStaticAssets(): void {
 async function startServer(): Promise<string> {
   writeStaticAssets();
   const server = new StaticServer({
-    // Relative to DocumentDirectoryPath — must match Paths.document above.
-    fileDir: SERVER_DIR_NAME,
+    fileDir: getServerWebrootPath(),
     port: 0,
     hostname: "127.0.0.1",
   });
