@@ -78,6 +78,14 @@ export type PoseCalibration = {
     hingeMaxDeg: number;
     dorsiflexionProxyDeg: number;
   };
+  /** Front T-pose shoulderWidth / torsoLen — orientation reference (not turn-step). */
+  frontShoulderRatio?: number;
+  /** Average knee angle while standing in T-pose. */
+  standingKneeDeg?: number;
+  /** Torso lean (deg) while standing in T-pose — baseline for form checks. */
+  torsoLeanBaselineDeg?: number;
+  /** Deepest knee angle measured during squat step (before personalization). */
+  squatDepthDeg?: number;
   confidenceByAngle: Record<string, number>;
   calibratedAt: string;
   version: number;
