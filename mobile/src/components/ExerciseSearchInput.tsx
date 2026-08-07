@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  FlatList,
   Keyboard,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-  type ListRenderItemInfo,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { GlobalExercise } from "../constants/GlobalExercisesData";
@@ -225,7 +224,7 @@ export default function ExerciseSearchInput({
     openDropdown();
   };
 
-  const renderItem = ({ item }: ListRenderItemInfo<SectionedRow>) => {
+  const renderRow = (item: SectionedRow) => {
     if (item.kind === "header") {
       return <Text style={[styles.sectionHeader, { color: colors.muted }]}>{item.title}</Text>;
     }
@@ -286,6 +285,11 @@ export default function ExerciseSearchInput({
       </Pressable>
     );
   };
+
+  const rowKey = (item: SectionedRow, index: number) =>
+    item.kind === "header"
+      ? `header-${item.title}`
+      : `row-${index}-${item.item.kind === "catalog" ? item.item.name : item.item.exercise.name}`;
 
   const showDropdown = isDropdownOpen && !disabled && sectionedRows.length > 0;
   const fieldValue = isDropdownOpen ? inputText : displayValue;
@@ -365,18 +369,15 @@ export default function ExerciseSearchInput({
             { borderColor: colors.border, backgroundColor: colors.cardAlt, borderRadius: chipMode ? 14 : radius.lg },
           ]}
         >
-          <FlatList
-            data={sectionedRows}
-            keyExtractor={(item, index) =>
-              item.kind === "header"
-                ? `header-${item.title}`
-                : `row-${index}-${item.item.kind === "catalog" ? item.item.name : item.item.exercise.name}`
-            }
+          <ScrollView
             keyboardShouldPersistTaps="always"
             nestedScrollEnabled
             style={styles.list}
-            renderItem={renderItem}
-          />
+          >
+            {sectionedRows.map((item, index) => (
+              <View key={rowKey(item, index)}>{renderRow(item)}</View>
+            ))}
+          </ScrollView>
         </View>
       ) : null}
 
