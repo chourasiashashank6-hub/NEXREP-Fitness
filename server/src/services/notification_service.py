@@ -197,6 +197,43 @@ def send_push_to_user(
         return False
 
 
+def send_test_push_to_user(db: Session, *, user_id: int) -> tuple[bool, str]:
+    """Send an immediate test push, bypassing preferences and dedup."""
+    tokens = (
+        db.query(PushToken)
+        .filter(PushToken.user_id == user_id, PushToken.is_active.is_(True))
+        .order_by(PushToken.updated_at.desc())
+        .all()
+    )
+    if not tokens:
+        return False, "No active push token registered for this account. Enable notifications in the app first."
+
+    messages = [
+        {
+            "to": token.expo_push_token,
+            "title": "NexRep test push",
+            "body": "Server push notifications are working.",
+            "sound": "default",
+            "channelId": "logging-nudges",
+            "data": {"category": "logging_nudges", "kind": "server_test"},
+        }
+        for token in tokens
+    ]
+    try:
+        response = requests.post(EXPO_PUSH_URL, json=messages, timeout=8)
+        response.raise_for_status()
+        payload = response.json()
+        tickets = payload.get("data") if isinstance(payload, dict) else None
+        if isinstance(tickets, list):
+            for token, ticket in zip(tokens, tickets):
+                if isinstance(ticket, dict) and ticket.get("details", {}).get("error") == "DeviceNotRegistered":
+                    token.is_active = False
+            db.commit()
+        return True, f"Sent to {len(tokens)} device(s)."
+    except Exception as exc:  # pragma: no cover
+        return False, str(exc)[:500]
+
+
 def _users_with_active_tokens(db: Session) -> list[User]:
     return (
         db.query(User)

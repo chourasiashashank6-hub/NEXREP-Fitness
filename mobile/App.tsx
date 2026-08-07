@@ -2,6 +2,7 @@ import { Component, useEffect, type ErrorInfo, type ReactNode } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { AppState, Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { setupNotificationChannels } from "./src/services/notificationService";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./src/i18n";
 import i18n from "./src/i18n";
@@ -94,6 +95,10 @@ function I18nBootstrap() {
 }
 
 export default function App() {
+  useEffect(() => {
+    void setupNotificationChannels().catch(() => undefined);
+  }, []);
+
   return (
     <AppErrorBoundary>
       <SafeAreaProvider>

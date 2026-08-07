@@ -67,6 +67,7 @@ from src.services.score_service import compute_discipline_score
 from src.services.calorie_log_targets import get_activity_level, get_tdee_multiplier
 from src.services.notification_service import (
     send_push_to_user,
+    send_test_push_to_user,
     start_notification_scheduler,
     stop_notification_scheduler,
 )
@@ -1847,6 +1848,17 @@ def put_notification_preferences(
         db.add(row)
     db.commit()
     return {"preferences": prefs}
+
+
+@app.post("/api/notifications/test-push")
+def post_test_push(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    sent, detail = send_test_push_to_user(db, user_id=current_user.id)
+    if not sent:
+        raise HTTPException(status_code=400, detail=detail)
+    return {"sent": True, "detail": detail}
 
 
 @app.put("/onboarding/me")

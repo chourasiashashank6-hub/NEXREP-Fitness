@@ -1316,7 +1316,25 @@
       "meditation": "Meditation",
       "meditationOffset": "Meditation offset",
       "minutesBefore": "{{count}} min before",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "testSection": "Test notifications",
+      "testSectionHelper": "Use these to verify on-device scheduling and server push delivery.",
+      "permissionStatus": "Permission: {{status}}",
+      "permissionGranted": "Granted",
+      "permissionDenied": "Not granted",
+      "permissionBlocked": "Blocked in system settings",
+      "enableNotifications": "Enable notifications",
+      "testLocal": "Test on-device",
+      "testServer": "Test server push",
+      "testing": "Sending…",
+      "testLocalTitle": "Local test scheduled",
+      "testLocalScheduled": "You should see a notification in about 2 seconds.",
+      "testServerTitle": "Server push sent",
+      "testServerOk": "Check your notification tray.",
+      "testServerNoToken": "Permission granted but push token could not be registered. Rebuild the dev client with FCM credentials if this persists.",
+      "testServerFcmNotConfigured": "This Android build was not compiled with Firebase/FCM. Reinstall a dev client built after google-services.json was added (eas build --profile development --platform android, or npx expo run:android). Then upload FCM credentials in EAS if server push still fails. Guide: {{url}}",
+      "testServerFcmGuide": "See {{url}}",
+      "testFailed": "Test failed"
     }
   },
   "notifications": {

@@ -74,6 +74,23 @@ const androidApiLevel = () => {
   return typeof version === "number" ? version : Number.parseInt(String(version), 10) || 0;
 };
 
+const FCM_SETUP_URL = "https://docs.expo.dev/push-notifications/fcm-credentials/";
+
+/** Turn native FCM setup failures into an actionable message for settings / test UI. */
+export function formatExpoPushTokenError(err: unknown): Error {
+  const message = err instanceof Error ? err.message : String(err);
+  if (
+    Platform.OS === "android" &&
+    (message.includes("FirebaseApp is not initialized") || message.includes("FirebaseApp.initializeApp"))
+  ) {
+    return new Error(i18n.t("settings.notifications.testServerFcmNotConfigured", { url: FCM_SETUP_URL }));
+  }
+  if (message.includes("fcm-credentials") || /firebase/i.test(message)) {
+    return new Error(`${message} ${i18n.t("settings.notifications.testServerFcmGuide", { url: FCM_SETUP_URL })}`);
+  }
+  return err instanceof Error ? err : new Error(message);
+}
+
 const parseTime = (time: string, fallback = DEFAULT_WORKOUT_TIME) => {
   const match = /^(\d{1,2}):(\d{2})$/.exec(time.trim()) ?? /^(\d{1,2}):(\d{2})$/.exec(fallback);
   const hour = Math.min(23, Math.max(0, Number(match?.[1] ?? 18)));
@@ -155,22 +172,72 @@ export async function requestNotificationPermissions(_context: PermissionContext
   return getNotificationPermissionState();
 }
 
-export async function registerExpoPushTokenForCurrentDevice() {
+export async function registerExpoPushTokenForCurrentDevice(): Promise<string | null> {
   if (Platform.OS === "web") return null;
   await setupNotificationChannels();
   const permission = await getNotificationPermissionState();
-  if (!permission.granted) return null;
+  if (!permission.granted) {
+    if (__DEV__) {
+      console.warn("[Notifications] Push token skipped — permission not granted");
+    }
+    return null;
+  }
   const projectId =
     Constants.easConfig?.projectId ??
     Constants.expoConfig?.extra?.eas?.projectId ??
     process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
-  const token = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
-  await registerPushToken({
-    expo_push_token: token.data,
-    platform: Platform.OS === "ios" ? "ios" : "android",
-    device_id: Constants.sessionId ?? undefined,
+  if (!projectId && __DEV__) {
+    console.warn("[Notifications] EXPO_PUBLIC_EAS_PROJECT_ID missing — push token may fail");
+  }
+  try {
+    const token = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+    await registerPushToken({
+      expo_push_token: token.data,
+      platform: Platform.OS === "ios" ? "ios" : "android",
+      device_id: Constants.sessionId ?? undefined,
+    });
+    if (__DEV__) {
+      console.log("[Notifications] Push token registered:", token.data.slice(0, 28) + "…");
+    }
+    return token.data;
+  } catch (err) {
+    const formatted = formatExpoPushTokenError(err);
+    if (__DEV__) {
+      console.warn("[Notifications] Push token registration failed:", formatted.message);
+    }
+    throw formatted;
+  }
+}
+
+/** Request permission if needed, then register the Expo push token with the server. */
+export async function ensurePushRegistration(requestIfNeeded = true): Promise<string | null> {
+  const state = requestIfNeeded
+    ? await requestNotificationPermissions("settings")
+    : await getNotificationPermissionState();
+  if (!state.granted) return null;
+  return registerExpoPushTokenForCurrentDevice();
+}
+
+/** Fire an immediate on-device notification (no server). Useful for permission/channel testing. */
+export async function sendLocalTestNotification() {
+  await setupNotificationChannels();
+  const permission = await requestNotificationPermissions("settings");
+  if (!permission.granted) {
+    throw new Error("Notification permission not granted");
+  }
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "NexRep test",
+      body: "On-device notifications are working.",
+      sound: "default",
+      data: { category: "logging-nudges", kind: "local_test" },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 2,
+      channelId: "logging-nudges",
+    },
   });
-  return token.data;
 }
 
 export function openNotificationSettings() {

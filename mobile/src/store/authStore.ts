@@ -120,8 +120,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       returnToProfileAfterOnboarding: false,
     });
     await saveToken(token);
-    const { registerExpoPushTokenForCurrentDevice } = await import("../services/notificationService");
-    void registerExpoPushTokenForCurrentDevice().catch(() => undefined);
+    const { ensurePushRegistration } = await import("../services/notificationService");
+    void ensurePushRegistration(false).catch(() => undefined);
   },
   setNeedsOnboarding: (value) => {
     set({ needsOnboarding: value });
@@ -169,7 +169,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       hydrated: true,
       returnToProfileAfterOnboarding: false,
     });
-    const { registerExpoPushTokenForCurrentDevice } = await import("../services/notificationService");
-    void registerExpoPushTokenForCurrentDevice().catch(() => undefined);
+    const { ensurePushRegistration } = await import("../services/notificationService");
+    void ensurePushRegistration(false).catch(() => undefined);
   },
 }));

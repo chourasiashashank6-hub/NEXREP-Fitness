@@ -64,3 +64,8 @@ export const updateNotificationPreferences = async (
   });
   return data.preferences;
 };
+
+export const sendTestPush = async () => {
+  const { data } = await apiClient.post<{ sent: boolean; detail?: string }>("/api/notifications/test-push");
+  return data;
+};

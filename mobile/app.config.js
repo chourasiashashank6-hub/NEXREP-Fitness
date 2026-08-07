@@ -43,7 +43,8 @@ module.exports = {
     },
     android: {
       package: "com.nexrep.fitness",
-      googleServicesFile: "./google-services.json",
+      // Baked into the native APK/AAB at prebuild; required for getExpoPushTokenAsync on Android.
+      googleServicesFile: path.resolve(__dirname, "google-services.json"),
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../components/BottomSheetPicker";
@@ -13,10 +13,14 @@ import {
 import {
   cancelAllNexRepNotifications,
   dismissAndroidBatteryTip,
+  ensurePushRegistration,
+  getNotificationPermissionState,
   openNotificationSettings,
-  requestNotificationPermissions,
+  sendLocalTestNotification,
   shouldShowAndroidBatteryTip,
+  type NotificationPermissionState,
 } from "../services/notificationService";
+import { sendTestPush } from "../api/notifications";
 
 const GREEN = "#0F6E56";
 const ORANGE = "#D85A30";
@@ -42,6 +46,9 @@ export function NotificationPreferencesScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [batteryTip, setBatteryTip] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermissionState | null>(null);
+  const [testingLocal, setTestingLocal] = useState(false);
+  const [testingServer, setTestingServer] = useState(false);
   const offsetOptions = useMemo(
     () => offsetValues.map((n) => ({ value: n, label: t("settings.notifications.minutesBefore", { count: n }) })),
     [t],
@@ -50,12 +57,14 @@ export function NotificationPreferencesScreen({ navigation }: any) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [remote, showTip] = await Promise.all([
+      const [remote, showTip, perm] = await Promise.all([
         getNotificationPreferences().catch(() => DEFAULT_NOTIFICATION_PREFERENCES),
         shouldShowAndroidBatteryTip().catch(() => false),
+        getNotificationPermissionState().catch(() => null),
       ]);
       setPrefs(remote);
       setBatteryTip(showTip);
+      setPermission(perm);
     } finally {
       setLoading(false);
     }
@@ -72,7 +81,11 @@ export function NotificationPreferencesScreen({ navigation }: any) {
       const saved = await updateNotificationPreferences(next);
       setPrefs(saved);
       if (!saved.master_enabled) await cancelAllNexRepNotifications().catch(() => undefined);
-      if (saved.master_enabled) await requestNotificationPermissions("settings").catch(() => undefined);
+      if (saved.master_enabled) {
+        await ensurePushRegistration(true).catch(() => undefined);
+        const perm = await getNotificationPermissionState().catch(() => null);
+        setPermission(perm);
+      }
     } finally {
       setSaving(false);
     }
@@ -80,6 +93,45 @@ export function NotificationPreferencesScreen({ navigation }: any) {
 
   const updateCategory = (key: keyof NotificationPreferences["categories"], value: boolean) =>
     savePrefs({ ...prefs, categories: { ...prefs.categories, [key]: value } });
+
+  const permissionLabel = permission?.granted
+    ? t("settings.notifications.permissionGranted")
+    : permission?.blocked
+      ? t("settings.notifications.permissionBlocked")
+      : t("settings.notifications.permissionDenied");
+
+  const runLocalTest = async () => {
+    setTestingLocal(true);
+    try {
+      await sendLocalTestNotification();
+      Alert.alert(t("settings.notifications.testLocalTitle"), t("settings.notifications.testLocalScheduled"));
+    } catch (err) {
+      Alert.alert(t("settings.notifications.testFailed"), err instanceof Error ? err.message : String(err));
+    } finally {
+      setTestingLocal(false);
+      const perm = await getNotificationPermissionState().catch(() => null);
+      setPermission(perm);
+    }
+  };
+
+  const runServerTest = async () => {
+    setTestingServer(true);
+    try {
+      const granted = await ensurePushRegistration(true);
+      if (!granted) {
+        throw new Error(t("settings.notifications.testServerNoToken"));
+      }
+      const result = await sendTestPush();
+      Alert.alert(t("settings.notifications.testServerTitle"), result.detail ?? t("settings.notifications.testServerOk"));
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail ?? (err instanceof Error ? err.message : String(err));
+      Alert.alert(t("settings.notifications.testFailed"), String(detail));
+    } finally {
+      setTestingServer(false);
+      const perm = await getNotificationPermissionState().catch(() => null);
+      setPermission(perm);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -118,6 +170,39 @@ export function NotificationPreferencesScreen({ navigation }: any) {
               </View>
             </View>
           ) : null}
+
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>{t("settings.notifications.testSection")}</Text>
+            <Text style={styles.helper}>{t("settings.notifications.testSectionHelper")}</Text>
+            <Text style={styles.permissionStatus}>
+              {t("settings.notifications.permissionStatus", { status: permissionLabel })}
+            </Text>
+            {!permission?.granted ? (
+              <Pressable
+                style={styles.testPrimary}
+                onPress={() => {
+                  void ensurePushRegistration(true).then(async () => {
+                    const perm = await getNotificationPermissionState().catch(() => null);
+                    setPermission(perm);
+                  });
+                }}
+              >
+                <Text style={styles.testPrimaryText}>{t("settings.notifications.enableNotifications")}</Text>
+              </Pressable>
+            ) : null}
+            <View style={styles.testActions}>
+              <Pressable style={styles.testSecondary} onPress={() => void runLocalTest()} disabled={testingLocal}>
+                <Text style={styles.testSecondaryText}>
+                  {testingLocal ? t("settings.notifications.testing") : t("settings.notifications.testLocal")}
+                </Text>
+              </Pressable>
+              <Pressable style={styles.testSecondary} onPress={() => void runServerTest()} disabled={testingServer}>
+                <Text style={styles.testSecondaryText}>
+                  {testingServer ? t("settings.notifications.testing") : t("settings.notifications.testServer")}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
 
           <View style={styles.card}>
             <ToggleRow
@@ -198,4 +283,10 @@ const styles = StyleSheet.create({
   tipSecondaryText: { color: TEXT, fontSize: 13, fontWeight: "800" },
   tipPrimary: { flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: "center", backgroundColor: GREEN },
   tipPrimaryText: { color: WHITE, fontSize: 13, fontWeight: "900" },
+  permissionStatus: { color: MUTED, fontSize: 12, lineHeight: 17, marginBottom: 10 },
+  testActions: { flexDirection: "row", gap: 10, marginTop: 4 },
+  testPrimary: { borderRadius: 12, paddingVertical: 11, alignItems: "center", backgroundColor: GREEN, marginBottom: 10 },
+  testPrimaryText: { color: WHITE, fontSize: 13, fontWeight: "900" },
+  testSecondary: { flex: 1, borderRadius: 12, borderWidth: 1, borderColor: BORDER, paddingVertical: 11, alignItems: "center", backgroundColor: BG },
+  testSecondaryText: { color: TEXT, fontSize: 13, fontWeight: "800" },
 });
