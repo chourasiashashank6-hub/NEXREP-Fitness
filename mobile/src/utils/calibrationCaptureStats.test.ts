@@ -11,8 +11,10 @@ import {
   computeTurnProgress,
   createSquatRepState,
   estimateTurnAngleBucket,
-  stepSquatRep,
+  emaAngle,
+  stepCalibrationSquat,
   shouldCaptureSquatDepthSample,
+  SQUAT_MIN_REPS,
 } from "./calibrationCaptureStats";
 
 function mulberry32(seed: number) {
@@ -46,40 +48,66 @@ function synthTpose(rand: () => number): CalibrationCaptureSample[] {
   }));
 }
 
+function advanceSquatFrames(
+  knees: number[],
+  opts?: { frameMs?: number; framesPerAngle?: number; startMs?: number },
+) {
+  const frameMs = opts?.frameMs ?? 50;
+  const framesPerAngle = opts?.framesPerAngle ?? 5;
+  let state = createSquatRepState();
+  let t = opts?.startMs ?? 0;
+  let ema: number | null = null;
+  for (const knee of knees) {
+    for (let f = 0; f < framesPerAngle; f += 1) {
+      ema = emaAngle(ema, knee);
+      state = stepCalibrationSquat(state, ema, t).state;
+      t += frameMs;
+    }
+  }
+  return state;
+}
+
 function synthSquats(noiseSeed: number): CalibrationCaptureSample[] {
   const rand = mulberry32(noiseSeed);
   const samples: CalibrationCaptureSample[] = [];
   let state = createSquatRepState();
+  let ema: number | null = null;
+  const frameMs = 50;
+  const framesPerAngle = 5;
+  let t = 0;
   const knees: number[] = [];
-  const pattern = [168, 160, 145, 138, 135];
-  for (const k of pattern) knees.push(k);
-  for (let i = 0; i < 10; i += 1) knees.push(128);
-  knees.push(135, 145, 160, 168, 168, 160, 142, 130);
-  for (let i = 0; i < 10; i += 1) knees.push(127);
-  knees.push(135, 145, 160, 168);
+  const rep1 = [168, 160, 145, 130, 95, 90, 95, 100, 120, 145, 160, 168];
+  const rep2 = [168, 158, 140, 125, 92, 90, 95, 110, 135, 155, 168];
+  for (const k of rep1) knees.push(k);
+  for (const k of rep2) knees.push(k);
   for (const baseKnee of knees) {
-    const knee = baseKnee;
-    state = stepSquatRep(state, knee);
-    if (shouldCaptureSquatDepthSample(state, knee)) {
-      samples.push({
-        torsoLen: 0.31,
-        shoulderWidth: 0.19,
-        hipWidth: 0.14,
-        upperArmL: 0.13,
-        upperArmR: 0.13,
-        thighL: 0.2,
-        thighR: 0.2,
-        shankL: 0.19,
-        shankR: 0.19,
-        knee: knee + (rand() - 0.5) * 1.5,
-        hip: 95 + (rand() - 0.5) * 1.5,
-        ankleFlex: 28 + (rand() - 0.5) * 1,
-        ratio: 0.35,
-        torsoLean: 12,
-        lVis: 0.72 + rand() * 0.2,
-      });
+    const knee = baseKnee + (rand() - 0.5) * 1.5;
+    for (let f = 0; f < framesPerAngle; f += 1) {
+      ema = emaAngle(ema, knee);
+      state = stepCalibrationSquat(state, ema, t).state;
+      t += frameMs;
+      if (shouldCaptureSquatDepthSample(state, knee)) {
+        samples.push({
+          torsoLen: 0.31,
+          shoulderWidth: 0.19,
+          hipWidth: 0.14,
+          upperArmL: 0.13,
+          upperArmR: 0.13,
+          thighL: 0.2,
+          thighR: 0.2,
+          shankL: 0.19,
+          shankR: 0.19,
+          knee,
+          hip: 95 + (rand() - 0.5) * 1.5,
+          ankleFlex: 28 + (rand() - 0.5) * 1,
+          ratio: 0.35,
+          torsoLean: 12,
+          lVis: 0.72 + rand() * 0.2,
+        });
+      }
     }
   }
+  assert(state.repCount >= SQUAT_MIN_REPS, `expected ${SQUAT_MIN_REPS} reps, got ${state.repCount}`);
   return samples;
 }
 
@@ -138,6 +166,16 @@ function synthTurn(rand: () => number): CalibrationCaptureSample[] {
   assert(ratioDelta <= 0.03, `frontShoulderRatio delta ${ratioDelta}`);
   assert(armDeltaPct <= 0.05, `upperArmL delta ${armDeltaPct}`);
   assert(thighDeltaPct <= 0.05, `thighL delta ${thighDeltaPct}`);
+}
+
+// --- Squat rep safeguards ---
+{
+  const standing = advanceSquatFrames(
+    Array.from({ length: 40 }, (_, i) => 167 + (i % 3) - 1),
+  );
+  assert.equal(standing.repCount, 0, "standing jitter must not count squats");
+  const shallow = advanceSquatFrames([168, 155, 150, 155, 168, 168]);
+  assert.equal(shallow.repCount, 0, "shallow knee bend must not count as squat");
 }
 
 // --- Squats repeatability ---

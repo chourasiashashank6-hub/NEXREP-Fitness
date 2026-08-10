@@ -60,6 +60,8 @@ export type MediaPipeGuidanceViewProps = {
   seedRepCount?: number;
   /** Briefly freeze counting (flip stabilize / orientation wait). */
   countingPaused?: boolean;
+  /** Called when WebView finishes a camera flip. */
+  onCameraFlipped?: (facing: "user" | "environment") => void;
   /** Relax orientation/idle/visibility gates for standalone camera workouts. */
   relaxTrackingGates?: boolean;
   /** Camera zoom 1–3; resets each session. */
@@ -623,6 +625,7 @@ function MediaPipeGuidanceView({
   calibration = null,
   seedRepCount = 0,
   countingPaused = false,
+  onCameraFlipped,
   relaxTrackingGates = false,
   zoomLevel = 1,
 }: MediaPipeGuidanceViewProps) {
@@ -631,12 +634,14 @@ function MediaPipeGuidanceView({
   const onReadyRef = useRef(onReady);
   const onErrorRef = useRef(onError);
   const onTrackingUpdateRef = useRef(onTrackingUpdate);
+  const onCameraFlippedRef = useRef(onCameraFlipped);
   const countingPausedRef = useRef(countingPaused);
   const skipFlipInjectRef = useRef(true);
   const skipZoomInjectRef = useRef(true);
   onReadyRef.current = onReady;
   onErrorRef.current = onError;
   onTrackingUpdateRef.current = onTrackingUpdate;
+  onCameraFlippedRef.current = onCameraFlipped;
   countingPausedRef.current = countingPaused;
 
   // Tracks MediaPipe init on native so we can show a loading indicator instead of a
@@ -1678,6 +1683,13 @@ function MediaPipeGuidanceView({
             if (parsed.type === "error") {
               setInitStatus("error");
               onError?.(String(parsed.message || "MediaPipe failed to start."));
+            }
+            if (parsed.type === "cameraFlipped") {
+              const facing = parsed.facing;
+              if (facing === "user" || facing === "environment") {
+                onCameraFlippedRef.current?.(facing);
+              }
+              return;
             }
             if (parsed.type === "tracking") {
               onTrackingUpdate?.(parseTrackingPayload(parsed));

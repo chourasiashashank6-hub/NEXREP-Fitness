@@ -2461,6 +2461,8 @@
     "cal_get_position": "Get into position…",
     "cal_hold_tpose_sec": "Hold your T-pose · {{sec}}s",
     "cal_squat_tracking": "Tracking · {{reps}} squats captured",
+    "cal_squat_reps_of": "{{reps}} of {{total}} squats",
+    "cal_soft_timeout": "{{sec}}s left",
     "cal_turn_keep": "Keep turning · {{pct}}%",
     "cal_tracking": "Tracking…",
     "cal_capture_done": "Capture complete — tap to continue",

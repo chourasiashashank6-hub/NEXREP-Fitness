@@ -21,6 +21,7 @@ import { postSessionComplete } from "../api/workoutSessions";
 import { getProfile } from "../api/user";
 import { EndEarlySheet } from "../components/EndEarlySheet";
 import type { MediaPipeTrackingUpdate } from "../components/MediaPipeGuidanceView";
+import { useCameraFlipLock } from "../hooks/useCameraFlipLock";
 import { CameraWorkoutShell } from "../components/aiTrainer/CameraWorkoutShell";
 import { AI_C } from "../components/aiTrainer/aiTrainerTokens";
 import { getExerciseTrackingConfig } from "../constants/exerciseTrackingConfig";
@@ -196,6 +197,7 @@ export default function AICameraWorkoutScreen() {
   } | null>(null);
   const pauseStartedAt = useRef<number | null>(null);
   const flipStabilizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { flipInProgress, requestFlip, finishFlip } = useCameraFlipLock();
   const setRepEvents = useRef<AiRepEvent[]>([]);
   const lastSpokenCueRef = useRef<string | null>(null);
   const pausedForCalibrate = useRef(false);
@@ -758,8 +760,27 @@ export default function AICameraWorkoutScreen() {
   }, [sessionPaused]);
 
   const handleFlipCam = useCallback(() => {
-    setFacingMode((f) => (f === "user" ? "environment" : "user"));
-  }, []);
+    if (!requestFlip(setFacingMode)) return;
+    setCountingPaused(true);
+    if (flipStabilizeTimer.current) clearTimeout(flipStabilizeTimer.current);
+    flipStabilizeTimer.current = setTimeout(() => {
+      if (!sessionPaused) setCountingPaused(false);
+      flipStabilizeTimer.current = null;
+    }, 800);
+  }, [requestFlip, sessionPaused]);
+
+  const handleCameraFlipped = useCallback(
+    (facing: "user" | "environment") => {
+      const synced = finishFlip(facing);
+      if (synced) setFacingMode(synced);
+      if (flipStabilizeTimer.current) {
+        clearTimeout(flipStabilizeTimer.current);
+        flipStabilizeTimer.current = null;
+      }
+      if (!sessionPaused) setCountingPaused(false);
+    },
+    [finishFlip, sessionPaused],
+  );
 
   const handleZoomIn = useCallback(() => {
     setZoomLevel((z) => Math.min(3, Math.round((z + 0.25) * 100) / 100));
@@ -1143,6 +1164,8 @@ export default function AICameraWorkoutScreen() {
               cycleVoiceMode();
             }}
             onFlipCam={handleFlipCam}
+            flipDisabled={flipInProgress}
+            onCameraFlipped={handleCameraFlipped}
             onZoomIn={handleZoomIn}
             onZoomOut={handleZoomOut}
             zoomLevel={zoomLevel}

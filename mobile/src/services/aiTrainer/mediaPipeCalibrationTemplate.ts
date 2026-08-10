@@ -28,8 +28,7 @@ export function buildStaticCalibrationHtml(): string {
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <style>
 html,body{margin:0;padding:0;width:100%;height:100%;background:#050b16;overflow:hidden;font-family:-apple-system,sans-serif}
-video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-body.mp-mirror video,body.mp-mirror canvas{transform:scaleX(-1)}
+video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:center center}
 #scan{position:absolute;left:0;right:0;height:2px;background:${MINT};box-shadow:0 0 12px ${MINT};animation:scan 2.4s linear infinite;z-index:5;display:none}
 #scan.active{display:block}
 #hud{display:none!important}
@@ -85,7 +84,8 @@ let capturePhase="seek_pose";
 let gateStreak=0;
 let holdStreak=0;
 let squatRepCount=0;
-let squatRepState=createSquatRepState();
+let squatPhase=createPhase();
+let emaKnee=null;
 let minKneeSeen=180;
 let turnFrontRatio=FRONT_SHOULDER_RATIO;
 let lastProgressPost=0;
@@ -213,10 +213,15 @@ function processFrame(lms){
         return;
       }
       const knee=getKneeAngle(lms);
-      squatRepState=stepSquatRep(squatRepState,knee);
-      squatRepCount=squatRepState.repCount;
-      if(knee!=null&&Number.isFinite(knee))minKneeSeen=Math.min(minKneeSeen,knee);
-      if(shouldCaptureSquatDepthSample(squatRepState,knee))capture(lms);
+      if(knee!=null&&Number.isFinite(knee)){
+        emaKnee=ema(emaKnee,knee);
+        const angleForRep=emaKnee!=null?emaKnee:knee;
+        const stepped=stepPhase(squatPhase,angleForRep,CAL_SQUAT_RULE,performance.now());
+        squatPhase=stepped.state;
+        squatRepCount=squatPhase.repCount;
+        minKneeSeen=Math.min(minKneeSeen,knee);
+      }
+      if(shouldCaptureSquatDepthSample(squatPhase,knee))capture(lms);
       const depthProg=Math.min(1,Math.max(0,(175-minKneeSeen)/55));
       setMsg("Do "+SQUAT_MIN_REPS+" slow squats — reps: "+squatRepCount+"/"+SQUAT_MIN_REPS);
       setMeter(Math.max(depthProg,squatRepCount/SQUAT_MIN_REPS),"Deepest knee: "+Math.round(minKneeSeen)+"°");
@@ -305,12 +310,12 @@ const loop=()=>{
     window.__mpCamStartStream=async(facing)=>{
       const fm=facing||window.__mpCamState.facing||"user";
       window.__mpCamState.facing=fm;
-      window.__mpApplyMirror();
       stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:fm,width:{ideal:1280},height:{ideal:720}},audio:false});
       window.__mpCamStream=stream;
       video.srcObject=stream;
       await video.play();
       if(window.__mpSetZoom)await window.__mpSetZoom(window.__mpCamState.zoom||1);
+      window.__mpApplyMirror();
     };
     await window.__mpCamStartStream(FACING_MODE);
     if(window.__mpNotifyCamStarted)window.__mpNotifyCamStarted(stream);

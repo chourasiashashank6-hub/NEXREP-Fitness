@@ -117,9 +117,7 @@ export function buildStaticMediaPipeHtml(): string {
     <style>
       html,body{margin:0;padding:0;width:100%;height:100%;background:#050b16;overflow:hidden}
       #root{position:relative;width:100%;height:100%}
-      video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-      body.mp-mirror video,body.mp-mirror canvas{transform:scaleX(-1)}
-      body:not(.mp-mirror) video,body:not(.mp-mirror) canvas{transform:none}
+      video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:center center}
       body.mp-chrome-hidden #badge,body.mp-chrome-hidden #posture,
       body.mp-chrome-hidden #notes,body.mp-chrome-hidden #hint{display:none}
       #badge{position:absolute;left:10px;top:10px;z-index:12;background:rgba(0,0,0,.65);
@@ -187,6 +185,7 @@ export function buildStaticMediaPipeHtml(): string {
       if(RELAX_TRACKING_GATES)MIN_VIS=0.45;
 
       if(FACING_MODE==="user")document.body.classList.add("mp-mirror");
+      window.__mpCamState.facing=FACING_MODE;
       if(SESSION_MODE)document.body.classList.add("mp-chrome-hidden");
       if(IS_CARDIO&&!SESSION_MODE)document.body.classList.add("mp-cardio-banner");
       window.__mpCamState.facing=FACING_MODE;
@@ -674,7 +673,6 @@ export function buildStaticMediaPipeHtml(): string {
       window.__mpCamStartStream=async(facing)=>{
         const fm=facing||window.__mpCamState.facing||"user";
         window.__mpCamState.facing=fm;
-        window.__mpApplyMirror();
         stream=await navigator.mediaDevices.getUserMedia({
           video:{facingMode:fm,width:{ideal:1280},height:{ideal:720}},audio:false
         });
@@ -682,6 +680,7 @@ export function buildStaticMediaPipeHtml(): string {
         video.srcObject=stream;
         await video.play();
         if(window.__mpSetZoom)await window.__mpSetZoom(window.__mpCamState.zoom||1);
+        window.__mpApplyMirror();
       };
 
       document.addEventListener("visibilitychange",()=>{if(document.hidden)stop()});

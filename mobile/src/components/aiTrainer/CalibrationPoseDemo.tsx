@@ -1,6 +1,8 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line } from "react-native-svg";
 import type { CalibrationStepId } from "../../services/aiTrainer/mediaPipeCalibrationTemplate";
+import { CALIBRATION_SQUAT_GIF } from "../../data/aiTrainer/calibrationExerciseGifs";
 
 const MINT = "#2DD4A7";
 const STROKE = "#E2E8F0";
@@ -24,15 +26,12 @@ function TposeFigure() {
 
 function SquatFigure() {
   return (
-    <Svg width={160} height={220} viewBox="0 0 160 220">
-      <Circle cx={108} cy={36} r={14} fill={MINT} />
-      <Line x1={108} y1={50} x2={88} y2={100} stroke={STROKE} strokeWidth={6} strokeLinecap="round" />
-      <Line x1={88} y1={100} x2={62} y2={108} stroke={MINT} strokeWidth={6} strokeLinecap="round" />
-      <Line x1={62} y1={108} x2={48} y2={188} stroke={STROKE} strokeWidth={6} strokeLinecap="round" />
-      <Line x1={88} y1={100} x2={108} y2={188} stroke={STROKE} strokeWidth={6} strokeLinecap="round" />
-      <Line x1={48} y1={188} x2={38} y2={200} stroke={STROKE} strokeWidth={4} strokeLinecap="round" />
-      <Line x1={108} y1={188} x2={118} y2={200} stroke={STROKE} strokeWidth={4} strokeLinecap="round" />
-    </Svg>
+    <Image
+      source={{ uri: CALIBRATION_SQUAT_GIF.gifUrl }}
+      style={styles.demoGif}
+      resizeMode="contain"
+      accessibilityLabel="Bodyweight squat demonstration"
+    />
   );
 }
 
@@ -67,6 +66,13 @@ const STEP_COPY: Record<CalibrationStepId, { title: string; hint: string }> = {
 
 export function CalibrationPoseDemo({ step, secondsLeft }: Props) {
   const copy = STEP_COPY[step];
+
+  useEffect(() => {
+    if (step === "squats") {
+      void Image.prefetch(CALIBRATION_SQUAT_GIF.gifUrl);
+    }
+  }, [step]);
+
   return (
     <View style={styles.wrap} accessibilityRole="image" accessibilityLabel={`${copy.title} demo`}>
       <View style={styles.card}>
@@ -95,6 +101,7 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     gap: 10,
   },
+  demoGif: { width: 180, height: 220 },
   title: { color: "#fff", fontSize: 22, fontWeight: "800", marginTop: 8 },
   hint: { color: "rgba(255,255,255,0.8)", fontSize: 14, textAlign: "center", lineHeight: 20 },
   countdown: { color: MINT, fontSize: 13, fontWeight: "700", marginTop: 6 },

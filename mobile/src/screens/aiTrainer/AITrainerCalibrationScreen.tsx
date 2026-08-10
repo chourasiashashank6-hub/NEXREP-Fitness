@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -44,15 +45,20 @@ import {
 import { CalibrationPoseDemo } from "../../components/aiTrainer/CalibrationPoseDemo";
 import { GlassPanel } from "../../components/aiTrainer/GlassPanel";
 import { AI_C } from "../../components/aiTrainer/aiTrainerTokens";
+import { SQUAT_MIN_REPS } from "../../utils/calibrationCaptureStats";
+import { useCameraFlipLock } from "../../hooks/useCameraFlipLock";
+import { CALIBRATION_SQUAT_GIF } from "../../data/aiTrainer/calibrationExerciseGifs";
 
 const DEMO_SEC = 3;
 const TPOSE_HOLD_SEC = 3;
+/** Soft safety timeout for squats step — completion is rep-based, not timer-based. */
+const SQUAT_SOFT_TIMEOUT_SEC = 60;
 
 type Props = NativeStackScreenProps<RootStackParamList, "AITrainerCalibration">;
 
 const STEPS = [
   { id: "tpose" as const, durationSec: 10, labelKey: "cal_step_tpose", labelDefault: "T-pose" },
-  { id: "squats" as const, durationSec: 20, labelKey: "cal_step_squats", labelDefault: "Squats" },
+  { id: "squats" as const, durationSec: SQUAT_SOFT_TIMEOUT_SEC, labelKey: "cal_step_squats", labelDefault: "Squats" },
   { id: "turn" as const, durationSec: 8, labelKey: "cal_step_turn", labelDefault: "Turn" },
 ] as const;
 
@@ -123,6 +129,7 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
   const skipFlipInjectRef = useRef(true);
   const skipZoomInjectRef = useRef(true);
   const demoActiveRef = useRef(true);
+  const { flipInProgress, requestFlip, finishFlip } = useCameraFlipLock();
   const partialRef = useRef<CalibrationStepPartial>({});
   const stepRef = useRef(step);
   stepRef.current = step;
@@ -194,6 +201,10 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
   }, [zoomLevel]);
 
   useEffect(() => {
+    void Image.prefetch(CALIBRATION_SQUAT_GIF.gifUrl);
+  }, []);
+
+  useEffect(() => {
     if (Platform.OS === "web") return;
     let cancelled = false;
     setServerUri(null);
@@ -240,6 +251,7 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
           turnProgress?: number;
           gateProgress?: number;
           statusText?: string;
+          facing?: string;
         };
 
         if (parsed.type === "cameraDiagnostics") {
@@ -258,6 +270,14 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
               "if(window.__calResumeCapture){window.__calResumeCapture();}true;",
             );
           }
+          return;
+        }
+
+        if (parsed.type === "cameraFlipped") {
+          const synced = finishFlip(
+            typeof parsed.facing === "string" ? parsed.facing : undefined,
+          );
+          if (synced) setFacingMode(synced);
           return;
         }
 
@@ -306,7 +326,7 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
         }
       }
     },
-    [],
+    [finishFlip],
   );
 
   const onContinueStep = () => {
@@ -335,7 +355,7 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
   };
 
   const handleFlipCam = () => {
-    setFacingMode((f) => (f === "user" ? "environment" : "user"));
+    requestFlip(setFacingMode);
   };
 
   const handleZoomIn = () => {
@@ -373,9 +393,10 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
       });
     }
     if (stepId === "squats") {
-      return t("aiTrainer.cal_squat_tracking", {
-        defaultValue: "Tracking · {{reps}} squats captured",
+      return t("aiTrainer.cal_squat_reps_of", {
+        defaultValue: "{{reps}} of {{total}} squats",
         reps: calProgress.squatReps ?? 0,
+        total: SQUAT_MIN_REPS,
       });
     }
     if (stepId === "turn" && calProgress.turnProgress != null) {
@@ -392,11 +413,7 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
     if (!calProgress.gatePassed) return calProgress.gateProgress ?? 0;
     if (stepId === "tpose") return calProgress.holdProgress ?? 0;
     if (stepId === "squats") {
-      const repPart = Math.min(1, (calProgress.squatReps ?? 0) / 2);
-      const depthPart = calProgress.depthDeg
-        ? Math.min(1, Math.max(0, (175 - calProgress.depthDeg) / 55))
-        : 0;
-      return Math.max(repPart, depthPart);
+      return Math.min(1, (calProgress.squatReps ?? 0) / SQUAT_MIN_REPS);
     }
     if (stepId === "turn") return calProgress.turnProgress ?? 0;
     return 0;
@@ -414,10 +431,16 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
       });
     }
     if (stepId === "squats") {
-      return t("aiTrainer.cal_meter_depth", {
-        defaultValue: "Depth {{deg}}°",
-        deg: Math.round(calProgress.depthDeg ?? 180),
+      const reps = calProgress.squatReps ?? 0;
+      const repLine = t("aiTrainer.cal_squat_reps_of", {
+        defaultValue: "{{reps}} of {{total}} squats",
+        reps,
+        total: SQUAT_MIN_REPS,
       });
+      if (calProgress.depthDeg != null && reps > 0) {
+        return `${repLine} · ${Math.round(calProgress.depthDeg)}°`;
+      }
+      return repLine;
     }
     if (stepId === "turn") {
       return t("aiTrainer.cal_meter_turn", {
@@ -540,7 +563,27 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
                 name: stepName,
               })}
             </Text>
-            <Text style={styles.countdown}>{countdownSec}s</Text>
+            {stepId === "squats" && !demoActive ? (
+              <View style={styles.squatProgressCol}>
+                <Text style={styles.repProgress}>
+                  {t("aiTrainer.cal_squat_reps_of", {
+                    defaultValue: "{{reps}} of {{total}} squats",
+                    reps: calProgress.squatReps ?? 0,
+                    total: SQUAT_MIN_REPS,
+                  })}
+                </Text>
+                {countdownSec <= 15 && calProgress.gatePassed && !stepReady ? (
+                  <Text style={styles.softTimeoutHint}>
+                    {t("aiTrainer.cal_soft_timeout", {
+                      defaultValue: "{{sec}}s left",
+                      sec: countdownSec,
+                    })}
+                  </Text>
+                ) : null}
+              </View>
+            ) : (
+              <Text style={styles.countdown}>{countdownSec}s</Text>
+            )}
           </View>
         </GlassPanel>
 
@@ -570,8 +613,9 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
 
           <View style={styles.bottomControls}>
             <Pressable
-              style={styles.ctrlPill}
+              style={[styles.ctrlPill, flipInProgress && styles.ctrlPillDisabled]}
               onPress={handleFlipCam}
+              disabled={flipInProgress}
               accessibilityRole="button"
               accessibilityLabel={t("aiTrainer.flip_camera", { defaultValue: "Flip camera" })}
             >
@@ -661,6 +705,9 @@ const styles = StyleSheet.create({
   },
   stepLabel: { color: AI_C.dim, fontSize: 12, fontWeight: "600", flex: 1 },
   countdown: { color: AI_C.mint, fontSize: 12, fontWeight: "800", marginLeft: 8 },
+  squatProgressCol: { alignItems: "flex-end", marginLeft: 8 },
+  repProgress: { color: AI_C.mint, fontSize: 13, fontWeight: "800" },
+  softTimeoutHint: { color: "rgba(255,255,255,0.45)", fontSize: 10, fontWeight: "600", marginTop: 2 },
 
   middleSpacer: { flex: 1 },
 
@@ -753,6 +800,7 @@ const styles = StyleSheet.create({
   zoomBtnTxt: { color: AI_C.txt, fontWeight: "700", fontSize: 14 },
   zoomValue: { color: AI_C.mint, fontWeight: "800", fontSize: 12, minWidth: 36, textAlign: "center" },
   ctrlDisabled: { opacity: 0.4 },
+  ctrlPillDisabled: { opacity: 0.4 },
 
   summaryScroll: { padding: 20, paddingTop: 32, gap: 4 },
   summaryTitle: { color: AI_C.txt, fontSize: 20, fontWeight: "700", marginBottom: 6 },

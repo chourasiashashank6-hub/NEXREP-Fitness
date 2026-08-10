@@ -1,14 +1,16 @@
 /**
  * Inline JS for calibration WebView — must stay in sync with calibrationCaptureStats.ts
  */
+import {
+  CALIBRATION_SQUAT_REP_RULE_JS,
+  WEBVIEW_REP_PHASE_RUNTIME_JS,
+} from "../services/aiTrainer/webviewRepPhaseRuntime";
+
 export const CALIBRATION_CAPTURE_RUNTIME_JS = `
+${WEBVIEW_REP_PHASE_RUNTIME_JS}
+${CALIBRATION_SQUAT_REP_RULE_JS}
 const CAL_CAPTURE_VIS_MIN=0.6;
 const TURN_ANGLE_KEYS=["0","45","90","135","180","225","270","315"];
-const SQUAT_REP_DOWN_ENTER_DEG=140;
-const SQUAT_REP_UP_EXIT_DEG=155;
-const SQUAT_BOTTOM_STABLE_DEG=3;
-const SQUAT_BOTTOM_STABLE_FRAMES=8;
-const SQUAT_REP_DEBOUNCE_FRAMES=6;
 const SQUAT_MIN_REPS=2;
 
 function median(vals){
@@ -116,45 +118,5 @@ function aggregateSquats(samples){
       dorsiflexionProxyDeg:Math.max(15,Math.min(45,dorsiflex))
     }
   };
-}
-function createSquatRepState(){
-  return {phase:"top",repCount:0,bottomStableFrames:0,lastKnee:null,downFrames:0,upFrames:0};
-}
-function stepSquatRep(state,knee){
-  if(knee==null||!Number.isFinite(knee)){
-    return Object.assign({},state,{bottomStableFrames:0,downFrames:0,upFrames:0});
-  }
-  const next=Object.assign({},state,{lastKnee:knee});
-  if(state.phase==="top"){
-    if(knee<SQUAT_REP_DOWN_ENTER_DEG){
-      const downFrames=state.downFrames+1;
-      if(downFrames>=SQUAT_REP_DEBOUNCE_FRAMES){
-        return Object.assign(next,{phase:"down",downFrames,upFrames:0,bottomStableFrames:0});
-      }
-      return Object.assign(next,{downFrames,upFrames:0});
-    }
-    return Object.assign(next,{downFrames:0,upFrames:0});
-  }
-  if(state.phase==="down"){
-    if(state.lastKnee!=null&&Math.abs(knee-state.lastKnee)<=SQUAT_BOTTOM_STABLE_DEG){
-      const bottomStableFrames=state.bottomStableFrames+1;
-      if(bottomStableFrames>=SQUAT_BOTTOM_STABLE_FRAMES){
-        return Object.assign(next,{phase:"bottom",bottomStableFrames});
-      }
-      return Object.assign(next,{bottomStableFrames});
-    }
-    return Object.assign(next,{bottomStableFrames:0});
-  }
-  if(knee>SQUAT_REP_UP_EXIT_DEG){
-    const upFrames=state.upFrames+1;
-    if(upFrames>=SQUAT_REP_DEBOUNCE_FRAMES){
-      return {phase:"top",repCount:state.repCount+1,bottomStableFrames:0,lastKnee:knee,downFrames:0,upFrames:0};
-    }
-    return Object.assign(next,{upFrames});
-  }
-  return Object.assign(next,{upFrames:0});
-}
-function shouldCaptureSquatDepthSample(state,knee){
-  return state.phase==="bottom"&&state.bottomStableFrames>=SQUAT_BOTTOM_STABLE_FRAMES&&knee!=null&&knee<150;
 }
 `;

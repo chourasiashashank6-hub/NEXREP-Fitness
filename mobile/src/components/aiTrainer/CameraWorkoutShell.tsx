@@ -58,6 +58,8 @@ export type CameraWorkoutShellProps = {
   onPauseToggle?: () => void;
   onVoiceModeCycle?: () => void;
   onFlipCam?: () => void;
+  flipDisabled?: boolean;
+  onCameraFlipped?: (facing: "user" | "environment") => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   zoomLevel?: number;
@@ -104,6 +106,8 @@ export function CameraWorkoutShell({
   onPauseToggle,
   onVoiceModeCycle,
   onFlipCam,
+  flipDisabled = false,
+  onCameraFlipped,
   onZoomIn,
   onZoomOut,
   zoomLevel = 1,
@@ -145,6 +149,7 @@ export function CameraWorkoutShell({
           onReady={onReady}
           onError={onError}
           onTrackingUpdate={onTrackingUpdate}
+          onCameraFlipped={onCameraFlipped}
         />
       ) : isActive ? (
         <View style={styles.cameraPlaceholder}>
@@ -319,8 +324,9 @@ export function CameraWorkoutShell({
             ) : null}
             {onFlipCam ? (
               <Pressable
-                style={styles.ctrlBtn}
+                style={[styles.ctrlBtn, flipDisabled && styles.ctrlBtnDisabled]}
                 onPress={onFlipCam}
+                disabled={flipDisabled}
                 accessibilityRole="button"
                 accessibilityLabel={t("aiTrainer.flip_camera", { defaultValue: "Flip camera" })}
               >

@@ -2148,6 +2148,8 @@ export const WorkoutScreen = () => {
             onPauseToggle={cameraTracking.handlePauseToggle}
             onVoiceModeCycle={cameraTracking.handleVoiceModeCycle}
             onFlipCam={cameraTracking.handleFlipCam}
+            flipDisabled={cameraTracking.flipInProgress}
+            onCameraFlipped={cameraTracking.handleCameraFlipped}
             onZoomIn={cameraTracking.handleZoomIn}
             onZoomOut={cameraTracking.handleZoomOut}
             zoomLevel={cameraTracking.zoomLevel}

@@ -9,6 +9,7 @@ export const WEBVIEW_CAMERA_CONTROLS_JS = `
   window.__mpCamControlsReady=true;
   window.__mpEnableCameraDiagnostics=false;
   var __flipSeq=0;
+  window.__mpFlipInProgress=false;
   window.__mpCamState={facing:"user",zoom:1,opticalMax:1,digital:false};
   window.__mpCamVideo=null;
   window.__mpCamCanvas=null;
@@ -29,7 +30,6 @@ export const WEBVIEW_CAMERA_CONTROLS_JS = `
     if(v){v.style.transformOrigin="center center";v.style.transform=t;}
     if(c){c.style.transformOrigin="center center";c.style.transform=t;}
   };
-
   window.__mpZoomLm=function(lm){
     var z=window.__mpCamState.zoom;
     if(!window.__mpCamState.digital||z<=1.001||!lm)return lm;
@@ -68,15 +68,21 @@ export const WEBVIEW_CAMERA_CONTROLS_JS = `
   };
 
   window.__mpFlipCamera=async function(facing){
+    if(window.__mpFlipInProgress)return window.__mpCamState.facing;
+    window.__mpFlipInProgress=true;
     var seq=++__flipSeq;
     var next=facing||(window.__mpCamState.facing==="user"?"environment":"user");
     window.__mpCamState.facing=next;
-    window.__mpApplyMirror();
-    if(window.__mpCamStopStream)window.__mpCamStopStream();
-    if(window.__mpCamStartStream)await window.__mpCamStartStream(next);
-    if(seq!==__flipSeq)return next;
-    window.__mpApplyMirror();
-    try{window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify({type:"cameraFlipped",facing:next}));}catch(e){}
+    try{
+      if(window.__mpCamStopStream)window.__mpCamStopStream();
+      if(window.__mpCamStartStream)await window.__mpCamStartStream(next);
+      if(seq===__flipSeq)window.__mpApplyMirror();
+    }finally{
+      if(seq===__flipSeq){
+        try{window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify({type:"cameraFlipped",facing:next}));}catch(e){}
+      }
+      window.__mpFlipInProgress=false;
+    }
     return next;
   };
 

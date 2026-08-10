@@ -19,6 +19,7 @@ import {
   CAMERA_ZOOM_MIN,
   CAMERA_ZOOM_STEP,
 } from "../services/aiTrainer/webviewCameraControls";
+import { useCameraFlipLock } from "./useCameraFlipLock";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 
 const VOICE_MODES: VoiceMode[] = ["full", "corrections_only", "muted"];
@@ -92,6 +93,7 @@ export function useCameraTracking(options: UseCameraTrackingOptions) {
   } | null>(null);
   const [sessionPaused, setSessionPaused] = useState(false);
   const [countingPaused, setCountingPaused] = useState(false);
+  const { flipInProgress, requestFlip, finishFlip } = useCameraFlipLock();
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [zoomLevel, setZoomLevel] = useState(CAMERA_ZOOM_MIN);
   const [voiceMode, setVoiceMode] = useState<VoiceMode>("full");
@@ -253,8 +255,18 @@ export function useCameraTracking(options: UseCameraTrackingOptions) {
   }, [sessionPaused]);
 
   const handleFlipCam = useCallback(() => {
-    setFacingMode((f) => (f === "user" ? "environment" : "user"));
-  }, []);
+    if (!requestFlip(setFacingMode)) return;
+    setCountingPaused(true);
+  }, [requestFlip]);
+
+  const handleCameraFlipped = useCallback(
+    (facing: "user" | "environment") => {
+      const synced = finishFlip(facing);
+      if (synced) setFacingMode(synced);
+      if (!sessionPaused) setCountingPaused(false);
+    },
+    [finishFlip, sessionPaused],
+  );
 
   const handleZoomIn = useCallback(() => {
     setZoomLevel((z) => Math.min(CAMERA_ZOOM_MAX, Math.round((z + CAMERA_ZOOM_STEP) * 100) / 100));
@@ -300,6 +312,8 @@ export function useCameraTracking(options: UseCameraTrackingOptions) {
     handleTrackingUpdate,
     handlePauseToggle,
     handleFlipCam,
+    handleCameraFlipped,
+    flipInProgress,
     handleZoomIn,
     handleZoomOut,
     handleVoiceModeCycle,
