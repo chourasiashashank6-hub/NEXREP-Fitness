@@ -5,6 +5,16 @@
 import type { PoseCheck, PoseCalibration, TrainerView } from "../../data/aiTrainer/types";
 import { MIN_LANDMARK_VISIBILITY } from "../../data/aiTrainer/types";
 import type { RepPhase } from "./repStateMachine";
+import {
+  BOTTOM_ANGLE_TOLERANCE_DEG,
+  hipLockoutBand,
+  parseElbowFlareMultiplier,
+  parseKneeCapFromRule,
+  parseShrugRiseCap,
+  parseTorsoLeanCap,
+  parseTorsoLenMultiplier,
+  spineNeutralLeanCap,
+} from "./poseRuntimeHelpers";
 
 export type Lm = { x: number; y: number; visibility?: number };
 
@@ -35,6 +45,34 @@ export function torsoMetrics(lms: Lm[]) {
   return { midS, midH, torsoLen, lean };
 }
 
+/** Pick working knee for lunges / split squats / step-ups (more flexed knee). */
+function workingKneeAngle(lms: Lm[], minVis = MIN_LANDMARK_VISIBILITY): number | null {
+  const l =
+    visOk(lms[23], minVis) && visOk(lms[25], minVis) && visOk(lms[27], minVis)
+      ? angle3(lms[23], lms[25], lms[27])
+      : null;
+  const r =
+    visOk(lms[24], minVis) && visOk(lms[26], minVis) && visOk(lms[28], minVis)
+      ? angle3(lms[24], lms[26], lms[28])
+      : null;
+  if (l == null) return r;
+  if (r == null) return l;
+  return l <= r ? l : r;
+}
+
+function workingKneeIndex(lms: Lm[], minVis = MIN_LANDMARK_VISIBILITY): number | null {
+  const lOk = visOk(lms[25], minVis);
+  const rOk = visOk(lms[26], minVis);
+  if (!lOk && !rOk) return null;
+  if (!lOk) return 26;
+  if (!rOk) return 25;
+  const l =
+    visOk(lms[23], minVis) && visOk(lms[27], minVis) ? angle3(lms[23], lms[25], lms[27]) : Infinity;
+  const r =
+    visOk(lms[24], minVis) && visOk(lms[28], minVis) ? angle3(lms[24], lms[26], lms[28]) : Infinity;
+  return l <= r ? 25 : 26;
+}
+
 /** Return best-visibility side angle for hip–knee–ankle / etc. */
 export function jointAngle(lms: Lm[], joint: string | null, minVis = MIN_LANDMARK_VISIBILITY): number | null {
   const pick = (la: number, lb: number, lc: number, ra: number, rb: number, rc: number) => {
@@ -47,6 +85,9 @@ export function jointAngle(lms: Lm[], joint: string | null, minVis = MIN_LANDMAR
     return lVis >= rVis ? L : R;
   };
   switch (joint) {
+    case "front_knee":
+    case "lead_knee":
+      return workingKneeAngle(lms, minVis);
     case "knee":
       return pick(23, 25, 27, 24, 26, 28);
     case "hip":
@@ -74,6 +115,9 @@ export function repJointLandmarkIndex(lms: Lm[], joint: string | null, minVis = 
     return lv >= rv ? l : r;
   };
   switch (joint) {
+    case "front_knee":
+    case "lead_knee":
+      return workingKneeIndex(lms, minVis);
     case "knee":
       return better(25, 26);
     case "hip":
@@ -135,6 +179,15 @@ const WARN_BY_CHECK: Record<string, number[]> = {
   elbow_bend: [13, 14],
 };
 
+export function extractKneeCap(checks: PoseCheck[]): number | undefined {
+  for (const c of checks) {
+    if (c.id !== "knee_bend_cap") continue;
+    const parsed = parseKneeCapFromRule(c.rule);
+    if (parsed != null) return parsed;
+  }
+  return undefined;
+}
+
 export type CheckEvalResult = {
   failingIds: string[];
   criticalFailed: boolean;
@@ -161,7 +214,8 @@ export function evaluatePoseChecks(
 ): CheckEvalResult {
   const failing: string[] = [];
   const warn = new Set<number>();
-  let bestCue: { key: string; priority: "safety" | "correction"; sev: number } | null = null;
+  type CuePick = { key: string; priority: "safety" | "correction"; sev: number };
+  const cueState: { best: CuePick | null } = { best: null };
 
   const tm = torsoMetrics(lms);
   const consider = (check: PoseCheck, fail: boolean, landmarks: number[]) => {
@@ -173,9 +227,10 @@ export function evaluatePoseChecks(
     failing.push(check.id);
     for (const i of WARN_BY_CHECK[check.id] || landmarks) warn.add(i);
     const sev = check.severity === "critical" ? 2 : 1;
-    const priority = check.safety ? "safety" : "correction";
-    if (!bestCue || sev > bestCue.sev || (sev === bestCue.sev && priority === "safety")) {
-      bestCue = { key: check.cue, priority, sev };
+    const priority: "safety" | "correction" = check.safety ? "safety" : "correction";
+    const cur = cueState.best;
+    if (!cur || sev > cur.sev || (sev === cur.sev && priority === "safety")) {
+      cueState.best = { key: check.cue, priority, sev };
     }
   };
 
@@ -191,12 +246,13 @@ export function evaluatePoseChecks(
     const hipAngle = jointAngle(lms, "hip");
     const elbowAngle = jointAngle(lms, "elbow");
     const inBottom = phase === "bottom" || phase === "ascending";
+    const depthTol = BOTTOM_ANGLE_TOLERANCE_DEG;
 
     switch (check.id) {
       case "depth": {
         if (!inBottom || kneeAngle == null) break;
         if (!needs(lms, [23, 25, 27]) && !needs(lms, [24, 26, 28])) break;
-        consider(check, kneeAngle > opts.depthTargetDeg + 5, [25, 26, 23, 24]);
+        consider(check, kneeAngle > opts.depthTargetDeg + depthTol, [25, 26, 23, 24]);
         break;
       }
       case "torso_lean":
@@ -204,7 +260,9 @@ export function evaluatePoseChecks(
       case "swing":
       case "lumbar_arch": {
         if (!tm) break;
-        const cap = check.id === "lumbar_arch" ? 15 : check.id.includes("swing") ? 10 : 45;
+        const defaultCap =
+          check.id === "lumbar_arch" ? 15 : check.id.includes("swing") ? 10 : 45;
+        const cap = parseTorsoLeanCap(check.rule, defaultCap);
         consider(check, tm.lean > cap, [11, 12, 23, 24]);
         break;
       }
@@ -223,7 +281,8 @@ export function evaluatePoseChecks(
         const a = visOk(lms[27]) ? lms[27] : visOk(lms[28]) ? lms[28] : null;
         const h = visOk(lms[29]) ? lms[29] : visOk(lms[30]) ? lms[30] : null;
         if (!a || !h) break;
-        consider(check, Math.abs(a.y - h.y) > 0.03 * tm.torsoLen, [27, 28, 29, 30]);
+        const cap = parseTorsoLenMultiplier(check.rule, 0.04);
+        consider(check, Math.abs(a.y - h.y) > cap * tm.torsoLen, [27, 28, 29, 30]);
         break;
       }
       case "knee_valgus": {
@@ -240,21 +299,22 @@ export function evaluatePoseChecks(
       }
       case "spine_neutral": {
         if (!tm || hipAngle == null) break;
-        // coarse: large change vs standing — use lean as proxy mid-rep
         if (phase === "idle" || phase === "top") break;
-        consider(check, tm.lean > 18, [11, 12, 23, 24]);
+        consider(check, tm.lean > spineNeutralLeanCap(cal), [11, 12, 23, 24]);
         break;
       }
       case "knee_bend_cap": {
         if (kneeAngle == null) break;
-        const cap = opts.kneeCap ?? 150;
+        const cap = opts.kneeCap ?? parseKneeCapFromRule(check.rule, 150) ?? 150;
         consider(check, kneeAngle < cap, [25, 26]);
         break;
       }
       case "lockout": {
         if (phase !== "top" && phase !== "idle") break;
-        if (hipAngle != null) consider(check, hipAngle < 168 || hipAngle > 185, [23, 24]);
-        else if (elbowAngle != null) consider(check, elbowAngle < 160, [13, 14]);
+        if (hipAngle != null) {
+          const band = hipLockoutBand(cal);
+          consider(check, hipAngle < band.min || hipAngle > band.max, [23, 24]);
+        } else if (elbowAngle != null) consider(check, elbowAngle < 160, [13, 14]);
         break;
       }
       case "rom_bottom":
@@ -266,28 +326,33 @@ export function evaluatePoseChecks(
           if (!inBottom) break;
           consider(check, elbowAngle > 90, [13, 14]);
         } else {
+          // static-pending-measurement: widen extension threshold until we capture per-user lockout
           if (phase !== "top" && phase !== "idle" && phase !== "bottom") break;
-          consider(check, elbowAngle < 150, [13, 14]);
+          consider(check, elbowAngle < 145, [13, 14]);
         }
         break;
       }
       case "elbow_flare":
       case "elbow_pin": {
         if (!tm || !visOk(lms[13]) || !visOk(lms[14]) || !visOk(lms[11]) || !visOk(lms[12])) break;
-        const flare = Math.abs(lms[13].x - lms[11].x) > 0.12 * tm.torsoLen
-          || Math.abs(lms[14].x - lms[12].x) > 0.12 * tm.torsoLen;
-        const pin = Math.abs(lms[13].x - lms[11].x) > 0.07 * tm.torsoLen
-          || Math.abs(lms[14].x - lms[12].x) > 0.07 * tm.torsoLen;
+        const pinMul = parseTorsoLenMultiplier(check.rule, 0.07);
+        const flareMul = parseElbowFlareMultiplier(check.rule, 0.12);
+        const flare =
+          Math.abs(lms[13].x - lms[11].x) > flareMul * tm.torsoLen ||
+          Math.abs(lms[14].x - lms[12].x) > flareMul * tm.torsoLen;
+        const pin =
+          Math.abs(lms[13].x - lms[11].x) > pinMul * tm.torsoLen ||
+          Math.abs(lms[14].x - lms[12].x) > pinMul * tm.torsoLen;
         consider(check, check.id === "elbow_pin" ? pin : flare, [13, 14]);
         break;
       }
       case "shrug": {
         if (!tm || !visOk(lms[11]) || !visOk(lms[12])) break;
-        // relative shoulder rise vs ear/nose — coarse y vs mid-hip distance shrink
         const ear = lms[7] || lms[8] || lms[0];
         if (!visOk(ear)) break;
         const rise = Math.min(lms[11].y, lms[12].y) - ear.y;
-        consider(check, rise > -0.02 * tm.torsoLen, [11, 12]);
+        const cap = parseShrugRiseCap(check.rule);
+        consider(check, rise > -cap * tm.torsoLen, [11, 12]);
         break;
       }
       case "asymmetry": {
@@ -308,8 +373,8 @@ export function evaluatePoseChecks(
   return {
     failingIds: failing,
     criticalFailed,
-    cueKey: bestCue?.key ?? null,
-    cuePriority: bestCue?.priority ?? null,
+    cueKey: cueState.best?.key ?? null,
+    cuePriority: cueState.best?.priority ?? null,
     warnLandmarkIndices: [...warn],
   };
 }

@@ -24,12 +24,12 @@ from src.schemas.calories_api import (
     MealUpdateRequest,
     WaterPatchRequest,
 )
+from src.services.activity_feed_service import calculate_user_streak, emit_streak_milestone_if_needed
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.services.food_image_utils import prepare_food_image_for_vision
 from src.services.language_service import normalize_language_tag
 from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.services.gemini_client import gemini_generate_content_models, has_gemini_key
-from src.services.activity_feed_service import emit_streak_milestone_if_needed
 from src.utils.auth import get_current_user
 
 router = APIRouter()
@@ -1628,7 +1628,14 @@ def get_calorie_streak(
         key = d.isoformat()
         out.append({"date": key, "total_calories": totals_by_date.get(key, 0.0)})
 
-    return {"days": out, "start_date": start.isoformat(), "end_date": end.isoformat()}
+    streak_stats = calculate_user_streak(db, current_user.id)
+    return {
+        "days": out,
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat(),
+        "current_streak": streak_stats["current_streak"],
+        "personal_best_streak": streak_stats["personal_best_streak"],
+    }
 
 
 @router.post("/meals")

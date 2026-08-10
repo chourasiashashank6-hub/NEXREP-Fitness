@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View, type ImageStyle, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { resolveApiBaseUrl } from "../api/client";
 
@@ -30,11 +31,25 @@ const initialsForName = (name?: string | null): string => {
 
 export const UserAvatar = ({ name, initials, profilePhotoUrl, size, style, textStyle, imageStyle }: UserAvatarProps) => {
   const photoUrl = resolveProfilePhotoUrl(profilePhotoUrl);
+  const [imageFailed, setImageFailed] = useState(false);
   const dimensionStyle = size ? { width: size, height: size, borderRadius: size / 2 } : null;
+  const showPhoto = Boolean(photoUrl) && !imageFailed;
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [photoUrl]);
+
   return (
     <View style={[styles.container, dimensionStyle, style]}>
-      {photoUrl ? <Image source={{ uri: photoUrl }} style={[styles.image, imageStyle]} resizeMode="cover" /> : null}
-      {!photoUrl ? <Text style={textStyle}>{initials || initialsForName(name)}</Text> : null}
+      {showPhoto ? (
+        <Image
+          source={{ uri: photoUrl! }}
+          style={[styles.image, imageStyle]}
+          resizeMode="cover"
+          onError={() => setImageFailed(true)}
+        />
+      ) : null}
+      {!showPhoto ? <Text style={textStyle}>{initials || initialsForName(name)}</Text> : null}
     </View>
   );
 };

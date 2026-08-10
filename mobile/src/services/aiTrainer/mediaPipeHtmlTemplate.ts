@@ -226,7 +226,6 @@ export function buildStaticMediaPipeHtml(): string {
       let lastWarnIdx=[];
       let failedDuringRep=[];
       let angleHist=[];
-      const depthTarget=(POSE_SPEC&&POSE_SPEC._depthTargetDeg)||((CAL&&CAL.mobility&&CAL.mobility.depthTargetDeg)||95);
       const hasMotion=(now)=>{
         angleHist=angleHist.filter(s=>now-s.t<=1000);
         if(angleHist.length<3)return false;
@@ -532,12 +531,14 @@ export function buildStaticMediaPipeHtml(): string {
         const repJoint=REP_JOINT||(POSE_SPEC&&POSE_SPEC.repJoint)||"knee";
         const rule=(POSE_SPEC&&POSE_SPEC.repRule)||{topAngle:160,bottomAngle:95,minRepDurationSec:1.2};
         const top=rule.topAngle!=null?rule.topAngle:160;
-        const formBottom=depthTarget||(rule.bottomAngle!=null?rule.bottomAngle:95);
+        const formBottom=resolveFormBottom(POSE_SPEC,rule,CAL||{});
         const inverted=rule.direction==="inverted";
-        // Looser bottom so shallow reps still complete a phase cycle; form checks use formBottom.
-        const countBottom=inverted?formBottom:Math.max(formBottom, top-45);
+        // countBottom matches formBottom; phase machine ±5° aligns with depth check ±5°.
+        const countBottom=formBottom;
+        const kneeCap=extractKneeCap((POSE_SPEC&&POSE_SPEC.checks)||[]);
         const rawAng=jointAngle(landmarks,repJoint);
         const jointVisible=rawAng!=null&&isFinite(rawAng);
+        const bodyDetected=isBodyDetected(landmarks);
         emaPrimary=jointVisible?ema(emaPrimary,rawAng):emaPrimary;
         const primaryAngle=jointVisible?emaPrimary:null;
         if(primaryAngle!=null)angleHist.push({t:performance.now(),a:primaryAngle});
@@ -546,7 +547,7 @@ export function buildStaticMediaPipeHtml(): string {
         const detectedView=smoothOri(sample);
         const requiredView=REQUIRED_VIEW||(POSE_SPEC&&POSE_SPEC.view)||"side";
         const orientationOk=RELAX_TRACKING_GATES?true:oriMatch(requiredView,detectedView);
-        const gated=COUNTING_PAUSED||!orientationOk||!jointVisible;
+        const gated=COUNTING_PAUSED||!orientationOk||!jointVisible||!bodyDetected;
         const atRest=sessionPhase.phase==="idle"||sessionPhase.phase==="top";
         const idleBlocked=RELAX_TRACKING_GATES?false:(atRest&&!recentMotion);
         const occluded={};
@@ -569,7 +570,7 @@ export function buildStaticMediaPipeHtml(): string {
           repCount=sessionPhase.repCount;
         }
         const checks=(POSE_SPEC&&POSE_SPEC.checks)||[];
-        const evald=evaluateChecks(landmarks,phase,checks,formBottom,detectedView,occluded);
+        const evald=evaluateChecks(landmarks,phase,checks,formBottom,detectedView,occluded,CAL||{},kneeCap);
         lastWarnIdx=evald.warnLandmarkIndices||[];
         if(!gated && (phase==="descending"||phase==="bottom"||phase==="ascending")){
           for(const id of evald.failingIds){
@@ -589,8 +590,8 @@ export function buildStaticMediaPipeHtml(): string {
         const target01=Math.max(0,Math.min(1,(top-formBottom)/span));
         const zoneStart=Math.max(0,target01-0.08), zoneEnd=Math.min(1,target01+0.14);
         const inZone=progress>=zoneStart&&progress<=zoneEnd;
-        const formOk=!evald.criticalFailed&&orientationOk;
-        const cueKey=!orientationOk?(requiredView==="side"?"cue_turn_side":"cue_turn_front"):evald.cueKey;
+        const formOk=!evald.criticalFailed&&orientationOk&&jointVisible&&bodyDetected;
+        const cueKey=!bodyDetected?"step_into_frame":(!orientationOk?(requiredView==="side"?"cue_turn_side":"cue_turn_front"):evald.cueKey);
         const cuePriority=!orientationOk?"safety":evald.cuePriority;
         const jIdx=jointIdx(landmarks,repJoint);
         const drawLms=window.__mpZoomLms?window.__mpZoomLms(landmarks):landmarks;
@@ -598,7 +599,7 @@ export function buildStaticMediaPipeHtml(): string {
         drawLandmarks(drawLms,formOk);
         drawAngleTag(drawLms,primaryAngle,formOk,jIdx);
         emitTracking({
-          reps:repCount,formOk,correction:cueKey||"",phase,bodyDetected:true,
+          reps:repCount,formOk,correction:cueKey||"",phase,bodyDetected,
           primaryAngle, rom01:progress, inDepthZone:inZone, zoneStart01:zoneStart, zoneEnd01:zoneEnd,
           failingCheckIds:evald.failingIds, warnLandmarkIndices:lastWarnIdx,
           cueKey, cuePriority, orientationOk, requiredView, detectedView,

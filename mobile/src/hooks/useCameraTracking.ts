@@ -1,17 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Platform } from "react-native";
 import { useTranslation } from "react-i18next";
 import { scoreSetFromReps } from "../data/aiTrainer/formScore";
+import { hasTrackablePoseSpec } from "../data/aiTrainer/manualOnlyExercises";
 import { remapSpecWithCalibration, resolvePoseSpec } from "../data/aiTrainer/resolvePoseSpec";
 import type { AiRepEvent, RepVerdict } from "../data/aiTrainer/types";
 import type { MediaPipeTrackingUpdate } from "../components/MediaPipeGuidanceView";
-import { sharedAudioCoach } from "../services/aiTrainer/audioCoach";
-import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
-import type { CoachPriority } from "../services/aiTrainer/audioCoach";
+import {
+  isWebSpeechUnlocked,
+  sharedAudioCoach,
+  speechLocaleForAppLang,
+  unlockWebSpeech,
+  type CoachPriority,
+  type VoiceMode,
+} from "../services/aiTrainer/audioCoach";
 import {
   CAMERA_ZOOM_MAX,
   CAMERA_ZOOM_MIN,
   CAMERA_ZOOM_STEP,
 } from "../services/aiTrainer/webviewCameraControls";
+import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
+
+const VOICE_MODES: VoiceMode[] = ["full", "corrections_only", "muted"];
 
 export type LiveTrackingStatus = "tracking_good" | "tracking_correction" | "no_body";
 
@@ -54,9 +64,10 @@ export function useCameraTracking(options: UseCameraTrackingOptions) {
     enableAudio = true,
     paused = false,
   } = options;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const calibrationPayload = usePoseCalibrationStore((s) => s.effectiveCalibration());
   const poseSpec = useMemo(() => {
+    if (!hasTrackablePoseSpec(exerciseName)) return null;
     const raw = resolvePoseSpec(exerciseName);
     if (!raw) return null;
     return remapSpecWithCalibration(raw, calibrationPayload);
@@ -83,9 +94,35 @@ export function useCameraTracking(options: UseCameraTrackingOptions) {
   const [countingPaused, setCountingPaused] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [zoomLevel, setZoomLevel] = useState(CAMERA_ZOOM_MIN);
+  const [voiceMode, setVoiceMode] = useState<VoiceMode>("full");
+  const [ttsSpeaking, setTtsSpeaking] = useState(false);
+  const [webAudioReady, setWebAudioReady] = useState(() =>
+    Platform.OS !== "web" ? true : isWebSpeechUnlocked(),
+  );
 
   const repEventsRef = useRef<AiRepEvent[]>([]);
   const lastSpokenCueRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    sharedAudioCoach.configure({
+      voiceMode,
+      lang: speechLocaleForAppLang(i18n.language),
+    });
+  }, [voiceMode, i18n.language]);
+
+  useEffect(() => {
+    const unsub = sharedAudioCoach.onSpeakingChange((speaking) => {
+      setTtsSpeaking(speaking);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    setWebAudioReady(isWebSpeechUnlocked());
+  }, [sessionPaused, countingPaused]);
 
   const setRepCount = useCallback(
     (n: number) => {
@@ -109,6 +146,7 @@ export function useCameraTracking(options: UseCameraTrackingOptions) {
     setCountingPaused(false);
     setFacingMode("user");
     setZoomLevel(CAMERA_ZOOM_MIN);
+    setVoiceMode("full");
   }, []);
 
   const handleTrackingUpdate = useCallback(
@@ -226,6 +264,14 @@ export function useCameraTracking(options: UseCameraTrackingOptions) {
     setZoomLevel((z) => Math.max(CAMERA_ZOOM_MIN, Math.round((z - CAMERA_ZOOM_STEP) * 100) / 100));
   }, []);
 
+  const handleVoiceModeCycle = useCallback(() => {
+    if (Platform.OS === "web") unlockWebSpeech();
+    setVoiceMode((mode) => {
+      const idx = VOICE_MODES.indexOf(mode);
+      return VOICE_MODES[(idx + 1) % VOICE_MODES.length] ?? "full";
+    });
+  }, []);
+
   const trackingRunning = !sessionPaused && !countingPaused && !paused;
 
   return {
@@ -247,12 +293,16 @@ export function useCameraTracking(options: UseCameraTrackingOptions) {
     countingPaused,
     facingMode,
     zoomLevel,
+    voiceMode,
+    ttsSpeaking,
+    webAudioReady,
     trackingRunning,
     handleTrackingUpdate,
     handlePauseToggle,
     handleFlipCam,
     handleZoomIn,
     handleZoomOut,
+    handleVoiceModeCycle,
     resetTracking,
     setSessionPaused,
     setCountingPaused,

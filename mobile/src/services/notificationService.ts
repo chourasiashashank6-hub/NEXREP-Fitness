@@ -4,6 +4,7 @@ import * as Notifications from "expo-notifications";
 import { Linking, PermissionsAndroid, Platform } from "react-native";
 import i18n from "../i18n";
 import { DEFAULT_NOTIFICATION_PREFERENCES, getNotificationPreferences, registerPushToken, type NotificationPreferences } from "../api/notifications";
+import { getRandomQuote, type QuoteCategory } from "../api/quotes";
 import type { MealDayPlan, MealPlanCurrent, WorkoutPlanCurrent } from "../types/planner";
 
 type NotificationCategory = "workout" | "meals" | "macro-checkins" | "logging-nudges" | "motivational-quotes";
@@ -429,7 +430,28 @@ export async function rescheduleWaterReminders(enabled: boolean, times = DEFAULT
   await storeGroupIds(groupKey, ids);
 }
 
-export async function rescheduleMotivationalQuoteReminder(enabled = true, time = DEFAULT_MOTIVATION_TIME) {
+const formatQuoteNotificationBody = (quote: string, author: string) => {
+  const trimmed = quote.trim();
+  const byline = author.trim();
+  if (trimmed && byline) return `"${trimmed}" — ${byline}`;
+  if (trimmed) return trimmed;
+  return i18n.t("notifications.scheduled.dailyFuelBody");
+};
+
+async function fetchMotivationalQuote(category?: Exclude<QuoteCategory, "general">) {
+  try {
+    return await getRandomQuote(category);
+  } catch (err) {
+    console.warn("[Notifications] Could not fetch motivational quote:", err);
+    return null;
+  }
+}
+
+export async function rescheduleMotivationalQuoteReminder(
+  enabled = true,
+  time = DEFAULT_MOTIVATION_TIME,
+  category?: Exclude<QuoteCategory, "general">,
+) {
   const groupKey = "motivational-quotes";
   await cancelGroup(groupKey);
   if (!enabled) return;
@@ -442,17 +464,28 @@ export async function rescheduleMotivationalQuoteReminder(enabled = true, time =
     base.setDate(today.getDate() + dayOffset);
     const { hour, minute } = parseTime(time, DEFAULT_MOTIVATION_TIME);
     const date = new Date(base.getFullYear(), base.getMonth(), base.getDate(), hour, minute, 0, 0);
+    const quote = await fetchMotivationalQuote(category);
     const id = await scheduleOne({
       title: i18n.t("notifications.scheduled.dailyFuelTitle"),
-      body: i18n.t("notifications.scheduled.dailyFuelBody"),
+      body: quote ? formatQuoteNotificationBody(quote.quote, quote.author) : i18n.t("notifications.scheduled.dailyFuelBody"),
       date,
       category: "motivational-quotes",
-      data: { kind: "daily_quote" },
+      data: { kind: "daily_quote", quote_id: quote?.id ?? null },
       prefs,
     });
     if (id) ids.push(id);
   }
   await storeGroupIds(groupKey, ids);
+}
+
+/** Re-schedule local motivational quote reminders from saved prefs (app launch / settings). */
+export async function syncMotivationalQuoteReminders(category?: Exclude<QuoteCategory, "general">) {
+  const prefs = await getEffectiveNotificationPreferences();
+  if (!prefs.master_enabled || !prefs.categories.motivational_quotes) {
+    await cancelGroup("motivational-quotes");
+    return;
+  }
+  await rescheduleMotivationalQuoteReminder(true, DEFAULT_MOTIVATION_TIME, category);
 }
 
 export async function cancelAllNexRepNotifications() {

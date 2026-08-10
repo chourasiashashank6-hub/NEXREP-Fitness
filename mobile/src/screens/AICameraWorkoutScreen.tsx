@@ -26,10 +26,10 @@ import { AI_C } from "../components/aiTrainer/aiTrainerTokens";
 import { getExerciseTrackingConfig } from "../constants/exerciseTrackingConfig";
 import { scoreSetFromReps } from "../data/aiTrainer/formScore";
 import {
-  hasPoseSpec,
   remapSpecWithCalibration,
   resolvePoseSpec,
 } from "../data/aiTrainer/resolvePoseSpec";
+import { hasTrackablePoseSpec } from "../data/aiTrainer/manualOnlyExercises";
 import type { AiRepEvent } from "../data/aiTrainer/types";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 import {
@@ -326,7 +326,7 @@ export default function AICameraWorkoutScreen() {
   );
   // Part 0: only the 71 poseSpec exercises get full AI tracking; others → manual fallback
   const trackable = Boolean(
-    currentExercise && hasPoseSpec(currentExercise.exercise_name) && trackingConfig,
+    currentExercise && hasTrackablePoseSpec(currentExercise.exercise_name) && trackingConfig,
   );
   const poseExerciseName =
     trackingConfig?.mediaPipeName || currentExercise?.exercise_name || "";
@@ -1028,7 +1028,7 @@ export default function AICameraWorkoutScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.offTitle}>Camera is off</Text>
             <Text style={styles.offSub}>
-              Form tracking isn’t available for this exercise
+              Manual logging only — camera tracking isn’t available for this exercise
               {forceManual ? " — logging manually" : ""}
             </Text>
           </View>

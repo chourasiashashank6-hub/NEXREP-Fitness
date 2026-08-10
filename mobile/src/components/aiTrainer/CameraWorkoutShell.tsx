@@ -149,8 +149,8 @@ export function CameraWorkoutShell({
       ) : isActive ? (
         <View style={styles.cameraPlaceholder}>
           <Text style={styles.untrackableTxt}>
-            {t("aiTrainer.not_trackable", {
-              defaultValue: "This exercise isn't AI-trackable yet. Pick a supported lift.",
+            {t("aiTrainer.manual_logging_only", {
+              defaultValue: "Manual logging only — camera tracking isn't available for this exercise.",
             })}
           </Text>
         </View>
@@ -212,8 +212,20 @@ export function CameraWorkoutShell({
             </Text>
           </GlassPanel>
           <GlassPanel style={styles.scoreCard}>
-            <Text style={[styles.scoreBig, { color: formScore >= 89 ? AI_C.mint : AI_C.orange }]}>
-              {formScore}
+            <Text
+              style={[
+                styles.scoreBig,
+                {
+                  color:
+                    liveStatus === "no_body" || !trackable
+                      ? AI_C.dim
+                      : formScore >= 89
+                        ? AI_C.mint
+                        : AI_C.orange,
+                },
+              ]}
+            >
+              {liveStatus === "no_body" || !trackable ? "—" : formScore}
             </Text>
             <Text style={styles.scoreLbl}>FORM SCORE</Text>
           </GlassPanel>

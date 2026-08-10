@@ -5,7 +5,7 @@ import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from "@media
 import i18n from "../i18n";
 import { LiveSessionTracker } from "../services/aiTrainer/liveSessionTracker";
 import { MEDIAPIPE_VERSION, MP_TEXT, buildInjectedConfigScript } from "../services/aiTrainer/mediaPipeHtmlTemplate";
-import { acquireMediaPipeServer, releaseMediaPipeServer } from "../services/aiTrainer/mediaPipeLocalServer";
+import { acquireMediaPipeServer, prepareMediaPipeServerRetry, releaseMediaPipeServer } from "../services/aiTrainer/mediaPipeLocalServer";
 import {
   type CameraDiagnosticsPayload,
   logCameraDiagnostics,
@@ -514,7 +514,7 @@ function toMovementConfig(selectedExerciseName?: string, record?: MediaPipeExerc
     return { primaryJoint: "knee", downThreshold: 105, upThreshold: 155, downWhenAngleIsLower: true };
   }
   if (containsAny(name, ["deadlift", "romanian", "rack pull", "hip thrust", "glute bridge", "swing"])) {
-    return { primaryJoint: "knee", downThreshold: 110, upThreshold: 165, downWhenAngleIsLower: true };
+    return { primaryJoint: "hip", downThreshold: 110, upThreshold: 165, downWhenAngleIsLower: true };
   }
   if (containsAny(name, ["push up", "bench press", "chest press", "dip", "chest fly", "pec deck"])) {
     return { primaryJoint: "elbow", downThreshold: 95, upThreshold: 155, downWhenAngleIsLower: true };
@@ -536,7 +536,7 @@ function toMovementConfig(selectedExerciseName?: string, record?: MediaPipeExerc
     return { primaryJoint: "elbow", downThreshold: 70, upThreshold: 150, downWhenAngleIsLower: true };
   }
   if (containsAny(name, ["calf raise", "tibialis raise", "calf jump"])) {
-    return { primaryJoint: "knee", downThreshold: 150, upThreshold: 175, downWhenAngleIsLower: true };
+    return { primaryJoint: "ankle", downThreshold: 150, upThreshold: 175, downWhenAngleIsLower: true };
   }
   if (containsAny(name, ["burpee", "mountain climber", "jumping jack", "tuck jump", "box jump", "depth jump"])) {
     return { primaryJoint: "knee", downThreshold: 95, upThreshold: 165, downWhenAngleIsLower: true };
@@ -1601,7 +1601,11 @@ function MediaPipeGuidanceView({
           <Text style={styles.loadingSubtitle}>{serverError}</Text>
           <Pressable
             style={styles.retryButton}
-            onPress={() => setServerRetryNonce((n) => n + 1)}
+            onPress={() => {
+              void prepareMediaPipeServerRetry().finally(() => {
+                setServerRetryNonce((n) => n + 1);
+              });
+            }}
           >
             <Text style={styles.retryButtonText}>{i18n.t("mediaPipe.retry")}</Text>
           </Pressable>

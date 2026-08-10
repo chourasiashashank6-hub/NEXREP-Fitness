@@ -24,7 +24,6 @@ import { getWorkoutHistory } from "../api/workout";
 import { DailyQuoteCard } from "../components/DailyQuoteCard";
 import { MilestoneBoxes } from "../components/MilestoneBoxes";
 import { TodaysGoalRing } from "../components/TodaysGoalRing";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "../store/authStore";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
@@ -80,7 +79,6 @@ const CARD = "#FFFFFF";
 const TEXT_PRIMARY = "#1A1A18";
 const TEXT_MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
-const BEST_STREAK_KEY = "nexrep_best_streak";
 const STREAK_LOOKBACK_DAYS = 60;
 
 type BurnProfile = {
@@ -313,9 +311,8 @@ export const HomeScreen = () => {
       setStrengthProgress(strengthProgressRes);
 
       const todayKey = todayLocal();
-      const [streakWorkoutRes, storedBestRaw, streakRes] = await Promise.all([
+      const [streakWorkoutRes, streakRes] = await Promise.all([
         getWorkoutHistory(24 * STREAK_LOOKBACK_DAYS).catch(() => ({ items: [] })),
-        AsyncStorage.getItem(BEST_STREAK_KEY).catch(() => null),
         // Single bulk call replacing what used to be one getDailyCalorieLog() request per day.
         getCalorieStreak(STREAK_LOOKBACK_DAYS, todayKey).catch(() => null),
       ]);
@@ -348,13 +345,7 @@ export const HomeScreen = () => {
       setWorkoutHistory(workoutItems);
       setStreakCalorieLogs(calorieLogsForStreak);
 
-      const currentStreak = computeCombinedStreak(calorieLogsForStreak, workoutItems);
-      const previousBest = storedBestRaw ? Math.max(0, parseInt(storedBestRaw, 10) || 0) : 0;
-      const bestStreak = Math.max(currentStreak, previousBest);
-      if (bestStreak > previousBest) {
-        await AsyncStorage.setItem(BEST_STREAK_KEY, String(bestStreak)).catch(() => {});
-      }
-      setPersonalBestStreak(bestStreak);
+      setPersonalBestStreak(Math.max(0, Number(streakRes?.personal_best_streak ?? 0)));
     } catch {
       Alert.alert(t("home.alerts.error"), t("home.alerts.loadFailed"));
     }

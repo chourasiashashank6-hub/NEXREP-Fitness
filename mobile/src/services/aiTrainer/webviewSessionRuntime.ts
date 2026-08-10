@@ -60,6 +60,11 @@ function jointAngle(lms,joint){
   }
   if(joint==="hip") return pick(11,23,25,12,24,26);
   if(joint==="elbow") return pick(11,13,15,12,14,16);
+  if(joint==="front_knee"||joint==="lead_knee"){
+    var lK=visOk(lms[23])&&visOk(lms[25])&&visOk(lms[27])?angle3(lms[23],lms[25],lms[27]):null;
+    var rK=visOk(lms[24])&&visOk(lms[26])&&visOk(lms[28])?angle3(lms[24],lms[26],lms[28]):null;
+    if(lK==null)return rK; if(rK==null)return lK; return lK<=rK?lK:rK;
+  }
   if(joint==="shoulder"||joint==="shoulder_abduction"){
     var L=visOk(lms[13])&&visOk(lms[11])&&visOk(lms[23])?angle3(lms[13],lms[11],lms[23]):null;
     var R=visOk(lms[14])&&visOk(lms[12])&&visOk(lms[24])?angle3(lms[14],lms[12],lms[24]):null;
@@ -71,6 +76,14 @@ function jointIdx(lms,joint){
   function better(l,r){var lv=lms[l]?lms[l].visibility||0:0,rv=lms[r]?lms[r].visibility||0:0;if(lv<MIN_VIS&&rv<MIN_VIS)return null;return lv>=rv?l:r}
   if(joint==="hip") return better(23,24);
   if(joint==="elbow") return better(13,14);
+  if(joint==="front_knee"||joint==="lead_knee"){
+    var lv=lms[25]?lms[25].visibility||0:0,rv=lms[26]?lms[26].visibility||0:0;
+    if(lv<MIN_VIS&&rv<MIN_VIS)return null;
+    if(lv<MIN_VIS)return 26; if(rv<MIN_VIS)return 25;
+    var la=visOk(lms[23])&&visOk(lms[27])?angle3(lms[23],lms[25],lms[27]):Infinity;
+    var ra=visOk(lms[24])&&visOk(lms[28])?angle3(lms[24],lms[26],lms[28]):Infinity;
+    return la<=ra?25:26;
+  }
   if(joint==="shoulder"||joint==="shoulder_abduction") return better(11,12);
   return better(25,26);
 }
@@ -78,6 +91,49 @@ function rom01(angle,top,bottom,inverted){
   if(angle==null||!isFinite(angle))return 0;
   if(inverted){var s=Math.max(1,bottom-top);return Math.max(0,Math.min(1,(angle-top)/s))}
   var s2=Math.max(1,top-bottom);return Math.max(0,Math.min(1,(top-angle)/s2));
+}
+function parseTorsoLeanCap(rule,fallback){
+  var m=/torsoLean\\s*<=\\s*(\\d+(?:\\.\\d+)?)/i.exec(rule||"");
+  return m?Number(m[1]):fallback;
+}
+function parseTorsoLenMul(rule,fallback){
+  var m=/(\\d+(?:\\.\\d+)?)\\s*\\*\\s*torsoLen/i.exec(rule||"");
+  return m?Number(m[1]):fallback;
+}
+function parseKneeCapRule(rule,fallback){
+  var m=/kneeAngle\\s*>=\\s*(\\d+(?:\\.\\d+)?)/i.exec(rule||"");
+  return m?Number(m[1]):fallback;
+}
+function parseShrugCap(rule){return parseTorsoLenMul(rule,0.04)}
+function hipLockoutBand(cal){
+  var standing=(cal&&cal.standingKneeDeg!=null)?cal.standingKneeDeg:168;
+  return{min:Math.max(155,standing-5),max:Math.max(190,standing+22)};
+}
+function spineNeutralCap(cal){
+  var baseline=(cal&&cal.torsoLeanBaselineDeg!=null)?cal.torsoLeanBaselineDeg:8;
+  return baseline+12;
+}
+function elbowFlareMul(rule,fallback){
+  var ar=/angle\\s+(\\d+)[\\u2013-](\\d+)/i.exec(rule||"");
+  if(ar){var mx=Number(ar[2]); if(mx<=45)return 0.08; if(mx<=70)return 0.12;}
+  return parseTorsoLenMul(rule,fallback);
+}
+function extractKneeCap(checks){
+  for(var i=0;i<(checks||[]).length;i++){
+    if(checks[i].id!=="knee_bend_cap")continue;
+    var p=parseKneeCapRule(checks[i].rule);
+    if(p!=null)return p;
+  }
+  return null;
+}
+function isBodyDetected(lms){
+  var torso=(visOk(lms[11])&&visOk(lms[23]))||(visOk(lms[12])&&visOk(lms[24]));
+  var leg=(visOk(lms[23])&&visOk(lms[25]))||(visOk(lms[24])&&visOk(lms[26]));
+  return torso&&leg;
+}
+function resolveFormBottom(poseSpec,rule,cal){
+  if(poseSpec&&poseSpec._depthTargetDeg!=null)return poseSpec._depthTargetDeg;
+  return rule.bottomAngle!=null?rule.bottomAngle:95;
 }
 function torsoMetrics(lms){
   var lS=lms[11],rS=lms[12],lH=lms[23],rH=lms[24];
@@ -113,7 +169,7 @@ function oriMatch(required,detected){
   return false;
 }
 var WARN_BY={depth:[23,24,25,26],torso_lean:[11,12,23,24],knee_forward_drift:[25,26,31,32],heel_lift:[27,28,29,30],knee_valgus:[23,24,25,26],tempo:[25,26],spine_neutral:[11,12,23,24],knee_bend_cap:[25,26],lockout:[23,24],rom_bottom:[13,14],elbow_flare:[11,12,13,14],elbow_pin:[13,14],asymmetry:[13,14],shrug:[11,12],torso_swing:[11,12,23,24],swing:[11,12,23,24],lumbar_arch:[11,12,23,24],full_stretch:[13,14],full_extension:[13,14],full_hang:[13,14]};
-function evaluateChecks(lms,phase,checks,depthTarget,detectedView,occluded){
+function evaluateChecks(lms,phase,checks,depthTarget,detectedView,occluded,cal,kneeCap){
   var failing=[], warn={}, bestCue=null, tm=torsoMetrics(lms);
   function consider(check,fail,landmarks){
     if(!fail)return;
@@ -141,8 +197,9 @@ function evaluateChecks(lms,phase,checks,depthTarget,detectedView,occluded){
       consider(check,kneeAngle>depthTarget+5,[25,26,23,24]);
     } else if(check.id==="torso_lean"||check.id==="torso_swing"||check.id==="swing"||check.id==="lumbar_arch"){
       if(!tm)continue;
-      var cap=check.id==="lumbar_arch"?15:(check.id.indexOf("swing")>=0?10:45);
-      consider(check,tm.lean>cap,[11,12,23,24]);
+      var capDefault=check.id==="lumbar_arch"?15:(check.id.indexOf("swing")>=0?10:45);
+      var capLean=parseTorsoLeanCap(check.rule,capDefault);
+      consider(check,tm.lean>capLean,[11,12,23,24]);
     } else if(check.id==="knee_forward_drift"){
       if(!tm||!inBottom)continue;
       var side=visOk(lms[25])&&visOk(lms[31])?0:(visOk(lms[26])&&visOk(lms[32])?1:-1);
@@ -154,7 +211,7 @@ function evaluateChecks(lms,phase,checks,depthTarget,detectedView,occluded){
       var a=visOk(lms[27])?lms[27]:(visOk(lms[28])?lms[28]:null);
       var h=visOk(lms[29])?lms[29]:(visOk(lms[30])?lms[30]:null);
       if(!a||!h)continue;
-      consider(check,Math.abs(a.y-h.y)>0.03*tm.torsoLen,[27,28,29,30]);
+      consider(check,Math.abs(a.y-h.y)>parseTorsoLenMul(check.rule,0.04)*tm.torsoLen,[27,28,29,30]);
     } else if(check.id==="knee_valgus"){
       if(detectedView==="side"||!tm)continue;
       function badSide(hip,knee,ankle){var mid=(hip.x+ankle.x)/2;return Math.abs(knee.x-mid)>0.06*tm.torsoLen}
@@ -163,23 +220,34 @@ function evaluateChecks(lms,phase,checks,depthTarget,detectedView,occluded){
       consider(check,badL||badR,[25,26]);
     } else if(check.id==="spine_neutral"){
       if(!tm||phase==="idle"||phase==="top")continue;
-      consider(check,tm.lean>18,[11,12,23,24]);
+      consider(check,tm.lean>spineNeutralCap(cal||{}),[11,12,23,24]);
+    } else if(check.id==="knee_bend_cap"){
+      if(kneeAngle==null)continue;
+      var kCap=kneeCap!=null?kneeCap:(parseKneeCapRule(check.rule,150));
+      consider(check,kneeAngle<kCap,[25,26]);
     } else if(check.id==="elbow_flare"||check.id==="elbow_pin"){
       if(!tm||!visOk(lms[13])||!visOk(lms[14])||!visOk(lms[11])||!visOk(lms[12]))continue;
-      var pin=Math.abs(lms[13].x-lms[11].x)>0.07*tm.torsoLen||Math.abs(lms[14].x-lms[12].x)>0.07*tm.torsoLen;
-      var flare=Math.abs(lms[13].x-lms[11].x)>0.12*tm.torsoLen||Math.abs(lms[14].x-lms[12].x)>0.12*tm.torsoLen;
+      var pinMul=parseTorsoLenMul(check.rule,0.07);
+      var flareMul=elbowFlareMul(check.id==="elbow_flare"?check.rule:"",0.12);
+      var pin=Math.abs(lms[13].x-lms[11].x)>pinMul*tm.torsoLen||Math.abs(lms[14].x-lms[12].x)>pinMul*tm.torsoLen;
+      var flare=Math.abs(lms[13].x-lms[11].x)>flareMul*tm.torsoLen||Math.abs(lms[14].x-lms[12].x)>flareMul*tm.torsoLen;
       consider(check,check.id==="elbow_pin"?pin:flare,[13,14]);
     } else if(check.id==="rom_bottom"){
       if(!inBottom||elbowAngle==null)continue;
       consider(check,elbowAngle>90,[13,14]);
+    } else if(check.id==="full_extension"||check.id==="full_stretch"||check.id==="full_hang"){
+      if(elbowAngle==null)continue;
+      if(phase!=="top"&&phase!=="idle"&&phase!=="bottom")continue;
+      consider(check,elbowAngle<145,[13,14]);
     } else if(check.id==="lockout"){
       if(phase!=="top"&&phase!=="idle")continue;
-      if(hipAngle!=null)consider(check,hipAngle<168||hipAngle>185,[23,24]);
+      if(hipAngle!=null){var band=hipLockoutBand(cal||{});consider(check,hipAngle<band.min||hipAngle>band.max,[23,24]);}
       else if(elbowAngle!=null)consider(check,elbowAngle<160,[13,14]);
     } else if(check.id==="shrug"){
       if(!tm||!visOk(lms[11])||!visOk(lms[12]))continue;
       var ear=lms[7]||lms[8]||lms[0]; if(!visOk(ear))continue;
-      consider(check,Math.min(lms[11].y,lms[12].y)-ear.y>-0.02*tm.torsoLen,[11,12]);
+      var rise=Math.min(lms[11].y,lms[12].y)-ear.y;
+      consider(check,rise>-parseShrugCap(check.rule)*tm.torsoLen,[11,12]);
     } else if(check.id==="asymmetry"){
       if(!visOk(lms[13])||!visOk(lms[14])||!visOk(lms[15])||!visOk(lms[16]))continue;
       consider(check,Math.abs(angle3(lms[11],lms[13],lms[15])-angle3(lms[12],lms[14],lms[16]))>15,[13,14]);

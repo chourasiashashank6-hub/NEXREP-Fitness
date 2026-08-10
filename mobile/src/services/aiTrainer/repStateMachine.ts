@@ -26,6 +26,7 @@ export type PhaseMachineState = {
 };
 
 const HYSTERESIS = 4;
+/** Must match BOTTOM_ANGLE_TOLERANCE_DEG in poseRuntimeHelpers / depth check (+5°). */
 
 export function createPhaseMachine(): PhaseMachineState {
   return {

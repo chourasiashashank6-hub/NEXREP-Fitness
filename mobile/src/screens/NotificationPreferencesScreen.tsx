@@ -18,6 +18,7 @@ import {
   openNotificationSettings,
   sendLocalTestNotification,
   shouldShowAndroidBatteryTip,
+  syncMotivationalQuoteReminders,
   type NotificationPermissionState,
 } from "../services/notificationService";
 import { sendTestPush } from "../api/notifications";
@@ -83,6 +84,7 @@ export function NotificationPreferencesScreen({ navigation }: any) {
       if (!saved.master_enabled) await cancelAllNexRepNotifications().catch(() => undefined);
       if (saved.master_enabled) {
         await ensurePushRegistration(true).catch(() => undefined);
+        await syncMotivationalQuoteReminders().catch(() => undefined);
         const perm = await getNotificationPermissionState().catch(() => null);
         setPermission(perm);
       }

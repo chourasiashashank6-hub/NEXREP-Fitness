@@ -7,6 +7,7 @@
  * An exercise is trackable when we can resolve movement thresholds — either from
  * a matched MediaPipe record or the same name heuristics MediaPipeGuidanceView uses.
  */
+import { isPoseSpecManualOnly, MANUAL_ONLY_POSE_SPEC_IDS, hasTrackablePoseSpec } from "../data/aiTrainer/manualOnlyExercises";
 
 export type TrackingPrimaryJoint = "elbow" | "knee" | "hip" | "shoulder" | "ankle";
 
@@ -280,7 +281,7 @@ function movementFromNameHeuristics(exerciseName?: string | null): {
     return { primaryJoint: "knee", downThreshold: 105, upThreshold: 155, downWhenAngleIsLower: true };
   }
   if (containsAny(name, ["deadlift", "romanian", "rack pull", "hip thrust", "glute bridge", "swing"])) {
-    return { primaryJoint: "knee", downThreshold: 110, upThreshold: 165, downWhenAngleIsLower: true };
+    return { primaryJoint: "hip", downThreshold: 110, upThreshold: 165, downWhenAngleIsLower: true };
   }
   // Incline / flat / decline presses without the literal "bench press" phrase
   if (
@@ -316,7 +317,7 @@ function movementFromNameHeuristics(exerciseName?: string | null): {
     return { primaryJoint: "elbow", downThreshold: 70, upThreshold: 150, downWhenAngleIsLower: true };
   }
   if (containsAny(name, ["calf raise", "tibialis raise", "calf jump"])) {
-    return { primaryJoint: "knee", downThreshold: 150, upThreshold: 175, downWhenAngleIsLower: true };
+    return { primaryJoint: "ankle", downThreshold: 150, upThreshold: 175, downWhenAngleIsLower: true };
   }
   if (containsAny(name, ["burpee", "mountain climber", "jumping jack", "tuck jump", "box jump", "depth jump"])) {
     return { primaryJoint: "knee", downThreshold: 95, upThreshold: 165, downWhenAngleIsLower: true };
@@ -389,7 +390,20 @@ export function getExerciseTrackingConfig(
 }
 
 export function isExerciseTrackable(exerciseNameOrId?: string | null): boolean {
+  if (isPoseSpecManualOnly(exerciseNameOrId)) return false;
   return getExerciseTrackingConfig(exerciseNameOrId) != null;
+}
+
+/** Whether AI camera session should run pose or legacy movement tracking. */
+export function isCameraExerciseTrackable(exerciseNameOrId?: string | null): boolean {
+  if (isPoseSpecManualOnly(exerciseNameOrId)) return false;
+  if (hasTrackablePoseSpec(exerciseNameOrId)) return true;
+  return getExerciseTrackingConfig(exerciseNameOrId) != null;
+}
+
+/** Exercises that resolve a pose spec but are manual-logging only in AI camera mode. */
+export function listManualOnlyPoseSpecIds(): string[] {
+  return [...MANUAL_ONLY_POSE_SPEC_IDS];
 }
 
 export function listTrackableExerciseIds(): string[] {

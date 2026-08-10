@@ -14,11 +14,12 @@ import { useCameraPermissions } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { postSessionComplete } from "../api/workoutSessions";
 import { getProfile } from "../api/user";
 import { EndEarlySheet } from "../components/EndEarlySheet";
-import { CameraWorkoutShell } from "../components/aiTrainer/CameraWorkoutShell";
+import { CameraGuidedSessionFrame } from "../components/aiTrainer/CameraGuidedSessionFrame";
 import { useCameraTracking } from "../hooks/useCameraTracking";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 import { navigationRef } from "../navigation/navigationRef";
@@ -64,6 +65,7 @@ function parseReps(reps: string | number): number {
 }
 
 export default function ActiveWorkoutScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, "ActiveWorkoutSession">>();
   const planId = route.params?.planId;
@@ -357,6 +359,63 @@ export default function ActiveWorkoutScreen() {
 
   const resting = session.status === "resting";
 
+  if (showSessionCamera && currentExercise) {
+    const coachWarn =
+      cameraTracking.bannerCue?.priority === "correction" ||
+      cameraTracking.bannerCue?.priority === "safety" ||
+      cameraTracking.liveStatus === "no_body" ||
+      !cameraTracking.orientationOk;
+    const coachText =
+      cameraTracking.bannerCue?.text ||
+      cameraTracking.liveCorrection ||
+      t("aiTrainer.tracking_ready", { defaultValue: "Tracking locked — start when ready" });
+
+    return (
+      <CameraGuidedSessionFrame
+        exerciseName={currentExercise.exercise_name}
+        exerciseSubtitle={`Set ${session.current_set} of ${currentExercise.sets} · ${session.day_name}`}
+        targetReps={cameraTargetReps}
+        poseSpec={cameraTracking.poseSpec}
+        calibration={cameraTracking.calibrationPayload}
+        isActive
+        countingPaused={cameraTracking.countingPaused}
+        sessionPaused={cameraTracking.sessionPaused}
+        facingMode={cameraTracking.facingMode}
+        repCount={cameraTracking.repCount}
+        formScore={cameraTracking.formScore}
+        verdicts={cameraTracking.verdicts}
+        liveRom01={cameraTracking.liveRom01}
+        liveInZone={cameraTracking.liveInZone}
+        zoneStart01={cameraTracking.zoneStart01}
+        zoneEnd01={cameraTracking.zoneEnd01}
+        orientationOk={cameraTracking.orientationOk}
+        liveStatus={cameraTracking.liveStatus}
+        coachText={coachText}
+        coachWarn={coachWarn}
+        ttsSpeaking={cameraTracking.ttsSpeaking}
+        trackingRunning={cameraTracking.trackingRunning}
+        voiceMode={cameraTracking.voiceMode}
+        webAudioReady={cameraTracking.webAudioReady}
+        cameraError={sessionCameraError}
+        showCalibrateBanner={needsCalBanner || needsRecalibration}
+        onClose={() => setShowSessionCamera(false)}
+        onCalibrate={() => {
+          setShowSessionCamera(false);
+          navigationRef.navigate("AITrainerCalibration" as never, { planId } as never);
+        }}
+        onPauseToggle={cameraTracking.handlePauseToggle}
+        onVoiceModeCycle={cameraTracking.handleVoiceModeCycle}
+        onFlipCam={cameraTracking.handleFlipCam}
+        onZoomIn={cameraTracking.handleZoomIn}
+        onZoomOut={cameraTracking.handleZoomOut}
+        zoomLevel={cameraTracking.zoomLevel}
+        onTrackingUpdate={cameraTracking.handleTrackingUpdate}
+        onReady={handleSessionCameraReady}
+        onError={handleSessionCameraError}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -492,59 +551,6 @@ export default function ActiveWorkoutScreen() {
         </Text>
       </ScrollView>
 
-      {showSessionCamera && currentExercise ? (
-        <View style={styles.cameraOverlayFull}>
-          <CameraWorkoutShell
-            exerciseName={currentExercise.exercise_name}
-            exerciseSubtitle={`Set ${session.current_set} of ${currentExercise.sets} · Guided session`}
-            targetReps={cameraTargetReps}
-            poseSpec={cameraTracking.poseSpec}
-            calibration={cameraTracking.calibrationPayload}
-            isActive={showSessionCamera}
-            countingPaused={cameraTracking.countingPaused}
-            sessionPaused={cameraTracking.sessionPaused}
-            facingMode={cameraTracking.facingMode}
-            repCount={cameraTracking.repCount}
-            formScore={cameraTracking.formScore}
-            verdicts={cameraTracking.verdicts}
-            liveRom01={cameraTracking.liveRom01}
-            liveInZone={cameraTracking.liveInZone}
-            zoneStart01={cameraTracking.zoneStart01}
-            zoneEnd01={cameraTracking.zoneEnd01}
-            orientationOk={cameraTracking.orientationOk}
-            liveStatus={cameraTracking.liveStatus}
-            coachText={
-              cameraTracking.bannerCue?.text ||
-              cameraTracking.liveCorrection ||
-              "Tracking locked — start when ready"
-            }
-            coachWarn={
-              cameraTracking.bannerCue?.priority === "correction" ||
-              cameraTracking.bannerCue?.priority === "safety" ||
-              cameraTracking.liveStatus === "no_body" ||
-              !cameraTracking.orientationOk
-            }
-            trackingRunning={cameraTracking.trackingRunning}
-            cameraError={sessionCameraError}
-            showCalibrateBanner={needsCalBanner || needsRecalibration}
-            relaxTrackingGates
-            onClose={() => setShowSessionCamera(false)}
-            onCalibrate={() => {
-              setShowSessionCamera(false);
-              navigationRef.navigate("AITrainerCalibration" as never, { planId } as never);
-            }}
-            onPauseToggle={cameraTracking.handlePauseToggle}
-            onFlipCam={cameraTracking.handleFlipCam}
-            onZoomIn={cameraTracking.handleZoomIn}
-            onZoomOut={cameraTracking.handleZoomOut}
-            zoomLevel={cameraTracking.zoomLevel}
-            onTrackingUpdate={cameraTracking.handleTrackingUpdate}
-            onReady={handleSessionCameraReady}
-            onError={handleSessionCameraError}
-          />
-        </View>
-      ) : null}
-
       <EndEarlySheet
         visible={showEndSheet}
         onDismiss={() => setShowEndSheet(false)}
@@ -676,14 +682,4 @@ const styles = StyleSheet.create({
   },
   endEarlyTxt: { color: MUTED, fontWeight: "700" },
   endEarlyCap: { textAlign: "center", color: MUTED, fontSize: 11, marginTop: 8 },
-  cameraOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 50,
-    backgroundColor: "#050b16",
-  },
-  cameraOverlayFull: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 50,
-    backgroundColor: "#050b16",
-  },
 });

@@ -396,20 +396,7 @@
     "family": "horizontal_press",
     "overrides": {
       "view": "side",
-      "add": [
-        {
-          "id": "body_line",
-          "severity": "critical",
-          "rule": "shoulder\u2013hip\u2013ankle 170\u2013185 throughout",
-          "cue": "cue_hips_level"
-        },
-        {
-          "id": "depth",
-          "severity": "critical",
-          "rule": "elbowAngle at bottom <= 90",
-          "cue": "cue_chest_to_floor"
-        }
-      ]
+      "add": []
     },
     "aliases": [
       "push up",
@@ -541,7 +528,7 @@
     "id": "front_raise",
     "family": "lateral_raise_family",
     "overrides": {
-      "view": "side",
+      "view": "front",
       "note": "raise_height judged in sagittal plane"
     },
     "aliases": [

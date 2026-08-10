@@ -59,8 +59,19 @@ export function DailyQuoteCard({ goal }: { goal?: GoalLabel }) {
           Animated.timing(fade, { toValue: 1, duration: 180, useNativeDriver: true }),
         ]).start();
         setQuote(next);
-      } catch {
-        // Keep the widget quiet if quotes are unavailable.
+      } catch (err) {
+        setQuote(null);
+        const detail =
+          err && typeof err === "object" && "response" in err
+            ? String((err as { response?: { status?: number; data?: { detail?: string } } }).response?.status ?? "")
+            : err instanceof Error
+              ? err.message
+              : String(err);
+        const message =
+          err && typeof err === "object" && "response" in err
+            ? String((err as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? "")
+            : "";
+        console.warn("[DailyQuoteCard] Quote unavailable:", message || detail || "unknown error");
       } finally {
         setLoading(false);
         setRefreshing(false);

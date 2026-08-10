@@ -11,11 +11,17 @@ import {
 import {
   depthZoneBand,
   evaluatePoseChecks,
+  extractKneeCap,
   jointAngle,
   repJointLandmarkIndex,
   romProgress01,
   type Lm,
 } from "./poseCheckEval";
+import {
+  isBodyDetected,
+  resolveCountBottom,
+  resolveFormBottom,
+} from "./poseRuntimeHelpers";
 import {
   createPhaseMachine,
   emaAngle,
@@ -147,13 +153,10 @@ export class LiveSessionTracker {
     const repJoint = this.poseSpec.repJoint || "knee";
     const rule = asRepRule(this.poseSpec.repRule);
     const top = rule.topAngle ?? 160;
-    const formBottom =
-      this.poseSpec._depthTargetDeg ||
-      this.calibration.mobility?.depthTargetDeg ||
-      rule.bottomAngle ||
-      95;
+    const formBottom = resolveFormBottom(this.poseSpec, rule, this.calibration);
     const inverted = rule.direction === "inverted";
-    const countBottom = inverted ? formBottom : Math.max(formBottom, top - 45);
+    const countBottom = resolveCountBottom(formBottom, top, inverted);
+    const kneeCap = extractKneeCap(this.poseSpec.checks || []);
 
     const minVis = this.relaxGates ? RELAXED_MIN_VISIBILITY : undefined;
     const rawAng = jointAngle(landmarks, repJoint, minVis);
@@ -173,7 +176,8 @@ export class LiveSessionTracker {
       ? true
       : orientationMatches(requiredView, detectedView);
 
-    const gated = this.countingPaused || !orientationOk || !jointVisible;
+    const bodyDetected = isBodyDetected(landmarks, minVis);
+    const gated = this.countingPaused || !orientationOk || !jointVisible || !bodyDetected;
     const atRestPhase = this.phase.phase === "idle" || this.phase.phase === "top";
     // Idle gate: no new descent without recent joint motion (kills lying-still phantom reps)
     const idleBlocked = this.relaxGates ? false : atRestPhase && !recentMotion;
@@ -206,6 +210,7 @@ export class LiveSessionTracker {
       this.calibration,
       {
         depthTargetDeg: formBottom,
+        kneeCap,
         detectedView,
         occluded,
       },
@@ -234,12 +239,14 @@ export class LiveSessionTracker {
     const progress = romProgress01(primaryAngle, top, formBottom, inverted);
     const band = depthZoneBand(top, formBottom, formBottom);
     const inZone = progress >= band.start01 && progress <= band.end01;
-    const formOk = !evald.criticalFailed && orientationOk && jointVisible;
-    const cueKey = !orientationOk
-      ? requiredView === "side"
-        ? "cue_turn_side"
-        : "cue_turn_front"
-      : evald.cueKey;
+    const formOk = !evald.criticalFailed && orientationOk && jointVisible && bodyDetected;
+    const cueKey = !bodyDetected
+      ? "step_into_frame"
+      : !orientationOk
+        ? requiredView === "side"
+          ? "cue_turn_side"
+          : "cue_turn_front"
+        : evald.cueKey;
     const cuePriority = !orientationOk ? "safety" : evald.cuePriority;
 
     if (this.debugEnabled && nowMs - this.lastDebugAt >= DEBUG_EVERY_MS) {
@@ -264,7 +271,7 @@ export class LiveSessionTracker {
       formOk,
       correction: cueKey || "",
       phase: this.phase.phase,
-      bodyDetected: true,
+      bodyDetected,
       primaryAngle,
       rom01: progress,
       inDepthZone: inZone,

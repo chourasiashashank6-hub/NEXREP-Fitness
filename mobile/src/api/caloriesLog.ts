@@ -214,6 +214,8 @@ export interface CalorieStreakResponse {
   days: Array<{ date: string; total_calories: number }>;
   start_date: string;
   end_date: string;
+  current_streak?: number;
+  personal_best_streak?: number;
 }
 
 /**

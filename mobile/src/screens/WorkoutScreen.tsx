@@ -41,7 +41,7 @@ import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
 import AllTimeHistoryModal from "../components/AllTimeHistoryModal";
 import { AppInput } from "../components/AppInput";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
-import { CameraWorkoutShell } from "../components/aiTrainer/CameraWorkoutShell";
+import { CameraGuidedSessionFrame } from "../components/aiTrainer/CameraGuidedSessionFrame";
 import { LogPlannerSegment, type LogPlannerMode } from "../components/LogPlannerSegment";
 import { PlannerLockedUpsell } from "../components/PlannerLockedUpsell";
 import { SessionTypePickerModal } from "../components/SessionTypePickerModal";
@@ -2115,51 +2115,54 @@ export const WorkoutScreen = () => {
       </Modal>
 
       <Modal visible={showCamera} animationType="slide" onRequestClose={closeCameraTracker}>
-        <SafeAreaView style={styles.cameraFullScreen} edges={["top", "left", "right", "bottom"]}>
-          {cameraPermission?.granted ? (
-            <CameraWorkoutShell
-              exerciseName={exerciseName}
-              exerciseSubtitle={t("workoutLog.cameraTitle", { defaultValue: "Camera tracker" })}
-              targetReps={cameraTargetReps}
-              poseSpec={cameraTracking.poseSpec}
-              calibration={cameraTracking.calibrationPayload}
-              isActive={showCamera}
-              countingPaused={cameraTracking.countingPaused}
-              sessionPaused={cameraTracking.sessionPaused}
-              facingMode={cameraTracking.facingMode}
-              repCount={cameraTracking.repCount}
-              formScore={cameraTracking.formScore}
-              verdicts={cameraTracking.verdicts}
-              liveRom01={cameraTracking.liveRom01}
-              liveInZone={cameraTracking.liveInZone}
-              zoneStart01={cameraTracking.zoneStart01}
-              zoneEnd01={cameraTracking.zoneEnd01}
-              orientationOk={cameraTracking.orientationOk}
-              liveStatus={cameraTracking.liveStatus}
-              coachText={cameraCoachText}
-              coachWarn={cameraCoachWarn}
-              trackingRunning={cameraTracking.trackingRunning}
-              cameraError={cameraError}
-              showCalibrateBanner={needsCalBanner || needsRecalibration}
-              relaxTrackingGates
-              onClose={closeCameraTracker}
-              onCalibrate={handleCameraCalibrate}
-              onPauseToggle={cameraTracking.handlePauseToggle}
-              onFlipCam={cameraTracking.handleFlipCam}
-              onZoomIn={cameraTracking.handleZoomIn}
-              onZoomOut={cameraTracking.handleZoomOut}
-              zoomLevel={cameraTracking.zoomLevel}
-              onTrackingUpdate={cameraTracking.handleTrackingUpdate}
-              onReady={() => {
-                setMediaPipeReady(true);
-                setCameraError(null);
-              }}
-              onError={(message) => {
-                setCameraError(message);
-                setMediaPipeReady(false);
-              }}
-            />
-          ) : (
+        {cameraPermission?.granted ? (
+          <CameraGuidedSessionFrame
+            exerciseName={exerciseName}
+            exerciseSubtitle={t("workoutLog.cameraTitle", { defaultValue: "Camera tracker" })}
+            targetReps={cameraTargetReps}
+            poseSpec={cameraTracking.poseSpec}
+            calibration={cameraTracking.calibrationPayload}
+            isActive={showCamera}
+            countingPaused={cameraTracking.countingPaused}
+            sessionPaused={cameraTracking.sessionPaused}
+            facingMode={cameraTracking.facingMode}
+            repCount={cameraTracking.repCount}
+            formScore={cameraTracking.formScore}
+            verdicts={cameraTracking.verdicts}
+            liveRom01={cameraTracking.liveRom01}
+            liveInZone={cameraTracking.liveInZone}
+            zoneStart01={cameraTracking.zoneStart01}
+            zoneEnd01={cameraTracking.zoneEnd01}
+            orientationOk={cameraTracking.orientationOk}
+            liveStatus={cameraTracking.liveStatus}
+            coachText={cameraCoachText}
+            coachWarn={cameraCoachWarn}
+            ttsSpeaking={cameraTracking.ttsSpeaking}
+            trackingRunning={cameraTracking.trackingRunning}
+            voiceMode={cameraTracking.voiceMode}
+            webAudioReady={cameraTracking.webAudioReady}
+            cameraError={cameraError}
+            showCalibrateBanner={needsCalBanner || needsRecalibration}
+            onClose={closeCameraTracker}
+            onCalibrate={handleCameraCalibrate}
+            onPauseToggle={cameraTracking.handlePauseToggle}
+            onVoiceModeCycle={cameraTracking.handleVoiceModeCycle}
+            onFlipCam={cameraTracking.handleFlipCam}
+            onZoomIn={cameraTracking.handleZoomIn}
+            onZoomOut={cameraTracking.handleZoomOut}
+            zoomLevel={cameraTracking.zoomLevel}
+            onTrackingUpdate={cameraTracking.handleTrackingUpdate}
+            onReady={() => {
+              setMediaPipeReady(true);
+              setCameraError(null);
+            }}
+            onError={(message) => {
+              setCameraError(message);
+              setMediaPipeReady(false);
+            }}
+          />
+        ) : (
+          <SafeAreaView style={styles.cameraFullScreen} edges={["top", "left", "right", "bottom"]}>
             <View style={styles.cameraPermissionFull}>
               <Text style={styles.cameraPermissionFullTxt}>
                 {cameraError || t("workoutLog.cameraPermission")}
@@ -2174,8 +2177,8 @@ export const WorkoutScreen = () => {
                 <Text style={styles.cameraCloseLinkTxt}>{t("profile.close")}</Text>
               </Pressable>
             </View>
-          )}
-        </SafeAreaView>
+          </SafeAreaView>
+        )}
       </Modal>
     </SafeAreaView>
   );

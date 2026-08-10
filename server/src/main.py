@@ -251,6 +251,11 @@ def startup():
     load_global_exercises_if_empty(engine)
     load_recipe_seed_if_empty(engine)
     seed_catalog_labels(engine)
+    from src.services.quote_seed_service import load_motivational_quotes_if_needed
+
+    quotes_imported = load_motivational_quotes_if_needed(engine)
+    if quotes_imported:
+        print(f"Motivational quotes seeded: {quotes_imported} new rows")
     start_notification_scheduler()
 
 

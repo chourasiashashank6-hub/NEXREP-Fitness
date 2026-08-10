@@ -154,16 +154,25 @@ export function remapSpecWithCalibration(
   if (!DEPTH_CALIBRATED_FAMILIES.has(spec.family)) {
     return spec;
   }
+  const entry = findExerciseSpecEntry(spec.id.replace(/_/g, " "));
+  const explicitBottom =
+    entry?.overrides?.repRule &&
+    typeof entry.overrides.repRule === "object" &&
+    typeof (entry.overrides.repRule as Record<string, unknown>).bottomAngle === "number"
+      ? ((entry.overrides.repRule as Record<string, unknown>).bottomAngle as number)
+      : null;
+
   const cal = calibration?.torsoLen ? calibration : DEFAULT_POSE_CALIBRATION;
   const standing = cal.standingKneeDeg ?? 168;
   const squatRaw = cal.squatDepthDeg ?? cal.mobility.depthTargetDeg ?? 95;
   const depth = computePersonalizedDepthTarget(squatRaw, standing);
+  const effectiveBottom = explicitBottom ?? depth;
   const checks = spec.checks.map((c) => {
     if (c.id === "depth" || c.calibrated) {
-      const limited = depth >= 100;
+      const limited = effectiveBottom >= 100;
       return {
         ...c,
-        rule: `kneeAngle at bottom <= ${depth}`,
+        rule: `kneeAngle at bottom <= ${effectiveBottom}`,
         cue: limited ? "cue_full_range_ok" : c.cue,
       };
     }
@@ -174,11 +183,11 @@ export function remapSpecWithCalibration(
     checks,
     repRule: {
       ...spec.repRule,
-      bottomAngle: depth,
+      bottomAngle: effectiveBottom,
     },
     // WebView session runtime reads this for depth/ROM checks
-    _depthTargetDeg: depth,
-  } as ResolvedPoseSpec & { _depthTargetDeg: number };
+    _depthTargetDeg: explicitBottom == null ? depth : undefined,
+  } as ResolvedPoseSpec & { _depthTargetDeg?: number };
 }
 
 export function listPoseSpecIds(): string[] {

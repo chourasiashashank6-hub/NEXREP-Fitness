@@ -30,22 +30,8 @@
       {
         "id": "heel_lift",
         "severity": "minor",
-        "rule": "ankle y stable within 0.03 * torsoLen",
+        "rule": "ankle y stable within 0.04 * torsoLen",
         "cue": "cue_heels_down"
-      },
-      {
-        "id": "knee_valgus",
-        "severity": "critical",
-        "view": "front",
-        "rule": "knee.x stays between hip.x and ankle.x \u00b1 0.06 * torsoLen",
-        "cue": "cue_knees_out",
-        "safety": true
-      },
-      {
-        "id": "tempo",
-        "severity": "minor",
-        "rule": "eccentric >= 1.0s",
-        "cue": "cue_slow_down"
       }
     ]
   },
@@ -61,7 +47,7 @@
       {
         "id": "spine_neutral",
         "severity": "critical",
-        "rule": "shoulder\u2013hip\u2013knee angle change during rep <= 12 (no rounding)",
+        "rule": "shoulder–hip–knee angle change during rep <= 12 (no rounding)",
         "cue": "cue_flat_back",
         "safety": true
       },
@@ -76,12 +62,6 @@
         "severity": "minor",
         "rule": "hipAngle >= 168 at top, <= 185 (no lean-back)",
         "cue": "cue_squeeze_glutes"
-      },
-      {
-        "id": "bar_drift",
-        "severity": "minor",
-        "rule": "wrist.x within 0.10 * torsoLen of ankle.x",
-        "cue": "cue_bar_close"
       }
     ]
   },
@@ -109,7 +89,7 @@
       {
         "id": "elbow_flare",
         "severity": "critical",
-        "rule": "upperArm-to-torso angle 45\u201370",
+        "rule": "upperArm-to-torso angle 45–70",
         "cue": "cue_tuck_elbows"
       },
       {
@@ -117,12 +97,6 @@
         "severity": "minor",
         "rule": "left/right elbowAngle diff <= 15",
         "cue": "cue_even_press"
-      },
-      {
-        "id": "tempo",
-        "severity": "minor",
-        "rule": "eccentric >= 1.0s",
-        "cue": "cue_slow_down"
       }
     ]
   },
@@ -135,12 +109,6 @@
       "minRepDurationSec": 1.0
     },
     "checks": [
-      {
-        "id": "lockout_overhead",
-        "severity": "critical",
-        "rule": "elbowAngle >= 165 AND upperArm-to-torso >= 160 at top",
-        "cue": "cue_lockout_overhead"
-      },
       {
         "id": "lumbar_arch",
         "severity": "critical",
@@ -173,18 +141,6 @@
     },
     "checks": [
       {
-        "id": "torso_fixed",
-        "severity": "critical",
-        "rule": "torsoLean variance during rep <= 10 (no heaving)",
-        "cue": "cue_no_swing"
-      },
-      {
-        "id": "pull_depth",
-        "severity": "critical",
-        "rule": "elbow.x passes behind torso line at contraction",
-        "cue": "cue_pull_back"
-      },
-      {
         "id": "full_stretch",
         "severity": "minor",
         "rule": "elbowAngle >= 160 at extension",
@@ -199,7 +155,7 @@
     ]
   },
   "vertical_pull": {
-    "view": "front",
+    "view": "side",
     "repJoint": "elbow",
     "repRule": {
       "topAngle": 160,
@@ -212,18 +168,6 @@
         "severity": "critical",
         "rule": "elbowAngle >= 160 at bottom",
         "cue": "cue_full_hang"
-      },
-      {
-        "id": "pull_height",
-        "severity": "critical",
-        "rule": "chin above wrist.y (pull-up) OR wrist.y <= chin.y (pulldown to upper chest)",
-        "cue": "cue_pull_higher"
-      },
-      {
-        "id": "kipping",
-        "severity": "minor",
-        "rule": "hip.x variance <= 0.10 * torsoLen",
-        "cue": "cue_no_kipping"
       }
     ]
   },
@@ -273,12 +217,6 @@
     },
     "checks": [
       {
-        "id": "upper_arm_fixed",
-        "severity": "critical",
-        "rule": "shoulder\u2013elbow segment angle variance <= 10",
-        "cue": "cue_lock_upper_arm"
-      },
-      {
         "id": "lockout",
         "severity": "minor",
         "rule": "elbowAngle >= 160 at extension",
@@ -303,28 +241,10 @@
     },
     "checks": [
       {
-        "id": "raise_height",
-        "severity": "critical",
-        "rule": "wrist reaches shoulder height, not above ear",
-        "cue": "cue_to_shoulder_height"
-      },
-      {
         "id": "shrug",
         "severity": "critical",
         "rule": "shoulder.y rise <= 0.04 * torsoLen",
         "cue": "cue_shoulders_down"
-      },
-      {
-        "id": "swing",
-        "severity": "minor",
-        "rule": "torsoLean <= 8",
-        "cue": "cue_no_swing"
-      },
-      {
-        "id": "elbow_bend",
-        "severity": "minor",
-        "rule": "elbowAngle 150\u2013175 held constant",
-        "cue": "cue_soft_elbows"
       }
     ]
   },
@@ -335,26 +255,7 @@
       "perExercise": true,
       "minRepDurationSec": 0.9
     },
-    "checks": [
-      {
-        "id": "full_rom",
-        "severity": "critical",
-        "rule": "per-exercise ROM reached",
-        "cue": "cue_full_range"
-      },
-      {
-        "id": "hips_planted",
-        "severity": "critical",
-        "rule": "hip.y displacement <= 0.05 * torsoLen",
-        "cue": "cue_hips_down"
-      },
-      {
-        "id": "tempo",
-        "severity": "minor",
-        "rule": "eccentric >= 1.0s",
-        "cue": "cue_control_negative"
-      }
-    ]
+    "checks": []
   },
   "calf_raise": {
     "view": "side",
@@ -363,20 +264,7 @@
       "rule": "heel.y travel >= 0.06 * torsoLen up from baseline, return",
       "minRepDurationSec": 0.8
     },
-    "checks": [
-      {
-        "id": "full_stretch",
-        "severity": "minor",
-        "rule": "heel returns to/below baseline",
-        "cue": "cue_full_stretch"
-      },
-      {
-        "id": "knee_state",
-        "severity": "critical",
-        "rule": "standing: kneeAngle >= 165 held; seated: 85\u2013100 held",
-        "cue": "cue_knee_position"
-      }
-    ]
+    "checks": []
   },
   "core_hold": {
     "view": "side",
@@ -384,20 +272,7 @@
     "repRule": {
       "type": "timed_hold"
     },
-    "checks": [
-      {
-        "id": "body_line",
-        "severity": "critical",
-        "rule": "shoulder\u2013hip\u2013ankle angle 170\u2013185 (no sag, no pike)",
-        "cue": "cue_hips_level"
-      },
-      {
-        "id": "head_neutral",
-        "severity": "minor",
-        "rule": "ear roughly on shoulder\u2013hip line",
-        "cue": "cue_neck_neutral"
-      }
-    ]
+    "checks": []
   },
   "core_flexion": {
     "view": "side",
@@ -406,19 +281,6 @@
       "perExercise": true,
       "minRepDurationSec": 0.8
     },
-    "checks": [
-      {
-        "id": "rom",
-        "severity": "critical",
-        "rule": "per-exercise ROM reached",
-        "cue": "cue_full_range"
-      },
-      {
-        "id": "momentum",
-        "severity": "minor",
-        "rule": "concentric >= 0.6s (no flinging)",
-        "cue": "cue_slow_down"
-      }
-    ]
+    "checks": []
   }
 }

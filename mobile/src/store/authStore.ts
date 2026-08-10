@@ -120,8 +120,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       returnToProfileAfterOnboarding: false,
     });
     await saveToken(token);
-    const { ensurePushRegistration } = await import("../services/notificationService");
+    const { ensurePushRegistration, syncMotivationalQuoteReminders } = await import("../services/notificationService");
     void ensurePushRegistration(false).catch(() => undefined);
+    void syncMotivationalQuoteReminders().catch(() => undefined);
   },
   setNeedsOnboarding: (value) => {
     set({ needsOnboarding: value });
@@ -169,7 +170,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       hydrated: true,
       returnToProfileAfterOnboarding: false,
     });
-    const { ensurePushRegistration } = await import("../services/notificationService");
+    const { ensurePushRegistration, syncMotivationalQuoteReminders } = await import("../services/notificationService");
     void ensurePushRegistration(false).catch(() => undefined);
+    void syncMotivationalQuoteReminders().catch(() => undefined);
   },
 }));
