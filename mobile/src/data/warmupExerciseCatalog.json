@@ -1,0 +1,34 @@
+{
+  "chest": [
+    { "name": "Arm circles", "cue": "20 sec each direction" },
+    { "name": "Band pull-aparts", "cue": "15 reps" },
+    { "name": "Wall push-up activation", "cue": "10 reps" }
+  ],
+  "back": [
+    { "name": "Cat-cow", "cue": "8 reps" },
+    { "name": "Scapular retractions", "cue": "12 reps" }
+  ],
+  "shoulders": [
+    { "name": "Arm circles", "cue": "20 sec each direction" },
+    { "name": "Shoulder pass-throughs", "cue": "10 reps" }
+  ],
+  "arms": [
+    { "name": "Arm circles", "cue": "20 sec each direction" },
+    { "name": "Light band curls", "cue": "12 reps" }
+  ],
+  "legs": [
+    { "name": "Bodyweight squats", "cue": "15 reps" },
+    { "name": "Walking lunges", "cue": "10 each leg" },
+    { "name": "Leg swings", "cue": "10 each leg" }
+  ],
+  "glutes": [
+    { "name": "Glute bridges", "cue": "15 reps" },
+    { "name": "Fire hydrants", "cue": "10 each side" }
+  ],
+  "core": [
+    { "name": "Plank", "cue": "30 sec hold" },
+    { "name": "Sit-ups", "cue": "12 reps" },
+    { "name": "Dead bug", "cue": "8 each side" },
+    { "name": "Bird dog", "cue": "8 each side" }
+  ]
+}

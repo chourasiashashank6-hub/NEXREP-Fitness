@@ -719,14 +719,16 @@ def _muscles_from_body_part(body_part: str | None) -> list[str]:
         out.append("Chest")
     if "shoulder" in lowered:
         out.append("Shoulders")
-    if "tricep" in lowered:
-        out.append("Triceps")
     if "back" in lowered:
         out.append("Back")
     if "leg" in lowered or "quad" in lowered or "hamstring" in lowered or "glute" in lowered:
         out.append("Legs")
-    if "bicep" in lowered or "arm" in lowered:
+    if "tricep" in lowered:
+        out.append("Triceps")
+    if "bicep" in lowered:
         out.append("Biceps")
+    if "arm" in lowered and "Triceps" not in out and "Biceps" not in out:
+        out.extend(["Biceps", "Triceps"])
     # Deduplicate while preserving order.
     return [m for i, m in enumerate(out) if m not in out[:i]]
 
@@ -746,15 +748,15 @@ def _catalog_row_for_workout(db: Session, workout: Workout) -> WorkoutCatalog | 
 
 
 def _infer_muscles_from_workout(workout: Workout, db: Session) -> list[str]:
-    # 1) Most reliable source: workout catalog body_part for the exact exercise.
-    catalog_row = _catalog_row_for_workout(db, workout)
-    mapped = _muscles_from_body_part(catalog_row.body_part if catalog_row else None)
+    # 1) Per-log body_part from notes (planner / manual) — more specific than catalog.
+    from_notes = _parse_body_part_from_notes(workout.notes)
+    mapped = _muscles_from_body_part(from_notes)
     if mapped:
         return mapped
 
-    # 2) Explicit body_part encoded in notes by workout logger.
-    from_notes = _parse_body_part_from_notes(workout.notes)
-    mapped = _muscles_from_body_part(from_notes)
+    # 2) Catalog body_part fallback when notes carry no muscle hint.
+    catalog_row = _catalog_row_for_workout(db, workout)
+    mapped = _muscles_from_body_part(catalog_row.body_part if catalog_row else None)
     if mapped:
         return mapped
 

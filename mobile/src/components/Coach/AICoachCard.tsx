@@ -32,12 +32,17 @@ const MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
 const BORDER = "#ECEAE5";
 
-const CACHE_KEY = "ai_calorie_insight_v2";
+const CACHE_KEY_PREFIX = "ai_calorie_insight_v2";
+
+function cacheStorageKey(logDate: string): string {
+  return `${CACHE_KEY_PREFIX}:${logDate}`;
+}
 
 type CachedInsight = {
   result?: AICoachResponse;
   ts?: number;
   signature?: string;
+  logDate?: string;
 };
 
 function buildNutritionSignature(nutritionData: NutritionData | null): string {
@@ -54,6 +59,7 @@ function buildNutritionSignature(nutritionData: NutritionData | null): string {
 }
 
 type Props = {
+  logDate: string;
   nutritionData: NutritionData | null;
   accentColor?: string;
   onNutritionRefresh?: () => void;
@@ -214,7 +220,7 @@ function ExpandableInsight({ insight, error, loading }: { insight: string; error
 }
 
 export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoachCard(
-  { nutritionData, accentColor = PURPLE, onNutritionRefresh, onCoachResult, onLoadingChange },
+  { logDate, nutritionData, accentColor = PURPLE, onNutritionRefresh, onCoachResult, onLoadingChange },
   ref,
 ) {
   const { t } = useTranslation();
@@ -225,7 +231,9 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AICoachResponse | null>(null);
   const [timestampText, setTimestampText] = useState(t("coach.calorie.card.notAnalyzed"));
+  const [loadedCacheSignature, setLoadedCacheSignature] = useState<string | null>(null);
   const currentSignature = useMemo(() => buildNutritionSignature(nutritionData), [nutritionData]);
+  const isStaleInsight = Boolean(result && loadedCacheSignature && loadedCacheSignature !== currentSignature);
 
   const keyMissing = !hasOpenAiKey();
   const hasData = Boolean(nutritionData);
@@ -239,11 +247,15 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
       setLoading(true);
       onLoadingChange?.(true);
       setError(null);
-      const next = await getCalorieCoachInsight(nutritionData);
+      const next = await getCalorieCoachInsight(nutritionData, logDate);
       setResult(next);
       onCoachResult?.(next);
+      setLoadedCacheSignature(currentSignature);
       setTimestampText(t("coach.calorie.card.analyzedJustNow"));
-      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ result: next, ts: Date.now(), signature: currentSignature }));
+      await AsyncStorage.setItem(
+        cacheStorageKey(logDate),
+        JSON.stringify({ result: next, ts: Date.now(), signature: currentSignature, logDate }),
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : t("coach.calorie.card.loadInsightFailed");
       setError(msg);
@@ -257,10 +269,11 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
     let cancelled = false;
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(CACHE_KEY);
+        const raw = await AsyncStorage.getItem(cacheStorageKey(logDate));
         if (!raw || cancelled) {
           if (!cancelled) {
             setResult(null);
+            setLoadedCacheSignature(null);
             onCoachResult?.(null);
             setTimestampText(t("coach.calorie.card.notAnalyzed"));
           }
@@ -270,6 +283,7 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
         if (!cached?.result) return;
         if (cancelled) return;
         setResult(cached.result);
+        setLoadedCacheSignature(cached.signature ?? null);
         onCoachResult?.(cached.result);
         setTimestampText(
           cached.signature && cached.signature === currentSignature
@@ -280,6 +294,7 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
       } catch {
         if (!cancelled) {
           setResult(null);
+          setLoadedCacheSignature(null);
           onCoachResult?.(null);
           setTimestampText(t("coach.calorie.card.notAnalyzed"));
         }
@@ -288,7 +303,7 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
     return () => {
       cancelled = true;
     };
-  }, [currentSignature, onCoachResult, t]);
+  }, [currentSignature, logDate, onCoachResult, t]);
 
   useImperativeHandle(ref, () => ({
     refresh: () => {
@@ -319,32 +334,37 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
 
           {result ? (
             <>
-              <View style={styles.heroCard}>
+              <View style={[styles.heroCard, isStaleInsight && styles.heroCardStale]}>
+                {isStaleInsight ? (
+                  <View style={styles.staleBanner}>
+                    <Text style={styles.staleBannerText}>{t("coach.calorie.card.staleInsightBanner")}</Text>
+                  </View>
+                ) : null}
                 <View style={styles.heroCircleOne} />
                 <View style={styles.heroCircleTwo} />
-                <View style={styles.heroTopRow}>
+                <View style={[styles.heroTopRow, isStaleInsight && styles.heroContentStale]}>
                   <ScoreRing value={result.dailyScore} />
                   <View style={styles.heroTextCol}>
-                    <Text style={styles.scoreLabel}>{result.scoreLabel}</Text>
-                    <Text style={styles.scoreSubtitle}>{t("coach.calorie.card.scoreSubtitle")}</Text>
+                    <Text style={[styles.scoreLabel, isStaleInsight && styles.staleText]}>{result.scoreLabel}</Text>
+                    <Text style={[styles.scoreSubtitle, isStaleInsight && styles.staleTextMuted]}>{t("coach.calorie.card.scoreSubtitle")}</Text>
                     <View style={styles.heroStatsRow}>
                       <View style={styles.heroStatTile}>
-                        <Text style={styles.heroStatValue}>{Math.round(nutritionData?.caloriesConsumed ?? 0)}</Text>
-                        <Text style={styles.heroStatLabel}>{t("coach.calorie.card.eaten")}</Text>
+                        <Text style={[styles.heroStatValue, isStaleInsight && styles.staleText]}>{Math.round(nutritionData?.caloriesConsumed ?? 0)}</Text>
+                        <Text style={[styles.heroStatLabel, isStaleInsight && styles.staleTextMuted]}>{t("coach.calorie.card.eaten")}</Text>
                       </View>
                       <View style={styles.heroStatTile}>
-                        <Text style={[styles.heroStatValue, styles.remainingValue]}>
+                        <Text style={[styles.heroStatValue, styles.remainingValue, isStaleInsight && styles.staleText]}>
                           {Math.max(0, Math.round((nutritionData?.tdee ?? 0) - (nutritionData?.caloriesConsumed ?? 0)))}
                         </Text>
-                        <Text style={styles.heroStatLabel}>{t("coach.calorie.card.left")}</Text>
+                        <Text style={[styles.heroStatLabel, isStaleInsight && styles.staleTextMuted]}>{t("coach.calorie.card.left")}</Text>
                       </View>
                     </View>
                   </View>
                 </View>
                 <ExpandableInsight loading={false} insight={result.insight} error={error} />
-                <View style={styles.bodyImpact}>
-                  <Text style={styles.bodyImpactTitle}>{t("coach.calorie.card.bodyImpact")}</Text>
-                  <Text style={styles.bodyImpactText}>{result.bodyImpact}</Text>
+                <View style={[styles.bodyImpact, isStaleInsight && styles.bodyImpactStale]}>
+                  <Text style={[styles.bodyImpactTitle, isStaleInsight && styles.staleTextMuted]}>{t("coach.calorie.card.bodyImpact")}</Text>
+                  <Text style={[styles.bodyImpactText, isStaleInsight && styles.staleTextMuted]}>{result.bodyImpact}</Text>
                 </View>
               </View>
 
@@ -443,6 +463,21 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
 const styles = StyleSheet.create({
   card: { marginBottom: 12 },
   heroCard: { backgroundColor: GREEN, borderRadius: 22, paddingVertical: 20, paddingHorizontal: 18, overflow: "hidden", marginBottom: 12 },
+  heroCardStale: { opacity: 0.55 },
+  staleBanner: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
+  },
+  staleBannerText: { color: GOLD, fontSize: 12, fontWeight: "900", textAlign: "center" },
+  heroContentStale: { opacity: 0.85 },
+  staleText: { opacity: 0.75 },
+  staleTextMuted: { opacity: 0.6 },
+  bodyImpactStale: { opacity: 0.7 },
   heroCircleOne: { position: "absolute", width: 160, height: 160, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.05)", top: -62, right: -42 },
   heroCircleTwo: { position: "absolute", width: 110, height: 110, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.04)", bottom: -38, left: -26 },
   heroTopRow: { flexDirection: "row", gap: 16, alignItems: "center" },

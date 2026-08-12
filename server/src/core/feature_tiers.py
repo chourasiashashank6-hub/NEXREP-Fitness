@@ -25,6 +25,8 @@ FEATURE_TIERS: dict[str, str] = {
     # Access is checked client-side only (no server endpoint needed).
     "mediapipe_pose_guidance": "pro",
     "ai_rep_counter": "pro",
+    "preworkout_recommendation": "pro",
+    "guided_warmup_session": "elite",
     # ── Free tier features (listed for completeness) ───────────────
     "workout_logging": "free",
     "calorie_logging": "free",

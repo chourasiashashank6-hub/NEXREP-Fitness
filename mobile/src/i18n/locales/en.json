@@ -1539,6 +1539,7 @@
         "loadInsightFailed": "Could not load insight. Tap refresh to try again.",
         "previousSession": "From previous session",
         "previousInsight": "Previous insight (tap Refresh to update)",
+        "staleInsightBanner": "Outdated insight — tap Refresh for today's analysis",
         "apiKeyMissing": "API key missing",
         "apiKeyMissingBody": "Configure GROQ_API_KEY on the server and restart.",
         "noNutritionData": "No nutrition data yet",
@@ -1835,6 +1836,7 @@
       "water": "Drink 3L water",
       "stretch": "Stretch 10m",
       "swapLimitUsed": "5/5 exercise swaps used today",
+      "logRefreshFailed": "Couldn't refresh logged exercises — your checks are still saved locally",
       "swapping": "Swapping...",
       "restSeconds": "{{sets}} × {{reps}} · Rest {{seconds}}s",
       "replaceTitle": "Replace {{name}}?",
@@ -1873,6 +1875,28 @@
         "monthPlanRegenerated": "Month plan regenerated!",
         "monthPlanLimitReset": "Month plan limit reached. Resets {{resetDate}}.",
         "monthPlanRegenerateFailed": "Failed to regenerate plan. Please try again."
+      },
+      "preworkout": {
+        "aiTag": "AI recommendation",
+        "cardioTitle": "Cardio warm-up",
+        "cardioSummary": "{{minutes}} min treadmill program · ~{{kcal}} kcal",
+        "strengthTitle": "Strength warm-up",
+        "strengthSummary": "{{sets}} ramp-up sets (~{{minutes}} min each) · post-workout protein target {{protein}}g within a couple hours",
+        "startGuided": "Start guided warm-up",
+        "guidedTitle": "Guided warm-up",
+        "elapsed": "Elapsed {{time}}",
+        "speed": "Speed",
+        "incline": "Incline",
+        "nextPhase": "Next: {{label}} · {{speed}} km/h · {{incline}}% incline",
+        "transitionBanner": "Phase change — adjust treadmill now",
+        "phaseCue": "Change to {{speed}} kilometers per hour, incline {{incline}} percent.",
+        "pause": "Pause",
+        "resume": "Resume",
+        "skipPhase": "Skip phase",
+        "end": "End",
+        "done": "Done",
+        "completeTitle": "Warm-up complete",
+        "completeBody": "Nice work — about {{kcal}} kcal burned during your warm-up."
       }
     },
     "mealPlannerScreen": {
@@ -2179,7 +2203,10 @@
         "targetRequired": "Target weight is required",
         "targetLiftsRequired": "Enter a target weight for each selected lift",
         "fatLossTarget": "For fat loss, target weight must be less than current weight",
-        "muscleGainTarget": "For muscle gain, target weight must be greater than current weight"
+        "muscleGainTarget": "For muscle gain, target weight must be greater than current weight",
+        "goalMustBeFatLoss": "Target weight is below your current weight — set your goal to Fat loss",
+        "goalMustBeMuscleGain": "Target weight is above your current weight — set your goal to Muscle gain",
+        "targetMustDiffer": "Target weight must be different from your current weight"
       }
     },
     "screen3": {

@@ -9,12 +9,11 @@ export function hasOpenAiKey() {
   return true;
 }
 
-export async function getCalorieCoachInsight(data: NutritionData): Promise<AICoachResponse> {
+export async function getCalorieCoachInsight(data: NutritionData, logDate?: string): Promise<AICoachResponse> {
   try {
-    // Server endpoint is GET with no body. Sending a body on GET can yield 403 from
-    // some stacks/proxies and left the Refresh spinner stuck waiting on retries.
     const response = await apiClient.get<Record<string, unknown>>("/api/calories/coach/insight", {
       timeout: COACH_API_TIMEOUT_MS,
+      params: logDate ? { local_date: logDate } : undefined,
     });
     return normalizeCalorieCoachResponse(response.data, data);
   } catch (e) {

@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Onboarding: undefined;
   ActiveWorkoutSession: { planId: number };
+  GuidedWarmupSession: undefined;
   AICameraWorkoutSession: { planId: number };
   AITrainerCalibration: { planId?: number } | undefined;
   WorkoutCompletion: {

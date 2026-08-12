@@ -484,13 +484,31 @@ export const HomeScreen = () => {
   const dietDeltaDisplay = Math.max(0, deltaDisplay - exerciseDeltaDisplay);
   const exerciseSharePct = Number.isFinite(exerciseShare) ? clamp01(exerciseShare) : 0.2;
   const dietSharePct = Number.isFinite(dietShare) ? clamp01(dietShare) : 0.8;
+  const defaultDeltaLabel =
+    burnProfile?.goal_tag === "Muscle Gain"
+      ? t("home.surplus")
+      : burnProfile?.goal_tag === "Strength"
+        ? t("home.maintenance")
+        : t("home.deficit");
   const dailyDeltaLabel = !Number.isFinite(dailyDelta)
-    ? t("home.deficit")
+    ? defaultDeltaLabel
     : dailyDelta < 0
       ? t("home.deficit")
       : dailyDelta > 0
         ? t("home.surplus")
         : t("home.maintenance");
+  const deltaKpiEmoji = !Number.isFinite(dailyDelta)
+    ? burnProfile?.goal_tag === "Muscle Gain"
+      ? "📈"
+      : burnProfile?.goal_tag === "Strength"
+        ? "⚖️"
+        : "📉"
+    : dailyDelta < 0
+      ? "📉"
+      : dailyDelta > 0
+        ? "📈"
+        : "⚖️";
+  const deltaKpiLabel = dailyDeltaLabel.toLowerCase();
   const goalWeeksProgress =
     totalGoalWeeks > 0 ? clamp01((totalGoalWeeks - weeksRemaining) / totalGoalWeeks) : 0;
   const workoutShareAchieved = Math.min(caloriesBurnedSoFar, exerciseDeltaDisplay);
@@ -742,8 +760,8 @@ export const HomeScreen = () => {
               )}
               <View style={styles.kpiPill}>
                 <View style={styles.kpiPillLeft}>
-                  <Text style={styles.kpiEmoji}>📉</Text>
-                  <Text style={styles.kpiLabel}>{t("home.deficit").toLowerCase()}</Text>
+                  <Text style={styles.kpiEmoji}>{deltaKpiEmoji}</Text>
+                  <Text style={styles.kpiLabel}>{deltaKpiLabel}</Text>
                 </View>
                 <Text style={styles.kpiValue}>{formatNum(deltaDisplay)}</Text>
               </View>

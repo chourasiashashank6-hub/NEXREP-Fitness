@@ -28,6 +28,7 @@ import {
 import { addWorkout, deleteWorkout, getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
 import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
+import { PreworkoutCard } from "../../components/Coach/PreworkoutCard";
 import { PlannerLockedUpsell } from "../../components/PlannerLockedUpsell";
 import { StalePlanBanner } from "../../components/StalePlanBanner";
 import { EXERCISE_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
@@ -48,9 +49,15 @@ import {
   buildLoggedExerciseIdMap,
   estimatePlannerTimeTaken,
   exerciseLogKey,
+  mergeLoggedExerciseIdMap,
   parsePlannerReps,
 } from "../../utils/workoutPlannerLog";
 import { fullDayLabel, getNextMonthResetLabel, isPastPlanDay, localDateIso, monthYearLabel } from "../../utils/localDate";
+import { navigationRef } from "../../navigation/navigationRef";
+import { unlockWebSpeech } from "../../services/aiTrainer/audioCoach";
+import { useGuidedWarmupStore } from "../../store/guidedWarmupStore";
+import type { PreworkoutPlan, PreworkoutProfile } from "../../utils/generatePreworkoutPlan";
+import { lbToKg } from "../../utils/units";
 
 const PURPLE_MID = '#7B68CC';
 const PURPLE_LIGHT = '#F0EEF9';
@@ -308,6 +315,33 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const regeneratingWorkoutRef = useRef(false);
   const regeneratingMonthPlanRef = useRef(false);
   const [exerciseListVersion, setExerciseListVersion] = useState(0);
+  const [onboardingProfile, setOnboardingProfile] = useState<PreworkoutProfile | null>(null);
+  const [logExerciseRefreshError, setLogExerciseRefreshError] = useState<string | null>(null);
+  const optimisticLogEntriesRef = useRef<Record<string, { id: number; at: number }>>({});
+
+  const handleStartGuidedWarmup = (warmupPlan: PreworkoutPlan) => {
+    if (!plan || !dayDetail || warmupPlan.kind !== "cardio" || !onboardingProfile) return;
+    if (Platform.OS === "web") unlockWebSpeech();
+    const existing = useGuidedWarmupStore.getState().session;
+    if (
+      existing &&
+      existing.plan_day_number === dayDetail.day &&
+      (existing.status === "active" || existing.status === "paused")
+    ) {
+      navigationRef.navigate("GuidedWarmupSession");
+      return;
+    }
+    const dayLabel = fullDayLabel(plan.month, plan.year, dayDetail.day);
+    useGuidedWarmupStore.getState().startSession({
+      planDayId: `${plan.plan_id}-${dayDetail.day}`,
+      planDayNumber: dayDetail.day,
+      dayLabel,
+      phases: warmupPlan.phases,
+      estimatedKcal: warmupPlan.estimatedKcal,
+      weightKg: onboardingProfile.weightKg,
+    });
+    navigationRef.navigate("GuidedWarmupSession");
+  };
 
   const resetMonthLabel = getNextMonthResetLabel();
   const selectedWorkoutOverview = plan?.month_overview.find((d) => d.day === selectedDay);
@@ -429,7 +463,18 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       try {
         const ob = await fetchOnboardingMe();
         const goal = ob?.onboarding?.goal;
+        const personal = ob?.onboarding?.personal;
         const activity = ob?.onboarding?.activity;
+        const weightKg =
+          personal?.unit_system === "metric"
+            ? Number(personal?.weight_kg ?? 70)
+            : lbToKg(Number(personal?.weight_lb ?? 154));
+        setOnboardingProfile({
+          primaryGoal: String(goal?.type ?? "muscle_gain"),
+          goalPace: String(goal?.pace ?? "moderate"),
+          difficulty: String(goal?.difficulty ?? "intermediate"),
+          weightKg: Number.isFinite(weightKg) && weightKg > 0 ? weightKg : 70,
+        });
         setPreview({
           goal: String(goal?.type ?? "muscle_gain"),
           difficulty: String(goal?.difficulty ?? "intermediate"),
@@ -466,21 +511,25 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   }, [plan]);
 
   const syncLoggedExercises = useCallback((items: WorkoutHistoryItem[], exercises: WorkoutExercise[], dayKey: string) => {
-    setLoggedExerciseIds(buildLoggedExerciseIdMap(items, exercises, dayKey));
+    const fetched = buildLoggedExerciseIdMap(items, exercises, dayKey);
+    setLoggedExerciseIds(mergeLoggedExerciseIdMap(fetched, optimisticLogEntriesRef.current));
   }, []);
 
   const refreshLoggedExercises = useCallback(async () => {
-    if (!canLogExercises || !dayDetail?.exercises?.length) {
+    if (!dayDetail || isWorkoutRestDay(dayDetail) || !dayDetail.exercises?.length) {
       setLoggedExerciseIds({});
+      setLogExerciseRefreshError(null);
       return;
     }
+    if (!canLogExercises) return;
     try {
+      setLogExerciseRefreshError(null);
       const { items } = await getWorkoutHistory(24 * 2);
       syncLoggedExercises(items ?? [], dayDetail.exercises, selectedLogDateKey);
     } catch {
-      setLoggedExerciseIds({});
+      setLogExerciseRefreshError(t("coach.workoutPlannerScreen.logRefreshFailed"));
     }
-  }, [canLogExercises, dayDetail?.exercises, selectedLogDateKey, syncLoggedExercises]);
+  }, [canLogExercises, dayDetail, selectedLogDateKey, syncLoggedExercises, t]);
 
   useEffect(() => {
     void refreshLoggedExercises();
@@ -505,6 +554,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
           delete next[key];
           return next;
         });
+        delete optimisticLogEntriesRef.current[key];
         return;
       }
       const sets = Math.max(1, Number(exercise.sets) || 1);
@@ -530,6 +580,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       });
       const savedId = Number(saved?.id);
       if (Number.isFinite(savedId) && savedId > 0) {
+        optimisticLogEntriesRef.current[key] = { id: savedId, at: Date.now() };
         setLoggedExerciseIds((prev) => ({ ...prev, [key]: savedId }));
       } else {
         await refreshLoggedExercises();
@@ -951,7 +1002,20 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                       </View>
                     </View>
                   ) : (
+                    <>
+                      {onboardingProfile ? (
+                        <PreworkoutCard
+                          profile={onboardingProfile}
+                          dayMuscleFocus={dayDetail.focus_muscles}
+                          onStartGuided={handleStartGuidedWarmup}
+                        />
+                      ) : null}
                     <View style={styles.exerciseList}>
+                      {logExerciseRefreshError ? (
+                        <View style={styles.logRefreshError}>
+                          <Text style={styles.logRefreshErrorText}>{logExerciseRefreshError}</Text>
+                        </View>
+                      ) : null}
                       {canSwapExercises && exerciseSwapsUsed >= (dayDetail.swaps_limit ?? exerciseSwapsLimit) ? (
                         <View style={styles.swapLimitNotice}>
                           <Text style={styles.swapLimitNoticeText}>{t("coach.workoutPlannerScreen.swapLimitUsed")}</Text>
@@ -1049,6 +1113,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                         );
                       })}
                     </View>
+                    </>
                   )}
                 </>
               ) : null}
@@ -1126,6 +1191,8 @@ const styles = StyleSheet.create({
   recoveryTipText: { color: ORANGE, fontSize: 11, fontWeight: "800" },
   exerciseList: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 24 },
   swapLimitNotice: { backgroundColor: ORANGE_LIGHT, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 8, marginBottom: 12 },
+  logRefreshError: { backgroundColor: ORANGE_LIGHT, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 8, marginBottom: 12 },
+  logRefreshErrorText: { color: ORANGE, fontSize: 12, fontWeight: "700", lineHeight: 17 },
   swapLimitNoticeText: { color: ORANGE, fontSize: 11, fontWeight: "800" },
   exercise: { flexDirection: "row", alignItems: "flex-start", gap: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#F0EEF5" },
   exerciseLogged: { backgroundColor: GREEN_LIGHT, marginHorizontal: -8, paddingHorizontal: 8, borderRadius: 12, borderBottomColor: "transparent" },

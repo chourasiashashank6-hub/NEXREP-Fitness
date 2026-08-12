@@ -1,0 +1,7119 @@
+{
+  "generated_at": "2026-08-12T19:19:21.297Z",
+  "description": "Gym-oriented exercises from NexRep workout DB (workout_catalog_v2), deduplicated by name. Excludes cardio-machine equipment. Used for /workout/catalog, logging, MET lookup, and AI trainer references — monthly plan generation is AI-driven and not strictly limited to this list.",
+  "sources": {
+    "workout_catalog_v2": "server/workout_catalog_v2_clean.json",
+    "global_exercises": "server/global_exercises_seed.json",
+    "workout_planner_fallback": "server/src/services/workout_planner_service.py (35 hardcoded names when AI fails)"
+  },
+  "counts": {
+    "catalog_total_rows": 350,
+    "catalog_unique_names_all": 279,
+    "gym_exercises_exported": 262,
+    "matched_to_global_exercises": 182,
+    "cardio_equipment_excluded": 18
+  },
+  "exercises": [
+    {
+      "name": "Ab Wheel Rollout",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Ab Wheel",
+        "Ab Roller Rollout",
+        "Wheel Rollout"
+      ],
+      "muscles_primary": [
+        "Rectus Abdominis",
+        "Transverse Abdominis"
+      ],
+      "muscles_secondary": [
+        "Lats",
+        "Shoulders"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Ab Wheel Rollout Variations",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Agility Ladder Drills",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Agility Ladder",
+      "difficulty": "Advanced",
+      "met_value": 10.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "3 patterns x 10 meters",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=agility-ladder-drills",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Alternating Side Lunges",
+      "body_part": "Legs",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12 each side",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=alternating-side-lunges",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Ankle Rotations",
+      "body_part": "Ankles",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 1.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "10 each direction per ankle",
+      "rest_time_sec": 10,
+      "video_url": "https://www.youtube.com/watch?v=ankle-rotations",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Arm Circles",
+      "body_part": "Shoulders",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 2.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "20 each direction",
+      "rest_time_sec": 15,
+      "video_url": "https://www.youtube.com/watch?v=arm-circles",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Arnold Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength",
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Arnold Dumbbell Press",
+        "Rotating Press"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid",
+        "Lateral Deltoid"
+      ],
+      "muscles_secondary": [
+        "Rotator Cuff",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Assault Bike Sprint",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Advanced",
+      "met_value": 14,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "6",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Cardio",
+      "aliases": [
+        "Airbike Sprint",
+        "Fan Bike Sprint"
+      ],
+      "muscles_primary": [
+        "Full Body"
+      ],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Assisted Pull-Up",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Band Assisted Pull Up",
+        "Machine Assisted Pull Up"
+      ],
+      "muscles_primary": [
+        "Lats"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Rhomboids"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Band Resisted Hip Flexion",
+      "body_part": "Hips",
+      "movement_type": "Pre Workout",
+      "equipment": "Resistance Band",
+      "difficulty": "Advanced",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "15 each side",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=band-hip-flexion",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Banded Pull-Aparts",
+      "body_part": "Shoulders",
+      "movement_type": "Pre Workout",
+      "equipment": "Resistance Band",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "20",
+      "rest_time_sec": 15,
+      "video_url": "https://www.youtube.com/watch?v=banded-pull-aparts",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Barbell 21s",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "21",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "21s Curl",
+        "Seven Seven Seven Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [
+        "Brachialis"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Back Squat",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Back Squat",
+        "Barbell Squat",
+        "High Bar Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Adductors",
+        "Erector Spinae"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Bench Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Flat Bench Press",
+        "Bench Press"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Bent-Over Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 6.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Barbell Clean and Press",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 9,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4-5",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Olympic",
+      "aliases": [
+        "Clean and Press",
+        "Clean and Jerk (Press variant)"
+      ],
+      "muscles_primary": [
+        "Full Body"
+      ],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Complex",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 10,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6 each",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Barbell Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Straight Bar Curl",
+        "Barbell Bicep Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [
+        "Brachialis",
+        "Brachioradialis"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Front Squat",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Front Squat",
+        "Olympic Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps"
+      ],
+      "muscles_secondary": [
+        "Glutes",
+        "Core",
+        "Upper Back"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Hang Clean",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 8,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-8",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Olympic",
+      "aliases": [
+        "Hang Clean",
+        "Hang Power Clean"
+      ],
+      "muscles_primary": [
+        "Traps",
+        "Glutes",
+        "Hamstrings"
+      ],
+      "muscles_secondary": [
+        "Shoulders",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Heavy Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 4,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "5",
+      "reps_recommended": "4-6",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Barbell Hip Thrust",
+      "body_part": "Legs",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell Hip Thrust",
+        "BB Hip Thrust",
+        "Glute Bridge Barbell"
+      ],
+      "muscles_primary": [
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Core"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Hip Thrust Activation",
+      "body_part": "Glutes",
+      "movement_type": "Pre Workout",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "15",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=barbell-hip-thrust-activation",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Barbell Push Press",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 6.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell Push Press",
+        "Power Press"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid",
+        "Lateral Deltoid",
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Quads",
+        "Glutes",
+        "Traps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Romanian Deadlift",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell RDL",
+        "BB RDL"
+      ],
+      "muscles_primary": [
+        "Hamstrings",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Erector Spinae"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell Bent Over Row",
+        "Overhand Row",
+        "Pronated Row"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Rhomboids"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Rear Deltoid",
+        "Erector Spinae"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Standing Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Barbell Upright Row",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 6,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell Upright Row",
+        "DB Upright Row"
+      ],
+      "muscles_primary": [
+        "Lateral Deltoid",
+        "Upper Traps"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Biceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Barbell Walking Lunge",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Barbell Z-Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-8",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Z Press",
+        "Seated Floor Press"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid",
+        "Lateral Deltoid"
+      ],
+      "muscles_secondary": [
+        "Core",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Battle Rope Shoulder Wave",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Cable",
+      "difficulty": "Intermediate",
+      "met_value": 8.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 35,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Battle Ropes",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Cable",
+      "difficulty": "Advanced",
+      "met_value": 10.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "5",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Cardio",
+      "aliases": [
+        "Battle Rope",
+        "Rope Waves",
+        "Heavy Rope"
+      ],
+      "muscles_primary": [
+        "Shoulders",
+        "Core",
+        "Forearms"
+      ],
+      "muscles_secondary": [
+        "Legs",
+        "Back"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Bear Crawl",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 6,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "20 meters",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=bear-crawl",
+      "category": "Calisthenics",
+      "aliases": [
+        "Bear Crawl Exercise",
+        "Quadruped Crawl"
+      ],
+      "muscles_primary": [
+        "Core",
+        "Shoulders",
+        "Hip Flexors"
+      ],
+      "muscles_secondary": [
+        "Quads",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Bicycle Crunch",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 4,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "20-30",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Bicycle Ab",
+        "Alternating Crunch",
+        "Pedal Crunch"
+      ],
+      "muscles_primary": [
+        "Obliques",
+        "Rectus Abdominis"
+      ],
+      "muscles_secondary": [
+        "Hip Flexors"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Bird Dog",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Bird Dog Exercise",
+        "Quadruped Arm Leg Raise"
+      ],
+      "muscles_primary": [
+        "Erector Spinae",
+        "Glutes",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Shoulders"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Bodyweight Squat",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Air Squat",
+        "BW Squat",
+        "Bodyweight Squats"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Bodyweight Squats",
+      "body_part": "Legs",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "15",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=bodyweight-squats",
+      "category": "Calisthenics",
+      "aliases": [
+        "Air Squat",
+        "BW Squat",
+        "Bodyweight Squats"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Box Jump",
+      "body_part": "Calves",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 9.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Plyometric",
+      "aliases": [
+        "Plyometric Box Jump",
+        "Jump To Box"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes",
+        "Calves"
+      ],
+      "muscles_secondary": [
+        "Hamstrings"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Box Jumps",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Plyo Box",
+      "difficulty": "Advanced",
+      "met_value": 10,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=box-jumps",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Brisk Walking",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 4.3,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "1",
+      "reps_recommended": "10-15 min",
+      "rest_time_sec": 0,
+      "video_url": "https://www.youtube.com/watch?v=brisk-walking",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Broad Jump to Backpedal",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=broad-jump-backpedal",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Broad Jumps",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 10,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-8",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=broad-jumps",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Bulgarian Split Squat",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength",
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Rear Foot Elevated Split Squat",
+        "RFESS",
+        "Split Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Hip Flexors"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Burpees",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 9,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Cardio",
+      "aliases": [
+        "Burpee",
+        "Full Body Burpee"
+      ],
+      "muscles_primary": [
+        "Full Body"
+      ],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Butt Kicks",
+      "body_part": "Legs",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 7,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=butt-kicks",
+      "category": "Cardio",
+      "aliases": [
+        "Butt Kick",
+        "Heel to Glute Run"
+      ],
+      "muscles_primary": [
+        "Hamstrings",
+        "Calves"
+      ],
+      "muscles_secondary": [
+        "Hip Flexors"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Chest Fly",
+      "body_part": "Chest",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cable Fly",
+        "Low Cable Fly"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Crossover",
+      "body_part": "Chest",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cross Cable Fly",
+        "Cable Cross"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Crunch",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Kneeling Cable Crunch",
+        "Rope Crunch"
+      ],
+      "muscles_primary": [
+        "Rectus Abdominis"
+      ],
+      "muscles_secondary": [
+        "Obliques"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Low Cable Curl",
+        "Cable Bicep Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [
+        "Brachialis"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Face Pull",
+      "body_part": "Back",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Intermediate",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cable Face Pull",
+        "Rope Face Pull"
+      ],
+      "muscles_primary": [
+        "Rear Deltoid",
+        "Rhomboids",
+        "Rotator Cuff"
+      ],
+      "muscles_secondary": [
+        "Upper Traps"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Front Raise",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Low Cable Front Raise"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Hammer Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Rope Hammer Curl",
+        "Cable Neutral Curl"
+      ],
+      "muscles_primary": [
+        "Brachialis",
+        "Brachioradialis"
+      ],
+      "muscles_secondary": [
+        "Biceps Brachii"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Lateral Raise",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cable Side Raise",
+        "Low Cable Lateral Raise"
+      ],
+      "muscles_primary": [
+        "Lateral Deltoid"
+      ],
+      "muscles_secondary": [
+        "Supraspinatus"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Overhead Tricep Extension",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Overhead Cable Extension",
+        "Overhead Rope Extension"
+      ],
+      "muscles_primary": [
+        "Triceps Long Head"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Rear Delt Fly",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cable Reverse Fly",
+        "Cross Cable Rear Delt"
+      ],
+      "muscles_primary": [
+        "Posterior Deltoid"
+      ],
+      "muscles_secondary": [
+        "Rhomboids"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cable Straight-Arm Pulldown",
+      "body_part": "Back",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Advanced",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Cable Y-Raise",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Y Raise",
+        "Band Y Raise"
+      ],
+      "muscles_primary": [
+        "Lower Trapezius",
+        "Serratus Anterior"
+      ],
+      "muscles_secondary": [
+        "Posterior Deltoid"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Carioca Drill",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 7,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "20 meters each side",
+      "rest_time_sec": 25,
+      "video_url": "https://www.youtube.com/watch?v=carioca-drill",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Cat-Cow Stretch",
+      "body_part": "Spine",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 2,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "10",
+      "rest_time_sec": 15,
+      "video_url": "https://www.youtube.com/watch?v=cat-cow-stretch",
+      "category": "Flexibility",
+      "aliases": [
+        "Cat Cow",
+        "Spine Flex",
+        "Cat Camel"
+      ],
+      "muscles_primary": [
+        "Erector Spinae"
+      ],
+      "muscles_secondary": [
+        "Rectus Abdominis"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Chest-Supported Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Incline DB Row",
+        "Chest Support Row"
+      ],
+      "muscles_primary": [
+        "Rhomboids",
+        "Lats"
+      ],
+      "muscles_secondary": [
+        "Rear Deltoid",
+        "Biceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Chin-Up",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Chinup",
+        "Underhand Pull Up",
+        "Supinated Pull Up"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Biceps"
+      ],
+      "muscles_secondary": [
+        "Rhomboids",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Clean",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 9.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Olympic",
+      "aliases": [
+        "Clean",
+        "Barbell Power Clean"
+      ],
+      "muscles_primary": [
+        "Traps",
+        "Glutes",
+        "Hamstrings"
+      ],
+      "muscles_secondary": [
+        "Shoulders",
+        "Quads",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Close Grip Bench Press",
+      "body_part": "Arms",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Narrow Grip Bench Press",
+        "CGBP"
+      ],
+      "muscles_primary": [
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Pectoralis Major",
+        "Anterior Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Close-Grip Bench Press",
+      "body_part": "Arms",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-8",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Concentration Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 3.8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Seated Concentration Curl",
+        "One Arm Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Cross Body Hammer Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cross Body Curl",
+        "Across Body Curl"
+      ],
+      "muscles_primary": [
+        "Brachialis",
+        "Brachioradialis"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Crunch",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Ab Crunch",
+        "Standard Crunch",
+        "Abdominal Crunch"
+      ],
+      "muscles_primary": [
+        "Rectus Abdominis"
+      ],
+      "muscles_secondary": [
+        "Obliques"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dead Bug",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Dead Bug Exercise"
+      ],
+      "muscles_primary": [
+        "Transverse Abdominis",
+        "Rectus Abdominis"
+      ],
+      "muscles_secondary": [
+        "Hip Flexors"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Deadlift",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Conventional Deadlift",
+        "Barbell Deadlift"
+      ],
+      "muscles_primary": [
+        "Erector Spinae",
+        "Glutes",
+        "Hamstrings"
+      ],
+      "muscles_secondary": [
+        "Traps",
+        "Lats",
+        "Quads"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Decline Barbell Bench Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 6.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Decline Bench Press",
+        "Decline Press"
+      ],
+      "muscles_primary": [
+        "Lower Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Decline Push-Up",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Feet Elevated Push Up",
+        "Decline Pushup"
+      ],
+      "muscles_primary": [
+        "Upper Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Deficit Deadlift",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 8.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Elevated Deadlift",
+        "Platform Deadlift"
+      ],
+      "muscles_primary": [
+        "Hamstrings",
+        "Glutes",
+        "Erector Spinae"
+      ],
+      "muscles_secondary": [
+        "Quads",
+        "Lats"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Depth Jump",
+      "body_part": "Calves",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 10,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Plyometric",
+      "aliases": [
+        "Drop Jump",
+        "Box Drop Jump"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Calves",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Depth Jumps",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Plyo Box",
+      "difficulty": "Advanced",
+      "met_value": 11,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-8",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=depth-jumps",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Diamond Push-Up",
+      "body_part": "Arms",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3.8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Triangle Push Up",
+        "Close Grip Push Up",
+        "Narrow Push Up"
+      ],
+      "muscles_primary": [
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Pectoralis Major",
+        "Anterior Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dips",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Chest Dips",
+        "Parallel Bar Dips",
+        "Body Dips"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major",
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Donkey Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "5",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Bent Over Calf Raise",
+        "Hip Hinged Calf Raise"
+      ],
+      "muscles_primary": [
+        "Gastrocnemius"
+      ],
+      "muscles_secondary": [
+        "Soleus"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dragon Flag",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-10",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Dragon Flag Ab",
+        "Bruce Lee Exercise"
+      ],
+      "muscles_primary": [
+        "Rectus Abdominis",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Hip Flexors",
+        "Lats"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Bench Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "DB Bench Press",
+        "Dumbbell Flat Press"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Burpee",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 9,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Dumbbell Chest Fly",
+      "body_part": "Chest",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "DB Fly",
+        "Dumbbell Fly",
+        "Chest Fly"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Chest Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3.8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Dumbbell Clean and Press",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 7,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Dumbbell Cuban Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Advanced",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cuban Press",
+        "Cuban Rotation Press"
+      ],
+      "muscles_primary": [
+        "Rotator Cuff",
+        "Anterior Deltoid"
+      ],
+      "muscles_secondary": [
+        "Upper Traps"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "DB Curl",
+        "Dumbbell Bicep Curl",
+        "Alternating DB Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [
+        "Brachialis"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Deadlift",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Dumbbell Farmer Carry",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Dumbbell Lateral Raise",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Lateral Raise",
+        "Side Raise",
+        "DB Lateral Raise"
+      ],
+      "muscles_primary": [
+        "Lateral Deltoid"
+      ],
+      "muscles_secondary": [
+        "Supraspinatus"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Lunges",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3.7,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "DB Lunges",
+        "Weighted Lunges"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Calves"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Meadows Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Dumbbell Meadows Row",
+        "Landmine Single Arm Row"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Upper Traps"
+      ],
+      "muscles_secondary": [
+        "Rear Deltoid",
+        "Biceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Pullover",
+      "body_part": "Chest",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Advanced",
+      "met_value": 4,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "DB Pullover",
+        "Chest Pullover"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major",
+        "Lats"
+      ],
+      "muscles_secondary": [
+        "Serratus Anterior",
+        "Triceps Long Head"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Romanian Deadlift",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "DB RDL",
+        "Dumbbell RDL"
+      ],
+      "muscles_primary": [
+        "Hamstrings",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Erector Spinae"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "DB Row",
+        "One Arm DB Row",
+        "Single Arm Dumbbell Row"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Rhomboids"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Rear Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Shoulder Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "DB Shoulder Press",
+        "Seated DB Press",
+        "Overhead DB Press"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid",
+        "Lateral Deltoid"
+      ],
+      "muscles_secondary": [
+        "Triceps",
+        "Upper Traps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Single-Arm Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3.7,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Dumbbell Squat to Press",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Squat to Press",
+        "Dumbbell Thruster",
+        "DB Squat Press"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes",
+        "Shoulders"
+      ],
+      "muscles_secondary": [
+        "Core",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Standing Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 3,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Dumbbell Step-Up",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Dumbbell Thruster",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Squat to Press",
+        "Dumbbell Thruster",
+        "DB Squat Press"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes",
+        "Shoulders"
+      ],
+      "muscles_secondary": [
+        "Core",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dumbbell Zottman Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Zottman Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii",
+        "Brachioradialis"
+      ],
+      "muscles_secondary": [
+        "Brachialis"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Dynamic Lunge with Rotation",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12 each leg",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=dynamic-lunge-rotation",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Explosive Calf Jump",
+      "body_part": "Calves",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Explosive Push-Up",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Explosive Shoulder Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Power Shoulder Press",
+        "Ballistic Press"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid",
+        "Lateral Deltoid",
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Traps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "EZ Bar Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "EZ Curl",
+        "EZ Bicep Curl",
+        "Cambered Bar Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [
+        "Brachialis",
+        "Brachioradialis"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Face Pull",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cable Face Pull",
+        "Rope Face Pull"
+      ],
+      "muscles_primary": [
+        "Rear Deltoid",
+        "Rhomboids",
+        "Rotator Cuff"
+      ],
+      "muscles_secondary": [
+        "Upper Traps"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Farmer’s Walk",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Advanced",
+      "met_value": 7.2,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Floor Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell Floor Press",
+        "Floor Bench Press"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major",
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Flutter Kicks",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 4,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Flutter Kick",
+        "Alternating Leg Raise",
+        "Scissor Kick"
+      ],
+      "muscles_primary": [
+        "Hip Flexors",
+        "Rectus Abdominis"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Front Raise",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Dumbbell Front Raise",
+        "Anterior Raise",
+        "Barbell Front Raise"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid"
+      ],
+      "muscles_secondary": [
+        "Upper Pectoralis",
+        "Serratus Anterior"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Front Squat",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Front Squat",
+        "Olympic Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps"
+      ],
+      "muscles_secondary": [
+        "Glutes",
+        "Core",
+        "Upper Back"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Glute Bridge",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Bodyweight Glute Bridge",
+        "Floor Hip Thrust"
+      ],
+      "muscles_primary": [
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Core"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Glute Bridge Hold",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "30-45 sec",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Glute Bridge March",
+      "body_part": "Glutes",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 4,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "20 alternating",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=glute-bridge-march",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Goblet Squat",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Goblet KB Squat",
+        "Kettlebell Goblet Squat",
+        "Dumbbell Goblet Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Core",
+        "Adductors"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Hack Squat",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Advanced",
+      "met_value": 7,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Machine Hack Squat",
+        "Plate Loaded Hack Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps"
+      ],
+      "muscles_secondary": [
+        "Glutes",
+        "Hamstrings"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Hammer Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Neutral Grip Curl",
+        "Dumbbell Hammer Curl"
+      ],
+      "muscles_primary": [
+        "Brachialis",
+        "Brachioradialis"
+      ],
+      "muscles_secondary": [
+        "Biceps Brachii"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Hang Clean (Light)",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "5",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=hang-clean-light",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Hanging Leg Raise",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Hanging Knee Raise",
+        "Hanging Ab Raise"
+      ],
+      "muscles_primary": [
+        "Hip Flexors",
+        "Rectus Abdominis"
+      ],
+      "muscles_secondary": [
+        "Obliques",
+        "Lats"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Hanging Windshield Wiper",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Windshield Wiper",
+        "Bar Windshield Wiper"
+      ],
+      "muscles_primary": [
+        "Obliques",
+        "Hip Flexors"
+      ],
+      "muscles_secondary": [
+        "Rectus Abdominis",
+        "Lats"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Heavy Leg Press Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4-5",
+      "reps_recommended": "6-10",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Heavy Overhead Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 7,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "High Knees",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=high-knees",
+      "category": "Cardio",
+      "aliases": [
+        "High Knee Run",
+        "Running High Knees"
+      ],
+      "muscles_primary": [
+        "Hip Flexors",
+        "Quads",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Calves"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Hip 90-90 Stretch",
+      "body_part": "Hips",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 2.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10 each side",
+      "rest_time_sec": 15,
+      "video_url": "https://www.youtube.com/watch?v=hip-90-90-stretch",
+      "category": "Flexibility",
+      "aliases": [
+        "90-90 Stretch",
+        "Piriformis Stretch"
+      ],
+      "muscles_primary": [
+        "Hip External Rotators",
+        "Piriformis"
+      ],
+      "muscles_secondary": [
+        "Hip Flexors"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Hip Circles",
+      "body_part": "Hips",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 2.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "15 each direction",
+      "rest_time_sec": 15,
+      "video_url": "https://www.youtube.com/watch?v=hip-circles",
+      "category": "Flexibility",
+      "aliases": [
+        "Hip Circle",
+        "Hip Rotation",
+        "Hip CARs"
+      ],
+      "muscles_primary": [
+        "Hip Flexors",
+        "Hip Abductors"
+      ],
+      "muscles_secondary": [
+        "Glutes"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Hip Thrust",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell Hip Thrust",
+        "BB Hip Thrust",
+        "Glute Bridge Barbell"
+      ],
+      "muscles_primary": [
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Core"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Hurdle Drills",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Hurdles",
+      "difficulty": "Advanced",
+      "met_value": 10,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10 hurdles",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=hurdle-drills",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Inchworm Stretch",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=inchworm-stretch",
+      "category": "Flexibility",
+      "aliases": [
+        "Inchworm",
+        "Walk Out",
+        "Plank Walk Out"
+      ],
+      "muscles_primary": [
+        "Hamstrings",
+        "Shoulders"
+      ],
+      "muscles_secondary": [
+        "Core",
+        "Calves"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Incline Barbell Bench Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-10",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Incline Bench Press",
+        "Incline Press"
+      ],
+      "muscles_primary": [
+        "Upper Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Incline Bench Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Incline Bench Press",
+        "Incline Press"
+      ],
+      "muscles_primary": [
+        "Upper Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Incline Cable Fly",
+      "body_part": "Chest",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Incline Dumbbell Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Incline DB Curl",
+        "Incline Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Incline Push-Up",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Hands Elevated Push Up",
+        "Incline Pushup"
+      ],
+      "muscles_primary": [
+        "Lower Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Inverted Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 5,
+      "goal_tags": [
+        "Fat Loss",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Australian Pull Up",
+        "Bodyweight Row",
+        "TRX Row"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Rhomboids"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "JM Press",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 4,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-8",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "JM Barbell Press",
+        "Tricep JM Press"
+      ],
+      "muscles_primary": [
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Pectoralis Major"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Jump Lunge",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Plyometric",
+      "aliases": [
+        "Split Jump",
+        "Plyometric Lunge",
+        "Jumping Lunge"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes",
+        "Calves"
+      ],
+      "muscles_secondary": [
+        "Hamstrings"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Jump Rope",
+      "body_part": "Calves",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 11,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "60 sec",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Cardio",
+      "aliases": [
+        "Skipping",
+        "Skip Rope",
+        "Jump Rope Cardio"
+      ],
+      "muscles_primary": [
+        "Calves",
+        "Shoulders",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Forearms",
+        "Quads"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Jump Squat",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 9,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Plyometric",
+      "aliases": [
+        "Squat Jump",
+        "Plyometric Squat",
+        "Explosive Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes",
+        "Calves"
+      ],
+      "muscles_secondary": [
+        "Hamstrings"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Jumping Jacks",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 7.7,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Cardio",
+      "aliases": [
+        "Star Jump",
+        "Side Straddle Hop"
+      ],
+      "muscles_primary": [
+        "Calves",
+        "Deltoids",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Glutes",
+        "Hip Abductors"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Kettlebell Swing",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Kettlebell",
+      "difficulty": "Advanced",
+      "met_value": 9.5,
+      "goal_tags": [
+        "Strength",
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "KB Swing",
+        "Russian KB Swing",
+        "American KB Swing"
+      ],
+      "muscles_primary": [
+        "Glutes",
+        "Hamstrings",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Shoulders",
+        "Lats"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Kettlebell Swing Warm-Up",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Kettlebell",
+      "difficulty": "Advanced",
+      "met_value": 9.8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=kettlebell-swing-warmup",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Lat Pulldown",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cable Pulldown",
+        "Wide Grip Pulldown"
+      ],
+      "muscles_primary": [
+        "Lats"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Rhomboids"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Lateral Band Walks",
+      "body_part": "Hips",
+      "movement_type": "Pre Workout",
+      "equipment": "Resistance Band",
+      "difficulty": "Intermediate",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "15 each direction",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=lateral-band-walks",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Lateral Lunge",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Side Lunge",
+        "Lateral Step Lunge"
+      ],
+      "muscles_primary": [
+        "Glutes",
+        "Adductors",
+        "Quadriceps"
+      ],
+      "muscles_secondary": [
+        "Hamstrings"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Lateral Raise",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Lateral Raise",
+        "Side Raise",
+        "DB Lateral Raise"
+      ],
+      "muscles_primary": [
+        "Lateral Deltoid"
+      ],
+      "muscles_secondary": [
+        "Supraspinatus"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Lateral Shuffles",
+      "body_part": "Legs",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=lateral-shuffles",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Leg Curl",
+      "body_part": "Legs",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Hamstring Curl",
+        "Lying Leg Curl",
+        "Seated Leg Curl"
+      ],
+      "muscles_primary": [
+        "Hamstrings"
+      ],
+      "muscles_secondary": [
+        "Gastrocnemius"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Leg Extension",
+      "body_part": "Legs",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Quad Extension",
+        "Machine Leg Extension"
+      ],
+      "muscles_primary": [
+        "Quadriceps"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Leg Press",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 4,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Machine Leg Press",
+        "Plate Loaded Leg Press"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Calves"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Leg Press Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Intermediate",
+      "met_value": 3,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Leg Raise",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Lying Leg Raise",
+        "Floor Leg Raise",
+        "Straight Leg Raise"
+      ],
+      "muscles_primary": [
+        "Hip Flexors",
+        "Rectus Abdominis"
+      ],
+      "muscles_secondary": [
+        "Obliques"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Leg Swings",
+      "body_part": "Legs",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 2.8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "15 each leg",
+      "rest_time_sec": 15,
+      "video_url": "https://www.youtube.com/watch?v=leg-swings",
+      "category": "Flexibility",
+      "aliases": [
+        "Leg Swing",
+        "Hip Swing",
+        "Pendulum Leg Swing"
+      ],
+      "muscles_primary": [
+        "Hip Flexors",
+        "Hamstrings"
+      ],
+      "muscles_secondary": [
+        "Glutes",
+        "Adductors"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Loaded Donkey Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Advanced",
+      "met_value": 4,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4-5",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Lunges",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Forward Lunge",
+        "Walking Lunge",
+        "Barbell Lunge"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Calves"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Machine Chest Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 4,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Chest Press Machine",
+        "Seated Chest Press"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Machine Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 4,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Seated Machine Row",
+        "Hammer Strength Row"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Rhomboids"
+      ],
+      "muscles_secondary": [
+        "Biceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Machine Shoulder Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Seated Machine Press",
+        "Overhead Machine Press"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid",
+        "Lateral Deltoid"
+      ],
+      "muscles_secondary": [
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Machine Standing Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Man Maker",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 9.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Dumbbell Man Maker"
+      ],
+      "muscles_primary": [
+        "Full Body"
+      ],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Medicine Ball Push-Up",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 7,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Medicine Ball Slam",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Medicine Ball",
+      "difficulty": "Advanced",
+      "met_value": 9.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=medicine-ball-slam",
+      "category": "Plyometric",
+      "aliases": [
+        "Ball Slam",
+        "Med Ball Slam"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Core",
+        "Shoulders"
+      ],
+      "muscles_secondary": [
+        "Glutes",
+        "Quads"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Mountain Climbers",
+      "body_part": "Core",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 35,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Cardio",
+      "aliases": [
+        "Mountain Climber",
+        "Running Plank",
+        "Plank Knee Drive"
+      ],
+      "muscles_primary": [
+        "Core",
+        "Hip Flexors"
+      ],
+      "muscles_secondary": [
+        "Shoulders",
+        "Quads"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Muscle-Up",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 10,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-10",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Muscle Up",
+        "Bar Muscle Up",
+        "Ring Muscle Up"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Chest",
+        "Core",
+        "Biceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Neck Rolls",
+      "body_part": "Neck",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 1.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "10 each direction",
+      "rest_time_sec": 10,
+      "video_url": "https://www.youtube.com/watch?v=neck-rolls",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Nordic Hamstring Curl",
+      "body_part": "Legs",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Nordic Curl",
+        "Nordic Ham Curl",
+        "GHR"
+      ],
+      "muscles_primary": [
+        "Hamstrings"
+      ],
+      "muscles_secondary": [
+        "Glutes",
+        "Calves"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Overhead Barbell Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Military Press",
+        "Standing Press",
+        "OHP",
+        "Overhead Barbell Press"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid",
+        "Lateral Deltoid"
+      ],
+      "muscles_secondary": [
+        "Triceps",
+        "Upper Traps",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Overhead Cable Extension",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Overhead Cable Extension",
+        "Overhead Rope Extension"
+      ],
+      "muscles_primary": [
+        "Triceps Long Head"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Overhead Squat",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Olympic",
+      "aliases": [
+        "OHS",
+        "Barbell OHS"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Shoulders",
+        "Core",
+        "Upper Back"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Pallof Press",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Advanced",
+      "met_value": 4,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Anti Rotation Press",
+        "Core Pallof"
+      ],
+      "muscles_primary": [
+        "Obliques",
+        "Transverse Abdominis"
+      ],
+      "muscles_secondary": [
+        "Rectus Abdominis"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Pause Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 4,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Pec Deck Machine",
+      "body_part": "Chest",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Pec Dec",
+        "Machine Fly",
+        "Chest Machine Fly"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Pendlay Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 6,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 50,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Pendlay Barbell Row",
+        "Dead Stop Row"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Rhomboids"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Erector Spinae"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Pistol Squat",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-10",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Single Leg Squat",
+        "One Leg Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Plank",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Forearm Plank",
+        "Standard Plank",
+        "Prone Plank"
+      ],
+      "muscles_primary": [
+        "Transverse Abdominis",
+        "Core Stabilisers"
+      ],
+      "muscles_secondary": [
+        "Shoulders",
+        "Glutes"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Plank to Downward Dog",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 4,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=plank-to-downward-dog",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Plyometric Calf Jump",
+      "body_part": "Calves",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 8.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 35,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Plyometric Lateral Bounds",
+      "body_part": "Legs",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 10.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10 each side",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=plyometric-lateral-bounds",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Plyometric Push-Up",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Plyometric",
+      "aliases": [
+        "Explosive Push Up",
+        "Clap Push Up"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Triceps",
+        "Anterior Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Power Clean",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 9.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Olympic",
+      "aliases": [
+        "Clean",
+        "Barbell Power Clean"
+      ],
+      "muscles_primary": [
+        "Traps",
+        "Glutes",
+        "Hamstrings"
+      ],
+      "muscles_secondary": [
+        "Shoulders",
+        "Quads",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Preacher Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Scott Curl",
+        "Incline Preacher Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [
+        "Brachialis"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Pull-Up",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Pullup",
+        "Overhand Pull Up",
+        "Pronated Pull Up"
+      ],
+      "muscles_primary": [
+        "Lats"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Rhomboids",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Push Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 7,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4-5",
+      "reps_recommended": "6-8",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell Push Press",
+        "Power Press"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid",
+        "Lateral Deltoid",
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Quads",
+        "Glutes",
+        "Traps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Push-Up",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Pushup",
+        "Press-Up",
+        "Standard Push Up"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Triceps",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Push-Up to Renegade Row",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 6.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Renegade Row Push Up",
+        "Push Up Row Combo"
+      ],
+      "muscles_primary": [
+        "Chest",
+        "Lats",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Triceps",
+        "Biceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Rack Pull",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Partial Deadlift",
+        "Block Pull"
+      ],
+      "muscles_primary": [
+        "Erector Spinae",
+        "Traps"
+      ],
+      "muscles_secondary": [
+        "Glutes",
+        "Hamstrings"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Reactive Cone Drills",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Cones",
+      "difficulty": "Advanced",
+      "met_value": 11,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "5",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=reactive-cone-drills",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Rear Delt Fly",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Reverse Fly",
+        "Bent Over Rear Delt Fly",
+        "Rear Delt Raise"
+      ],
+      "muscles_primary": [
+        "Posterior Deltoid"
+      ],
+      "muscles_secondary": [
+        "Rhomboids",
+        "Infraspinatus"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Renegade Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 6.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Push Up Row",
+        "Plank Row"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Core",
+        "Chest"
+      ],
+      "muscles_secondary": [
+        "Triceps",
+        "Biceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Resistance Band Chest Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3.9,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Band Press",
+        "Band Chest Press"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Triceps",
+        "Anterior Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Resistance Band Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Band Curl",
+        "Band Bicep Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Resistance Band Lateral Raise",
+      "body_part": "Shoulders",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Band Lateral Raise",
+        "Band Side Raise"
+      ],
+      "muscles_primary": [
+        "Lateral Deltoid"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Resistance Band Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3.9,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Resistance Band Squat Press",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Resisted Sprint with Band",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Resistance Band",
+      "difficulty": "Advanced",
+      "met_value": 13,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "5",
+      "reps_recommended": "20 meters",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=resisted-sprint-band",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Reverse Barbell Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 4,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-8",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Overhand Curl",
+        "Reverse Curl"
+      ],
+      "muscles_primary": [
+        "Brachioradialis",
+        "Wrist Extensors"
+      ],
+      "muscles_secondary": [
+        "Biceps Brachii"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Romanian Deadlift",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "RDL",
+        "Romanian DL",
+        "Straight Leg Deadlift"
+      ],
+      "muscles_primary": [
+        "Hamstrings",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Erector Spinae",
+        "Lats"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Rope Tricep Pushdown",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Rope Pushdown",
+        "Cable Rope Extension"
+      ],
+      "muscles_primary": [
+        "Triceps"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Russian Twist",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 4,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Seated Twist",
+        "Medicine Ball Twist"
+      ],
+      "muscles_primary": [
+        "Obliques"
+      ],
+      "muscles_secondary": [
+        "Rectus Abdominis",
+        "Hip Flexors"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Sandbag Squat",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 5.8,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Sandbag Front Squat",
+        "Sandbag Bear Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Core",
+        "Upper Back"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Scapular Push-Ups",
+      "body_part": "Shoulders",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 3.8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "15",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=scapular-push-ups",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Seal Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Prone Row",
+        "Seal Barbell Row"
+      ],
+      "muscles_primary": [
+        "Rhomboids",
+        "Lats"
+      ],
+      "muscles_secondary": [
+        "Rear Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Seated Cable Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Cable",
+      "difficulty": "Beginner",
+      "met_value": 4,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cable Row",
+        "Low Cable Row",
+        "Seated Row"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Rhomboids"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Rear Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Seated Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 3.3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Machine Seated Calf Raise",
+        "Soleus Raise"
+      ],
+      "muscles_primary": [
+        "Soleus"
+      ],
+      "muscles_secondary": [
+        "Gastrocnemius"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Seated Dumbbell Press",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Advanced",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-10",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Seated DB Shoulder Press",
+        "Seated OHP"
+      ],
+      "muscles_primary": [
+        "Anterior Deltoid"
+      ],
+      "muscles_secondary": [
+        "Lateral Deltoid",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Shadow Boxing",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 7.8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "2 min",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=shadow-boxing",
+      "category": "Cardio",
+      "aliases": [
+        "Air Boxing",
+        "Boxing Cardio"
+      ],
+      "muscles_primary": [
+        "Shoulders",
+        "Core",
+        "Calves"
+      ],
+      "muscles_secondary": [
+        "Triceps",
+        "Obliques"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Shoulder Rolls",
+      "body_part": "Shoulders",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 1.8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "10 each direction",
+      "rest_time_sec": 10,
+      "video_url": "https://www.youtube.com/watch?v=shoulder-rolls",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Single-Leg Bodyweight Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Single-Leg Seated Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Intermediate",
+      "met_value": 3,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Single-Leg Standing Barbell Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Skipping with Arm Drive",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 8.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "40 sec",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=skipping-arm-drive",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Skull Crusher",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Lying Tricep Extension",
+        "EZ Bar Skull Crusher",
+        "French Press"
+      ],
+      "muscles_primary": [
+        "Triceps"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Sled Push",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Advanced",
+      "met_value": 10,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Cardio",
+      "aliases": [
+        "Prowler Push",
+        "Weighted Sled Push"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes",
+        "Calves"
+      ],
+      "muscles_secondary": [
+        "Core",
+        "Shoulders"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Smith Machine Bench Press",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Beginner",
+      "met_value": 3.8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Smith Bench",
+        "Smith Machine Press"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Triceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Smith Machine Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Machine",
+      "difficulty": "Intermediate",
+      "met_value": 3,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Snatch",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 11,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Olympic",
+      "aliases": [
+        "Barbell Snatch",
+        "Olympic Snatch"
+      ],
+      "muscles_primary": [
+        "Full Body"
+      ],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Spider Curl",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Prone Incline Curl",
+        "Spider Bench Curl"
+      ],
+      "muscles_primary": [
+        "Biceps Brachii"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Spiderman Push-Up",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Spider Push Up",
+        "Spiderman Pushup"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major",
+        "Obliques"
+      ],
+      "muscles_secondary": [
+        "Triceps",
+        "Hip Flexors"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Sprint Drills - A-Skip",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 9,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "30 meters",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=a-skip-drill",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Sprint Drills - B-Skip",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 9.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "30 meters",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=b-skip-drill",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Sprint Intervals",
+      "body_part": "Calves",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 13,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "6",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 30,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Cardio",
+      "aliases": [
+        "Sprint",
+        "400m Sprint",
+        "Running Intervals"
+      ],
+      "muscles_primary": [
+        "Glutes",
+        "Hamstrings",
+        "Calves"
+      ],
+      "muscles_secondary": [
+        "Hip Flexors",
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Stair Running",
+      "body_part": "Calves",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 10,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "60 sec",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Standing Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Calf Raise",
+        "Bodyweight Calf Raise",
+        "Machine Calf Raise"
+      ],
+      "muscles_primary": [
+        "Gastrocnemius",
+        "Soleus"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Step Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Step-Up",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Box Step Up",
+        "Dumbbell Step Up",
+        "Weighted Step Up"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Calves"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Step-Up with Dumbbell",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3.7,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Suitcase Deadlift",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 4.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Single Arm Deadlift",
+        "One Arm Deadlift"
+      ],
+      "muscles_primary": [
+        "Glutes",
+        "Hamstrings",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Obliques",
+        "Erector Spinae"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Sumo Deadlift",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Wide Stance Deadlift",
+        "Sumo DL"
+      ],
+      "muscles_primary": [
+        "Glutes",
+        "Adductors",
+        "Quads"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Erector Spinae"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Sumo Squat",
+      "body_part": "Legs",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3.9,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Wide Stance Squat",
+        "Sumo Bodyweight Squat",
+        "Plie Squat"
+      ],
+      "muscles_primary": [
+        "Glutes",
+        "Adductors"
+      ],
+      "muscles_secondary": [
+        "Quadriceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Superman Hold",
+      "body_part": "Back",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "30 sec",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Superman Exercise",
+        "Back Extension Hold"
+      ],
+      "muscles_primary": [
+        "Erector Spinae",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Upper Back"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "T-Bar Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Machine",
+      "difficulty": "Intermediate",
+      "met_value": 5,
+      "goal_tags": [
+        "Muscle Gain",
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "T Bar Row",
+        "Landmine Row"
+      ],
+      "muscles_primary": [
+        "Lats",
+        "Rhomboids"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Erector Spinae"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Thoracic Spine Rotations",
+      "body_part": "Spine",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10 each side",
+      "rest_time_sec": 15,
+      "video_url": "https://www.youtube.com/watch?v=thoracic-rotation",
+      "category": "Flexibility",
+      "aliases": [
+        "Thoracic Rotation",
+        "T-Spine Rotation"
+      ],
+      "muscles_primary": [
+        "Thoracic Rotators",
+        "Obliques"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Thruster",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 9,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell Thruster",
+        "DB Thruster",
+        "Dumbbell Thruster"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes",
+        "Shoulders",
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Core"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Tibialis Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Intermediate",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Tibialis Anterior Raise",
+        "Tib Raise"
+      ],
+      "muscles_primary": [
+        "Tibialis Anterior"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Toes to Bar",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "TTB",
+        "Toes 2 Bar",
+        "Hanging Toes to Bar"
+      ],
+      "muscles_primary": [
+        "Rectus Abdominis",
+        "Hip Flexors"
+      ],
+      "muscles_secondary": [
+        "Obliques",
+        "Lats"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Torso Twists",
+      "body_part": "Core",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 2.8,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "20 each side",
+      "rest_time_sec": 15,
+      "video_url": "https://www.youtube.com/watch?v=torso-twists",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Trap Bar Deadlift",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 6.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Hex Bar Deadlift",
+        "Trap Bar DL"
+      ],
+      "muscles_primary": [
+        "Glutes",
+        "Quads",
+        "Hamstrings"
+      ],
+      "muscles_secondary": [
+        "Erector Spinae",
+        "Traps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Tricep Dips",
+      "body_part": "Arms",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 7,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Bench Dips",
+        "Chair Dips",
+        "Tricep Bench Dips"
+      ],
+      "muscles_primary": [
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Tricep Kickback",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 3.8,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "DB Tricep Kickback",
+        "Dumbbell Kickback"
+      ],
+      "muscles_primary": [
+        "Triceps"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Tricep Overhead Extension",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Overhead Tricep Extension",
+        "Dumbbell Overhead Tricep Extension"
+      ],
+      "muscles_primary": [
+        "Triceps Long Head"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Tricep Pushdown",
+      "body_part": "Arms",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Beginner",
+      "met_value": 3,
+      "goal_tags": [
+        "Fat Loss",
+        "Muscle Gain"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cable Tricep Pushdown",
+        "Rope Pushdown",
+        "Bar Pushdown"
+      ],
+      "muscles_primary": [
+        "Triceps"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Tuck Jump",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 9,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 35,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Turkish Get-Up (Light)",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Kettlebell",
+      "difficulty": "Advanced",
+      "met_value": 6.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "3 each side",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=turkish-get-up",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Upright Row",
+      "body_part": "Shoulders",
+      "movement_type": "Compound",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Barbell Upright Row",
+        "DB Upright Row"
+      ],
+      "muscles_primary": [
+        "Lateral Deltoid",
+        "Upper Traps"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid",
+        "Biceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "V-Up",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 40,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Jackknife Sit Up",
+        "Pike Sit Up"
+      ],
+      "muscles_primary": [
+        "Rectus Abdominis",
+        "Hip Flexors"
+      ],
+      "muscles_secondary": [
+        "Obliques"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Walking Lunge",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "12-15",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Forward Lunge",
+        "Walking Lunge",
+        "Barbell Lunge"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Calves"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Walking Lunges",
+      "body_part": "Legs",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 4,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "10 each leg",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=walking-lunges",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Wall Drill - Isometric Sprint Position",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "10 each leg",
+      "rest_time_sec": 20,
+      "video_url": "https://www.youtube.com/watch?v=wall-sprint-drill",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Wall Sit",
+      "body_part": "Legs",
+      "movement_type": "Isolation",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 3.7,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3",
+      "reps_recommended": "30-60 sec",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Wall Squat Hold",
+        "Static Squat"
+      ],
+      "muscles_primary": [
+        "Quadriceps"
+      ],
+      "muscles_secondary": [
+        "Glutes",
+        "Calves"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Weighted Cable Crunch",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Cable",
+      "difficulty": "Advanced",
+      "met_value": 4,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Heavy Cable Crunch"
+      ],
+      "muscles_primary": [
+        "Rectus Abdominis"
+      ],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Weighted Chest Dips",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 6,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-10",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Weighted Chin-Up",
+      "body_part": "Arms",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4-5",
+      "reps_recommended": "4-6",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Weighted Dips",
+      "body_part": "Chest",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 7,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Belt Dips",
+        "Loaded Dips"
+      ],
+      "muscles_primary": [
+        "Pectoralis Major",
+        "Triceps"
+      ],
+      "muscles_secondary": [
+        "Anterior Deltoid"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Weighted Pull-Up",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Weighted Pullup",
+        "Belt Pull Up"
+      ],
+      "muscles_primary": [
+        "Lats"
+      ],
+      "muscles_secondary": [
+        "Biceps",
+        "Rhomboids"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Weighted Step-Up Calf Raise",
+      "body_part": "Calves",
+      "movement_type": "Isolation",
+      "equipment": "Dumbbell",
+      "difficulty": "Intermediate",
+      "met_value": 3.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-10",
+      "rest_time_sec": 75,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Weighted Tricep Dips",
+      "body_part": "Arms",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 7,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": true,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Wide Grip Pull-Up",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Bodyweight",
+      "difficulty": "Advanced",
+      "met_value": 7.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "8-12",
+      "rest_time_sec": 60,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Calisthenics",
+      "aliases": [
+        "Wide Pull Up",
+        "Wide Pullup"
+      ],
+      "muscles_primary": [
+        "Lats"
+      ],
+      "muscles_secondary": [
+        "Rear Deltoid",
+        "Rhomboids"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Windmill",
+      "body_part": "Core",
+      "movement_type": "Isolation",
+      "equipment": "Kettlebell",
+      "difficulty": "Advanced",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "10-12",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Kettlebell Windmill",
+        "KB Windmill"
+      ],
+      "muscles_primary": [
+        "Obliques",
+        "Glutes",
+        "Shoulders"
+      ],
+      "muscles_secondary": [
+        "Hamstrings",
+        "Hip Flexors"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Woodchop Cable",
+      "body_part": "Core",
+      "movement_type": "Compound",
+      "equipment": "Cable",
+      "difficulty": "Intermediate",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Fat Loss"
+      ],
+      "sets_recommended": "3-4",
+      "reps_recommended": "15-20",
+      "rest_time_sec": 45,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Cable Woodchop",
+        "High to Low Cable",
+        "Diagonal Cable Pull"
+      ],
+      "muscles_primary": [
+        "Obliques",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Shoulders",
+        "Hips"
+      ],
+      "is_compound": false,
+      "in_global_exercises": true
+    },
+    {
+      "name": "World's Greatest Stretch",
+      "body_part": "Full Body",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 2.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "5 each side",
+      "rest_time_sec": 15,
+      "video_url": "https://www.youtube.com/watch?v=worlds-greatest-stretch",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Wrist Rotations",
+      "body_part": "Wrists",
+      "movement_type": "Pre Workout",
+      "equipment": "Bodyweight",
+      "difficulty": "Beginner",
+      "met_value": 1.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "2",
+      "reps_recommended": "10 each direction",
+      "rest_time_sec": 10,
+      "video_url": "https://www.youtube.com/watch?v=wrist-rotations",
+      "category": null,
+      "aliases": [],
+      "muscles_primary": [],
+      "muscles_secondary": [],
+      "is_compound": false,
+      "in_global_exercises": false
+    },
+    {
+      "name": "Yates Row",
+      "body_part": "Back",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Advanced",
+      "met_value": 5.5,
+      "goal_tags": [
+        "Muscle Gain"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "6-8",
+      "rest_time_sec": 90,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Underhand Barbell Row",
+        "Reverse Grip Row"
+      ],
+      "muscles_primary": [
+        "Lower Lats",
+        "Biceps"
+      ],
+      "muscles_secondary": [
+        "Rhomboids"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    },
+    {
+      "name": "Zercher Squat",
+      "body_part": "Full Body",
+      "movement_type": "Compound",
+      "equipment": "Barbell",
+      "difficulty": "Intermediate",
+      "met_value": 6.5,
+      "goal_tags": [
+        "Strength"
+      ],
+      "sets_recommended": "4",
+      "reps_recommended": "5-8",
+      "rest_time_sec": 120,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "category": "Strength",
+      "aliases": [
+        "Zercher"
+      ],
+      "muscles_primary": [
+        "Quadriceps",
+        "Glutes",
+        "Core"
+      ],
+      "muscles_secondary": [
+        "Upper Back",
+        "Biceps"
+      ],
+      "is_compound": true,
+      "in_global_exercises": true
+    }
+  ]
+}

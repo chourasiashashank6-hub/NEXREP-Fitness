@@ -14,6 +14,8 @@ export const FEATURE_TIERS: Record<string, PlanId> = {
   workout_regen_remaining: "pro",
   mediapipe_pose_guidance: "pro",
   ai_rep_counter: "pro",
+  preworkout_recommendation: "pro",
+  guided_warmup_session: "elite",
   workout_logging: "free",
   calorie_logging: "free",
   weight_logging: "free",

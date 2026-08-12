@@ -710,6 +710,22 @@ export class AudioCoachQueue {
   }
 }
 
+export function speakPlainCue(text: string): void {
+  const lang = speechLocaleForAppLang(i18n.language);
+  if (webSpeechAvailable()) {
+    const synth = getSynth()!;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    const voice = pickVoice(synth.getVoices(), lang);
+    if (voice) utter.voice = voice;
+    utter.volume = 1;
+    speakHeldUtterance(synth, utter, { tag: "WarmupCue" });
+    markWebSpeechUnlocked();
+    return;
+  }
+  Speech.speak(text, { language: lang });
+}
+
 export const sharedAudioCoach = new AudioCoachQueue();
 
 export function nextVoiceMode(current: VoiceMode): VoiceMode {

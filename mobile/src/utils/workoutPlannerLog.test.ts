@@ -8,6 +8,7 @@ import {
   exerciseLogKey,
   findPlannerWorkoutLog,
   isPlannerLoggedWorkout,
+  mergeLoggedExerciseIdMap,
   parsePlannerReps,
 } from "./workoutPlannerLog";
 
@@ -69,5 +70,24 @@ const afterDelete = buildLoggedExerciseIdMap(
   today,
 );
 assert(afterDelete["n:0:barbell bench press"] === undefined, "delete clears checkbox mapping");
+
+const fetched = { "n:1:back squat": 202 };
+const optimistic = { "n:0:barbell bench press": { id: 101, at: Date.now() } };
+const merged = mergeLoggedExerciseIdMap(fetched, optimistic);
+assert(merged["n:0:barbell bench press"] === 101, "optimistic grace preserves recent checkbox");
+assert(merged["n:1:back squat"] === 202, "merge keeps fetched ids");
+
+// UTC-naive server timestamp after local midnight (IST): Home counts as Aug 13, planner must too.
+const istLateNight = {
+  id: 201,
+  exerciseName: "Plank",
+  notes: "source=workout_planner; body_part=Core",
+  date: "2026-08-12T21:18:00", // UTC ≈ Aug 13 02:48 IST
+};
+const aug13 = "2026-08-13";
+assert(
+  findPlannerWorkoutLog([istLateNight], { name: "Plank" }, aug13)?.id === 201,
+  "naive UTC timestamp maps to local plan day",
+);
 
 console.log("workoutPlannerLog.test.ts: all assertions passed");

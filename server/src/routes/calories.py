@@ -1930,11 +1930,12 @@ def create_ai_meal_entry(
 
 @router.get("/coach/insight")
 def coach_calorie_insight(
+    local_date: str | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    today = datetime.utcnow().date()
-    day_payload = _serialize_day(db, current_user, today)
+    log_date = _parse_log_date(local_date)
+    day_payload = _serialize_day(db, current_user, log_date)
     # Free the pooled connection before Groq/Gemini HTTP (can take 30–60s).
     from src.db.session import release_db_connection
 

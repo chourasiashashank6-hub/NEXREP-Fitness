@@ -16,7 +16,7 @@ import { RecoveryTipCard } from "../../components/Coach/RecoveryTipCard";
 import WeeklyVolumeLoad from "../../components/Coach/WeeklyVolumeLoad";
 import { WeeklyProgressBar } from "../../components/Coach/WeeklyProgressBar";
 import { fetchOnboardingMe } from "../../api/onboarding";
-import { getWorkoutCoachData, getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
+import { getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { WC_COLORS } from "../../constants/workoutCoach";
 import { buildFallbackCoachingTips, normalizeWorkoutCoachResponse } from "../../services/coachNormalize";
@@ -26,6 +26,7 @@ import type { DynamicCoachingTip, MuscleStatus, WorkoutCoachInsight, WorkoutData
 import type { CoachStackParamList } from "./CoachHomeScreen";
 import { getGoalFocusMuscles } from "../../utils/onboardingFocusMuscles";
 import { getMuscleWeeklyTargets, getTargetWeeklySets } from "../../utils/weeklyMuscleTargets";
+import { inferMusclesFromWorkout, parseWorkoutTimestamp } from "../../utils/workoutMuscleInfer";
 
 const CACHE_KEY = "workout_coach_insight";
 const BASE_MUSCLES = ["Chest", "Shoulders", "Triceps", "Back", "Legs", "Biceps"] as const;
@@ -34,33 +35,6 @@ function formatTimestamp(): string {
   return i18n.t("coach.workout.analyzedAt", {
     time: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
   });
-}
-
-function parseBodyPartFromNotes(notes?: string | null): string | null {
-  if (!notes) return null;
-  const m = notes.match(/body_part=([^;]+)/i);
-  return m?.[1]?.trim() || null;
-}
-
-function inferMuscles(item: WorkoutHistoryItem): string[] {
-  const fromNotes = parseBodyPartFromNotes(item.notes);
-  if (fromNotes) {
-    const lowered = fromNotes.toLowerCase();
-    if (lowered.includes("chest")) return ["Chest"];
-    if (lowered.includes("shoulder")) return ["Shoulders"];
-    if (lowered.includes("tricep")) return ["Triceps"];
-    if (lowered.includes("back")) return ["Back"];
-    if (lowered.includes("leg")) return ["Legs"];
-    if (lowered.includes("bicep") || lowered.includes("arm")) return ["Biceps"];
-  }
-  const ex = `${item.exerciseName} ${item.type}`.toLowerCase();
-  if (/(bench|press|pushup|chest)/.test(ex)) return ["Chest", "Triceps"];
-  if (/(row|pull|lat|deadlift|back)/.test(ex)) return ["Back", "Biceps"];
-  if (/(squat|lunge|leg|hamstring|quad|glute)/.test(ex)) return ["Legs"];
-  if (/(shoulder|overhead|lateral raise)/.test(ex)) return ["Shoulders"];
-  if (/bicep|curl/.test(ex)) return ["Biceps"];
-  if (/tricep|dip|pushdown/.test(ex)) return ["Triceps"];
-  return [];
 }
 
 function relativeLabel(dateIso: string): string {
@@ -101,9 +75,10 @@ function buildWorkoutDataFromHistory(items: WorkoutHistoryItem[], onboardingData
   for (const m of BASE_MUSCLES) byMuscleSets.set(m, 0);
 
   for (const w of sorted) {
-    const muscles = inferMuscles(w);
+    const muscles = inferMusclesFromWorkout(w);
     const sets = Math.max(0, Number(w.sets || 0));
-    const ts = +new Date(w.date);
+    const ts = parseWorkoutTimestamp(w.date);
+    if (ts == null) continue;
     for (const m of muscles) {
       if (!byMuscleSets.has(m)) continue;
       if (ts >= sevenDaysAgo) byMuscleSets.set(m, (byMuscleSets.get(m) || 0) + sets);
@@ -127,7 +102,7 @@ function buildWorkoutDataFromHistory(items: WorkoutHistoryItem[], onboardingData
   const recentWorkouts = sorted.slice(0, 5).map((w) => ({
     date: relativeLabel(w.date),
     type: w.type,
-    musclesTrained: inferMuscles(w),
+    musclesTrained: inferMusclesFromWorkout(w),
     durationMin: Number(w.duration || 0),
   }));
   const totalWeeklySets = weeklyVolume.reduce((s, v) => s + v.sets, 0);
@@ -162,12 +137,13 @@ export default function AIWorkoutCoachScreen() {
     try {
       setDataLoading(true);
       setDataError(null);
-      const [workoutData, onboardingRes] = await Promise.all([
-        getWorkoutCoachData(14),
+      const [historyRes, onboardingRes] = await Promise.all([
+        getWorkoutHistory(24 * 14),
         fetchOnboardingMe().catch(() => null),
       ]);
-      setOnboardingData(onboardingRes?.onboarding ?? null);
-      setData(workoutData);
+      const nextOnboarding = onboardingRes?.onboarding ?? null;
+      setOnboardingData(nextOnboarding);
+      setData(buildWorkoutDataFromHistory(Array.isArray(historyRes?.items) ? historyRes.items : [], nextOnboarding));
     } catch (e1) {
       try {
         const [historyRes, onboardingRes] = await Promise.all([
@@ -176,9 +152,7 @@ export default function AIWorkoutCoachScreen() {
         ]);
         const nextOnboarding = onboardingRes?.onboarding ?? null;
         setOnboardingData(nextOnboarding);
-        const fallbackData = buildWorkoutDataFromHistory(Array.isArray(historyRes?.items) ? historyRes.items : [], nextOnboarding);
-        setData(fallbackData);
-        setDataError(t("coach.workout.usingHistoryFallback"));
+        setData(buildWorkoutDataFromHistory(Array.isArray(historyRes?.items) ? historyRes.items : [], nextOnboarding));
       } catch (e2) {
         setData(buildWorkoutDataFromHistory([], null));
         const m1 = e1 instanceof Error ? e1.message : t("coach.workout.couldNotLoadData");

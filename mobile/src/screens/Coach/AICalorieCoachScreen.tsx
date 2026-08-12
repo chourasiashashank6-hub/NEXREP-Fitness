@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
-import { ensureDailyCalorieLog } from "../../api/caloriesLog";
+import { ensureDailyCalorieLog, todayLocal } from "../../api/caloriesLog";
 import { getSummary } from "../../api/dashboard";
 import { AICoachCard } from "../../components/Coach/AICoachCard";
 import { ActionPlanCard } from "../../components/Coach/ActionPlanCard";
@@ -39,10 +39,12 @@ export default function AICalorieCoachScreen() {
   const [loading, setLoading] = useState(false);
   const [coachRefreshing, setCoachRefreshing] = useState(false);
 
+  const logDate = todayLocal();
+
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const [day, summary] = await Promise.all([ensureDailyCalorieLog(), getSummary()]);
+      const [day, summary] = await Promise.all([ensureDailyCalorieLog(logDate), getSummary()]);
       setNutritionData({
         goal: "maintain",
         tdee: Number(day.log.target_calories || 0),
@@ -64,7 +66,7 @@ export default function AICalorieCoachScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [logDate]);
 
   useEffect(() => {
     void load();
@@ -102,6 +104,7 @@ export default function AICalorieCoachScreen() {
         ) : null}
         <AICoachCard
           ref={coachCardRef}
+          logDate={logDate}
           nutritionData={nutritionData}
           accentColor="#22d3ee"
           onNutritionRefresh={() => void load()}

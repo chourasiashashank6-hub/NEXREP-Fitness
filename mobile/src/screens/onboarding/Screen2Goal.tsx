@@ -72,7 +72,7 @@ export default function Screen2Goal({ navigation }: any) {
     BODY_DATA[btGender]?.goal.find((x) => x.id === bodyType?.goal_body_id)?.label ?? "";
   const hasBodyType = Boolean(bodyType?.current_body_id && bodyType?.goal_body_id);
 
-  const validate = () => {
+  const collectErrors = () => {
     const next: Record<string, string> = {};
     if (!data.goal.type) next.goal = t("onboarding.screen2.errors.goalRequired");
     if (!data.goal.difficulty) next.difficulty = t("onboarding.screen2.errors.difficultyRequired");
@@ -82,12 +82,31 @@ export default function Screen2Goal({ navigation }: any) {
       next.target_lifts = t("onboarding.screen2.errors.targetLiftsRequired");
     }
     if (isPaceNeeded && targetWeight && currentWeight) {
-      if (data.goal.type === "fat_loss" && targetWeight >= currentWeight) next.target = t("onboarding.screen2.errors.fatLossTarget");
-      if (data.goal.type === "muscle_gain" && targetWeight <= currentWeight) next.target = t("onboarding.screen2.errors.muscleGainTarget");
+      if (targetWeight < currentWeight && data.goal.type !== "fat_loss") {
+        next.goal = t("onboarding.screen2.errors.goalMustBeFatLoss");
+      } else if (targetWeight > currentWeight && data.goal.type !== "muscle_gain") {
+        next.goal = t("onboarding.screen2.errors.goalMustBeMuscleGain");
+      } else if (targetWeight === currentWeight) {
+        next.target = t("onboarding.screen2.errors.targetMustDiffer");
+      }
     }
+    return next;
+  };
+
+  const applyValidation = () => {
+    const next = collectErrors();
     setErrors(next);
-    if (Object.keys(next).length) return;
+    return Object.keys(next).length === 0;
+  };
+
+  const validate = () => {
+    if (!applyValidation()) return;
     navigation.navigate("Screen3Activity");
+  };
+
+  const handleSaveExit = async () => {
+    if (!applyValidation()) return;
+    await saveAndExit();
   };
 
   const setGoalType = (type: string) => {
@@ -129,7 +148,7 @@ export default function Screen2Goal({ navigation }: any) {
       subtitle={t("onboarding.screen2.subtitle")}
       onBack={() => navigation.goBack()}
       onNext={validate}
-      onSaveExit={saveAndExit}
+      onSaveExit={handleSaveExit}
       saveLoading={saving}
       saveDisabled={saving}
     >
@@ -172,6 +191,7 @@ export default function Screen2Goal({ navigation }: any) {
             onChange={(v) => {
               data.personal.unit_system === "metric" ? updateGoal({ target_weight_kg: Number(v) }) : updateGoal({ target_weight_lb: Number(v) });
               clearError("target");
+              clearError("goal");
             }}
             placeholder={t("onboarding.screen2.targetWeightPlaceholder")}
             error={errors.target}

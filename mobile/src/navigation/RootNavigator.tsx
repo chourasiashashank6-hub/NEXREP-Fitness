@@ -10,6 +10,7 @@ import { useLanguageStore } from "../i18n/languageStore";
 import { useAuthStore } from "../store/authStore";
 import { useWorkoutSessionStore } from "../store/workoutSessionStore";
 import { AuthScreen } from "../screens/AuthScreen";
+import GuidedWarmupScreen from "../screens/GuidedWarmupScreen";
 import ActiveWorkoutScreen from "../screens/ActiveWorkoutScreen";
 import AICameraWorkoutScreen from "../screens/AICameraWorkoutScreen";
 import AITrainerCalibrationScreen from "../screens/aiTrainer/AITrainerCalibrationScreen";
@@ -292,6 +293,11 @@ export const RootNavigator = () => {
             name="AdminStack"
             component={AdminNavigator}
             options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="GuidedWarmupSession"
+            component={GuidedWarmupScreen}
+            options={{ headerShown: false, presentation: "modal", gestureEnabled: false }}
           />
           <Stack.Screen
             name="ActiveWorkoutSession"

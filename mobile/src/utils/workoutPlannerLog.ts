@@ -43,7 +43,13 @@ export function estimatePlannerTimeTaken(exercise: Pick<WorkoutExercise, "sets" 
 
 export function toLocalDateKey(value: unknown, now = new Date()): string | null {
   if (value == null) return null;
-  const d = value instanceof Date ? value : new Date(String(value));
+  const raw = String(value).trim();
+  if (!raw) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // Backend stores UTC naive ISO timestamps — treat as UTC (same as Home / Workout Log).
+  const normalized =
+    /^\d{4}-\d{2}-\d{2}T/.test(raw) && !/(Z|[+-]\d{2}:\d{2})$/.test(raw) ? `${raw}Z` : raw;
+  const d = new Date(normalized);
   if (Number.isNaN(d.getTime())) return null;
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -82,4 +88,21 @@ export function buildLoggedExerciseIdMap(
     if (match?.id != null) next[exerciseLogKey(ex, i)] = match.id;
   });
   return next;
+}
+
+const OPTIMISTIC_GRACE_MS = 15_000;
+
+/** Keep very recent optimistic checkbox state across a history refetch race. */
+export function mergeLoggedExerciseIdMap(
+  fetched: Record<string, number>,
+  optimistic: Record<string, { id: number; at: number }>,
+  now = Date.now(),
+): Record<string, number> {
+  const merged = { ...fetched };
+  for (const [key, entry] of Object.entries(optimistic)) {
+    if (now - entry.at < OPTIMISTIC_GRACE_MS) {
+      merged[key] = entry.id;
+    }
+  }
+  return merged;
 }

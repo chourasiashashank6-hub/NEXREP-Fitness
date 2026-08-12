@@ -1,0 +1,263 @@
+name,body_part,equipment,movement_type,difficulty,met_value,goal_tags,muscles_primary,is_compound,in_global_exercises
+Ab Wheel Rollout,Core,Bodyweight,Isolation,Advanced,5.5,Strength,Rectus Abdominis|Transverse Abdominis,false,true
+Ab Wheel Rollout Variations,Core,Bodyweight,Isolation,Advanced,6,Muscle Gain,,false,false
+Agility Ladder Drills,Full Body,Agility Ladder,Pre Workout,Advanced,10.5,Fat Loss,,false,false
+Alternating Side Lunges,Legs,Bodyweight,Pre Workout,Intermediate,5,Muscle Gain,,false,false
+Ankle Rotations,Ankles,Bodyweight,Pre Workout,Beginner,1.5,Strength,,false,false
+Arm Circles,Shoulders,Bodyweight,Pre Workout,Beginner,2.5,Strength,,false,false
+Arnold Press,Shoulders,Dumbbell,Compound,Intermediate,5,Muscle Gain|Strength|Fat Loss,Anterior Deltoid|Lateral Deltoid,true,true
+Assault Bike Sprint,Full Body,Machine,Compound,Advanced,14,Fat Loss,Full Body,true,true
+Assisted Pull-Up,Back,Machine,Compound,Beginner,4.5,Fat Loss|Muscle Gain,Lats,true,true
+Band Resisted Hip Flexion,Hips,Resistance Band,Pre Workout,Advanced,4.5,Muscle Gain,,false,false
+Banded Pull-Aparts,Shoulders,Resistance Band,Pre Workout,Intermediate,3.5,Muscle Gain,,false,false
+Barbell 21s,Arms,Barbell,Isolation,Advanced,4.5,Strength,Biceps Brachii,false,true
+Barbell Back Squat,Legs,Barbell,Compound,Intermediate,6,Muscle Gain|Strength,Quadriceps|Glutes,true,true
+Barbell Bench Press,Chest,Barbell,Compound,Intermediate,5,Muscle Gain|Strength,Pectoralis Major,true,true
+Barbell Bent-Over Row,Back,Barbell,Compound,Advanced,6.5,Fat Loss,,true,false
+Barbell Clean and Press,Full Body,Barbell,Compound,Advanced,9,Muscle Gain,Full Body,true,true
+Barbell Complex,Full Body,Barbell,Compound,Advanced,10,Fat Loss,,true,false
+Barbell Curl,Arms,Barbell,Isolation,Intermediate,3.5,Muscle Gain|Strength,Biceps Brachii,false,true
+Barbell Front Squat,Full Body,Barbell,Compound,Advanced,7.5,Muscle Gain,Quadriceps,true,true
+Barbell Hang Clean,Full Body,Barbell,Compound,Intermediate,8,Muscle Gain,Traps|Glutes|Hamstrings,true,true
+Barbell Heavy Calf Raise,Calves,Barbell,Isolation,Advanced,4,Strength,,false,false
+Barbell Hip Thrust,Legs,Barbell,Isolation,Advanced,5,Muscle Gain,Glutes,false,true
+Barbell Hip Thrust Activation,Glutes,Barbell,Pre Workout,Advanced,6,Muscle Gain,,false,false
+Barbell Push Press,Full Body,Barbell,Compound,Intermediate,6.5,Strength,Anterior Deltoid|Lateral Deltoid|Triceps,true,true
+Barbell Romanian Deadlift,Full Body,Barbell,Compound,Intermediate,6,Muscle Gain,Hamstrings|Glutes,true,true
+Barbell Row,Back,Barbell,Compound,Intermediate,5,Muscle Gain|Strength,Lats|Rhomboids,true,true
+Barbell Standing Calf Raise,Calves,Barbell,Isolation,Intermediate,3.5,Strength,,false,false
+Barbell Upright Row,Shoulders,Barbell,Compound,Advanced,6,Fat Loss,Lateral Deltoid|Upper Traps,true,true
+Barbell Walking Lunge,Legs,Barbell,Compound,Advanced,7.5,Fat Loss,,true,false
+Barbell Z-Press,Shoulders,Barbell,Compound,Advanced,5.5,Muscle Gain,Anterior Deltoid|Lateral Deltoid,true,true
+Battle Rope Shoulder Wave,Shoulders,Cable,Compound,Intermediate,8.5,Fat Loss,,true,false
+Battle Ropes,Full Body,Cable,Compound,Advanced,10.5,Fat Loss,Shoulders|Core|Forearms,true,true
+Bear Crawl,Full Body,Bodyweight,Pre Workout,Intermediate,6,Strength,Core|Shoulders|Hip Flexors,true,true
+Bicycle Crunch,Core,Bodyweight,Isolation,Intermediate,4,Fat Loss,Obliques|Rectus Abdominis,false,true
+Bird Dog,Core,Bodyweight,Isolation,Beginner,3,Strength,Erector Spinae|Glutes|Core,false,true
+Bodyweight Squat,Full Body,Bodyweight,Compound,Beginner,4.5,Fat Loss,Quadriceps|Glutes,true,true
+Bodyweight Squats,Legs,Bodyweight,Pre Workout,Beginner,3.5,Muscle Gain,Quadriceps|Glutes,true,true
+Box Jump,Calves,Bodyweight,Compound,Intermediate,9.5,Fat Loss,Quadriceps|Glutes|Calves,true,true
+Box Jumps,Full Body,Plyo Box,Pre Workout,Advanced,10,Strength,,false,false
+Brisk Walking,Full Body,Bodyweight,Pre Workout,Beginner,4.3,Fat Loss,,false,false
+Broad Jump to Backpedal,Full Body,Bodyweight,Pre Workout,Intermediate,8,Fat Loss,,false,false
+Broad Jumps,Full Body,Bodyweight,Pre Workout,Advanced,10,Strength,,false,false
+Bulgarian Split Squat,Legs,Bodyweight,Compound,Intermediate,6,Muscle Gain|Strength|Fat Loss,Quadriceps|Glutes,true,true
+Burpees,Full Body,Bodyweight,Compound,Advanced,9,Strength,Full Body,true,true
+Butt Kicks,Legs,Bodyweight,Pre Workout,Beginner,7,Fat Loss,Hamstrings|Calves,true,true
+Cable Chest Fly,Chest,Cable,Isolation,Beginner,3.5,Fat Loss|Muscle Gain,Pectoralis Major,false,true
+Cable Crossover,Chest,Cable,Isolation,Advanced,3.5,Fat Loss,Pectoralis Major,false,true
+Cable Crunch,Core,Cable,Isolation,Intermediate,3.5,Muscle Gain|Strength,Rectus Abdominis,false,true
+Cable Curl,Arms,Cable,Isolation,Beginner,3,Fat Loss|Muscle Gain,Biceps Brachii,false,true
+Cable Face Pull,Back,Cable,Isolation,Intermediate,4.5,Fat Loss,Rear Deltoid|Rhomboids|Rotator Cuff,false,true
+Cable Front Raise,Shoulders,Cable,Isolation,Intermediate,3.5,Fat Loss,Anterior Deltoid,false,true
+Cable Hammer Curl,Arms,Cable,Isolation,Intermediate,3.5,Fat Loss,Brachialis|Brachioradialis,false,true
+Cable Lateral Raise,Shoulders,Cable,Isolation,Beginner,3,Strength,Lateral Deltoid,false,true
+Cable Overhead Tricep Extension,Arms,Cable,Isolation,Advanced,3.5,Fat Loss,Triceps Long Head,false,true
+Cable Rear Delt Fly,Shoulders,Cable,Isolation,Advanced,3.5,Muscle Gain,Posterior Deltoid,false,true
+Cable Straight-Arm Pulldown,Back,Cable,Isolation,Advanced,5,Muscle Gain,,false,false
+Cable Y-Raise,Shoulders,Cable,Isolation,Advanced,3.5,Fat Loss,Lower Trapezius|Serratus Anterior,false,true
+Carioca Drill,Full Body,Bodyweight,Pre Workout,Intermediate,7,Fat Loss,,false,false
+Cat-Cow Stretch,Spine,Bodyweight,Pre Workout,Beginner,2,Strength,Erector Spinae,false,true
+Chest-Supported Row,Back,Dumbbell,Compound,Beginner,3.5,Strength,Rhomboids|Lats,true,true
+Chin-Up,Back,Bodyweight,Compound,Intermediate,6,Muscle Gain|Strength,Lats|Biceps,true,true
+Clean,Full Body,Barbell,Compound,Advanced,9.5,Strength,Traps|Glutes|Hamstrings,true,true
+Close Grip Bench Press,Arms,Barbell,Compound,Intermediate,4.5,Muscle Gain|Strength,Triceps,true,true
+Close-Grip Bench Press,Arms,Barbell,Compound,Advanced,5.5,Muscle Gain,,true,false
+Concentration Curl,Arms,Dumbbell,Isolation,Intermediate,3.8,Fat Loss,Biceps Brachii,false,true
+Cross Body Hammer Curl,Arms,Dumbbell,Isolation,Advanced,3.5,Fat Loss,Brachialis|Brachioradialis,false,true
+Crunch,Core,Bodyweight,Isolation,Beginner,3,Fat Loss|Muscle Gain,Rectus Abdominis,false,true
+Dead Bug,Core,Bodyweight,Isolation,Beginner,3,Strength,Transverse Abdominis|Rectus Abdominis,false,true
+Deadlift,Back,Barbell,Compound,Advanced,7.5,Strength,Erector Spinae|Glutes|Hamstrings,true,true
+Decline Barbell Bench Press,Chest,Barbell,Compound,Advanced,6.5,Fat Loss,Lower Pectoralis Major,true,true
+Decline Push-Up,Chest,Bodyweight,Compound,Intermediate,4.5,Muscle Gain|Strength,Upper Pectoralis Major,true,true
+Deficit Deadlift,Back,Barbell,Compound,Advanced,8.5,Fat Loss,Hamstrings|Glutes|Erector Spinae,true,true
+Depth Jump,Calves,Bodyweight,Compound,Advanced,10,Fat Loss,Quadriceps|Calves|Glutes,true,true
+Depth Jumps,Full Body,Plyo Box,Pre Workout,Advanced,11,Strength,,false,false
+Diamond Push-Up,Arms,Bodyweight,Compound,Beginner,3.8,Strength,Triceps,true,true
+Dips,Chest,Bodyweight,Compound,Intermediate,6,Muscle Gain|Strength,Pectoralis Major|Triceps,true,true
+Donkey Calf Raise,Calves,Machine,Isolation,Advanced,3.5,Muscle Gain,Gastrocnemius,false,true
+Dragon Flag,Core,Bodyweight,Isolation,Advanced,6,Muscle Gain,Rectus Abdominis|Core,false,true
+Dumbbell Bench Press,Chest,Dumbbell,Compound,Intermediate,4.5,Muscle Gain|Strength,Pectoralis Major,true,true
+Dumbbell Burpee,Full Body,Dumbbell,Compound,Intermediate,9,Fat Loss,,true,false
+Dumbbell Chest Fly,Chest,Dumbbell,Isolation,Intermediate,3.5,Fat Loss,Pectoralis Major,false,true
+Dumbbell Chest Press,Chest,Dumbbell,Compound,Beginner,3.8,Strength,,true,false
+Dumbbell Clean and Press,Full Body,Dumbbell,Compound,Intermediate,7,Muscle Gain,,true,false
+Dumbbell Cuban Press,Shoulders,Dumbbell,Compound,Advanced,5.5,Fat Loss,Rotator Cuff|Anterior Deltoid,false,true
+Dumbbell Curl,Arms,Dumbbell,Isolation,Beginner,3,Fat Loss|Muscle Gain,Biceps Brachii,false,true
+Dumbbell Deadlift,Full Body,Dumbbell,Compound,Beginner,4.5,Muscle Gain,,true,false
+Dumbbell Farmer Carry,Full Body,Dumbbell,Compound,Beginner,5,Strength,,true,false
+Dumbbell Lateral Raise,Shoulders,Dumbbell,Isolation,Intermediate,3.5,Fat Loss,Lateral Deltoid,false,true
+Dumbbell Lunges,Legs,Dumbbell,Compound,Beginner,3.7,Strength,Quadriceps|Glutes,true,true
+Dumbbell Meadows Row,Back,Dumbbell,Compound,Intermediate,5,Fat Loss,Lats|Upper Traps,true,true
+Dumbbell Pullover,Chest,Dumbbell,Isolation,Advanced,4,Muscle Gain,Pectoralis Major|Lats,false,true
+Dumbbell Romanian Deadlift,Full Body,Dumbbell,Compound,Beginner,4.5,Muscle Gain,Hamstrings|Glutes,true,true
+Dumbbell Row,Back,Dumbbell,Compound,Intermediate,4.5,Muscle Gain|Strength,Lats|Rhomboids,true,true
+Dumbbell Shoulder Press,Shoulders,Dumbbell,Compound,Beginner,4.5,Fat Loss|Muscle Gain|Strength,Anterior Deltoid|Lateral Deltoid,true,true
+Dumbbell Single-Arm Row,Back,Dumbbell,Compound,Beginner,3.7,Strength,,true,false
+Dumbbell Squat to Press,Full Body,Dumbbell,Compound,Beginner,5.5,Muscle Gain,Quadriceps|Glutes|Shoulders,true,true
+Dumbbell Standing Calf Raise,Calves,Dumbbell,Isolation,Intermediate,3,Muscle Gain,,false,false
+Dumbbell Step-Up,Legs,Dumbbell,Compound,Intermediate,5.5,Fat Loss,,true,false
+Dumbbell Thruster,Full Body,Dumbbell,Compound,Intermediate,8,Fat Loss,Quadriceps|Glutes|Shoulders,true,true
+Dumbbell Zottman Curl,Arms,Dumbbell,Isolation,Advanced,3.5,Muscle Gain,Biceps Brachii|Brachioradialis,false,true
+Dynamic Lunge with Rotation,Full Body,Bodyweight,Pre Workout,Intermediate,5.5,Muscle Gain,,false,false
+Explosive Calf Jump,Calves,Bodyweight,Compound,Intermediate,8,Fat Loss,,true,false
+Explosive Push-Up,Chest,Bodyweight,Compound,Advanced,8,Strength,,true,false
+Explosive Shoulder Press,Shoulders,Barbell,Compound,Advanced,7.5,Strength,Anterior Deltoid|Lateral Deltoid|Triceps,true,true
+EZ Bar Curl,Arms,Barbell,Isolation,Beginner,3.5,Strength,Biceps Brachii,false,true
+Face Pull,Shoulders,Cable,Isolation,Intermediate,3.5,Muscle Gain|Strength,Rear Deltoid|Rhomboids|Rotator Cuff,false,true
+Farmer’s Walk,Full Body,Dumbbell,Compound,Advanced,7.2,Strength,,true,false
+Floor Press,Chest,Dumbbell,Compound,Beginner,3.5,Strength,Pectoralis Major|Triceps,true,true
+Flutter Kicks,Core,Bodyweight,Isolation,Intermediate,4,Fat Loss,Hip Flexors|Rectus Abdominis,false,true
+Front Raise,Shoulders,Dumbbell,Isolation,Beginner,3,Fat Loss|Muscle Gain,Anterior Deltoid,false,true
+Front Squat,Legs,Barbell,Compound,Intermediate,6,Muscle Gain|Strength,Quadriceps,true,true
+Glute Bridge,Legs,Bodyweight,Compound,Beginner,3.5,Fat Loss|Muscle Gain,Glutes,false,true
+Glute Bridge Hold,Core,Bodyweight,Isolation,Beginner,3,Strength,,false,false
+Glute Bridge March,Glutes,Bodyweight,Pre Workout,Intermediate,4,Muscle Gain,,false,false
+Goblet Squat,Legs,Dumbbell,Compound,Beginner,5,Fat Loss|Muscle Gain|Strength,Quadriceps|Glutes,true,true
+Hack Squat,Legs,Machine,Compound,Advanced,7,Strength,Quadriceps,true,true
+Hammer Curl,Arms,Dumbbell,Isolation,Beginner,3,Fat Loss|Muscle Gain,Brachialis|Brachioradialis,false,true
+Hang Clean (Light),Full Body,Barbell,Pre Workout,Advanced,8,Strength,,false,false
+Hanging Leg Raise,Core,Bodyweight,Isolation,Intermediate,4.5,Muscle Gain|Strength,Hip Flexors|Rectus Abdominis,false,true
+Hanging Windshield Wiper,Core,Bodyweight,Isolation,Advanced,6,Muscle Gain,Obliques|Hip Flexors,false,true
+Heavy Leg Press Calf Raise,Calves,Machine,Isolation,Advanced,3.5,Muscle Gain,,false,false
+Heavy Overhead Press,Shoulders,Barbell,Compound,Advanced,7,Strength,,true,false
+High Knees,Full Body,Bodyweight,Pre Workout,Beginner,8,Fat Loss,Hip Flexors|Quads|Core,true,true
+Hip 90-90 Stretch,Hips,Bodyweight,Pre Workout,Intermediate,2.5,Strength,Hip External Rotators|Piriformis,false,true
+Hip Circles,Hips,Bodyweight,Pre Workout,Beginner,2.5,Strength,Hip Flexors|Hip Abductors,false,true
+Hip Thrust,Legs,Barbell,Compound,Intermediate,5,Muscle Gain|Strength,Glutes,false,true
+Hurdle Drills,Full Body,Hurdles,Pre Workout,Advanced,10,Fat Loss,,false,false
+Inchworm Stretch,Full Body,Bodyweight,Pre Workout,Beginner,3,Strength,Hamstrings|Shoulders,false,true
+Incline Barbell Bench Press,Chest,Barbell,Compound,Advanced,6,Muscle Gain,Upper Pectoralis Major,true,true
+Incline Bench Press,Chest,Barbell,Compound,Intermediate,4.5,Muscle Gain|Strength,Upper Pectoralis Major,true,true
+Incline Cable Fly,Chest,Cable,Isolation,Intermediate,3.5,Fat Loss,,false,false
+Incline Dumbbell Curl,Arms,Dumbbell,Isolation,Advanced,3.5,Fat Loss,Biceps Brachii,false,true
+Incline Push-Up,Chest,Bodyweight,Compound,Beginner,3.5,Fat Loss|Muscle Gain,Lower Pectoralis Major,true,true
+Inverted Row,Back,Bodyweight,Compound,Intermediate,5,Fat Loss|Strength,Lats|Rhomboids,true,true
+JM Press,Arms,Barbell,Isolation,Advanced,4,Muscle Gain,Triceps,false,true
+Jump Lunge,Legs,Bodyweight,Compound,Intermediate,8,Fat Loss,Quadriceps|Glutes|Calves,true,true
+Jump Rope,Calves,Bodyweight,Compound,Intermediate,11,Fat Loss,Calves|Shoulders|Core,true,true
+Jump Squat,Legs,Bodyweight,Compound,Advanced,9,Fat Loss,Quadriceps|Glutes|Calves,true,true
+Jumping Jacks,Full Body,Bodyweight,Compound,Beginner,7.7,Fat Loss,Calves|Deltoids|Core,true,true
+Kettlebell Swing,Full Body,Kettlebell,Compound,Advanced,9.5,Strength|Fat Loss,Glutes|Hamstrings|Core,true,true
+Kettlebell Swing Warm-Up,Full Body,Kettlebell,Pre Workout,Advanced,9.8,Strength,,false,false
+Lat Pulldown,Back,Machine,Compound,Beginner,4.5,Fat Loss|Muscle Gain,Lats,true,true
+Lateral Band Walks,Hips,Resistance Band,Pre Workout,Intermediate,4.5,Muscle Gain,,false,false
+Lateral Lunge,Legs,Dumbbell,Compound,Intermediate,5.5,Fat Loss,Glutes|Adductors|Quadriceps,true,true
+Lateral Raise,Shoulders,Dumbbell,Isolation,Beginner,3,Fat Loss|Muscle Gain,Lateral Deltoid,false,true
+Lateral Shuffles,Legs,Bodyweight,Pre Workout,Beginner,5.5,Fat Loss,,false,false
+Leg Curl,Legs,Machine,Isolation,Beginner,3,Fat Loss|Muscle Gain,Hamstrings,false,true
+Leg Extension,Legs,Machine,Isolation,Beginner,3,Fat Loss|Muscle Gain,Quadriceps,false,true
+Leg Press,Legs,Machine,Compound,Beginner,4,Fat Loss|Muscle Gain,Quadriceps|Glutes,true,true
+Leg Press Calf Raise,Calves,Machine,Isolation,Intermediate,3,Muscle Gain,,false,false
+Leg Raise,Core,Bodyweight,Isolation,Beginner,3.5,Fat Loss|Muscle Gain,Hip Flexors|Rectus Abdominis,false,true
+Leg Swings,Legs,Bodyweight,Pre Workout,Beginner,2.8,Strength,Hip Flexors|Hamstrings,false,true
+Loaded Donkey Calf Raise,Calves,Machine,Isolation,Advanced,4,Strength,,false,false
+Lunges,Legs,Bodyweight,Compound,Intermediate,5.5,Muscle Gain|Strength,Quadriceps|Glutes,true,true
+Machine Chest Press,Chest,Machine,Compound,Beginner,4,Fat Loss|Muscle Gain,Pectoralis Major,true,true
+Machine Row,Back,Machine,Compound,Beginner,4,Fat Loss|Muscle Gain,Lats|Rhomboids,true,true
+Machine Shoulder Press,Shoulders,Machine,Compound,Beginner,3.5,Strength,Anterior Deltoid|Lateral Deltoid,true,true
+Machine Standing Calf Raise,Calves,Machine,Isolation,Beginner,3,Strength,,false,false
+Man Maker,Full Body,Dumbbell,Compound,Intermediate,9.5,Fat Loss,Full Body,true,true
+Medicine Ball Push-Up,Chest,Bodyweight,Compound,Advanced,7,Fat Loss,,true,false
+Medicine Ball Slam,Full Body,Medicine Ball,Pre Workout,Advanced,9.5,Fat Loss,Lats|Core|Shoulders,true,true
+Mountain Climbers,Core,Bodyweight,Compound,Intermediate,8,Fat Loss,Core|Hip Flexors,true,true
+Muscle-Up,Back,Bodyweight,Compound,Advanced,10,Fat Loss|Muscle Gain,Lats|Triceps,true,true
+Neck Rolls,Neck,Bodyweight,Pre Workout,Beginner,1.5,Strength,,false,false
+Nordic Hamstring Curl,Legs,Bodyweight,Isolation,Advanced,5,Muscle Gain,Hamstrings,false,true
+Overhead Barbell Press,Shoulders,Barbell,Compound,Intermediate,5.5,Muscle Gain|Strength,Anterior Deltoid|Lateral Deltoid,true,true
+Overhead Cable Extension,Arms,Cable,Isolation,Beginner,3,Fat Loss|Muscle Gain,Triceps Long Head,false,true
+Overhead Squat,Full Body,Barbell,Compound,Advanced,7.5,Muscle Gain,Quadriceps|Glutes,true,true
+Pallof Press,Core,Cable,Isolation,Advanced,4,Fat Loss,Obliques|Transverse Abdominis,false,true
+Pause Calf Raise,Calves,Barbell,Isolation,Advanced,4,Strength,,false,false
+Pec Deck Machine,Chest,Machine,Isolation,Beginner,3,Fat Loss|Muscle Gain,Pectoralis Major,false,true
+Pendlay Row,Back,Barbell,Compound,Advanced,6,Fat Loss,Lats|Rhomboids,true,true
+Pistol Squat,Legs,Bodyweight,Compound,Advanced,8,Fat Loss,Quadriceps|Glutes,true,true
+Plank,Core,Bodyweight,Isolation,Beginner,3.5,Fat Loss|Muscle Gain|Strength,Transverse Abdominis|Core Stabilisers,false,true
+Plank to Downward Dog,Full Body,Bodyweight,Pre Workout,Intermediate,4,Strength,,false,false
+Plyometric Calf Jump,Calves,Bodyweight,Compound,Advanced,8.5,Fat Loss,,true,false
+Plyometric Lateral Bounds,Legs,Bodyweight,Pre Workout,Advanced,10.5,Fat Loss,,false,false
+Plyometric Push-Up,Chest,Bodyweight,Compound,Advanced,8,Fat Loss,Pectoralis Major,true,true
+Power Clean,Full Body,Barbell,Compound,Advanced,9.5,Strength,Traps|Glutes|Hamstrings,true,true
+Preacher Curl,Arms,Machine,Isolation,Intermediate,3.5,Muscle Gain|Strength,Biceps Brachii,false,true
+Pull-Up,Back,Bodyweight,Compound,Intermediate,6,Muscle Gain|Strength,Lats,true,true
+Push Press,Shoulders,Barbell,Compound,Advanced,7,Muscle Gain,Anterior Deltoid|Lateral Deltoid|Triceps,true,true
+Push-Up,Chest,Bodyweight,Compound,Beginner,4.5,Fat Loss|Muscle Gain,Pectoralis Major,true,true
+Push-Up to Renegade Row,Chest,Bodyweight,Compound,Intermediate,6.5,Fat Loss,Chest|Lats|Core,true,true
+Rack Pull,Back,Barbell,Compound,Advanced,7.5,Strength,Erector Spinae|Traps,true,true
+Reactive Cone Drills,Full Body,Cones,Pre Workout,Advanced,11,Fat Loss,,false,false
+Rear Delt Fly,Shoulders,Dumbbell,Isolation,Intermediate,3.5,Muscle Gain|Strength,Posterior Deltoid,false,true
+Renegade Row,Back,Dumbbell,Compound,Intermediate,6.5,Fat Loss,Lats|Core|Chest,true,true
+Resistance Band Chest Press,Chest,Bodyweight,Compound,Beginner,3.9,Strength,Pectoralis Major,true,true
+Resistance Band Curl,Arms,Bodyweight,Isolation,Beginner,3,Strength,Biceps Brachii,false,true
+Resistance Band Lateral Raise,Shoulders,Bodyweight,Isolation,Beginner,3,Strength,Lateral Deltoid,false,true
+Resistance Band Row,Back,Bodyweight,Compound,Beginner,3.9,Strength,,true,false
+Resistance Band Squat Press,Full Body,Bodyweight,Compound,Beginner,5,Muscle Gain,,true,false
+Resisted Sprint with Band,Full Body,Resistance Band,Pre Workout,Advanced,13,Fat Loss,,false,false
+Reverse Barbell Curl,Arms,Barbell,Isolation,Advanced,4,Strength,Brachioradialis|Wrist Extensors,false,true
+Romanian Deadlift,Back,Barbell,Compound,Intermediate,5.5,Muscle Gain|Strength,Hamstrings|Glutes,true,true
+Rope Tricep Pushdown,Arms,Cable,Isolation,Intermediate,3.5,Fat Loss,Triceps,false,true
+Russian Twist,Core,Bodyweight,Isolation,Intermediate,4,Muscle Gain|Strength,Obliques,false,true
+Sandbag Squat,Full Body,Bodyweight,Compound,Intermediate,5.8,Muscle Gain,Quadriceps|Glutes,true,true
+Scapular Push-Ups,Shoulders,Bodyweight,Pre Workout,Intermediate,3.8,Strength,,false,false
+Seal Row,Back,Barbell,Compound,Advanced,5.5,Muscle Gain,Rhomboids|Lats,true,true
+Seated Cable Row,Back,Cable,Compound,Beginner,4,Fat Loss|Muscle Gain,Lats|Rhomboids,true,true
+Seated Calf Raise,Calves,Machine,Isolation,Beginner,3.3,Fat Loss|Muscle Gain,Soleus,false,true
+Seated Dumbbell Press,Shoulders,Dumbbell,Compound,Advanced,5,Muscle Gain,Anterior Deltoid,true,true
+Shadow Boxing,Full Body,Bodyweight,Pre Workout,Beginner,7.8,Fat Loss,Shoulders|Core|Calves,true,true
+Shoulder Rolls,Shoulders,Bodyweight,Pre Workout,Beginner,1.8,Strength,,false,false
+Single-Leg Bodyweight Calf Raise,Calves,Bodyweight,Isolation,Beginner,3,Strength,,false,false
+Single-Leg Seated Calf Raise,Calves,Machine,Isolation,Intermediate,3,Muscle Gain,,false,false
+Single-Leg Standing Barbell Calf Raise,Calves,Barbell,Isolation,Advanced,3.5,Muscle Gain,,false,false
+Skipping with Arm Drive,Full Body,Bodyweight,Pre Workout,Intermediate,8.5,Fat Loss,,false,false
+Skull Crusher,Arms,Barbell,Isolation,Intermediate,3.5,Muscle Gain|Strength,Triceps,false,true
+Sled Push,Legs,Machine,Compound,Advanced,10,Fat Loss,Quadriceps|Glutes|Calves,true,true
+Smith Machine Bench Press,Chest,Machine,Compound,Beginner,3.8,Strength,Pectoralis Major,true,true
+Smith Machine Calf Raise,Calves,Machine,Isolation,Intermediate,3,Muscle Gain,,false,false
+Snatch,Full Body,Barbell,Compound,Advanced,11,Strength,Full Body,true,true
+Spider Curl,Arms,Barbell,Isolation,Advanced,3.5,Muscle Gain,Biceps Brachii,false,true
+Spiderman Push-Up,Chest,Bodyweight,Compound,Intermediate,5.5,Fat Loss,Pectoralis Major|Obliques,true,true
+Sprint Drills - A-Skip,Full Body,Bodyweight,Pre Workout,Advanced,9,Fat Loss,,false,false
+Sprint Drills - B-Skip,Full Body,Bodyweight,Pre Workout,Advanced,9.5,Fat Loss,,false,false
+Sprint Intervals,Calves,Bodyweight,Compound,Advanced,13,Fat Loss,Glutes|Hamstrings|Calves,true,true
+Stair Running,Calves,Bodyweight,Compound,Intermediate,10,Fat Loss,,true,false
+Standing Calf Raise,Calves,Bodyweight,Isolation,Beginner,3,Fat Loss|Muscle Gain,Gastrocnemius|Soleus,false,true
+Step Calf Raise,Calves,Bodyweight,Isolation,Beginner,3,Strength,,false,false
+Step-Up,Full Body,Bodyweight,Compound,Beginner,4.5,Fat Loss,Quadriceps|Glutes,true,true
+Step-Up with Dumbbell,Legs,Dumbbell,Compound,Beginner,3.7,Strength,,true,false
+Suitcase Deadlift,Full Body,Dumbbell,Compound,Beginner,4.5,Strength,Glutes|Hamstrings|Core,true,true
+Sumo Deadlift,Back,Barbell,Compound,Advanced,7.5,Strength,Glutes|Adductors|Quads,true,true
+Sumo Squat,Legs,Dumbbell,Compound,Beginner,3.9,Strength,Glutes|Adductors,true,true
+Superman Hold,Back,Bodyweight,Isolation,Beginner,3,Strength,Erector Spinae|Glutes,false,true
+T-Bar Row,Back,Machine,Compound,Intermediate,5,Muscle Gain|Strength,Lats|Rhomboids,true,true
+Thoracic Spine Rotations,Spine,Bodyweight,Pre Workout,Intermediate,3,Strength,Thoracic Rotators|Obliques,false,true
+Thruster,Full Body,Barbell,Compound,Advanced,9,Strength,Quadriceps|Glutes|Shoulders|Triceps,true,true
+Tibialis Raise,Calves,Bodyweight,Isolation,Intermediate,3,Strength,Tibialis Anterior,false,true
+Toes to Bar,Core,Bodyweight,Isolation,Advanced,5.5,Fat Loss,Rectus Abdominis|Hip Flexors,false,true
+Torso Twists,Core,Bodyweight,Pre Workout,Beginner,2.8,Strength,,false,false
+Trap Bar Deadlift,Full Body,Barbell,Compound,Intermediate,6.5,Strength,Glutes|Quads|Hamstrings,true,true
+Tricep Dips,Arms,Bodyweight,Compound,Advanced,7,Fat Loss,Triceps,false,true
+Tricep Kickback,Arms,Dumbbell,Isolation,Intermediate,3.8,Fat Loss,Triceps,false,true
+Tricep Overhead Extension,Arms,Dumbbell,Isolation,Beginner,3,Strength,Triceps Long Head,false,true
+Tricep Pushdown,Arms,Cable,Isolation,Beginner,3,Fat Loss|Muscle Gain,Triceps,false,true
+Tuck Jump,Full Body,Bodyweight,Compound,Advanced,9,Fat Loss,,true,false
+Turkish Get-Up (Light),Full Body,Kettlebell,Pre Workout,Advanced,6.5,Strength,,false,false
+Upright Row,Shoulders,Dumbbell,Compound,Intermediate,5,Fat Loss,Lateral Deltoid|Upper Traps,true,true
+V-Up,Core,Bodyweight,Isolation,Advanced,5,Fat Loss,Rectus Abdominis|Hip Flexors,false,true
+Walking Lunge,Full Body,Bodyweight,Compound,Beginner,5,Fat Loss,Quadriceps|Glutes,true,true
+Walking Lunges,Legs,Bodyweight,Pre Workout,Beginner,4,Muscle Gain,,false,false
+Wall Drill - Isometric Sprint Position,Full Body,Bodyweight,Pre Workout,Advanced,7.5,Strength,,false,false
+Wall Sit,Legs,Bodyweight,Isolation,Beginner,3.7,Strength,Quadriceps,false,true
+Weighted Cable Crunch,Core,Cable,Isolation,Advanced,4,Muscle Gain,Rectus Abdominis,false,true
+Weighted Chest Dips,Chest,Bodyweight,Compound,Advanced,6,Muscle Gain,,true,false
+Weighted Chin-Up,Arms,Bodyweight,Compound,Advanced,7.5,Strength,,true,false
+Weighted Dips,Chest,Bodyweight,Compound,Advanced,7,Strength,Pectoralis Major|Triceps,true,true
+Weighted Pull-Up,Back,Bodyweight,Compound,Advanced,7.5,Strength,Lats,true,true
+Weighted Step-Up Calf Raise,Calves,Dumbbell,Isolation,Intermediate,3.5,Strength,,false,false
+Weighted Tricep Dips,Arms,Bodyweight,Compound,Advanced,7,Strength,,true,false
+Wide Grip Pull-Up,Back,Bodyweight,Compound,Advanced,7.5,Strength,Lats,true,true
+Windmill,Core,Kettlebell,Isolation,Advanced,5.5,Fat Loss,Obliques|Glutes|Shoulders,true,true
+Woodchop Cable,Core,Cable,Compound,Intermediate,5.5,Fat Loss,Obliques|Core,false,true
+World's Greatest Stretch,Full Body,Bodyweight,Pre Workout,Beginner,2.5,Strength,,false,false
+Wrist Rotations,Wrists,Bodyweight,Pre Workout,Beginner,1.5,Strength,,false,false
+Yates Row,Back,Barbell,Compound,Advanced,5.5,Muscle Gain,Lower Lats|Biceps,true,true
+Zercher Squat,Full Body,Barbell,Compound,Intermediate,6.5,Strength,Quadriceps|Glutes|Core,true,true
