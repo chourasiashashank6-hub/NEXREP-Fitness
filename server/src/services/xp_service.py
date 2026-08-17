@@ -81,6 +81,69 @@ def _has_idempotency_key(db: Session, user_id: int, key: str) -> bool:
     )
 
 
+def _reversal_idempotency_key(original_key: str) -> str:
+    return f"reverse:{original_key}"
+
+
+def _find_award_event(db: Session, user_id: int, idempotency_key: str) -> XpEvent | None:
+    return (
+        db.query(XpEvent)
+        .filter(
+            XpEvent.user_id == user_id,
+            XpEvent.metadata_json["idempotency_key"].astext == idempotency_key,
+            XpEvent.xp_amount > 0,
+        )
+        .order_by(XpEvent.id.asc())
+        .first()
+    )
+
+
+def _update_totals_after_xp_change(totals: UserXpTotal) -> None:
+    """Total XP reflects earned work; level is a sticky high-water mark."""
+    totals.total_xp = int(totals.total_xp or 0)
+    computed_level = level_for_total_xp(totals.total_xp)
+    totals.level = max(int(totals.level or 1), computed_level)
+    totals.updated_at = datetime.utcnow()
+
+
+def _reverse_xp_for_idempotency_key(
+    db: Session,
+    *,
+    user_id: int,
+    idempotency_key: str,
+    metadata: dict[str, Any] | None = None,
+) -> XpEvent | None:
+    reversal_key = _reversal_idempotency_key(idempotency_key)
+    if _has_idempotency_key(db, user_id, reversal_key):
+        return None
+
+    original = _find_award_event(db, user_id, idempotency_key)
+    if not original:
+        return None
+
+    meta = dict(metadata or {})
+    meta["idempotency_key"] = reversal_key
+    meta["reverses_event_id"] = original.id
+    meta["reverses_idempotency_key"] = idempotency_key
+    if isinstance(original.metadata_json, dict):
+        meta.setdefault("original_metadata", original.metadata_json)
+
+    event = XpEvent(
+        user_id=user_id,
+        event_type=f"{original.event_type}_reversed",
+        xp_amount=-int(original.xp_amount),
+        metadata_json=meta,
+    )
+    db.add(event)
+    db.flush()
+
+    totals = _get_or_create_totals(db, user_id)
+    totals.total_xp = int(totals.total_xp or 0) - int(original.xp_amount)
+    _update_totals_after_xp_change(totals)
+    db.flush()
+    return event
+
+
 def _last_activity_date(db: Session, user_id: int, before: date) -> date | None:
     last_workout = (
         db.query(func.max(func.date(Workout.date)))
@@ -141,7 +204,7 @@ def _award_xp(
     db.flush()
 
     totals.total_xp = int(totals.total_xp or 0) + xp_amount
-    totals.level = level_for_total_xp(totals.total_xp)
+    _update_totals_after_xp_change(totals)
     if totals.comeback_sessions_remaining > 0:
         totals.comeback_sessions_remaining = max(0, int(totals.comeback_sessions_remaining) - 1)
     totals.updated_at = datetime.utcnow()
@@ -252,6 +315,114 @@ def award_xp_for_workout_log(db: Session, *, user_id: int, workout_id: int, log_
     except Exception:
         logger.exception("XP award failed for workout log user=%s workout=%s", user_id, workout_id)
         db.rollback()
+
+
+def reverse_xp_for_workout_delete(
+    db: Session,
+    *,
+    user_id: int,
+    workout_id: int,
+    log_date: date | None = None,
+) -> None:
+    """Reverse exercise XP when a workout log is deleted or planner checkbox unchecked."""
+    try:
+        _reverse_xp_for_idempotency_key(
+            db,
+            user_id=user_id,
+            idempotency_key=f"workout:{workout_id}",
+            metadata={"workout_id": workout_id, "reason": "workout_deleted"},
+        )
+        if log_date is not None:
+            _maybe_reverse_workout_day_completed(db, user_id=user_id, log_date=log_date)
+    except Exception:
+        logger.exception(
+            "XP reversal failed for workout delete user=%s workout=%s",
+            user_id,
+            workout_id,
+        )
+
+
+def _maybe_reverse_workout_day_completed(db: Session, *, user_id: int, log_date: date) -> None:
+    """Reverse daily workout-completion bonus when the day is no longer fully logged."""
+    day_key = log_date.isoformat()
+    idempotency_key = f"daily:{day_key}:workout_day_completed"
+    if _find_award_event(db, user_id, idempotency_key) is None:
+        return
+    if _day_workouts_fully_logged(db, user_id, log_date):
+        return
+    _reverse_xp_for_idempotency_key(
+        db,
+        user_id=user_id,
+        idempotency_key=idempotency_key,
+        metadata={"log_date": day_key, "reason": "workout_day_incomplete"},
+    )
+
+
+def _day_workouts_fully_logged(db: Session, user_id: int, log_date: date) -> bool:
+    """Placeholder until workout-day completion awards are wired server-side."""
+    return False
+
+
+def reevaluate_xp_after_meal_change(db: Session, *, user_id: int, log_date: date) -> None:
+    """Reverse daily meal bonuses that no longer apply after a meal is deleted."""
+    try:
+        day_key = log_date.isoformat()
+        log = (
+            db.query(DailyNutritionLog)
+            .filter(DailyNutritionLog.user_id == user_id, DailyNutritionLog.log_date == log_date)
+            .first()
+        )
+        expected = _expected_meal_slots(db, user_id, log_date)
+        logged = _logged_meal_count(db, user_id, log_date)
+
+        if expected is None or logged < expected:
+            _reverse_xp_for_idempotency_key(
+                db,
+                user_id=user_id,
+                idempotency_key=f"daily:{day_key}:all_meals_logged",
+                metadata={"log_date": day_key, "logged": logged, "expected": expected, "reason": "meal_deleted"},
+            )
+
+        if not log or not _calorie_target_hit(log):
+            _reverse_xp_for_idempotency_key(
+                db,
+                user_id=user_id,
+                idempotency_key=f"daily:{day_key}:calorie_target_hit",
+                metadata={"log_date": day_key, "reason": "meal_deleted"},
+            )
+
+        # Streak day bonus: reverse only when the day has no logged meals left.
+        if logged == 0:
+            _reverse_xp_for_idempotency_key(
+                db,
+                user_id=user_id,
+                idempotency_key=f"daily:{day_key}:streak_day_bonus",
+                metadata={"log_date": day_key, "reason": "meal_deleted"},
+            )
+    except Exception:
+        logger.exception("XP reversal failed after meal change user=%s date=%s", user_id, log_date)
+
+
+def reverse_xp_for_guided_warmup_delete(
+    db: Session,
+    *,
+    user_id: int,
+    session_id: str,
+) -> None:
+    """Reverse guided warm-up XP when its session history entry is deleted."""
+    try:
+        _reverse_xp_for_idempotency_key(
+            db,
+            user_id=user_id,
+            idempotency_key=f"guided_warmup:{session_id}",
+            metadata={"session_id": session_id, "reason": "guided_warmup_deleted"},
+        )
+    except Exception:
+        logger.exception(
+            "XP reversal failed for guided warm-up delete user=%s session=%s",
+            user_id,
+            session_id,
+        )
 
 
 def award_xp_for_meal_log(db: Session, *, user_id: int, log_date: date) -> None:

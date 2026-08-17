@@ -1,4 +1,5 @@
 import type { MealPlanMeal } from "../types/planner";
+import { getWorkoutCatalogFiltered } from "../api/workout";
 
 export type CatalogEquipmentRow = {
   exerciseName: string;
@@ -28,6 +29,30 @@ export function resolveEquipmentForExercises(
     if (!byKey.has(key)) byKey.set(key, equipment);
   }
   return [...byKey.values()].sort((a, b) => a.localeCompare(b));
+}
+
+/** Fetch equipment rows for only the exercises shown in today's plan. */
+export async function fetchEquipmentForExercises(exerciseNames: string[]): Promise<CatalogEquipmentRow[]> {
+  const unique = [...new Set(exerciseNames.map((name) => name.trim()).filter(Boolean))];
+  if (!unique.length) return [];
+
+  const responses = await Promise.all(
+    unique.map((exerciseName) =>
+      getWorkoutCatalogFiltered({ exerciseName }).catch(() => ({ items: [] as Array<Record<string, unknown>> })),
+    ),
+  );
+
+  const rows: CatalogEquipmentRow[] = [];
+  for (const data of responses) {
+    for (const item of data.items ?? []) {
+      rows.push({
+        exerciseName: String(item.exerciseName ?? ""),
+        defaultExerciseName: item.defaultExerciseName ? String(item.defaultExerciseName) : undefined,
+        equipment: String(item.equipment ?? ""),
+      });
+    }
+  }
+  return rows;
 }
 
 /** Ingredient names from meal-plan `recipe_items` (same embedded payload as View recipe). */

@@ -90,7 +90,7 @@
     "sessionBoxLabel": "Einheit",
     "restDayNoSession": "Heute ist Ruhetag 🛌 — keine Einheit geplant",
     "gamePlan": {
-      "openButton": "Tagesplan",
+      "openButton": "Tagesplan ansehen",
       "title": "Heutiger Tagesplan",
       "exerciseCount": "Übungen",
       "mealCount": "Mahlzeiten",
@@ -163,6 +163,12 @@
     "logWeight": "Protokollgewicht",
     "lastWeight": "Leisten: {{weight}} kg",
     "startTracking": "Starte mit der Verfolgung",
+    "weightJourneyTransformation": {
+      "title": "90-Tage-Transformation",
+      "workouts": "Workouts",
+      "newPrs": "Neue PRs",
+      "viewTimeline": "Gesamte Timeline ansehen"
+    },
     "xp": {
       "title": "FORTSCHRITTS-XP",
       "level": "LVL",
@@ -514,14 +520,17 @@
   },
   "social": {
     "nav": {
-      "home": "Squad",
+      "home": "Home",
       "leaderboard": "Bestenliste",
       "friends": "Freunde",
       "threads": "Threads",
-      "messages": "Nachrichten"
+      "messages": "Nachrichten",
+      "chats": "Chats"
     },
     "header": {
-      "title": "NexFam"
+      "title": "NexFam",
+      "findPeople": "Leute finden",
+      "search": "Nutzer suchen"
     },
     "home": {
       "eyebrow": "Squad",
@@ -530,7 +539,14 @@
       "friendCount": "{{count}} Freunde",
       "nextSessionEyebrow": "Deine nachste Session",
       "openThread": "Offnen",
-      "feedTitle": "Squad-Aktivitat",
+      "feedTitle": "Neueste Aktivitat",
+      "squadTitle": "Dein Squad",
+      "squadEmptyTitle": "Starte ein Gym-Squad",
+      "squadEmptyBody": "Erstelle oder tritt einem Squad bei, um tagliche Workout- und Mahlzeiten-Check-ins zu sehen.",
+      "squadBrowse": "Squads durchsuchen",
+      "squadSeeAll": "Alle anzeigen",
+      "leaderboardTitle": "Diese Woche",
+      "challengesLink": "Challenges",
       "reactions": {
         "flame": "Flamme",
         "cheer": "Jubeln"
@@ -679,6 +695,16 @@
     "common": {
       "comingSoon": "Demnächst"
     },
+    "chats": {
+      "eyebrow": "Posteingang",
+      "title": "Chats",
+      "threadBadge": "Thread",
+      "emptyTitle": "Noch keine Unterhaltungen",
+      "emptyBody": "Direktnachrichten und Thread-Chats erscheinen hier.",
+      "alerts": {
+        "loadFailed": "Chats konnten gerade nicht geladen werden."
+      }
+    },
     "threads": {
       "eyebrow": "Gym-Threads",
       "title": "Threads",
@@ -697,6 +723,13 @@
         "past": "Vergangen",
         "discover": "Entdecken"
       },
+      "filters": {
+        "all": "Alle",
+        "mine": "Meine",
+        "invites": "Einladungen"
+      },
+      "showPast": "Vergangene Threads anzeigen",
+      "hidePast": "Vergangene Threads ausblenden",
       "empty": {
         "active": {
           "title": "Keine aktiven Threads",
@@ -1433,6 +1466,7 @@
     }
   },
   "settings": {
+    "screenTitle": "Einstellungen",
     "notifications": {
       "title": "Benachrichtigungseinstellungen",
       "subtitle": "Steuere Erinnerungen, Ruhezeiten und Trainingszeitverschiebungen.",
@@ -1923,7 +1957,8 @@
     },
     "reflow": {
       "appliedTitle": "Plan angepasst",
-      "appliedBody": "Smart Reflow hat {{count}} verpasste Prioritätsübungen in kommende Tage verschoben."
+      "appliedBody": "Smart Reflow hat {{count}} verpasste Prioritätsübungen in kommende Tage verschoben.",
+      "movedFromDay": "→ Von Tag {{day}} verschoben"
     },
     "workoutPlannerScreen": {
       "balancedHint": "Ausgewogen – alle Muskelgruppen werden gleichermaßen trainiert",

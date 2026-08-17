@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, AppState, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { resolveApiBaseUrl } from "../api/client";
@@ -10,6 +10,7 @@ import {
   type XpLeaderboardRow,
   type XpSummary,
 } from "../api/xp";
+import { useXpRefreshStore } from "../store/xpRefreshStore";
 
 const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
@@ -33,10 +34,9 @@ const EMPTY_XP_SUMMARY: XpSummary = {
   season: null,
 };
 
-const FOCUS_STALE_MS = 45_000;
-
 export function ProfileXpCard() {
   const { t } = useTranslation();
+  const xpRefreshVersion = useXpRefreshStore((state) => state.version);
   const [summary, setSummary] = useState<XpSummary>(EMPTY_XP_SUMMARY);
   const [leaderboard, setLeaderboard] = useState<XpLeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,11 +44,7 @@ export function ProfileXpCard() {
   const lastLoadAt = useRef(0);
   const apiBase = useMemo(() => resolveApiBaseUrl(), []);
 
-  const loadXp = useCallback(async (force = false) => {
-    const now = Date.now();
-    if (!force && lastLoadAt.current > 0 && now - lastLoadAt.current < FOCUS_STALE_MS) {
-      return;
-    }
+  const loadXp = useCallback(async () => {
     setLoading((prev) => (lastLoadAt.current === 0 ? true : prev));
     setLoadError(null);
     try {
@@ -79,6 +75,18 @@ export function ProfileXpCard() {
       void loadXp();
     }, [loadXp]),
   );
+
+  useEffect(() => {
+    if (xpRefreshVersion === 0) return;
+    void loadXp();
+  }, [xpRefreshVersion, loadXp]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") void loadXp();
+    });
+    return () => sub.remove();
+  }, [loadXp]);
 
   const progressPct = useMemo(() => {
     if (summary.xp_to_next_level == null || summary.xp_to_next_level <= 0) {

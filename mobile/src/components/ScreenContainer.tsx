@@ -12,6 +12,8 @@ type ScreenContainerProps = PropsWithChildren<{
   refreshControl?: ReactElement<RefreshControlProps>;
   /** Skip outer SafeAreaView when embedded inside a Log tab. */
   embedded?: boolean;
+  /** When false, children render in a flex View instead of an outer ScrollView. */
+  scroll?: boolean;
 }>;
 
 export const ScreenContainer = ({
@@ -21,8 +23,9 @@ export const ScreenContainer = ({
   contentStyle,
   refreshControl,
   embedded = false,
+  scroll = true,
 }: ScreenContainerProps) => {
-  const body = (
+  const body = scroll ? (
     <ScrollView
       style={[styles.root, { backgroundColor: bg }]}
       contentContainerStyle={[styles.content, embedded && styles.contentEmbedded, contentStyle]}
@@ -33,6 +36,10 @@ export const ScreenContainer = ({
     >
       <View style={styles.inner}>{children}</View>
     </ScrollView>
+  ) : (
+    <View style={[styles.root, styles.content, embedded && styles.contentEmbedded, contentStyle, { backgroundColor: bg }]}>
+      <View style={styles.inner}>{children}</View>
+    </View>
   );
 
   if (embedded) {

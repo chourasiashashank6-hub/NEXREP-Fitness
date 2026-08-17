@@ -90,7 +90,7 @@
     "sessionBoxLabel": "Sesión",
     "restDayNoSession": "Hoy es día de descanso 🛌 — no hay sesión programada",
     "gamePlan": {
-      "openButton": "Plan del día",
+      "openButton": "Ver el plan del día",
       "title": "Plan del día",
       "exerciseCount": "Ejercicios",
       "mealCount": "Comidas",
@@ -163,6 +163,12 @@
     "logWeight": "Peso del tronco",
     "lastWeight": "último:{{weight}}kg",
     "startTracking": "comenzar a rastrear",
+    "weightJourneyTransformation": {
+      "title": "Transformación de 90 días",
+      "workouts": "Entrenamientos",
+      "newPrs": "Nuevos PR",
+      "viewTimeline": "Ver línea completa"
+    },
     "xp": {
       "title": "XP DE PROGRESO",
       "level": "NIV",
@@ -514,14 +520,17 @@
   },
   "social": {
     "nav": {
-      "home": "Squad",
+      "home": "Inicio",
       "leaderboard": "Ranking",
       "friends": "Amigos",
       "threads": "Hilos",
-      "messages": "Mensajes"
+      "messages": "Mensajes",
+      "chats": "Chats"
     },
     "header": {
-      "title": "NexFam"
+      "title": "NexFam",
+      "findPeople": "Buscar personas",
+      "search": "Buscar usuarios"
     },
     "home": {
       "eyebrow": "Squad",
@@ -530,7 +539,14 @@
       "friendCount": "{{count}} amigos",
       "nextSessionEyebrow": "Tu proxima sesion",
       "openThread": "Abrir",
-      "feedTitle": "Actividad del squad",
+      "feedTitle": "Actividad reciente",
+      "squadTitle": "Tu squad",
+      "squadEmptyTitle": "Empieza un gym squad",
+      "squadEmptyBody": "Crea o unete a un squad para ver check-ins diarios de entreno y comidas.",
+      "squadBrowse": "Ver squads",
+      "squadSeeAll": "Ver todos",
+      "leaderboardTitle": "Esta semana",
+      "challengesLink": "Retos",
       "reactions": {
         "flame": "Fuego",
         "cheer": "Animar"
@@ -679,6 +695,16 @@
     "common": {
       "comingSoon": "Próximamente"
     },
+    "chats": {
+      "eyebrow": "Bandeja",
+      "title": "Chats",
+      "threadBadge": "Hilo",
+      "emptyTitle": "Aun no hay conversaciones",
+      "emptyBody": "Los mensajes directos y chats de hilos apareceran aqui.",
+      "alerts": {
+        "loadFailed": "No se pudieron cargar los chats ahora."
+      }
+    },
     "threads": {
       "eyebrow": "Hilos de gym",
       "title": "Hilos",
@@ -697,6 +723,13 @@
         "past": "Pasados",
         "discover": "Descubrir"
       },
+      "filters": {
+        "all": "Todos",
+        "mine": "Mios",
+        "invites": "Invitaciones"
+      },
+      "showPast": "Mostrar hilos pasados",
+      "hidePast": "Ocultar hilos pasados",
       "empty": {
         "active": {
           "title": "No hay hilos activos",
@@ -1433,6 +1466,7 @@
     }
   },
   "settings": {
+    "screenTitle": "Ajustes",
     "notifications": {
       "title": "Preferencias de notificación",
       "subtitle": "Controle los recordatorios, las horas de silencio y las compensaciones del tiempo de entrenamiento.",
@@ -1923,7 +1957,8 @@
     },
     "reflow": {
       "appliedTitle": "Plan adaptado",
-      "appliedBody": "Smart Reflow movió {{count}} ejercicios prioritarios perdidos a los próximos días."
+      "appliedBody": "Smart Reflow movió {{count}} ejercicios prioritarios perdidos a los próximos días.",
+      "movedFromDay": "→ Movido del día {{day}}"
     },
     "workoutPlannerScreen": {
       "balancedHint": "Equilibrado: todos los grupos de músculos se entrenarán por igual",

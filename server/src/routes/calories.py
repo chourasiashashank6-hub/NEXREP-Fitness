@@ -25,7 +25,7 @@ from src.schemas.calories_api import (
     WaterPatchRequest,
 )
 from src.services.activity_feed_service import calculate_user_streak, emit_streak_milestone_if_needed
-from src.services.xp_service import award_xp_for_meal_log
+from src.services.xp_service import award_xp_for_meal_log, reevaluate_xp_after_meal_change
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.services.food_image_utils import prepare_food_image_for_vision
 from src.services.language_service import normalize_language_tag
@@ -1716,6 +1716,7 @@ def delete_meal_entry(meal_id: int, current_user: User = Depends(get_current_use
     db.delete(meal)
     db.flush()
     recalculate_daily_log(db, log)
+    reevaluate_xp_after_meal_change(db, user_id=current_user.id, log_date=log_date)
     db.commit()
     return _serialize_day(db, current_user, log_date)
 
@@ -1735,6 +1736,7 @@ def delete_ai_meal_entry(ai_meal_id: int, current_user: User = Depends(get_curre
     )
     if log:
         recalculate_daily_log(db, log)
+    reevaluate_xp_after_meal_change(db, user_id=current_user.id, log_date=log_date)
     db.commit()
     return _serialize_day(db, current_user, log_date)
 

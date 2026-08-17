@@ -75,7 +75,7 @@ from src.services.notification_service import (
     stop_notification_scheduler,
 )
 from src.services.activity_feed_service import emit_activity_event, emit_streak_milestone_if_needed
-from src.services.xp_service import award_xp_for_workout_log
+from src.services.xp_service import award_xp_for_workout_log, reverse_xp_for_workout_delete, reverse_xp_for_guided_warmup_delete
 from src.services.language_service import ai_language_instruction
 from src.services.language_service import normalize_language_tag
 from src.services.subscription_service import (
@@ -2326,6 +2326,23 @@ def _delete_workout_impl(
         StrengthLift.user_id == current_user.id,
         StrengthLift.workout_id == workout.id,
     ).delete(synchronize_session=False)
+
+    workout_log_date = workout.date.date() if workout.date else date.today()
+    reverse_xp_for_workout_delete(
+        db,
+        user_id=current_user.id,
+        workout_id=workout.id,
+        log_date=workout_log_date,
+    )
+    notes = str(workout.notes or "")
+    session_match = re.search(r"active_session(?:_partial)?:([^\s,]+)", notes)
+    if session_match and (workout.exercise_name or "").strip().lower() == "guided warm-up":
+        reverse_xp_for_guided_warmup_delete(
+            db,
+            user_id=current_user.id,
+            session_id=session_match.group(1),
+        )
+
     db.delete(workout)
     db.commit()
     return {"deleted": True, "workout_id": workout_id}

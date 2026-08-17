@@ -1,5 +1,6 @@
 import axios from "axios";
 import { apiClient } from "./client";
+import { bumpXpRefresh } from "../store/xpRefreshStore";
 
 export type MealType = "Breakfast" | "Lunch" | "Dinner" | "Snack" | "Pre_Workout" | "Post_Workout";
 
@@ -264,6 +265,7 @@ export const postCalorieMeal = async (payload: {
 }) => {
   return withCaloriesRoute("/meals", async (path) => {
     const { data } = await apiClient.post<CalorieDayPayload>(path, payload);
+    bumpXpRefresh();
     return data;
   });
 };
@@ -271,6 +273,7 @@ export const postCalorieMeal = async (payload: {
 export const deleteCalorieMeal = async (mealId: number) => {
   return withCaloriesRoute(`/meals/${mealId}`, async (path) => {
     const { data } = await apiClient.delete<CalorieDayPayload>(path);
+    bumpXpRefresh();
     return data;
   });
 };
@@ -278,6 +281,7 @@ export const deleteCalorieMeal = async (mealId: number) => {
 export const deleteAIFoodMeal = async (aiMealId: number) => {
   return withCaloriesRoute(`/foods/ai-meals/${aiMealId}`, async (path) => {
     const { data } = await apiClient.delete<CalorieDayPayload>(path);
+    bumpXpRefresh();
     return data;
   });
 };

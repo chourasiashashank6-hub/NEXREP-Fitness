@@ -90,7 +90,7 @@
     "sessionBoxLabel": "Session",
     "restDayNoSession": "Today is a rest day 🛌 — no session scheduled",
     "gamePlan": {
-      "openButton": "Game plan",
+      "openButton": "Aaj ka game plan dekho",
       "title": "Aaj ka game plan",
       "exerciseCount": "Exercises",
       "mealCount": "Meals",
@@ -163,6 +163,12 @@
     "logWeight": "Weight log karein",
     "lastWeight": "last: {{weight}} kg",
     "startTracking": "tracking start karein",
+    "weightJourneyTransformation": {
+      "title": "90-day transformation",
+      "workouts": "Workouts",
+      "newPrs": "New PRs",
+      "viewTimeline": "Full timeline dekho"
+    },
     "xp": {
       "title": "PROGRESS XP",
       "level": "LVL",
@@ -515,14 +521,17 @@
   },
   "social": {
     "nav": {
-      "home": "Squad",
+      "home": "Home",
       "leaderboard": "Leaderboard",
       "friends": "Friends",
       "threads": "Threads",
-      "messages": "Messages"
+      "messages": "Messages",
+      "chats": "Chats"
     },
     "header": {
-      "title": "NexFam"
+      "title": "NexFam",
+      "findPeople": "Find people",
+      "search": "Search users"
     },
     "home": {
       "eyebrow": "Squad",
@@ -531,7 +540,14 @@
       "friendCount": "{{count}} friends",
       "nextSessionEyebrow": "Aapka next session",
       "openThread": "Open",
-      "feedTitle": "Squad activity",
+      "feedTitle": "Recent activity",
+      "squadTitle": "Aapka squad",
+      "squadEmptyTitle": "Gym squad shuru karein",
+      "squadEmptyBody": "Daily workout aur meal check-ins dekhne ke liye squad banao ya join karein.",
+      "squadBrowse": "Squads dekhein",
+      "squadSeeAll": "Sab dekhein",
+      "leaderboardTitle": "Is week",
+      "challengesLink": "Challenges",
       "reactions": {
         "flame": "Flame",
         "cheer": "Cheer"
@@ -680,6 +696,16 @@
     "common": {
       "comingSoon": "Jald aa raha hai"
     },
+    "chats": {
+      "eyebrow": "Inbox",
+      "title": "Chats",
+      "threadBadge": "Thread",
+      "emptyTitle": "Abhi koi conversation nahi",
+      "emptyBody": "Direct messages aur thread chats yahan dikhenge.",
+      "alerts": {
+        "loadFailed": "Chats abhi load nahi ho payi."
+      }
+    },
     "threads": {
       "eyebrow": "Gym threads",
       "title": "Threads",
@@ -698,6 +724,13 @@
         "past": "Past",
         "discover": "Discover"
       },
+      "filters": {
+        "all": "All",
+        "mine": "Mine",
+        "invites": "Invites"
+      },
+      "showPast": "Show past threads",
+      "hidePast": "Hide past threads",
       "empty": {
         "active": {
           "title": "Active threads nahi hain",
@@ -1437,6 +1470,7 @@
     }
   },
   "settings": {
+    "screenTitle": "Settings",
     "notifications": {
       "title": "Notification Preferences",
       "subtitle": "Control reminders, quiet hours, and workout timing offsets.",
@@ -1927,7 +1961,8 @@
     },
     "reflow": {
       "appliedTitle": "Plan adapt ho gaya",
-      "appliedBody": "Smart Reflow ne {{count}} missed priority exercises upcoming days mein shift kar diye."
+      "appliedBody": "Smart Reflow ne {{count}} missed priority exercises upcoming days mein shift kar diye.",
+      "movedFromDay": "→ Day {{day}} se move kiya"
     },
     "workoutPlannerScreen": {
       "balancedHint": "Balanced — all muscle groups will be trained equally",

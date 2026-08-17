@@ -16,17 +16,19 @@ import { getDailyCalorieLog, todayLocal } from "../api/caloriesLog";
 import { resolveApiBaseUrl } from "../api/client";
 import { fetchMealPlanCurrent } from "../api/mealPlanner";
 import { fetchOnboardingMeShared } from "../api/onboarding";
-import { getWorkoutCatalog, getWorkoutHistory } from "../api/workout";
-import { fetchWorkoutPlanCurrent, fetchWeeklyWorkoutReview, applyWeeklyWorkoutReview } from "../api/workoutPlanner";
+import { getWorkoutHistory } from "../api/workout";
+import { fetchWorkoutPlanCurrent, fetchWeeklyWorkoutReview } from "../api/workoutPlanner";
 import { DailyGamePlanCard } from "../components/DailyGamePlanCard";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { runSmartReflowDetection } from "../services/smartReflowRunner";
+import { getGamePlanCache, setGamePlanCache, type GamePlanHistoryRow } from "../store/gamePlanCache";
 import { useAuthStore } from "../store/authStore";
 import type { MealDayPlan, WorkoutPlanCurrent } from "../types/planner";
 import { isWeeklyPlannerCurrent } from "../types/planner";
 import { isHomeRestDayActive } from "../utils/workoutRestDay";
 import {
   collectIngredientNames,
+  fetchEquipmentForExercises,
   resolveEquipmentForExercises,
   type CatalogEquipmentRow,
 } from "../utils/gamePlanPrepLists";
@@ -35,13 +37,24 @@ const TEXT = "#1A1A18";
 const MUTED = "#8A8A84";
 const WHITE = "#FFFFFF";
 
-type WorkoutHistoryRow = {
-  date: string;
-  exerciseName?: string;
-  type?: string;
-  notes?: string | null;
-  bodyPart?: string | null;
-};
+type WorkoutHistoryRow = GamePlanHistoryRow;
+
+function mapHistoryItems(items: { date: string; exerciseName?: string; type?: string; notes?: string | null; bodyPart?: string | null }[]): WorkoutHistoryRow[] {
+  return items.map((item) => ({
+    date: item.date,
+    exerciseName: item.exerciseName,
+    type: item.type,
+    notes: item.notes,
+    bodyPart: item.bodyPart,
+  }));
+}
+
+function resolveWeightKg(weightLatestRes: { weight_kg?: number } | null, onboardingWeight: number): number {
+  const latestWeight = Number(weightLatestRes?.weight_kg);
+  if (Number.isFinite(latestWeight) && latestWeight > 0) return latestWeight;
+  if (Number.isFinite(onboardingWeight) && onboardingWeight > 0) return onboardingWeight;
+  return 70;
+}
 
 export default function GamePlanModalScreen() {
   const { t } = useTranslation();
@@ -66,7 +79,81 @@ export default function GamePlanModalScreen() {
     navigation.goBack();
   }, [navigation]);
 
+  const loadDeferred = useCallback(
+    async (exerciseNames: string[], workoutPlan: WorkoutPlanCurrent | null) => {
+      if (!token) return;
+      try {
+        const weeklyPromise = canSmartReflow
+          ? fetchWeeklyWorkoutReview()
+              .then((review) => {
+                const day = new Date().getDay();
+                const isSundayWindow = day === 0 || day === 1;
+                if (review.weekly_summary_enabled && isSundayWindow && review.message) {
+                  setWeeklyReviewMessage(review.message);
+                }
+              })
+              .catch(() => undefined)
+          : Promise.resolve();
+
+        const reflowPromise =
+          canSmartReflow && workoutPlan
+            ? runSmartReflowDetection(workoutPlan).then((result) => {
+                if (result.status === "applied") {
+                  setTodayWorkoutPlan(result.plan);
+                }
+              })
+            : Promise.resolve();
+
+        const equipmentPromise = exerciseNames.length
+          ? fetchEquipmentForExercises(exerciseNames).then(setWorkoutCatalog).catch(() => undefined)
+          : Promise.resolve();
+
+        await Promise.all([weeklyPromise, reflowPromise, equipmentPromise]);
+      } catch {
+        // Non-blocking enhancements — ignore failures.
+      }
+    },
+    [token, canSmartReflow],
+  );
+
+  const applyCorePayload = useCallback(
+    (payload: {
+      calorieDay: CalorieDayPayload | null;
+      todayWorkoutPlan: WorkoutPlanCurrent | null;
+      todayMealPlan: MealDayPlan | null;
+      workoutHistory: WorkoutHistoryRow[];
+      weightKg: number;
+    }) => {
+      setCalorieDay(payload.calorieDay);
+      setTodayWorkoutPlan(payload.todayWorkoutPlan);
+      setTodayMealPlan(payload.todayMealPlan);
+      setWorkoutHistory(payload.workoutHistory);
+      setWeightKg(payload.weightKg);
+    },
+    [],
+  );
+
   const load = useCallback(async () => {
+    const cached = getGamePlanCache();
+    if (cached) {
+      applyCorePayload({
+        calorieDay: cached.calorieDay,
+        todayWorkoutPlan: cached.todayWorkoutPlan,
+        todayMealPlan: null,
+        workoutHistory: cached.workoutHistory,
+        weightKg: cached.weightKg,
+      });
+      setLoading(false);
+      const cachedExercises =
+        cached.todayWorkoutPlan?.today && !isHomeRestDayActive({ hasWorkoutPlannerAccess, plan: cached.todayWorkoutPlan })
+          ? cached.todayWorkoutPlan.today.exercises ?? []
+          : [];
+      void loadDeferred(
+        cachedExercises.map((ex) => ex.name),
+        cached.todayWorkoutPlan,
+      );
+    }
+
     if (!token) {
       setCalorieDay(null);
       setTodayWorkoutPlan(null);
@@ -74,102 +161,65 @@ export default function GamePlanModalScreen() {
       setWorkoutHistory([]);
       setWeightKg(70);
       setWorkoutCatalog([]);
+      setWeeklyReviewMessage(null);
       setLoading(false);
       return;
     }
+
     const apiBase = resolveApiBaseUrl();
     try {
-      const [dayRes, onboardingRes, historyRes, workoutPlanRes, mealPlanRes, weightLatestRes, catalogRes] = await Promise.all([
+      const [dayRes, onboardingRes, historyRes, workoutPlanRes, mealPlanRes, weightLatestRes] = await Promise.all([
         getDailyCalorieLog(todayLocal()).catch(() => null),
         fetchOnboardingMeShared().catch(() => null),
-        getWorkoutHistory(24 * 8).catch(() => ({ items: [] })),
+        getWorkoutHistory(24 * 7).catch(() => ({ items: [] })),
         fetchWorkoutPlanCurrent().catch(() => null),
         hasMealPlannerAccess ? fetchMealPlanCurrent().catch(() => null) : Promise.resolve(null),
         fetch(`${apiBase}/api/weight/latest`, { headers: { Authorization: `Bearer ${token}` } })
           .then((r) => (r.ok ? r.json() : null))
           .catch(() => null),
-        getWorkoutCatalog().catch(() => ({ items: [] })),
       ]);
 
-      setCalorieDay(dayRes);
       const mealToday = mealPlanRes
         ? isWeeklyPlannerCurrent(mealPlanRes)
           ? mealPlanRes.current_week?.today ?? null
           : mealPlanRes.today ?? null
         : null;
-      setTodayMealPlan(mealToday);
-      setWorkoutHistory(
-        (historyRes.items ?? []).map((item) => ({
-          date: item.date,
-          exerciseName: item.exerciseName,
-          type: item.type,
-          notes: item.notes,
-          bodyPart: item.bodyPart,
-        })),
-      );
-
+      const historyRows = mapHistoryItems(historyRes.items ?? []);
       const onboardingWeight = Number(onboardingRes?.onboarding?.personal?.weight_kg);
-      const latestWeight = Number(weightLatestRes?.weight_kg);
-      setWeightKg(
-        Number.isFinite(latestWeight) && latestWeight > 0
-          ? latestWeight
-          : Number.isFinite(onboardingWeight) && onboardingWeight > 0
-            ? onboardingWeight
-            : 70,
-      );
-      setWorkoutCatalog(
-        ((catalogRes as { items?: CatalogEquipmentRow[] })?.items ?? []).map((item) => ({
-          exerciseName: item.exerciseName,
-          defaultExerciseName: item.defaultExerciseName,
-          equipment: item.equipment,
-        })),
-      );
+      const resolvedWeightKg = resolveWeightKg(weightLatestRes, onboardingWeight);
 
-      let workoutPlan = workoutPlanRes;
-      if (workoutPlan && canSmartReflow) {
-        const reflowResult = await runSmartReflowDetection(workoutPlan);
-        if (reflowResult.status === "applied") {
-          workoutPlan = reflowResult.plan;
-        }
-      }
-      setTodayWorkoutPlan(workoutPlan);
+      applyCorePayload({
+        calorieDay: dayRes,
+        todayWorkoutPlan: workoutPlanRes,
+        todayMealPlan: mealToday,
+        workoutHistory: historyRows,
+        weightKg: resolvedWeightKg,
+      });
 
-      if (canSmartReflow) {
-        try {
-          const review = await fetchWeeklyWorkoutReview();
-          const isSundayWindow = new Date().getDay() === 0 || new Date().getDay() === 1;
-          if (review.weekly_summary_enabled && isSundayWindow && review.message) {
-            setWeeklyReviewMessage(review.message);
-            if (new Date().getDay() === 0 && workoutPlan?.plan_id) {
-              const applied = await applyWeeklyWorkoutReview(workoutPlan.plan_id).catch(() => null);
-              if (applied?.summary?.message) {
-                setWeeklyReviewMessage(applied.summary.message);
-              }
-              if (applied?.applied_days?.length) {
-                const refreshedPlan = await fetchWorkoutPlanCurrent().catch(() => workoutPlan);
-                setTodayWorkoutPlan(refreshedPlan);
-              }
-            }
-          } else {
-            setWeeklyReviewMessage(null);
-          }
-        } catch (error) {
-          console.warn("[smart-reflow] weekly review failed:", error);
-          setWeeklyReviewMessage(null);
-        }
-      } else {
+      setGamePlanCache({
+        calorieDay: dayRes,
+        todayWorkoutPlan: workoutPlanRes,
+        workoutHistory: historyRows,
+        weightKg: resolvedWeightKg,
+      });
+
+      const todayExercises =
+        workoutPlanRes?.today && !isHomeRestDayActive({ hasWorkoutPlannerAccess, plan: workoutPlanRes })
+          ? workoutPlanRes.today.exercises ?? []
+          : [];
+      void loadDeferred(todayExercises.map((ex) => ex.name), workoutPlanRes);
+    } catch {
+      if (!cached) {
+        setCalorieDay(null);
+        setTodayWorkoutPlan(null);
+        setTodayMealPlan(null);
+        setWorkoutHistory([]);
         setWeeklyReviewMessage(null);
       }
-    } catch {
-      setCalorieDay(null);
-      setTodayWorkoutPlan(null);
-      setTodayMealPlan(null);
-      setWorkoutHistory([]);
-      setWeeklyReviewMessage(null);
     } finally {
       setLoading(false);
     }
-  }, [token, hasMealPlannerAccess, canSmartReflow]);
+  }, [token, hasMealPlannerAccess, hasWorkoutPlannerAccess, applyCorePayload, loadDeferred]);
 
   useEffect(() => {
     void load();

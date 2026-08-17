@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getUnreadCounts } from "../api/messages";
 import { getFriendRequests } from "../api/social";
+import { listThreads } from "../api/threads";
 import { ScreenContainer } from "../components/ScreenContainer";
 import FriendsScreen from "../screens/social/FriendsScreen";
 import SocialHomeScreen from "../screens/social/SocialHomeScreen";
@@ -14,7 +15,7 @@ import UserSearchScreen from "../screens/social/UserSearchScreen";
 import ThreadsScreen from "../screens/social/ThreadsScreen";
 import ThreadDetailScreen from "../screens/social/ThreadDetailScreen";
 import ThreadFormScreen from "../screens/social/ThreadFormScreen";
-import MessagesScreen from "../screens/social/MessagesScreen";
+import ChatsScreen from "../screens/social/ChatsScreen";
 import ChatScreen from "../screens/social/ChatScreen";
 import ChallengeCreateScreen from "../screens/social/ChallengeCreateScreen";
 import ChallengeDetailScreen from "../screens/social/ChallengeDetailScreen";
@@ -33,19 +34,57 @@ const BORDER = "#ECEAE5";
 const WHITE = "#FFFFFF";
 const TEXT = "#1A1A18";
 
-type SocialRouteName = keyof Pick<
-  SocialStackParamList,
-  "SocialHome" | "SocialLeaderboard" | "SocialFriends" | "SocialThreads" | "SocialMessages"
->;
+type SocialRouteName = keyof Pick<SocialStackParamList, "SocialHome" | "SocialThreads" | "SocialChats">;
 
-/** Brand header shown above the tab row on every Social screen — mirrors the
- * "Calorie Log" page-title treatment (bold dark title + small icon, same line). */
 function SocialBrandHeader() {
   const { t } = useTranslation();
+  const navigation = useNavigation<any>();
+  const [incomingFriendRequests, setIncomingFriendRequests] = useState(0);
+
+  const loadFriendBadge = useCallback(async () => {
+    try {
+      const requests = await getFriendRequests();
+      setIncomingFriendRequests(requests.incoming.length);
+    } catch {
+      // Keep last visible count.
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadFriendBadge();
+    }, [loadFriendBadge]),
+  );
+
   return (
     <View style={styles.brandHeader}>
-      <Text style={styles.brandHeaderText}>{t("social.header.title")}</Text>
-      <Ionicons name="people-outline" size={19} color={GREEN} style={styles.brandHeaderIcon} />
+      <View style={styles.brandTitleRow}>
+        <Text style={styles.brandHeaderText}>{t("social.header.title")}</Text>
+        <Ionicons name="people-outline" size={19} color={GREEN} style={styles.brandHeaderIcon} />
+      </View>
+      <View style={styles.headerActions}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("social.header.findPeople")}
+          style={styles.headerIconBtn}
+          onPress={() => navigation.navigate("SocialFriends")}
+        >
+          <Ionicons name="person-add-outline" size={20} color={TEXT} />
+          {incomingFriendRequests > 0 ? (
+            <View style={styles.headerBadge}>
+              <Text style={styles.headerBadgeText}>{incomingFriendRequests}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("social.header.search")}
+          style={styles.headerIconBtn}
+          onPress={() => navigation.navigate("SocialUserSearch")}
+        >
+          <Ionicons name="search-outline" size={20} color={TEXT} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -53,22 +92,23 @@ function SocialBrandHeader() {
 function SocialSectionTabs({ active }: { active: SocialRouteName }) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
-  const [unreadTotal, setUnreadTotal] = useState(0);
+  const [chatUnreadTotal, setChatUnreadTotal] = useState(0);
   const [pendingJoinRequests, setPendingJoinRequests] = useState(0);
-  const [incomingFriendRequests, setIncomingFriendRequests] = useState(0);
+  const [threadInvites, setThreadInvites] = useState(0);
   const unreadRequestId = useRef(0);
-  const loadUnreadCounts = useCallback(async () => {
+
+  const loadBadges = useCallback(async () => {
     const requestId = unreadRequestId.current + 1;
     unreadRequestId.current = requestId;
     try {
-      const counts = await getUnreadCounts();
-      const requests = await getFriendRequests();
+      const [counts, invitedThreads] = await Promise.all([getUnreadCounts(), listThreads("invited")]);
       if (requestId !== unreadRequestId.current) return;
       const joinRequests = counts.pending_join_requests ?? 0;
       const dmUnread = (counts.dms ?? []).reduce((sum, item) => sum + (item.unread_count ?? 0), 0);
+      const threadUnread = (counts.threads ?? []).reduce((sum, item) => sum + (item.unread_count ?? 0), 0);
       setPendingJoinRequests(joinRequests);
-      setIncomingFriendRequests(requests.incoming.length);
-      setUnreadTotal(dmUnread);
+      setThreadInvites(invitedThreads.length);
+      setChatUnreadTotal(dmUnread + threadUnread);
     } catch {
       // Keep the last visible count if the network request fails.
     }
@@ -76,38 +116,34 @@ function SocialSectionTabs({ active }: { active: SocialRouteName }) {
 
   useFocusEffect(
     useCallback(() => {
-      void loadUnreadCounts();
-    }, [loadUnreadCounts]),
+      void loadBadges();
+    }, [loadBadges]),
   );
 
   useEffect(() => {
-    void loadUnreadCounts();
+    void loadBadges();
     const unsubscribe = subscribeToSocialUnreadChanges(() => {
-      void loadUnreadCounts();
+      void loadBadges();
     });
     const id = setInterval(() => {
-      void loadUnreadCounts();
+      void loadBadges();
     }, 30000);
     return () => {
       unsubscribe();
       clearInterval(id);
     };
-  }, [loadUnreadCounts]);
+  }, [loadBadges]);
+
   const tabs: Array<{ route: SocialRouteName; label: string }> = [
-    { route: "SocialThreads", label: t("social.nav.threads") },
     { route: "SocialHome", label: t("social.nav.home") },
-    { route: "SocialLeaderboard", label: t("social.nav.leaderboard") },
-    { route: "SocialFriends", label: t("social.nav.friends") },
-    { route: "SocialMessages", label: t("social.nav.messages") },
+    { route: "SocialThreads", label: t("social.nav.threads") },
+    { route: "SocialChats", label: t("social.nav.chats") },
   ];
+
   return (
     <>
       <SocialBrandHeader />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabs}
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {tabs.map((tab) => {
           const selected = tab.route === active;
           return (
@@ -118,19 +154,14 @@ function SocialSectionTabs({ active }: { active: SocialRouteName }) {
               onPress={() => navigation.navigate(tab.route)}
             >
               <Text style={[styles.tabText, selected ? styles.tabTextActive : null]}>{tab.label}</Text>
-              {tab.route === "SocialMessages" && unreadTotal > 0 ? (
+              {tab.route === "SocialChats" && chatUnreadTotal > 0 ? (
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{unreadTotal}</Text>
+                  <Text style={styles.badgeText}>{chatUnreadTotal}</Text>
                 </View>
               ) : null}
-              {tab.route === "SocialThreads" && pendingJoinRequests > 0 ? (
+              {tab.route === "SocialThreads" && (pendingJoinRequests > 0 || threadInvites > 0) ? (
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{pendingJoinRequests}</Text>
-                </View>
-              ) : null}
-              {tab.route === "SocialFriends" && incomingFriendRequests > 0 ? (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{incomingFriendRequests}</Text>
+                  <Text style={styles.badgeText}>{pendingJoinRequests + threadInvites}</Text>
                 </View>
               ) : null}
             </Pressable>
@@ -154,20 +185,20 @@ function ThreadsRouteScreen() {
   );
 }
 
-function LeaderboardRouteScreen() {
+function ChatsRouteScreen() {
   return (
     <ScreenContainer bg={BG}>
-      <SocialSectionTabs active="SocialLeaderboard" />
-      <LeaderboardScreen />
+      <SocialSectionTabs active="SocialChats" />
+      <ChatsScreen />
     </ScreenContainer>
   );
 }
 
-function MessagesRouteScreen() {
+function LeaderboardRouteScreen() {
   return (
     <ScreenContainer bg={BG}>
-      <SocialSectionTabs active="SocialMessages" />
-      <MessagesScreen />
+      <SocialBrandHeader />
+      <LeaderboardScreen />
     </ScreenContainer>
   );
 }
@@ -175,7 +206,7 @@ function MessagesRouteScreen() {
 function FriendsRouteScreen() {
   return (
     <ScreenContainer bg={BG}>
-      <SocialSectionTabs active="SocialFriends" />
+      <SocialBrandHeader />
       <FriendsScreen />
     </ScreenContainer>
   );
@@ -184,7 +215,7 @@ function FriendsRouteScreen() {
 function PendingRequestsRouteScreen() {
   return (
     <ScreenContainer bg={BG}>
-      <SocialSectionTabs active="SocialFriends" />
+      <SocialBrandHeader />
       <FriendsScreen initialView="pending" />
     </ScreenContainer>
   );
@@ -192,17 +223,18 @@ function PendingRequestsRouteScreen() {
 
 export default function SocialNavigator() {
   return (
-    <Stack.Navigator initialRouteName="SocialThreads" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="SocialHome" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="SocialHome" component={SocialHomeRouteScreen} />
+      <Stack.Screen name="SocialThreads" component={ThreadsRouteScreen} />
+      <Stack.Screen name="SocialChats" component={ChatsRouteScreen} />
       <Stack.Screen name="SocialLeaderboard" component={LeaderboardRouteScreen} />
       <Stack.Screen name="SocialFriends" component={FriendsRouteScreen} />
       <Stack.Screen name="SocialPendingRequests" component={PendingRequestsRouteScreen} />
       <Stack.Screen name="SocialUserSearch" component={UserSearchScreen} />
-      <Stack.Screen name="SocialThreads" component={ThreadsRouteScreen} />
       <Stack.Screen name="SocialThreadDetail" component={ThreadDetailScreen} />
       <Stack.Screen name="SocialThreadCreate">{() => <ThreadFormScreen mode="create" />}</Stack.Screen>
       <Stack.Screen name="SocialThreadEdit">{() => <ThreadFormScreen mode="edit" />}</Stack.Screen>
-      <Stack.Screen name="SocialMessages" component={MessagesRouteScreen} />
+      <Stack.Screen name="SocialMessages" component={ChatsRouteScreen} />
       <Stack.Screen name="SocialChat" component={ChatScreen} />
       <Stack.Screen name="SocialChallengeCreate" component={ChallengeCreateScreen} />
       <Stack.Screen name="SocialChallengeDetail" component={ChallengeDetailScreen} />
@@ -217,8 +249,13 @@ const styles = StyleSheet.create({
   brandHeader: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 6,
+    justifyContent: "space-between",
     marginBottom: 12,
+  },
+  brandTitleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   brandHeaderText: {
     color: TEXT,
@@ -227,6 +264,36 @@ const styles = StyleSheet.create({
   },
   brandHeaderIcon: {
     marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  headerIconBtn: {
+    alignItems: "center",
+    backgroundColor: WHITE,
+    borderColor: BORDER,
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  headerBadge: {
+    alignItems: "center",
+    backgroundColor: "#B42318",
+    borderRadius: 999,
+    minWidth: 16,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    position: "absolute",
+    right: -4,
+    top: -4,
+  },
+  headerBadgeText: {
+    color: WHITE,
+    fontSize: 9,
+    fontWeight: "900",
   },
   tabs: {
     flexDirection: "row",

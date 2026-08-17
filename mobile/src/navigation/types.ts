@@ -42,6 +42,7 @@ export type MainTabParamList = {
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
+  Settings: undefined;
   MySupplementStack: undefined;
   NotificationPreferences: undefined;
   Subscription: undefined;
@@ -60,6 +61,7 @@ export type SocialStackParamList = {
   SocialPendingRequests: undefined;
   SocialUserSearch: undefined;
   SocialThreads: undefined;
+  SocialChats: undefined;
   SocialThreadDetail: { threadId: number };
   SocialThreadCreate: undefined;
   SocialThreadEdit: { threadId: number };

@@ -90,7 +90,7 @@
     "logWeightTitle": "Log Today's Weight",
     "lastLogged": "Last logged: {{weight}}kg",
     "gamePlan": {
-      "openButton": "Game plan",
+      "openButton": "View today's game plan",
       "title": "Today's game plan",
       "exerciseCount": "Exercises",
       "mealCount": "Meals",
@@ -163,6 +163,12 @@
     "logWeight": "Log weight",
     "lastWeight": "last: {{weight}} kg",
     "startTracking": "start tracking",
+    "weightJourneyTransformation": {
+      "title": "90-day transformation",
+      "workouts": "Workouts",
+      "newPrs": "New PRs",
+      "viewTimeline": "View full timeline"
+    },
     "xp": {
       "title": "PROGRESS XP",
       "level": "LVL",
@@ -527,14 +533,17 @@
   },
   "social": {
     "nav": {
-      "home": "Squad",
+      "home": "Home",
       "leaderboard": "Leaderboard",
       "friends": "Friends",
       "threads": "Threads",
-      "messages": "Messages"
+      "messages": "Messages",
+      "chats": "Chats"
     },
     "header": {
-      "title": "NexFam"
+      "title": "NexFam",
+      "findPeople": "Find people",
+      "search": "Search users"
     },
     "common": {
       "comingSoon": "Coming soon"
@@ -546,7 +555,14 @@
       "friendCount": "{{count}} friends",
       "nextSessionEyebrow": "Your next session",
       "openThread": "Open",
-      "feedTitle": "Squad activity",
+      "feedTitle": "Recent activity",
+      "squadTitle": "Your squad",
+      "squadEmptyTitle": "Start a gym squad",
+      "squadEmptyBody": "Create or join a squad to see daily workout and meal check-ins.",
+      "squadBrowse": "Browse squads",
+      "squadSeeAll": "See all",
+      "leaderboardTitle": "This week",
+      "challengesLink": "Challenges",
       "reactions": {
         "flame": "Flame",
         "cheer": "Cheer"
@@ -692,6 +708,16 @@
       },
       "noHistory": "No completed challenges yet"
     },
+    "chats": {
+      "eyebrow": "Inbox",
+      "title": "Chats",
+      "threadBadge": "Thread",
+      "emptyTitle": "No conversations yet",
+      "emptyBody": "Direct messages and thread chats will show up here.",
+      "alerts": {
+        "loadFailed": "Could not load chats right now."
+      }
+    },
     "threads": {
       "eyebrow": "Gym threads",
       "title": "Threads",
@@ -710,6 +736,13 @@
         "past": "Past",
         "discover": "Discover"
       },
+      "filters": {
+        "all": "All",
+        "mine": "Mine",
+        "invites": "Invites"
+      },
+      "showPast": "Show past threads",
+      "hidePast": "Hide past threads",
       "empty": {
         "active": {
           "title": "No active threads",
@@ -1449,6 +1482,7 @@
     }
   },
   "settings": {
+    "screenTitle": "Settings",
     "notifications": {
       "title": "Notification Preferences",
       "subtitle": "Control reminders, quiet hours, and workout timing offsets.",
@@ -1958,7 +1992,8 @@
     },
     "reflow": {
       "appliedTitle": "Plan adapted",
-      "appliedBody": "Smart Reflow moved {{count}} missed priority exercises into upcoming days."
+      "appliedBody": "Smart Reflow moved {{count}} missed priority exercises into upcoming days.",
+      "movedFromDay": "→ Moved from Day {{day}}"
     },
     "workoutPlannerScreen": {
       "balancedHint": "Balanced — all muscle groups will be trained equally",
@@ -1972,6 +2007,7 @@
       "title": "Monthly Workout Planner",
       "day": "Day",
       "month": "Month",
+      "regenerateMonthPlan": "Regenerate month",
       "generateTitle": "Generate your workout plan for {{month}}",
       "muscleFocus": "Muscle Focus (optional):",
       "muscles": {
@@ -2049,7 +2085,9 @@
         "allMonthRegensUsed": "You've used all month plan regenerations. Resets {{resetDate}}.",
         "monthPlanRegenerated": "Month plan regenerated!",
         "monthPlanLimitReset": "Month plan limit reached. Resets {{resetDate}}.",
-        "monthPlanRegenerateFailed": "Failed to regenerate plan. Please try again."
+        "monthPlanRegenerateFailed": "Failed to regenerate plan. Please try again.",
+        "confirmMonthRegenTitle": "Regenerate remaining month?",
+        "confirmMonthRegenBody": "This rebuilds today and all future days in your plan with AI (uses 1 month regeneration — {{remaining}} left)."
       },
       "preworkout": {
         "aiTag": "AI recommendation",

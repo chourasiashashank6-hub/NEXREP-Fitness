@@ -5,8 +5,11 @@ import { useTranslation } from "react-i18next";
 import { listFeed, reactToFeedEvent, type FeedEvent, type FeedReactionType } from "../../api/feed";
 import { startOrGetDMConversation } from "../../api/messages";
 import { getFriends, type SocialUserProfile } from "../../api/social";
-import { listThreads, type GymThread } from "../../api/threads";
 import { getProfile, type UserProfile } from "../../api/user";
+import type { GymSquad } from "../../api/gymSquads";
+import type { LeaderboardResponse } from "../../api/socialChallenges";
+import { HomeSquadCard, loadHomeSquads } from "../../components/social/HomeSquadCard";
+import { WeeklyLeaderboardSection, loadWeeklyLeaderboard } from "../../components/social/WeeklyLeaderboardSection";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { UserAvatar } from "../../components/UserAvatar";
 
@@ -27,15 +30,6 @@ type SocialHomeScreenProps = {
   tabs?: ReactNode;
 };
 
-const formatThreadTime = (value: string) =>
-  new Date(value).toLocaleString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
 const formatTimestamp = (value: string | null | undefined, nowLabel: string) => {
   if (!value) return "";
   const date = new Date(value);
@@ -55,47 +49,49 @@ const formatKg = (value?: number) => {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 };
 
-const nearestUpcomingThread = (threads: GymThread[]) => {
-  const now = Date.now();
-  return (
-    threads
-      .filter((thread) => thread.status === "active" && new Date(thread.scheduled_time).getTime() >= now)
-      .sort((left, right) => new Date(left.scheduled_time).getTime() - new Date(right.scheduled_time).getTime())[0] ?? null
-  );
-};
-
 export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [friends, setFriends] = useState<SocialUserProfile[]>([]);
   const [feed, setFeed] = useState<FeedEvent[]>([]);
-  const [nextThread, setNextThread] = useState<GymThread | null>(null);
+  const [squads, setSquads] = useState<GymSquad[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [squadsLoading, setSquadsLoading] = useState(true);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyReaction, setBusyReaction] = useState<string | null>(null);
 
   const load = useCallback(
     async (mode: "initial" | "refresh" = "initial") => {
-      if (mode === "initial") setLoading(true);
+      if (mode === "initial") {
+        setLoading(true);
+        setSquadsLoading(true);
+        setLeaderboardLoading(true);
+      }
       if (mode === "refresh") {
         setRefreshing(true);
       }
       try {
-        const [profileData, friendItems, feedPage, activeThreads] = await Promise.all([
+        const [profileData, friendItems, feedPage, squadItems, leaderboardData] = await Promise.all([
           getProfile(),
           getFriends(),
           listFeed({ limit: 20 }),
-          listThreads("active"),
+          loadHomeSquads().catch(() => [] as GymSquad[]),
+          loadWeeklyLeaderboard().catch(() => null),
         ]);
         setProfile(profileData);
         setFriends(friendItems);
         setFeed(feedPage.items);
-        setNextThread(nearestUpcomingThread(activeThreads));
+        setSquads(squadItems);
+        setLeaderboard(leaderboardData);
       } catch {
         Alert.alert(t("common.error"), t("social.home.alerts.loadFailed"));
       } finally {
         setLoading(false);
+        setSquadsLoading(false);
+        setLeaderboardLoading(false);
         setRefreshing(false);
       }
     },
@@ -167,47 +163,19 @@ export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
         <Text style={styles.heroEyebrow}>{t("social.home.eyebrow")}</Text>
         <Text style={styles.heroTitle}>{t("social.home.heroTitle", { name: userFirstName })}</Text>
         <Text style={styles.heroSubtitle}>{t("social.home.friendCount", { count: friends.length })}</Text>
-        <Pressable style={styles.squadsCta} onPress={() => navigation.navigate("SocialGymSquads")}>
-          <Text style={styles.squadsCtaTitle}>{t("social.squads.open")}</Text>
-          <Text style={styles.squadsCtaSub}>{t("social.squads.openSub")}</Text>
-        </Pressable>
       </View>
+
+      <HomeSquadCard squads={squads} loading={squadsLoading} />
+      <WeeklyLeaderboardSection
+        leaderboard={leaderboard}
+        loading={leaderboardLoading}
+        onUpdated={setLeaderboard}
+      />
 
       {loading ? (
         <ActivityIndicator color={GREEN} style={styles.loader} />
       ) : (
         <>
-          {nextThread ? (
-            <Pressable style={styles.threadCard} onPress={() => navigation.navigate("SocialThreadDetail", { threadId: nextThread.id })}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionEyebrow}>{t("social.home.nextSessionEyebrow")}</Text>
-                <Text style={styles.threadTime}>{formatThreadTime(nextThread.scheduled_time)}</Text>
-              </View>
-              <Text style={styles.threadTitle} numberOfLines={1}>
-                {nextThread.title}
-              </Text>
-              <Text style={styles.threadGym} numberOfLines={1}>
-                {nextThread.gym_name}
-              </Text>
-              <View style={styles.threadBottom}>
-                <View style={styles.avatarRow}>
-                  {nextThread.member_preview.slice(0, 4).map((member) => (
-                    <UserAvatar
-                      key={member.user_id}
-                      name={member.name}
-                      initials={member.initials}
-                      profilePhotoUrl={member.profile_photo_url}
-                      style={styles.smallAvatar}
-                      textStyle={styles.smallAvatarText}
-                    />
-                  ))}
-                  <Text style={styles.goingText}>{t("social.threads.goingCount", { count: nextThread.going_count })}</Text>
-                </View>
-                <Text style={styles.openText}>{t("social.home.openThread")}</Text>
-              </View>
-            </Pressable>
-          ) : null}
-
           <Text style={styles.feedTitle}>{t("social.home.feedTitle")}</Text>
           {!hasFriends ? (
             <View style={styles.emptyCard}>
@@ -354,47 +322,7 @@ const styles = StyleSheet.create({
   heroEyebrow: { color: "#BDE7D5", fontSize: 11, fontWeight: "900", letterSpacing: 0.8, marginBottom: 8, textTransform: "uppercase" },
   heroTitle: { color: WHITE, fontSize: 28, fontWeight: "900", marginBottom: 6 },
   heroSubtitle: { color: "#DCF6EC", fontSize: 14, fontWeight: "800" },
-  squadsCta: {
-    marginTop: 14,
-    backgroundColor: "rgba(255,255,255,0.14)",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
-  },
-  squadsCtaTitle: { color: WHITE, fontSize: 14, fontWeight: "900" },
-  squadsCtaSub: { color: "#DCF6EC", fontSize: 11, fontWeight: "700", marginTop: 3 },
   loader: { marginTop: 28 },
-  threadCard: {
-    backgroundColor: WHITE,
-    borderColor: BORDER,
-    borderRadius: 22,
-    borderWidth: 1,
-    marginBottom: 18,
-    padding: 16,
-  },
-  sectionHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 9 },
-  sectionEyebrow: { color: PURPLE, fontSize: 11, fontWeight: "900", letterSpacing: 0.7, textTransform: "uppercase" },
-  threadTime: { color: ORANGE, fontSize: 12, fontWeight: "900" },
-  threadTitle: { color: TEXT, fontSize: 19, fontWeight: "900", marginBottom: 4 },
-  threadGym: { color: MUTED, fontSize: 13, fontWeight: "700", marginBottom: 14 },
-  threadBottom: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 10 },
-  avatarRow: { alignItems: "center", flexDirection: "row", flex: 1 },
-  smallAvatar: {
-    alignItems: "center",
-    backgroundColor: GREEN_LIGHT,
-    borderColor: WHITE,
-    borderRadius: 15,
-    borderWidth: 2,
-    height: 30,
-    justifyContent: "center",
-    marginRight: -6,
-    width: 30,
-  },
-  smallAvatarText: { color: GREEN, fontSize: 10, fontWeight: "900" },
-  goingText: { color: MUTED, fontSize: 12, fontWeight: "800", marginLeft: 12 },
-  openText: { color: GREEN, fontSize: 12, fontWeight: "900" },
   feedTitle: { color: TEXT, fontSize: 18, fontWeight: "900", marginBottom: 10 },
   emptyCard: {
     alignItems: "center",

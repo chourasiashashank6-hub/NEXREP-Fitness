@@ -117,12 +117,3 @@ export async function fetchWeeklyWorkoutReview(): Promise<{
   const { data } = await apiClient.get("/api/workout-planner/weekly-review", { params: params() });
   return data;
 }
-
-export async function applyWeeklyWorkoutReview(planId: number): Promise<{
-  applied_days: number[];
-  plan_id: number;
-  summary?: Awaited<ReturnType<typeof fetchWeeklyWorkoutReview>>;
-}> {
-  const { data } = await apiClient.post("/api/workout-planner/weekly-review/apply", { plan_id: planId }, { params: params() });
-  return data;
-}

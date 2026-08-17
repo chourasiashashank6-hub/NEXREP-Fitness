@@ -213,7 +213,12 @@ def _body_part_from_notes(notes: str | None) -> str | None:
 
 
 def build_weekly_review(db: Session, user: User, local_date: str | None) -> dict[str, Any]:
-    """Compare planned vs actual for the past 7 local days."""
+    """Compare planned vs actual for the past 7 local days.
+
+    A day counts as completed when *any* workout is logged (manual or planner).
+    Smart Reflow source-day detection uses planner-checkbox logs only so reflow
+    does not re-append exercises the user already checked off in the planner.
+    """
     today = parse_local_date(local_date)
     week_start = today - timedelta(days=6)
     plan = get_existing_workout_plan(db, user.id, today.month, today.year)

@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import { bumpXpRefresh } from "../store/xpRefreshStore";
 import type { WorkoutData } from "../types/workoutCoach";
 
 export type WorkoutHistoryItem = {
@@ -39,6 +40,7 @@ export const addWorkout = async (payload: {
   notes?: string;
 }) => {
   const { data } = await apiClient.post("/workout", payload);
+  bumpXpRefresh();
   return data;
 };
 
@@ -85,9 +87,11 @@ export const getWorkoutTotalBurn = async (): Promise<{ totalCaloriesBurned: numb
 export const deleteWorkout = async (workoutId: number): Promise<{ deleted: boolean; workout_id: number }> => {
   try {
     const { data } = await apiClient.post<{ deleted: boolean; workout_id: number }>(`/workout/${workoutId}/delete`);
+    bumpXpRefresh();
     return data;
   } catch {
     const { data } = await apiClient.delete<{ deleted: boolean; workout_id: number }>(`/workout/${workoutId}`);
+    bumpXpRefresh();
     return data;
   }
 };

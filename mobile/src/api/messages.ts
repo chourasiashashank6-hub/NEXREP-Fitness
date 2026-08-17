@@ -42,6 +42,23 @@ export type DMConversation = {
   last_message?: ChatMessage | null;
 };
 
+export type ThreadChatConversation = {
+  kind: "thread";
+  thread_id: number;
+  title: string;
+  gym_name: string;
+  scheduled_time?: string | null;
+  status: string;
+  muted: boolean;
+  last_read_message_id?: number | null;
+  unread_count: number;
+  last_message?: ChatMessage | null;
+};
+
+export type DMChatConversation = DMConversation & { kind: "dm" };
+
+export type ChatConversation = DMChatConversation | ThreadChatConversation;
+
 export type UnreadCounts = {
   total: number;
   pending_join_requests?: number;
@@ -116,5 +133,10 @@ export const startOrGetDMConversation = async (userId: number) => {
 
 export const listDMConversations = async () => {
   const { data } = await apiClient.get<{ items: DMConversation[] }>("/api/social/messages/dm-conversations");
+  return data.items ?? [];
+};
+
+export const listConversations = async () => {
+  const { data } = await apiClient.get<{ items: ChatConversation[] }>("/api/social/messages/conversations");
   return data.items ?? [];
 };

@@ -36,7 +36,7 @@ import { ScreenContainer } from "../../components/ScreenContainer";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import { getFirebaseAuth } from "../../config/firebase";
 import { useAuthStore } from "../../store/authStore";
-import { formatApiDetail, notifyUser } from "../../utils/notify";
+import { confirmUser, formatApiDetail, notifyUser } from "../../utils/notify";
 import {
   getNotificationPermissionState,
   requestNotificationPermissions,
@@ -46,6 +46,7 @@ import type { CoachStackParamList } from "../../navigation/coachTypes";
 import type { FocusMuscle, WorkoutDayPlan, WorkoutExercise, WorkoutPlanCurrent } from "../../types/planner";
 import { isWorkoutRestDay } from "../../utils/workoutRestDay";
 import { runSmartReflowDetection } from "../../services/smartReflowRunner";
+import { type ReflowTaggedExercise } from "../../utils/reflowExerciseMeta";
 import {
   buildLoggedExerciseIdMap,
   estimatePlannerTimeTaken,
@@ -253,6 +254,21 @@ function syncMonthPlanRegenStats(
   if (source?.month_plan_regens_remaining !== undefined) setRemaining(source.month_plan_regens_remaining);
 }
 
+function dayDetailFromPlanToday(plan: WorkoutPlanCurrent): WorkoutDayPlan | null {
+  if (!plan.today) return null;
+  return {
+    ...plan.today,
+    day_regens_used: plan.day_regens_used,
+    day_regens_limit: plan.day_regens_limit,
+    day_regens_remaining: plan.day_regens_remaining,
+    month_plan_regens_used: plan.month_plan_regens_used,
+    month_plan_regens_limit: plan.month_plan_regens_limit,
+    month_plan_regens_remaining: plan.month_plan_regens_remaining,
+    planner_limits_exempt: plan.planner_limits_exempt,
+    planner_days_unlocked: plan.planner_days_unlocked,
+  };
+}
+
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -314,6 +330,8 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const exerciseSwapsLimit = 5;
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadSeqRef = useRef(0);
+  const selectedDayRef = useRef(selectedDay);
+  selectedDayRef.current = selectedDay;
   const initialLoadDoneRef = useRef(false);
   const generatingRef = useRef(false);
   const regeneratingWorkoutRef = useRef(false);
@@ -416,12 +434,27 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       const current = await fetchWorkoutPlanCurrent();
       if (seq !== loadSeqRef.current) return;
       applyPlan(current);
-      if (current && canSmartReflow) {
-        const result = await runSmartReflowDetection(current);
-        if (result.status === "applied") {
-          notifyUser(t("coach.reflow.appliedTitle"), t("coach.reflow.appliedBody", { count: result.patchCount }));
-          applyPlan(result.plan);
+      if (current?.today) {
+        const todayDetail = dayDetailFromPlanToday(current);
+        if (todayDetail) {
+          setDayDetail(todayDetail);
+          syncWorkoutRegenStats(todayDetail, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
         }
+      }
+      if (current && canSmartReflow) {
+        void runSmartReflowDetection(current).then((result) => {
+          if (seq !== loadSeqRef.current) return;
+          if (result.status === "applied") {
+            notifyUser(t("coach.reflow.appliedTitle"), t("coach.reflow.appliedBody", { count: result.patchCount }));
+            applyPlan(result.plan);
+            const refreshedToday = dayDetailFromPlanToday(result.plan);
+            if (refreshedToday && refreshedToday.day === selectedDayRef.current) {
+              setDayDetail(refreshedToday);
+              setExerciseListVersion((v) => v + 1);
+              syncWorkoutRegenStats(refreshedToday, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+            }
+          }
+        });
       }
     } catch (e: unknown) {
       if (seq !== loadSeqRef.current) return;
@@ -511,7 +544,16 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   }, [plan]);
 
   useEffect(() => {
-    if (plan) void loadDay(selectedDay);
+    if (!plan) return;
+    if (plan.today && selectedDay === plan.today.day) {
+      const todayDetail = dayDetailFromPlanToday(plan);
+      if (todayDetail) {
+        setDayDetail(todayDetail);
+        syncWorkoutRegenStats(todayDetail, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+      }
+      return;
+    }
+    void loadDay(selectedDay);
   }, [plan, selectedDay, loadDay]);
 
   useEffect(() => {
@@ -742,7 +784,10 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   };
 
   const handleRegenerateMonthPlan = async () => {
-    if (!plan) return;
+    if (!plan) {
+      notifyUser(t("coach.workoutPlannerScreen.alerts.error"), t("coach.workoutPlannerScreen.alerts.stillLoading"));
+      return;
+    }
     if (!plannerLimitsExempt && monthPlanRegensRemaining <= 0) {
       notifyUser(
         t("coach.workoutPlannerScreen.alerts.monthPlanLimitReached"),
@@ -750,6 +795,16 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       );
       return;
     }
+
+    const remainingLabel = plannerLimitsExempt
+      ? t("coach.workoutPlannerScreen.alerts.testUnlimited")
+      : String(monthPlanRegensRemaining);
+    const confirmed = await confirmUser(
+      t("coach.workoutPlannerScreen.alerts.confirmMonthRegenTitle"),
+      t("coach.workoutPlannerScreen.alerts.confirmMonthRegenBody", { remaining: remainingLabel }),
+      t("coach.workoutPlannerScreen.regenerateMonthPlan"),
+    );
+    if (!confirmed) return;
 
     regeneratingMonthPlanRef.current = true;
     setIsRegeneratingMonthPlan(true);
@@ -853,7 +908,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   }
 
   return (
-    <ScreenContainer bg={SCREEN_BG} embedded={embedded}>
+    <ScreenContainer bg={SCREEN_BG} embedded={embedded} scroll={false} contentStyle={styles.screenRoot}>
       <View style={styles.header}>
         {!embedded ? (
           <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -883,14 +938,24 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
             <Pressable
               onPress={() => void handleRegenerateMonthPlan()}
               disabled={isRegeneratingMonthPlan}
-              style={[styles.headerMonthPill, isRegeneratingMonthPlan && styles.headerMonthPillDisabled]}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t("coach.workoutPlannerScreen.regenerateMonthPlan")}
+              accessibilityState={{ disabled: isRegeneratingMonthPlan }}
+              style={[
+                styles.headerMonthPill,
+                (isRegeneratingMonthPlan || !canPressRegenerateMonthPlan) && styles.headerMonthPillDisabled,
+              ]}
             >
               {isRegeneratingMonthPlan ? (
                 <ActivityIndicator size="small" color={ORANGE} />
               ) : (
-                <Ionicons name="refresh" size={13} color={ORANGE} />
+                <Ionicons name="refresh" size={13} color={canPressRegenerateMonthPlan ? ORANGE : MUTED} />
               )}
-              <Text style={styles.headerMonthPillText}>{t("coach.workoutPlannerScreen.month")}</Text>
+              <Text style={[styles.headerMonthPillText, !canPressRegenerateMonthPlan && styles.headerMonthPillTextDisabled]}>
+                {t("coach.workoutPlannerScreen.month")}
+                {!plannerLimitsExempt ? ` · ${monthPlanRegensRemaining}` : ""}
+              </Text>
             </Pressable>
           </View>
         ) : null}
@@ -904,7 +969,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
             regenerating={isRegeneratingStale}
           />
         ) : null}
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.screenScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
           {!plan && !generating ? (
             <View style={styles.panel}>
               <Text style={styles.panelTitle}>{t("coach.workoutPlannerScreen.generateTitle", { month: headerTitle })}</Text>
@@ -968,48 +1033,54 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                     <Text style={styles.dayDateLabel}>
                       {t("coach.workoutPlannerScreen.dateDay", { date: fullDayLabel(plan.month, plan.year, dayDetail.day).replace(",", " ·"), day: dayDetail.day })}
                     </Text>
-                    <Text style={styles.split}>{dayDetail.split_name.toUpperCase()}</Text>
                     {!isWorkoutRestDay(dayDetail) ? (
-                      <>
-                        <View style={styles.statChipsRow}>
-                          <View style={styles.statChip}>
-                            <Ionicons name="time-outline" size={13} color={WHITE} />
-                            <Text style={styles.statChipText}>{t("coach.workoutPlannerScreen.minutes", { count: dayDetail.estimated_duration_min })}</Text>
-                          </View>
-                          <View style={styles.statChip}>
-                            <Ionicons name="barbell-outline" size={13} color={WHITE} />
-                            <Text style={styles.statChipText}>{t("coach.workoutPlannerScreen.exerciseCount", { count: dayDetail.exercises.length })}</Text>
-                          </View>
-                          <View style={styles.statChip}>
-                            <Ionicons name="locate-outline" size={13} color={WHITE} />
-                            <Text style={styles.statChipText}>
-                              {dayDetail.split_name.toLowerCase().includes("push")
-                                ? t("coach.workoutPlannerScreen.push")
-                                : dayDetail.split_name.toLowerCase().includes("pull")
-                                  ? t("coach.workoutPlannerScreen.pull")
-                                  : dayDetail.split_name.toLowerCase().includes("leg")
-                                    ? t("coach.workoutPlannerScreen.legs")
-                                    : t("coach.workoutPlannerScreen.workout")}
-                            </Text>
-                          </View>
-                        </View>
-                        <View style={styles.dayFocusPillsRow}>
-                          {dayDetail.focus_muscles.map((muscle) => (
-                            <View key={muscle} style={styles.dayFocusPill}>
-                              <Text style={styles.dayFocusPillText}>{muscle}</Text>
+                      <View style={styles.dayHeaderMainRow}>
+                        <View style={styles.dayHeaderLeft}>
+                          <Text style={styles.split}>{dayDetail.split_name.toUpperCase()}</Text>
+                          <View style={styles.statChipsRow}>
+                            <View style={styles.statChip}>
+                              <Ionicons name="time-outline" size={13} color={WHITE} />
+                              <Text style={styles.statChipText}>{t("coach.workoutPlannerScreen.minutes", { count: dayDetail.estimated_duration_min })}</Text>
                             </View>
-                          ))}
+                            <View style={styles.statChip}>
+                              <Ionicons name="barbell-outline" size={13} color={WHITE} />
+                              <Text style={styles.statChipText}>{t("coach.workoutPlannerScreen.exerciseCount", { count: dayDetail.exercises.length })}</Text>
+                            </View>
+                            <View style={styles.statChip}>
+                              <Ionicons name="locate-outline" size={13} color={WHITE} />
+                              <Text style={styles.statChipText}>
+                                {dayDetail.split_name.toLowerCase().includes("push")
+                                  ? t("coach.workoutPlannerScreen.push")
+                                  : dayDetail.split_name.toLowerCase().includes("pull")
+                                    ? t("coach.workoutPlannerScreen.pull")
+                                    : dayDetail.split_name.toLowerCase().includes("leg")
+                                      ? t("coach.workoutPlannerScreen.legs")
+                                      : t("coach.workoutPlannerScreen.workout")}
+                              </Text>
+                            </View>
+                          </View>
                         </View>
-                        {activeFocusMuscles.length > 0 &&
-                        dayDetail.focus_muscles.some((m) =>
-                          activeFocusMuscles.some((f) => m.toLowerCase().includes(f.toLowerCase())),
-                        ) ? (
-                          <View style={styles.extraVolumeNote}>
-                            <Text style={styles.extraVolumeText}>{t("coach.workoutPlannerScreen.extraVolume", { muscles: activeFocusMuscles.join(", ") })}</Text>
+                        {dayDetail.focus_muscles.length > 0 ? (
+                          <View style={styles.dayFocusPillsColumn}>
+                            {dayDetail.focus_muscles.map((muscle) => (
+                              <View key={muscle} style={styles.dayFocusPill}>
+                                <Text style={styles.dayFocusPillText}>{muscle}</Text>
+                              </View>
+                            ))}
                           </View>
                         ) : null}
-
-                      </>
+                      </View>
+                    ) : (
+                      <Text style={styles.split}>{dayDetail.split_name.toUpperCase()}</Text>
+                    )}
+                    {!isWorkoutRestDay(dayDetail) &&
+                    activeFocusMuscles.length > 0 &&
+                    dayDetail.focus_muscles.some((m) =>
+                      activeFocusMuscles.some((f) => m.toLowerCase().includes(f.toLowerCase())),
+                    ) ? (
+                      <View style={styles.extraVolumeNote}>
+                        <Text style={styles.extraVolumeText}>{t("coach.workoutPlannerScreen.extraVolume", { muscles: activeFocusMuscles.join(", ") })}</Text>
+                      </View>
                     ) : null}
                   </View>
 
@@ -1049,6 +1120,8 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                         const logKey = exerciseLogKey(ex, i);
                         const isLogged = Boolean(loggedExerciseIds[logKey]);
                         const isLogging = loggingExerciseKey === logKey;
+                        const reflowSourceDay = (ex as ReflowTaggedExercise).reflow_source_day;
+                        const showReflowBadge = typeof reflowSourceDay === "number" && reflowSourceDay > 0;
                         return (
                           <View
                             key={`${exerciseListVersion}-${ex.name}-${i}`}
@@ -1067,6 +1140,13 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                                 <View style={styles.exerciseMiddle}>
                                   <View style={styles.exerciseTitleRow}>
                                     <Text style={styles.exName}>{ex.name}</Text>
+                                    {showReflowBadge ? (
+                                      <View style={styles.reflowBadge}>
+                                        <Text style={styles.reflowBadgeText}>
+                                          {t("coach.reflow.movedFromDay", { day: reflowSourceDay })}
+                                        </Text>
+                                      </View>
+                                    ) : null}
                                     {isLogged ? (
                                       <View style={styles.loggedBadge}>
                                         <Text style={styles.loggedBadgeText}>{t("coach.workoutPlannerScreen.loggedBadge")}</Text>
@@ -1166,8 +1246,10 @@ const styles = StyleSheet.create({
   loadingContent: { flexGrow: 1 },
   loadingWrap: { minHeight: 420, alignItems: "center", justifyContent: "center" },
   loadingText: { color: MUTED, fontSize: 12, fontWeight: "700", marginTop: 10 },
-  screenBody: { flex: 1 },
-  header: { paddingHorizontal: 2, paddingTop: 0, paddingBottom: 10, flexDirection: "row", alignItems: "center", gap: 12 },
+  screenRoot: { flex: 1, paddingBottom: 0 },
+  screenBody: { flex: 1, minHeight: 0 },
+  screenScroll: { flex: 1 },
+  header: { paddingHorizontal: 2, paddingTop: 0, paddingBottom: 10, flexDirection: "row", alignItems: "center", gap: 12, zIndex: 2 },
   backBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: BORDER, borderRadius: 10, backgroundColor: BG },
   backBtnText: { color: TEXT, fontSize: 17, fontWeight: "800" },
   headerTitleBlock: { flex: 1, minWidth: 0 },
@@ -1178,6 +1260,7 @@ const styles = StyleSheet.create({
   headerWorkoutPill: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: ORANGE_LIGHT, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
   headerMonthPillDisabled: { opacity: 0.6 },
   headerMonthPillText: { color: ORANGE, fontSize: 10, fontWeight: "800" },
+  headerMonthPillTextDisabled: { color: MUTED },
   panel: { backgroundColor: BG, borderRadius: 18, padding: 16, marginBottom: 14 },
   panelTitle: { color: TEXT, fontSize: 17, fontWeight: "800", marginBottom: 12 },
   label: { color: MUTED, fontSize: 13, fontWeight: "700", marginBottom: 8 },
@@ -1193,18 +1276,20 @@ const styles = StyleSheet.create({
   locked: { backgroundColor: BG, borderRadius: 18, padding: 32, alignItems: "center", marginVertical: 16 },
   lockedText: { color: MUTED, fontSize: 13, fontWeight: "800", marginTop: 8 },
   lockedMessage: { color: MUTED, fontSize: 11, marginTop: 4, textAlign: "center" },
-  dayHeader: { backgroundColor: ORANGE, borderRadius: 22, paddingHorizontal: 18, paddingVertical: 20, marginBottom: 14, overflow: "hidden" },
-  dayHeaderCircleOne: { position: "absolute", width: 130, height: 130, borderRadius: 65, right: -58, top: -44, backgroundColor: "rgba(255,255,255,0.05)" },
-  dayHeaderCircleTwo: { position: "absolute", width: 92, height: 92, borderRadius: 46, left: -34, bottom: -48, backgroundColor: "rgba(255,255,255,0.05)" },
-  dayDateLabel: { color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: "700", marginBottom: 4 },
-  split: { color: WHITE, fontSize: 34, fontWeight: "900", letterSpacing: 0.02, lineHeight: 34, marginBottom: 12 },
-  statChipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  statChip: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
-  statChipText: { color: WHITE, fontSize: 12, fontWeight: "800" },
-  dayFocusPillsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
-  dayFocusPill: { backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 99, paddingHorizontal: 11, paddingVertical: 4 },
-  dayFocusPillText: { color: WHITE, fontSize: 10, fontWeight: "800" },
-  extraVolumeNote: { backgroundColor: "rgba(255,215,0,0.15)", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
+  dayHeader: { backgroundColor: ORANGE, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14, overflow: "hidden" },
+  dayHeaderCircleOne: { position: "absolute", width: 100, height: 100, borderRadius: 50, right: -40, top: -36, backgroundColor: "rgba(255,255,255,0.05)" },
+  dayHeaderCircleTwo: { position: "absolute", width: 72, height: 72, borderRadius: 36, left: -28, bottom: -36, backgroundColor: "rgba(255,255,255,0.05)" },
+  dayDateLabel: { color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: "700", marginBottom: 6 },
+  dayHeaderMainRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  dayHeaderLeft: { flex: 1, minWidth: 0 },
+  split: { color: WHITE, fontSize: 26, fontWeight: "900", letterSpacing: 0.02, lineHeight: 28, marginBottom: 8 },
+  statChipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  statChip: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
+  statChipText: { color: WHITE, fontSize: 11, fontWeight: "800" },
+  dayFocusPillsColumn: { flexShrink: 0, alignItems: "flex-end", gap: 5, maxWidth: "38%" },
+  dayFocusPill: { backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  dayFocusPillText: { color: WHITE, fontSize: 10, fontWeight: "800", textAlign: "right" },
+  extraVolumeNote: { backgroundColor: "rgba(255,215,0,0.15)", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginTop: 10 },
   extraVolumeText: { color: GOLD, fontSize: 11, fontWeight: "800" },
   restBox: { backgroundColor: BG, borderRadius: 18, padding: 24, alignItems: "center", marginBottom: 12 },
   restEmoji: { fontSize: 40, textAlign: "center" },
@@ -1226,6 +1311,8 @@ const styles = StyleSheet.create({
   exName: { color: TEXT, fontSize: 14, fontWeight: "800" },
   loggedBadge: { backgroundColor: GREEN, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   loggedBadgeText: { color: WHITE, fontSize: 10, fontWeight: "800" },
+  reflowBadge: { backgroundColor: PURPLE_LIGHT, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: PURPLE_MID },
+  reflowBadgeText: { color: PURPLE_MID, fontSize: 10, fontWeight: "800" },
   exercisePrescription: { color: ORANGE, fontSize: 12, fontWeight: "800", marginBottom: 4 },
   exerciseMetaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
   muscleTag: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },

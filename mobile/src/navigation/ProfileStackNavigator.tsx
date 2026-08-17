@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ProfileScreen } from "../screens/ProfileScreen";
+import { SettingsScreen } from "../screens/SettingsScreen";
 import { NotificationPreferencesScreen } from "../screens/NotificationPreferencesScreen";
 import { MySupplementStackScreen } from "../screens/MySupplementStackScreen";
 import { SubscriptionScreen } from "../screens/SubscriptionScreen";
@@ -19,6 +20,7 @@ export function ProfileStackNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="MySupplementStack" component={MySupplementStackScreen} />
       <Stack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
       <Stack.Screen name="FastingPreferences" component={FastingPreferencesScreen} />

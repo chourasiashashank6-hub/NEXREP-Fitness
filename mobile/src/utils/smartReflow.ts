@@ -37,13 +37,20 @@ function estimateDayDuration(exercises: WorkoutExercise[]): number {
 function mergeUniqueExercises(
   base: WorkoutExercise[],
   additions: WorkoutExercise[],
-  sourceDay?: number,
+  sourceDay: number | undefined,
+  targetDay: number,
 ): WorkoutExercise[] {
   const names = new Set(base.map((exercise) => exercise.name.trim().toLowerCase()));
   const merged = [...base];
   for (const exercise of additions) {
     const key = exercise.name.trim().toLowerCase();
-    if (!key || names.has(key)) continue;
+    if (!key) continue;
+    if (names.has(key)) {
+      console.warn(
+        `[smart-reflow] skipped duplicate "${exercise.name}" when reflowing from day ${sourceDay ?? "?"} into day ${targetDay}`,
+      );
+      continue;
+    }
     merged.push(sourceDay ? tagExerciseForReflow(exercise, sourceDay) : exercise);
     names.add(key);
   }
@@ -58,6 +65,8 @@ export function buildSmartReflowPatches(
   const snapshotByDay = new Map(daySnapshots.map((snapshot) => [snapshot.day, snapshot]));
   const exercisesToMove: Array<{ sourceDay: number; exercise: WorkoutExercise }> = [];
 
+  // Reflow source days: skip when the user logged planner-checkbox exercises on that day.
+  // Weekly review uses any workout log — see build_weekly_review (intentional divergence).
   for (const overview of plan.month_overview) {
     if (!overview.is_past || overview.is_rest_day) continue;
     const snapshot = snapshotByDay.get(overview.day);
@@ -92,7 +101,7 @@ export function buildSmartReflowPatches(
     if (!additions.length) break;
     let exercises = [...target.exercises];
     for (const item of additions) {
-      exercises = mergeUniqueExercises(exercises, [item.exercise], item.sourceDay);
+      exercises = mergeUniqueExercises(exercises, [item.exercise], item.sourceDay, target.day);
     }
     patches.push({
       day: target.day,

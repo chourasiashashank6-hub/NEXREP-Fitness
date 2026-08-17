@@ -9,7 +9,6 @@ import {
   listThreads,
   requestToJoinThread,
   type GymThread,
-  type ThreadBucket,
 } from "../../api/threads";
 import { getThreadStackDetails, type SupplementCategory, type ThreadStackMember } from "../../api/supplementStacks";
 import { UserAvatar } from "../../components/UserAvatar";
@@ -33,8 +32,9 @@ const STACK_COLORS: Record<SupplementCategory, string> = {
   other: "#6F766F",
 };
 
-type ThreadTab = ThreadBucket | "discover";
-const buckets: ThreadTab[] = ["discover", "active", "invited", "past"];
+type ThreadFilter = "all" | "mine" | "invites";
+type ThreadListItem = GymThread & { listKind: "discover" | "active" | "invited" | "past" };
+const filters: ThreadFilter[] = ["all", "mine", "invites"];
 
 const formatThreadTime = (value: string) =>
   new Date(value).toLocaleString(undefined, {
@@ -47,8 +47,10 @@ const formatThreadTime = (value: string) =>
 export default function ThreadsScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
-  const [bucket, setBucket] = useState<ThreadTab>("discover");
-  const [items, setItems] = useState<GymThread[]>([]);
+  const [filter, setFilter] = useState<ThreadFilter>("all");
+  const [showPast, setShowPast] = useState(false);
+  const [inviteCount, setInviteCount] = useState(0);
+  const [items, setItems] = useState<ThreadListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyThreadId, setBusyThreadId] = useState<number | null>(null);
   const [stackSheetThread, setStackSheetThread] = useState<GymThread | null>(null);
@@ -58,13 +60,37 @@ export default function ThreadsScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setItems(bucket === "discover" ? await discoverThreads() : await listThreads(bucket));
+      if (showPast) {
+        const pastItems = await listThreads("past");
+        setItems(pastItems.map((thread) => ({ ...thread, listKind: "past" as const })));
+        return;
+      }
+      const invitedItems = await listThreads("invited");
+      setInviteCount(invitedItems.length);
+      if (filter === "invites") {
+        setItems(invitedItems.map((thread) => ({ ...thread, listKind: "invited" as const })));
+        return;
+      }
+      if (filter === "mine") {
+        const activeItems = await listThreads("active");
+        setItems(activeItems.map((thread) => ({ ...thread, listKind: "active" as const })));
+        return;
+      }
+      const [discoverItems, activeItems] = await Promise.all([discoverThreads(), listThreads("active")]);
+      const activeIds = new Set(activeItems.map((thread) => thread.id));
+      const merged: ThreadListItem[] = [
+        ...activeItems.map((thread) => ({ ...thread, listKind: "active" as const })),
+        ...discoverItems
+          .filter((thread) => !activeIds.has(thread.id))
+          .map((thread) => ({ ...thread, listKind: "discover" as const })),
+      ].sort((left, right) => new Date(left.scheduled_time).getTime() - new Date(right.scheduled_time).getTime());
+      setItems(merged);
     } catch {
       Alert.alert(t("common.error"), t("social.threads.alerts.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [bucket, t]);
+  }, [filter, showPast, t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,12 +100,12 @@ export default function ThreadsScreen() {
 
   useEffect(() => {
     const unsubscribe = subscribeToSocialUnreadChanges(() => {
-      if (bucket === "active") void load();
+      if (filter === "mine" || filter === "all") void load();
     });
     return () => {
       unsubscribe();
     };
-  }, [bucket, load]);
+  }, [filter, load]);
 
   const handleAccept = async (thread: GymThread) => {
     const previous = items;
@@ -162,15 +188,23 @@ export default function ThreadsScreen() {
       </View>
 
       <View style={styles.segment}>
-        {buckets.map((item) => (
+        {filters.map((item) => (
           <Pressable
             key={item}
-            style={[styles.segmentButton, bucket === item ? styles.segmentActive : null]}
-            onPress={() => setBucket(item)}
+            style={[styles.segmentButton, !showPast && filter === item ? styles.segmentActive : null]}
+            onPress={() => {
+              setShowPast(false);
+              setFilter(item);
+            }}
           >
-            <Text style={[styles.segmentText, bucket === item ? styles.segmentTextActive : null]}>
-              {t(`social.threads.tabs.${item}`)}
+            <Text style={[styles.segmentText, !showPast && filter === item ? styles.segmentTextActive : null]}>
+              {t(`social.threads.filters.${item}`)}
             </Text>
+            {item === "invites" && inviteCount > 0 ? (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{inviteCount}</Text>
+              </View>
+            ) : null}
           </Pressable>
         ))}
       </View>
@@ -181,8 +215,12 @@ export default function ThreadsScreen() {
         </View>
       ) : items.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>{t(`social.threads.empty.${bucket}.title`)}</Text>
-          <Text style={styles.emptyBody}>{t(`social.threads.empty.${bucket}.body`)}</Text>
+          <Text style={styles.emptyTitle}>
+            {t(`social.threads.empty.${showPast ? "past" : filter === "all" ? "discover" : filter === "mine" ? "active" : "invited"}.title`)}
+          </Text>
+          <Text style={styles.emptyBody}>
+            {t(`social.threads.empty.${showPast ? "past" : filter === "all" ? "discover" : filter === "mine" ? "active" : "invited"}.body`)}
+          </Text>
         </View>
       ) : (
         items.map((thread) => (
@@ -207,7 +245,7 @@ export default function ThreadsScreen() {
               </View>
               <Text style={styles.hostBadge}>{t("social.threads.detail.host")}</Text>
             </View>
-            {bucket === "discover" ? (
+            {thread.listKind === "discover" ? (
               <View style={styles.activeBody}>
                 <View style={styles.discoverHeader}>
                   <View style={styles.cardText}>
@@ -260,7 +298,7 @@ export default function ThreadsScreen() {
                   )}
                 </View>
               </View>
-            ) : bucket === "active" ? (
+            ) : thread.listKind === "active" ? (
               <View style={styles.activeBody}>
                   <View style={styles.cardTop}>
                     <View style={styles.cardText}>
@@ -375,12 +413,12 @@ export default function ThreadsScreen() {
                   ))}
                 <Text style={styles.goingText}>{t("social.threads.goingCount", { count: thread.going_count })}</Text>
               </View>
-              {bucket === "active" && thread.is_host && (thread.pending_join_request_count ?? 0) > 0 ? (
+              {thread.listKind === "active" && thread.is_host && (thread.pending_join_request_count ?? 0) > 0 ? (
                 <Text style={styles.pendingRequestText}>
                   {t("social.threads.pendingRequestsLine", { count: thread.pending_join_request_count })}
                 </Text>
               ) : null}
-              {bucket === "invited" ? (
+              {thread.listKind === "invited" ? (
                 <View style={styles.inviteActions}>
                   <Pressable
                     style={styles.secondaryButton}
@@ -404,6 +442,16 @@ export default function ThreadsScreen() {
           </Pressable>
         ))
       )}
+      <Pressable
+        style={styles.pastLink}
+        onPress={() => {
+          setShowPast((current) => !current);
+        }}
+      >
+        <Text style={styles.pastLinkText}>
+          {showPast ? t("social.threads.hidePast") : t("social.threads.showPast")}
+        </Text>
+      </Pressable>
       <Modal visible={Boolean(stackSheetThread)} transparent animationType="slide" onRequestClose={() => setStackSheetThread(null)}>
         <Pressable style={styles.backdrop} onPress={() => setStackSheetThread(null)}>
           <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
@@ -482,10 +530,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 5,
   },
-  segmentButton: { alignItems: "center", borderRadius: 14, flex: 1, paddingVertical: 10 },
+  segmentButton: { alignItems: "center", borderRadius: 14, flex: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 10 },
   segmentActive: { backgroundColor: GREEN_LIGHT },
   segmentText: { color: MUTED, fontSize: 13, fontWeight: "800" },
   segmentTextActive: { color: GREEN },
+  filterBadge: { alignItems: "center", backgroundColor: "#B42318", borderRadius: 999, minWidth: 18, paddingHorizontal: 5, paddingVertical: 2 },
+  filterBadgeText: { color: WHITE, fontSize: 10, fontWeight: "900" },
+  pastLink: { alignItems: "center", marginBottom: 20, marginTop: 4, paddingVertical: 10 },
+  pastLinkText: { color: GREEN, fontSize: 13, fontWeight: "900" },
   disabled: { opacity: 0.55 },
   loadingWrap: { alignItems: "center", padding: 28 },
   emptyCard: {

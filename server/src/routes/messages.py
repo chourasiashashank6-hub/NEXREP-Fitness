@@ -541,6 +541,77 @@ def _serialize_dm_conversation(db: Session, conversation: DMConversation, curren
     }
 
 
+def _serialize_thread_conversation(db: Session, thread: Thread, current_user_id: int) -> dict[str, Any]:
+    member = _thread_member(db, thread.id, current_user_id)
+    last = _conversation_last_message(db, thread_id=thread.id)
+    muted = (
+        db.query(ThreadMute)
+        .filter(ThreadMute.thread_id == thread.id, ThreadMute.user_id == current_user_id)
+        .first()
+        is not None
+    )
+    return {
+        "kind": "thread",
+        "thread_id": thread.id,
+        "title": thread.title,
+        "gym_name": thread.gym_name,
+        "scheduled_time": thread.scheduled_time.isoformat() if thread.scheduled_time else None,
+        "status": thread.status,
+        "muted": muted,
+        "last_read_message_id": member.last_read_message_id if member else None,
+        "unread_count": _unread_for_member(db, user_id=current_user_id, thread_id=thread.id),
+        "last_message": _serialize_message(db, last, current_user_id) if last else None,
+    }
+
+
+@router.get("/conversations")
+def list_conversations(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Unified DM + thread chat inbox sorted by most recent message."""
+    items: list[dict[str, Any]] = []
+
+    dm_rows = (
+        db.query(DMConversation)
+        .join(DMConversationMember, DMConversationMember.dm_conversation_id == DMConversation.id)
+        .filter(DMConversationMember.user_id == current_user.id)
+        .all()
+    )
+    for conversation in dm_rows:
+        other = _dm_other_member(db, conversation.id, current_user.id)
+        if not other or _is_blocked_between(db, current_user.id, other.id):
+            continue
+        row = _serialize_dm_conversation(db, conversation, current_user.id)
+        row["kind"] = "dm"
+        items.append(row)
+
+    thread_rows = (
+        db.query(Thread)
+        .join(ThreadMember, ThreadMember.thread_id == Thread.id)
+        .filter(
+            ThreadMember.user_id == current_user.id,
+            ThreadMember.status == "joined",
+            Thread.status.in_(("active", "completed")),
+        )
+        .all()
+    )
+    for thread in thread_rows:
+        items.append(_serialize_thread_conversation(db, thread, current_user.id))
+
+    def sort_key(row: dict[str, Any]) -> datetime:
+        last = row.get("last_message")
+        if last and last.get("created_at"):
+            return datetime.fromisoformat(str(last["created_at"]).replace("Z", "+00:00")).replace(tzinfo=None)
+        scheduled = row.get("scheduled_time")
+        if scheduled:
+            return datetime.fromisoformat(str(scheduled).replace("Z", "+00:00")).replace(tzinfo=None)
+        created = row.get("created_at")
+        if created:
+            return datetime.fromisoformat(str(created).replace("Z", "+00:00")).replace(tzinfo=None)
+        return datetime.min
+
+    items.sort(key=sort_key, reverse=True)
+    return {"items": items}
+
+
 @router.get("/dm-conversations")
 def list_dm_conversations(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     rows = (

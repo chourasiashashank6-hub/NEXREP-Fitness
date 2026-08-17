@@ -43,6 +43,7 @@ import {
 } from "../utils/streakEngine";
 import { isHomeRestDayActive, isWorkoutRestDay } from "../utils/workoutRestDay";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
+import { setGamePlanCache } from "../store/gamePlanCache";
 import type { WorkoutPlanCurrent } from "../types/planner";
 
 interface LatestWeightData {
@@ -77,6 +78,8 @@ const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FEF1EE";
+const PURPLE = "#7B68CC";
+const PURPLE_LIGHT = "#F0EEF9";
 const BG = "#F7F6F3";
 const CARD = "#FFFFFF";
 const TEXT_PRIMARY = "#1A1A18";
@@ -351,6 +354,28 @@ export const HomeScreen = () => {
       setStreakCalorieLogs(calorieLogsForStreak);
 
       setPersonalBestStreak(Math.max(0, Number(streakRes?.personal_best_streak ?? 0)));
+
+      const onboardingWeight = Number(onboardingRes?.onboarding?.personal?.weight_kg);
+      const latestWeightKg = Number(weightLatestRes?.weight_kg);
+      const cachedWeightKg =
+        Number.isFinite(latestWeightKg) && latestWeightKg > 0
+          ? latestWeightKg
+          : Number.isFinite(onboardingWeight) && onboardingWeight > 0
+            ? onboardingWeight
+            : 70;
+      setGamePlanCache({
+        calorieDay: dayRes,
+        todayWorkoutPlan: workoutPlanRes,
+        workoutHistory: (historyRes.items ?? []).map((item) => ({
+          date: item.date,
+          exerciseName: item.exerciseName,
+          type: item.type,
+          notes: item.notes,
+          bodyPart: item.bodyPart,
+        })),
+        weightKg: cachedWeightKg,
+      });
+
       lastLoadAt.current = Date.now();
     } catch {
       Alert.alert(t("home.alerts.error"), t("home.alerts.loadFailed"));
@@ -686,17 +711,6 @@ export const HomeScreen = () => {
                 </View>
               </View>
               <View style={styles.streakBestCol}>
-                <Pressable
-                  style={styles.gamePlanBtn}
-                  onPress={() => {
-                    if (navigationRef.isReady()) navigationRef.navigate("DailyGamePlan");
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={t("home.gamePlan.openButton")}
-                >
-                  <Ionicons name="sparkles-outline" size={11} color={TEXT_MUTED} />
-                  <Text style={styles.gamePlanBtnText}>{t("home.gamePlan.openButton")}</Text>
-                </Pressable>
                 <Text style={styles.streakBestLabel}>{t("home.best")}</Text>
                 <Text style={styles.streakBestValue}>
                   {displayBestStreak} 🏆
@@ -728,6 +742,18 @@ export const HomeScreen = () => {
                 <Text style={styles.streakLegendText}>{t("home.missed")}</Text>
               </View>
             </View>
+
+            <Pressable
+              style={styles.gamePlanBtn}
+              onPress={() => {
+                if (navigationRef.isReady()) navigationRef.navigate("DailyGamePlan");
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t("home.gamePlan.openButton")}
+            >
+              <Ionicons name="sparkles" size={16} color={PURPLE} />
+              <Text style={styles.gamePlanBtnText}>{t("home.gamePlan.openButton")}</Text>
+            </Pressable>
           </View>
         </Animated.View>
 
@@ -975,10 +1001,16 @@ const styles = StyleSheet.create({
   gamePlanBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginBottom: 6,
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: PURPLE_LIGHT,
+    width: "100%",
   },
-  gamePlanBtnText: { fontSize: 10, fontWeight: "600", color: TEXT_MUTED },
+  gamePlanBtnText: { fontSize: 14, fontWeight: "700", color: PURPLE },
   streakBestLabel: { fontSize: 10, color: TEXT_MUTED, marginBottom: 2 },
   streakBestValue: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY },
   streakDivider: { height: 1, backgroundColor: "#ECEAE5", marginVertical: 14 },

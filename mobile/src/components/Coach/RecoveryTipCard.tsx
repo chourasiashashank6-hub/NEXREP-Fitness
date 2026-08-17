@@ -20,15 +20,21 @@ export function RecoveryTipCard({ icon, title, description }: RecoveryTip) {
       </View>
       <Text style={[styles.iconLabel, { color: meta.color }]}>{meta.label}</Text>
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.desc} numberOfLines={3}>
-        {description}
-      </Text>
+      <Text style={styles.desc}>{description}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { minWidth: 150, backgroundColor: WC_COLORS.WHITE, borderRadius: 16, borderWidth: 1, borderColor: WC_COLORS.BORDER, padding: 13, marginRight: 10 },
+  card: {
+    width: 208,
+    backgroundColor: WC_COLORS.WHITE,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: WC_COLORS.BORDER,
+    padding: 12,
+    marginRight: 10,
+  },
   iconTile: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   iconLabel: { fontSize: 10, fontWeight: "700", letterSpacing: 0.4, textTransform: "uppercase" },
   title: { color: WC_COLORS.TEXT, fontSize: 12, fontWeight: "700", marginTop: 6 },

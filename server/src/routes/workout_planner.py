@@ -290,6 +290,7 @@ def post_weekly_review_apply(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Apply weekly compensation reflow. Mobile clients do not call this — Sunday cron handles it."""
     try:
         result = apply_weekly_compensation(
             db,

@@ -90,7 +90,7 @@
     "sessionBoxLabel": "सेशन",
     "restDayNoSession": "आज रेस्ट डे है 🛌 — कोई सेशन शेड्यूल नहीं",
     "gamePlan": {
-      "openButton": "गेम प्लान",
+      "openButton": "आज का गेम प्लान देखें",
       "title": "आज का गेम प्लान",
       "exerciseCount": "एक्सरसाइज़",
       "mealCount": "भोजन",
@@ -163,6 +163,12 @@
     "logWeight": "वजन लॉग करें",
     "lastWeight": "अंतिम: {{weight}} kg",
     "startTracking": "ट्रैकिंग शुरू करें",
+    "weightJourneyTransformation": {
+      "title": "90-दिन का ट्रांसफॉर्मेशन",
+      "workouts": "वर्कआउट",
+      "newPrs": "नए PR",
+      "viewTimeline": "पूरी टाइमलाइन देखें"
+    },
     "xp": {
       "title": "प्रोग्रेस XP",
       "level": "LVL",
@@ -514,14 +520,17 @@
   },
   "social": {
     "nav": {
-      "home": "Squad",
+      "home": "होम",
       "leaderboard": "लीडरबोर्ड",
       "friends": "दोस्त",
       "threads": "थ्रेड्स",
-      "messages": "संदेश"
+      "messages": "संदेश",
+      "chats": "चैट"
     },
     "header": {
-      "title": "NexFam"
+      "title": "NexFam",
+      "findPeople": "लोग खोजें",
+      "search": "यूज़र खोजें"
     },
     "home": {
       "eyebrow": "Squad",
@@ -530,7 +539,14 @@
       "friendCount": "{{count}} दोस्त",
       "nextSessionEyebrow": "आपका अगला सेशन",
       "openThread": "खोलें",
-      "feedTitle": "Squad गतिविधि",
+      "feedTitle": "हाल की गतिविधि",
+      "squadTitle": "आपका स्क्वाड",
+      "squadEmptyTitle": "जिम स्क्वाड शुरू करें",
+      "squadEmptyBody": "दैनिक वर्कआउट और मील चेक-इन देखने के लिए स्क्वाड बनाएं या जॉइन करें।",
+      "squadBrowse": "स्क्वाड देखें",
+      "squadSeeAll": "सभी देखें",
+      "leaderboardTitle": "इस सप्ताह",
+      "challengesLink": "चैलेंज",
       "reactions": {
         "flame": "फ्लेम",
         "cheer": "चीयर"
@@ -679,6 +695,16 @@
     "common": {
       "comingSoon": "जल्द आ रहा है"
     },
+    "chats": {
+      "eyebrow": "इनबॉक्स",
+      "title": "चैट",
+      "threadBadge": "थ्रेड",
+      "emptyTitle": "अभी कोई बातचीत नहीं",
+      "emptyBody": "डायरेक्ट मैसेज और थ्रेड चैट यहाँ दिखेंगे।",
+      "alerts": {
+        "loadFailed": "चैट अभी लोड नहीं हो सकीं।"
+      }
+    },
     "threads": {
       "eyebrow": "जिम थ्रेड्स",
       "title": "थ्रेड्स",
@@ -697,6 +723,13 @@
         "past": "पुराने",
         "discover": "डिस्कवर"
       },
+      "filters": {
+        "all": "सभी",
+        "mine": "मेरे",
+        "invites": "निमंत्रण"
+      },
+      "showPast": "पुराने थ्रेड दिखाएं",
+      "hidePast": "पुराने थ्रेड छिपाएं",
       "empty": {
         "active": {
           "title": "कोई एक्टिव थ्रेड नहीं",
@@ -1433,6 +1466,7 @@
     }
   },
   "settings": {
+    "screenTitle": "सेटिंग्स",
     "notifications": {
       "title": "अधिसूचना प्राथमिकताएँ",
       "subtitle": "अनुस्मारक, शांत घंटे और workout समय ऑफसेट को नियंत्रित करें।",
@@ -1923,7 +1957,8 @@
     },
     "reflow": {
       "appliedTitle": "Plan adapt ho gaya",
-      "appliedBody": "Smart Reflow ne {{count}} missed priority exercises upcoming days mein shift kiye."
+      "appliedBody": "Smart Reflow ne {{count}} missed priority exercises upcoming days mein shift kiye.",
+      "movedFromDay": "→ Day {{day}} se shift kiya"
     },
     "workoutPlannerScreen": {
       "balancedHint": "संतुलित - सभी मांसपेशी समूहों को समान रूप से प्रशिक्षित किया जाएगा",

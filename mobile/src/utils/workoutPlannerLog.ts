@@ -90,7 +90,11 @@ export function buildLoggedExerciseIdMap(
   return next;
 }
 
-/** True when at least one planner-checkbox log exists for this plan day. */
+/**
+ * True when at least one planner-checkbox log exists for this plan day.
+ * Smart Reflow uses this (not any-workout logs) so a missed weekly-review day
+ * with ad-hoc gym logs can still contribute exercises to reflow.
+ */
 export function hasAnyPlannerLogForDay(
   items: WorkoutHistoryMatchItem[],
   exercises: Pick<WorkoutExercise, "name">[],
