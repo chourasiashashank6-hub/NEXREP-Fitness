@@ -83,6 +83,7 @@ const TEXT_PRIMARY = "#1A1A18";
 const TEXT_MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
 const STREAK_LOOKBACK_DAYS = 60;
+const FOCUS_STALE_MS = 45_000;
 
 type BurnProfile = {
   name: string;
@@ -236,6 +237,7 @@ export const HomeScreen = () => {
   >([]);
   const [streakCalorieLogs, setStreakCalorieLogs] = useState<{ date: string; total_calories: number }[]>([]);
   const [personalBestStreak, setPersonalBestStreak] = useState(0);
+  const lastLoadAt = useRef(0);
 
   const sectionAnim = useRef([0, 1, 2, 3, 4].map(() => new Animated.Value(0))).current;
 
@@ -349,6 +351,7 @@ export const HomeScreen = () => {
       setStreakCalorieLogs(calorieLogsForStreak);
 
       setPersonalBestStreak(Math.max(0, Number(streakRes?.personal_best_streak ?? 0)));
+      lastLoadAt.current = Date.now();
     } catch {
       Alert.alert(t("home.alerts.error"), t("home.alerts.loadFailed"));
     }
@@ -414,12 +417,12 @@ export const HomeScreen = () => {
     }
   };
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now();
+      if (lastLoadAt.current > 0 && now - lastLoadAt.current < FOCUS_STALE_MS) {
+        return;
+      }
       void load();
     }, [load]),
   );

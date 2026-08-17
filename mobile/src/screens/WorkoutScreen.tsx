@@ -89,6 +89,7 @@ const TRACK = "#E5E4E0";
 const BORDER = "#E2E2DD";
 const DANGER = "#E85B5B";
 const BURN_TARGET_FALLBACK = 200;
+const FOCUS_STALE_MS = 45_000;
 
 const CHIP_DROPDOWN_COLORS = {
   text: TEXT,
@@ -438,6 +439,7 @@ export const WorkoutScreen = () => {
   const [guideOpen, setGuideOpen] = useState(false);
   const lastAutoFilledExerciseRef = useRef<string | null>(null);
   const workoutInputsEditedRef = useRef(false);
+  const lastFocusLoadAt = useRef(0);
 
   const isNoChoice = (value: string) => NO_CHOICE_VALUES.has((value || "").trim().toLowerCase());
   const needsGoalTagInput = isNoChoice(profileGoalTag);
@@ -665,13 +667,17 @@ export const WorkoutScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      // Always show planner form when user returns to this tab.
       setShowHistory(false);
       setTodayKey(toDateKey(new Date()));
-      loadInitial({ preservePlannerState: true });
-      fetchWorkoutPlanCurrent()
-        .then((plan) => setTodayPlan(plan))
-        .catch(() => setTodayPlan(null));
+      const now = Date.now();
+      if (lastFocusLoadAt.current === 0 || now - lastFocusLoadAt.current >= FOCUS_STALE_MS) {
+        void loadInitial({ preservePlannerState: true }).finally(() => {
+          lastFocusLoadAt.current = Date.now();
+        });
+        fetchWorkoutPlanCurrent()
+          .then((plan) => setTodayPlan(plan))
+          .catch(() => setTodayPlan(null));
+      }
     }, [needsGoalTagInput, needsDifficultyInput, language]),
   );
 

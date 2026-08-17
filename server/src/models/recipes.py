@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -31,6 +31,7 @@ class Recipe(Base):
     items = Column(JSONB, nullable=False)
     steps = Column(JSONB, nullable=False)
     slots = Column(JSONB, nullable=False)
+    dietary_tags = Column(JSONB, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -60,3 +61,16 @@ class UserMealPlan(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "plan_date", "slot", "slot_order", name="uq_user_meal_plan_user_date_slot_order"),
     )
+
+
+class UserFastingPreference(Base):
+    __tablename__ = "user_fasting_preferences"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    period_type = Column(String(24), nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)

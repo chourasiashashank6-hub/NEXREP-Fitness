@@ -10,12 +10,16 @@ import { useLanguageStore } from "../i18n/languageStore";
 import { useAuthStore } from "../store/authStore";
 import { useWorkoutSessionStore } from "../store/workoutSessionStore";
 import { AuthScreen } from "../screens/AuthScreen";
+import { HomeScreen } from "../screens/HomeScreen";
+import { WorkoutScreen } from "../screens/WorkoutScreen";
+import { CalorieLog } from "../screens/CalorieLog";
 import GuidedWarmupScreen from "../screens/GuidedWarmupScreen";
 import ActiveWorkoutScreen from "../screens/ActiveWorkoutScreen";
 import AICameraWorkoutScreen from "../screens/AICameraWorkoutScreen";
 import AITrainerCalibrationScreen from "../screens/aiTrainer/AITrainerCalibrationScreen";
 import WorkoutCompletionScreen from "../screens/WorkoutCompletionScreen";
 import GamePlanModalScreen from "../screens/GamePlanModalScreen";
+import ProgressPhotoCaptureScreen from "../screens/ProgressPhotoCaptureScreen";
 import CoachNavigator from "../screens/Coach/CoachNavigator";
 import { ProfileStackNavigator } from "./ProfileStackNavigator";
 import SocialNavigator from "./SocialNavigator";
@@ -99,6 +103,8 @@ const MainTabs = ({ initialRouteName = "Home" }: { initialRouteName?: "Home" | "
       initialRouteName={initialRouteName}
       screenOptions={({ route }) => ({
         headerShown: false,
+        lazy: true,
+        unmountOnBlur: false,
         tabBarLabel: ({ color }) => (
           <Text
             style={[styles.tabBarLabel, { color }]}
@@ -140,9 +146,9 @@ const MainTabs = ({ initialRouteName = "Home" }: { initialRouteName?: "Home" | "
         },
       })}
     >
-      <Tabs.Screen name="Home" getComponent={() => require("../screens/HomeScreen").HomeScreen} />
-      <Tabs.Screen name="Workout" getComponent={() => require("../screens/WorkoutScreen").WorkoutScreen} />
-      <Tabs.Screen name="Calories" getComponent={() => require("../screens/CalorieLog").CalorieLog} />
+      <Tabs.Screen name="Home" component={HomeScreen} />
+      <Tabs.Screen name="Workout" component={WorkoutScreen} />
+      <Tabs.Screen name="Calories" component={CalorieLog} />
       <Tabs.Screen name="Coach" component={CoachNavigator} />
       <Tabs.Screen name="Social" component={SocialNavigator} />
       <Tabs.Screen name="Profile" component={ProfileStackNavigator} />
@@ -330,6 +336,11 @@ export const RootNavigator = () => {
               contentStyle: { backgroundColor: "transparent" },
               gestureEnabled: true,
             }}
+          />
+          <Stack.Screen
+            name="ProgressPhotoCapture"
+            component={ProgressPhotoCaptureScreen}
+            options={{ headerShown: false, presentation: "fullScreenModal", gestureEnabled: true }}
           />
         </>
       ) : (

@@ -18,6 +18,9 @@ import MessagesScreen from "../screens/social/MessagesScreen";
 import ChatScreen from "../screens/social/ChatScreen";
 import ChallengeCreateScreen from "../screens/social/ChallengeCreateScreen";
 import ChallengeDetailScreen from "../screens/social/ChallengeDetailScreen";
+import GymSquadScreen from "../screens/social/GymSquadScreen";
+import GymSquadCreateScreen from "../screens/social/GymSquadCreateScreen";
+import GymSquadDetailScreen from "../screens/social/GymSquadDetailScreen";
 import type { SocialStackParamList } from "./types";
 import { subscribeToSocialUnreadChanges } from "../utils/socialUnreadEvents";
 
@@ -203,6 +206,9 @@ export default function SocialNavigator() {
       <Stack.Screen name="SocialChat" component={ChatScreen} />
       <Stack.Screen name="SocialChallengeCreate" component={ChallengeCreateScreen} />
       <Stack.Screen name="SocialChallengeDetail" component={ChallengeDetailScreen} />
+      <Stack.Screen name="SocialGymSquads" component={GymSquadScreen} />
+      <Stack.Screen name="SocialGymSquadCreate" component={GymSquadCreateScreen} />
+      <Stack.Screen name="SocialGymSquadDetail" component={GymSquadDetailScreen} />
     </Stack.Navigator>
   );
 }

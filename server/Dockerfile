@@ -15,6 +15,7 @@ COPY alembic/ ./alembic/
 COPY workout_catalog_v2_clean.json .
 COPY global_exercises_seed.json .
 COPY nexrep_recipes_seed.json .
+COPY nexrep_fasting_recipes_seed.json .
 COPY sql/ ./sql/
 COPY seeds/ ./seeds/
 

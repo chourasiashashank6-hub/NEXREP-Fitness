@@ -230,14 +230,20 @@ def _diet_clause(diet: DietFilter):
     return True
 
 
+def _fasting_clause(fasting_tag: str | None):
+    if not fasting_tag:
+        return True
+    return Recipe.dietary_tags.contains([fasting_tag])
+
+
 def _slot_matches(recipe: Recipe, slot: SlotName) -> bool:
     catalog = CATALOG_SLOT_FOR.get(slot, slot)  # type: ignore[arg-type]
     slots = recipe.slots or []
     return catalog in slots
 
 
-def fetch_slot_pool(db: Session, diet: DietFilter, slot: SlotName) -> list[Recipe]:
-    q = db.query(Recipe).filter(_diet_clause(diet))
+def fetch_slot_pool(db: Session, diet: DietFilter, slot: SlotName, fasting_tag: str | None = None) -> list[Recipe]:
+    q = db.query(Recipe).filter(_diet_clause(diet), _fasting_clause(fasting_tag))
     recipes = q.all()
     return [r for r in recipes if _slot_matches(r, slot)]
 
@@ -483,11 +489,17 @@ def select_for_slot(
     swap_version: int = 0,
     slot_order: int = 0,
     exclude_recipe_ids: set[int] | None = None,
+    fasting_tag: str | None = None,
 ) -> SlotPick:
     exclude = set(exclude_recipe_ids or ())
-    pool = [r for r in fetch_slot_pool(db, diet, slot) if r.id not in exclude]
+    pool = [r for r in fetch_slot_pool(db, diet, slot, fasting_tag) if r.id not in exclude]
     if not pool:
-        raise RuntimeError(f"Empty recipe pool for diet={diet} slot={slot}")
+        if fasting_tag:
+            logger.error(
+                "meal_engine_v3.empty_fasting_pool",
+                extra={"user_id": user_id, "plan_date": plan_date.isoformat(), "slot": slot, "fasting_tag": fasting_tag, "diet": diet},
+            )
+        raise RuntimeError(f"Empty recipe pool for diet={diet} slot={slot}" + (f" fasting_tag={fasting_tag}" if fasting_tag else ""))
 
     cooled = _cooldown_ids(db, user_id, plan_date)
     filtered = [r for r in pool if r.id not in cooled]
@@ -705,6 +717,7 @@ def ensure_day_plan(
     meals_per_day: int = 3,
     force: bool = False,
     daily_override: MacroTarget | None = None,
+    fasting_tag: str | None = None,
 ) -> list[UserMealPlan]:
     daily = daily_override or daily_targets(daily_kcal, goal)
     schedule = slot_schedule(meals_per_day)
@@ -739,6 +752,7 @@ def ensure_day_plan(
             swap_version=swap_version,
             slot_order=spec.order,
             exclude_recipe_ids=used_ids,
+            fasting_tag=fasting_tag,
         )
         used_ids.add(int(pick.recipe.id))
         row = upsert_assignment(
@@ -795,6 +809,7 @@ def swap_slot(
     exclude_recipe_ids: set[int] | None = None,
     match_current_macros: bool = True,
     daily_override: MacroTarget | None = None,
+    fasting_tag: str | None = None,
 ) -> UserMealPlan:
     daily = daily_override or daily_targets(daily_kcal, goal)
     q = db.query(UserMealPlan).filter(
@@ -839,8 +854,9 @@ def swap_slot(
         swap_version=next_version,
         slot_order=order,
         exclude_recipe_ids=exclude,
+        fasting_tag=fasting_tag,
     )
-    if existing and pick.recipe.id == existing.recipe_id:
+    if existing and int(pick.recipe.id) == int(existing.recipe_id):
         raise RuntimeError("Swap returned the same recipe")
 
     row = upsert_assignment(

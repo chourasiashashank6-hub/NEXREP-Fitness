@@ -25,6 +25,7 @@ from src.schemas.calories_api import (
     WaterPatchRequest,
 )
 from src.services.activity_feed_service import calculate_user_streak, emit_streak_milestone_if_needed
+from src.services.xp_service import award_xp_for_meal_log
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.services.food_image_utils import prepare_food_image_for_vision
 from src.services.language_service import normalize_language_tag
@@ -1699,6 +1700,7 @@ def add_meal_entry(payload: MealCreateRequest, current_user: User = Depends(get_
     db.commit()
     if total_calories > 0:
         emit_streak_milestone_if_needed(db, user_id=current_user.id, source="meal", source_id=entry.meal_id)
+        award_xp_for_meal_log(db, user_id=current_user.id, log_date=log_date)
     return _serialize_day(db, current_user, log_date)
 
 
@@ -1766,6 +1768,7 @@ def update_meal_entry(
     db.commit()
     if meal.total_calories > 0:
         emit_streak_milestone_if_needed(db, user_id=current_user.id, source="meal", source_id=meal.meal_id)
+        award_xp_for_meal_log(db, user_id=current_user.id, log_date=log.log_date)
     return _serialize_day(db, current_user, log.log_date)
 
 
@@ -1909,6 +1912,7 @@ def create_ai_meal_entry(
     db.refresh(row)
     if row.calories and row.calories > 0:
         emit_streak_milestone_if_needed(db, user_id=current_user.id, source="ai_meal", source_id=row.ai_meal_id)
+        award_xp_for_meal_log(db, user_id=current_user.id, log_date=log_date)
     day_payload = _serialize_day(db, current_user, log_date)
     return {
         "ai_meal_id": row.ai_meal_id,

@@ -45,6 +45,7 @@ import {
 import type { CoachStackParamList } from "../../navigation/coachTypes";
 import type { FocusMuscle, WorkoutDayPlan, WorkoutExercise, WorkoutPlanCurrent } from "../../types/planner";
 import { isWorkoutRestDay } from "../../utils/workoutRestDay";
+import { runSmartReflowDetection } from "../../services/smartReflowRunner";
 import {
   buildLoggedExerciseIdMap,
   estimatePlannerTimeTaken,
@@ -272,6 +273,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const { t } = useTranslation();
   const { hasFeatureAccess } = useFeatureAccess();
   const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
+  const canSmartReflow = hasFeatureAccess("smart_reflow");
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
   const now = new Date();
 
@@ -414,6 +416,13 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       const current = await fetchWorkoutPlanCurrent();
       if (seq !== loadSeqRef.current) return;
       applyPlan(current);
+      if (current && canSmartReflow) {
+        const result = await runSmartReflowDetection(current);
+        if (result.status === "applied") {
+          notifyUser(t("coach.reflow.appliedTitle"), t("coach.reflow.appliedBody", { count: result.patchCount }));
+          applyPlan(result.plan);
+        }
+      }
     } catch (e: unknown) {
       if (seq !== loadSeqRef.current) return;
       if (axios.isAxiosError(e) && e.response?.status === 404) {
@@ -425,7 +434,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
         setLoading(false);
       }
     }
-  }, [applyPlan]);
+  }, [applyPlan, canSmartReflow, t]);
 
   const loadDay = useCallback(
     async (day: number) => {

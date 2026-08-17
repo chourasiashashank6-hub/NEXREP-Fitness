@@ -107,7 +107,9 @@
       "ingredientsTitle": "Benötigte Zutaten",
       "noEquipmentNeeded": "Für das heutige Training ist kein Equipment nötig.",
       "noEquipmentMatched": "Equipment nicht aufgeführt — kein Katalogtreffer für die heutigen Übungen.",
-      "noIngredientsListed": "Für die heutigen Mahlzeiten sind keine Zutaten aufgeführt."
+      "noIngredientsListed": "Für die heutigen Mahlzeiten sind keine Zutaten aufgeführt.",
+      "reflowNote": "{{count}} Übungen von verpasstem Tag {{days}} hierher verschoben",
+      "weeklyReviewTitle": "Wochenrückblick"
     }
   },
   "profile": {
@@ -161,6 +163,19 @@
     "logWeight": "Protokollgewicht",
     "lastWeight": "Leisten: {{weight}} kg",
     "startTracking": "Starte mit der Verfolgung",
+    "xp": {
+      "title": "FORTSCHRITTS-XP",
+      "level": "LVL",
+      "totalXp": "{{xp}} XP gesamt",
+      "nextLevel": "{{current}} / {{total}} XP bis zum nächsten Level",
+      "maxLevel": "Maximales Level erreicht",
+      "comebackBonus": "Comeback-Bonus · {{count}} Sessions mit 2× XP übrig",
+      "seasonXp": "{{xp}} Saison-XP",
+      "friendsLeaderboard": "FREUNDE-SAISON-RANGLISTE",
+      "leaderboardEmpty": "Logge Workouts und Mahlzeiten, um in der Rangliste aufzusteigen.",
+      "loadFailed": "XP konnte nicht synchronisiert werden — Standardwerte werden angezeigt.",
+      "you": "Du"
+    },
     "activityOverview": "AKTIVITÄTSÜBERSICHT",
     "workouts": "Trainingseinheiten",
     "kcalBurned": "Kalorien verbrannt",
@@ -173,6 +188,8 @@
     "goToAdmin": "Geh zu Admin",
     "feedback": "Rückmeldung",
     "notificationPreferences": "Benachrichtigungseinstellungen",
+    "fastingPreferences": "Fasten-Mahlzeiten-Kalender",
+    "transformationTimeline": "Transformations-Zeitstrahl",
     "language": "Sprache",
     "languagePlaceholder": "Sprache wählen",
     "logout": "Abmelden",
@@ -399,6 +416,86 @@
       "snacks": "Snacks"
     }
   },
+  "fasting": {
+    "title": "Fasten-Mahlzeiten",
+    "subtitle": "Pläne verwenden während deiner Daten fastenfreundliche Rezepte",
+    "activeNow": "Jetzt aktiv",
+    "activeHint": "Der Planer wählt nur Rezepte mit dem passenden Fasten-Tag.",
+    "noActive": "Keine aktive Fastenperiode. Pläne nutzen den regulären Rezeptpool.",
+    "addPeriod": "Fastenperiode hinzufügen",
+    "periodType": "Periodentyp",
+    "startDate": "Startdatum",
+    "endDate": "Enddatum",
+    "save": "Periode speichern",
+    "manualDatesNote": "Navratri, Ramadan und Ekadashi verschieben sich jährlich — gib deine Daten ein.",
+    "savedPeriods": "Gespeicherte Perioden",
+    "dateRange": "{{start}} → {{end}}",
+    "statusActive": "Aktiv",
+    "statusInactive": "Inaktiv",
+    "deactivate": "Beenden",
+    "deactivateTitle": "Fastenperiode beenden?",
+    "deactivateBody": "Pläne kehren danach zum regulären Rezeptpool zurück.",
+    "deactivateConfirm": "Periode beenden",
+    "plannerBannerTitle": "Fasten-Mahlzeiten aktiv",
+    "plannerBannerBody": "{{period}} · {{start}} bis {{end}} — nur fastenfreundliche Rezepte.",
+    "periods": {
+      "navratri": "Navratri",
+      "ramadan": "Ramadan",
+      "ekadashi": "Ekadashi",
+      "custom": "Individuelles Fasten"
+    },
+    "alerts": {
+      "loadFailed": "Fasten-Einstellungen konnten nicht geladen werden.",
+      "saveFailed": "Fastenperiode konnte nicht gespeichert werden.",
+      "actionFailed": "Fastenperiode konnte nicht aktualisiert werden.",
+      "invalidRange": "Das Enddatum muss am oder nach dem Startdatum liegen.",
+      "savedTitle": "Gespeichert",
+      "savedBody": "Deine Fastenperiode ist für die Essensplanung aktiv.",
+      "unavailable": "Fasten-Mahlzeiten sind auf diesem Server noch nicht verfügbar. Backend mit Migration 027 deployen."
+    }
+  },
+  "transformation": {
+    "title": "Transformations-Zeitstrahl",
+    "subtitle": "Fortschrittsfotos bleiben auf diesem Gerät, es sei denn du aktivierst Cloud-Backup",
+    "angles": { "front": "Front", "side": "Seite" },
+    "capture": {
+      "alignGuide": "Richte deinen Körper an der Silhouette aus",
+      "permissionTitle": "Kamerazugriff erforderlich",
+      "permissionBody": "Erlaube die Kamera für Fotos mit Ausrichtungshilfe.",
+      "permissionDenied": "Kameraberechtigung verweigert.",
+      "allowCamera": "Kamera erlauben",
+      "captureFailed": "Foto konnte nicht aufgenommen werden.",
+      "previewTitle": "Dieses Fortschrittsfoto speichern?",
+      "backupOptIn": "Auch in NexRep-Cloud sichern (optional)",
+      "retake": "Erneut aufnehmen",
+      "save": "Lokal speichern",
+      "saveFailed": "Fortschrittsfoto konnte nicht gespeichert werden.",
+      "webFallback": "Im Web ist die Live-Silhouette eingeschränkt. Du kannst trotzdem ein Foto aufnehmen.",
+      "openCamera": "Kamera öffnen"
+    },
+    "gallery": {
+      "title": "Deine Fotos",
+      "emptyTitle": "Noch keine Fortschrittsfotos",
+      "emptyBody": "Nimm dein erstes Foto auf, um eine visuelle Zeitleiste zu starten. Fotos werden standardmäßig lokal gespeichert.",
+      "captureCta": "Foto aufnehmen",
+      "backedUp": "Gesichert"
+    },
+    "summary": {
+      "title": "Transformations-Zusammenfassung",
+      "weight": "Gewicht",
+      "workouts": "Trainingstage",
+      "prs": "Neue PRs",
+      "level": "Level",
+      "noWeightData": "Keine Gewichtseinträge im Zeitraum",
+      "weightStable": "Gewicht unverändert",
+      "weightUp": "+{{kg}} kg",
+      "weightDown": "−{{kg}} kg",
+      "refresh": "Zusammenfassung aktualisieren",
+      "loadFailed": "Transformations-Zusammenfassung konnte nicht geladen werden.",
+      "proGateTitle": "Vergleichs-Zusammenfassung ist Pro",
+      "proGateBody": "Upgrade für Gewichts-, Trainings- und Kraft-Deltas in jedem Datumsbereich."
+    }
+  },
   "common": {
     "cancel": "Abbrechen",
     "save": "Speichern",
@@ -479,6 +576,48 @@
       "alerts": {
         "loadFailed": "Bestenliste konnte gerade nicht geladen werden.",
         "settingsFailed": "Bestenlisten-Einstellungen konnten nicht aktualisiert werden."
+      }
+    },
+    "squads": {
+      "title": "Gym squads",
+      "open": "Gym squads",
+      "openSub": "Wer heute geloggt hat · Opt-in-Freigabe",
+      "create": "Erstellen",
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "active": "Deine Squads",
+      "invites": "Einladungen",
+      "empty": "Erstelle ein Squad und lade Freunde ein.",
+      "memberCount": "{{count}} / {{max}} Mitglieder",
+      "streak": "{{count}}-Tage-Squad-Serie",
+      "invitedBy": "Eingeladen von {{name}}",
+      "roster": "Heutige Liste",
+      "shareTitle": "Tagesstatus teilen",
+      "shareSub": "Wenn aktiv, sehen Squadmates Workouts und Mahlzeiten.",
+      "statusPrivate": "Privat",
+      "statusPending": "Noch nicht geloggt",
+      "statusComplete": "Workout + Mahlzeiten erledigt",
+      "workoutDone": "Workout",
+      "mealsDone": "Mahlzeiten",
+      "done": "Fertig",
+      "leaveTitle": "Squad verlassen?",
+      "leaveBody": "Wieder beitreten nur mit neuer Einladung.",
+      "leaveConfirm": "Verlassen",
+      "form": {
+        "title": "Gym-Squad erstellen",
+        "squadName": "Squad-Name",
+        "namePlaceholder": "Morning lifters",
+        "nameRequired": "Bitte einen Namen eingeben.",
+        "inviteFriends": "Freunde einladen ({{count}}/{{max}})",
+        "noFriends": "Zuerst Freunde hinzufügen.",
+        "create": "Squad erstellen"
+      },
+      "alerts": {
+        "loadFailed": "Squads konnten nicht geladen werden.",
+        "saveFailed": "Squad konnte nicht erstellt werden.",
+        "unavailable": "Gym Squads sind auf diesem Server noch nicht verfügbar. Backend deployen oder lokale API nutzen.",
+        "actionFailed": "Squad konnte nicht aktualisiert werden.",
+        "shareFailed": "Freigabe konnte nicht aktualisiert werden."
       }
     },
     "challenges": {
@@ -1781,6 +1920,10 @@
       "unlockAll": "Schalte alle Funktionen frei",
       "upgradePrice": "Pro 999 ₹/Monat · Elite 1.999 ₹/Monat",
       "upgrade": "Upgrade"
+    },
+    "reflow": {
+      "appliedTitle": "Plan angepasst",
+      "appliedBody": "Smart Reflow hat {{count}} verpasste Prioritätsübungen in kommende Tage verschoben."
     },
     "workoutPlannerScreen": {
       "balancedHint": "Ausgewogen – alle Muskelgruppen werden gleichermaßen trainiert",

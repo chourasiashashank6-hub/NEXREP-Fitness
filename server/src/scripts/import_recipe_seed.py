@@ -23,6 +23,7 @@ from src.models.recipes import Recipe
 
 _SERVER_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RECIPE_SEED_PATH = _SERVER_ROOT / "nexrep_recipes_seed.json"
+DEFAULT_FASTING_RECIPE_SEED_PATH = _SERVER_ROOT / "nexrep_fasting_recipes_seed.json"
 
 CATEGORY_SLOTS: dict[str, list[str]] = {
     "Cottage Cheese & Breakfast": ["breakfast"],
@@ -39,7 +40,10 @@ CATEGORY_SLOTS: dict[str, list[str]] = {
     "Extra Non-Veg": ["lunch", "dinner"],
     "Boiled & Steamed": ["lunch", "dinner", "snack"],
     "Soups": ["lunch", "dinner"],
-    "Protein Salads": ["lunch", "dinner", "snack"],
+    "Fasting Navratri": ["breakfast", "lunch", "dinner", "snack"],
+    "Fasting Ramadan": ["breakfast", "lunch", "dinner", "snack"],
+    "Fasting Ekadashi": ["breakfast", "lunch", "dinner", "snack"],
+    "Fasting Custom": ["breakfast", "lunch", "dinner", "snack"],
 }
 
 RECIPE_SLOT_ADD: dict[str, list[str]] = {
@@ -102,6 +106,7 @@ def upsert_recipes(db: Session, rows: list[dict[str, Any]]) -> dict[str, Any]:
             "items": row["items"],
             "steps": row["steps"],
             "slots": slots,
+            "dietary_tags": row.get("dietary_tags") or [],
             "updated_at": now,
         }
 
@@ -121,7 +126,7 @@ def upsert_recipes(db: Session, rows: list[dict[str, Any]]) -> dict[str, Any]:
             if key == "updated_at":
                 continue
             cur_val = getattr(cur, key)
-            if key in ("items", "steps", "slots"):
+            if key in ("items", "steps", "slots", "dietary_tags"):
                 if json.dumps(cur_val, sort_keys=True, default=str) != json.dumps(val, sort_keys=True, default=str):
                     setattr(cur, key, val)
                     changed = True
@@ -170,6 +175,21 @@ def load_recipe_seed_if_empty(engine: Engine, json_path: str | Path | None = Non
     finally:
         db.close()
     return int(summary.get("inserted", 0))
+
+
+def load_fasting_recipe_seed(engine: Engine, json_path: str | Path | None = None) -> dict[str, int]:
+    """Idempotent upsert of fasting recipe seed (runs on every startup)."""
+    path = Path(json_path or DEFAULT_FASTING_RECIPE_SEED_PATH)
+    if not path.is_file():
+        return {"inserted": 0, "updated": 0, "unchanged": 0, "total_seed": 0}
+
+    rows = load_seed(path)
+    db = SessionLocal()
+    try:
+        summary = upsert_recipes(db, rows)
+    finally:
+        db.close()
+    return summary
 
 
 def main(argv: list[str] | None = None) -> int:

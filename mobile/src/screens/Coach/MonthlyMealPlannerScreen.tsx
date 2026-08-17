@@ -38,6 +38,7 @@ import {
   type MealType,
 } from "../../api/caloriesLog";
 import { fetchOnboardingMe } from "../../api/onboarding";
+import { getFastingPreferences, type FastingPreference } from "../../api/fasting";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
 import { PlannerLockedUpsell } from "../../components/PlannerLockedUpsell";
 import { StalePlanBanner } from "../../components/StalePlanBanner";
@@ -266,6 +267,7 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
   const { t } = useTranslation();
   const { hasFeatureAccess } = useFeatureAccess();
   const hasMealPlannerAccess = hasFeatureAccess("meal_plan_generation");
+  const canUseFastingMeals = hasFeatureAccess("fasting_aware_meals");
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
   const now = new Date();
   const month = now.getMonth() + 1;
@@ -307,6 +309,7 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
   const [loggingMealKey, setLoggingMealKey] = useState<string | null>(null);
   const [staleFields, setStaleFields] = useState<string[]>([]);
   const [isRegeneratingStale, setIsRegeneratingStale] = useState(false);
+  const [activeFasting, setActiveFasting] = useState<FastingPreference | null>(null);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const signedInEmail = String(getFirebaseAuth().currentUser?.email || "")
     .trim()
@@ -463,8 +466,15 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
       } catch {
         /* keep defaults */
       }
+      if (!canUseFastingMeals) return;
+      try {
+        const fasting = await getFastingPreferences();
+        setActiveFasting(fasting.active ?? null);
+      } catch {
+        setActiveFasting(null);
+      }
     })();
-  }, []);
+  }, [canUseFastingMeals]);
 
   // Derive stale fields from the plan response (server computes this).
   useEffect(() => {
@@ -1020,6 +1030,18 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
             regenerating={isRegeneratingStale}
           />
         ) : null}
+        {activeFasting ? (
+          <View style={styles.fastingBanner}>
+            <Text style={styles.fastingBannerTitle}>{t("fasting.plannerBannerTitle")}</Text>
+            <Text style={styles.fastingBannerBody}>
+              {t("fasting.plannerBannerBody", {
+                period: t(`fasting.periods.${activeFasting.period_type}`),
+                start: activeFasting.start_date,
+                end: activeFasting.end_date,
+              })}
+            </Text>
+          </View>
+        ) : null}
         <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled keyboardShouldPersistTaps="handled">
           {showWeekGeneratePanel || showMonthlyGeneratePanel ? (
             <View style={styles.panel}>
@@ -1557,6 +1579,16 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
 const styles = StyleSheet.create({
   loadingSpinner: { marginTop: 40 },
   screenBody: { flex: 1 },
+  fastingBanner: {
+    backgroundColor: GREEN_LIGHT,
+    borderWidth: 1,
+    borderColor: "#CFE8DC",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+  },
+  fastingBannerTitle: { color: GREEN, fontSize: 13, fontWeight: "800" },
+  fastingBannerBody: { color: MUTED, fontSize: 12, marginTop: 4, lineHeight: 18 },
   header: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
   headerTitleBlock: { flex: 1, minWidth: 0 },
   headerActions: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 6 },

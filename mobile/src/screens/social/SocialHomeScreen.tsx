@@ -167,6 +167,10 @@ export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
         <Text style={styles.heroEyebrow}>{t("social.home.eyebrow")}</Text>
         <Text style={styles.heroTitle}>{t("social.home.heroTitle", { name: userFirstName })}</Text>
         <Text style={styles.heroSubtitle}>{t("social.home.friendCount", { count: friends.length })}</Text>
+        <Pressable style={styles.squadsCta} onPress={() => navigation.navigate("SocialGymSquads")}>
+          <Text style={styles.squadsCtaTitle}>{t("social.squads.open")}</Text>
+          <Text style={styles.squadsCtaSub}>{t("social.squads.openSub")}</Text>
+        </Pressable>
       </View>
 
       {loading ? (
@@ -350,6 +354,17 @@ const styles = StyleSheet.create({
   heroEyebrow: { color: "#BDE7D5", fontSize: 11, fontWeight: "900", letterSpacing: 0.8, marginBottom: 8, textTransform: "uppercase" },
   heroTitle: { color: WHITE, fontSize: 28, fontWeight: "900", marginBottom: 6 },
   heroSubtitle: { color: "#DCF6EC", fontSize: 14, fontWeight: "800" },
+  squadsCta: {
+    marginTop: 14,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.22)",
+  },
+  squadsCtaTitle: { color: WHITE, fontSize: 14, fontWeight: "900" },
+  squadsCtaSub: { color: "#DCF6EC", fontSize: 11, fontWeight: "700", marginTop: 3 },
   loader: { marginTop: 28 },
   threadCard: {
     backgroundColor: WHITE,

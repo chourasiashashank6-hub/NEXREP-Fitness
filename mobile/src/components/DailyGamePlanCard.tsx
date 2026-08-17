@@ -10,6 +10,7 @@ import {
   firstSoreFocusMuscle,
 } from "../utils/muscleRecoveryFromHistory";
 import { isWorkoutRestDay } from "../utils/workoutRestDay";
+import { countReflowedExercises } from "../utils/reflowExerciseMeta";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -40,6 +41,7 @@ type Props = {
   weightKg: number;
   equipmentItems: string[];
   ingredientNames: string[];
+  weeklyReviewMessage?: string | null;
 };
 
 const formatNum = (v: number) => Math.round(v || 0).toLocaleString();
@@ -75,6 +77,7 @@ export function DailyGamePlanCard({
   weightKg,
   equipmentItems,
   ingredientNames,
+  weeklyReviewMessage,
 }: Props) {
   const { t } = useTranslation();
 
@@ -102,6 +105,14 @@ export function DailyGamePlanCard({
 
   const exerciseLine = joinNames(exercises.map((ex) => ex.name));
   const muscleLine = joinNames(focusMuscles);
+  const reflowMeta = useMemo(() => countReflowedExercises(exercises), [exercises]);
+  const reflowNote =
+    reflowMeta.count > 0
+      ? t("home.gamePlan.reflowNote", {
+          count: reflowMeta.count,
+          days: reflowMeta.sourceDays.join(", "),
+        })
+      : null;
 
   const plannedMealNames = useMemo(() => {
     const planned = todayMealPlan?.meals ?? [];
@@ -201,6 +212,13 @@ export function DailyGamePlanCard({
         </View>
       ) : null}
 
+      {weeklyReviewMessage ? (
+        <View style={styles.weeklyReviewBanner}>
+          <Text style={styles.weeklyReviewTitle}>{t("home.gamePlan.weeklyReviewTitle")}</Text>
+          <Text style={styles.weeklyReviewText}>{weeklyReviewMessage}</Text>
+        </View>
+      ) : null}
+
       <View style={styles.workoutZone}>
         <Text style={styles.zoneTitle}>{t("home.gamePlan.workoutTitle")}</Text>
         {!restDayActive && todayPlanDay && exerciseLine ? (
@@ -212,6 +230,7 @@ export function DailyGamePlanCard({
             })}
           </Text>
         ) : null}
+        {reflowNote ? <Text style={styles.reflowNote}>{reflowNote}</Text> : null}
         <Text style={styles.prose}>{workoutBody}</Text>
         <View style={styles.zoneDivider} />
         <Text style={styles.prepTitle}>{t("home.gamePlan.equipmentTitle")}</Text>
@@ -420,6 +439,32 @@ const styles = StyleSheet.create({
     color: "#8A6D1B",
     fontSize: 12,
     fontWeight: "700",
+    lineHeight: 17,
+  },
+  weeklyReviewBanner: {
+    backgroundColor: "#F3F0FF",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    gap: 4,
+  },
+  weeklyReviewTitle: {
+    color: TEXT,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  weeklyReviewText: {
+    color: MUTED,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 17,
+  },
+  reflowNote: {
+    color: ORANGE,
+    fontSize: 12,
+    fontWeight: "800",
     lineHeight: 17,
   },
 });

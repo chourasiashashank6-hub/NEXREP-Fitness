@@ -107,7 +107,9 @@
       "ingredientsTitle": "Ingredientes necesarios",
       "noEquipmentNeeded": "No se necesita equipo para el entrenamiento de hoy.",
       "noEquipmentMatched": "Equipo no listado — no hay coincidencia en el catálogo para los ejercicios de hoy.",
-      "noIngredientsListed": "No hay ingredientes listados para las comidas de hoy."
+      "noIngredientsListed": "No hay ingredientes listados para las comidas de hoy.",
+      "reflowNote": "{{count}} ejercicios movidos aquí desde el día perdido {{days}}",
+      "weeklyReviewTitle": "Resumen semanal"
     }
   },
   "profile": {
@@ -161,6 +163,19 @@
     "logWeight": "Peso del tronco",
     "lastWeight": "último:{{weight}}kg",
     "startTracking": "comenzar a rastrear",
+    "xp": {
+      "title": "XP DE PROGRESO",
+      "level": "NIV",
+      "totalXp": "{{xp}} XP en total",
+      "nextLevel": "{{current}} / {{total}} XP al siguiente nivel",
+      "maxLevel": "Nivel máximo alcanzado",
+      "comebackBonus": "Bonus de regreso · {{count}} sesiones restantes con XP ×2",
+      "seasonXp": "{{xp}} XP de temporada",
+      "friendsLeaderboard": "CLASIFICACIÓN DE TEMPORADA ENTRE AMIGOS",
+      "leaderboardEmpty": "Registra entrenamientos y comidas para subir en la tabla.",
+      "loadFailed": "No se pudo sincronizar XP — se muestran valores predeterminados.",
+      "you": "Tú"
+    },
     "activityOverview": "RESUMEN DE ACTIVIDADES",
     "workouts": "Entrenamientos",
     "kcalBurned": "kcalquemado",
@@ -173,6 +188,8 @@
     "goToAdmin": "Ir a administrador",
     "feedback": "Comentario",
     "notificationPreferences": "Preferencias de notificación",
+    "fastingPreferences": "Calendario de comidas para ayuno",
+    "transformationTimeline": "Línea de transformación",
     "language": "Idioma",
     "languagePlaceholder": "Elige idioma",
     "logout": "Cerrar sesión",
@@ -399,6 +416,86 @@
       "snacks": "Aperitivos"
     }
   },
+  "fasting": {
+    "title": "Comidas para ayuno",
+    "subtitle": "Los planes usarán recetas aptas para ayuno durante tus fechas",
+    "activeNow": "Activo ahora",
+    "activeHint": "El planificador solo elegirá recetas etiquetadas para este periodo de ayuno.",
+    "noActive": "No hay un periodo de ayuno activo. Los planes usan el catálogo habitual.",
+    "addPeriod": "Añadir periodo de ayuno",
+    "periodType": "Tipo de periodo",
+    "startDate": "Fecha de inicio",
+    "endDate": "Fecha de fin",
+    "save": "Guardar periodo",
+    "manualDatesNote": "Navratri, Ramadán y Ekadashi cambian de fecha cada año — introduce las tuyas.",
+    "savedPeriods": "Periodos guardados",
+    "dateRange": "{{start}} → {{end}}",
+    "statusActive": "Activo",
+    "statusInactive": "Inactivo",
+    "deactivate": "Finalizar",
+    "deactivateTitle": "¿Finalizar periodo de ayuno?",
+    "deactivateBody": "Los planes volverán al catálogo habitual después de esto.",
+    "deactivateConfirm": "Finalizar periodo",
+    "plannerBannerTitle": "Comidas para ayuno activadas",
+    "plannerBannerBody": "{{period}} · {{start}} a {{end}} — solo recetas aptas para ayuno.",
+    "periods": {
+      "navratri": "Navratri",
+      "ramadan": "Ramadán",
+      "ekadashi": "Ekadashi",
+      "custom": "Ayuno personalizado"
+    },
+    "alerts": {
+      "loadFailed": "No se pudieron cargar las preferencias de ayuno.",
+      "saveFailed": "No se pudo guardar el periodo de ayuno.",
+      "actionFailed": "No se pudo actualizar el periodo de ayuno.",
+      "invalidRange": "La fecha de fin debe ser igual o posterior a la de inicio.",
+      "savedTitle": "Guardado",
+      "savedBody": "Tu periodo de ayuno está activo para la planificación de comidas.",
+      "unavailable": "Las comidas para ayuno no están disponibles en este servidor. Despliega el backend con la migración 027."
+    }
+  },
+  "transformation": {
+    "title": "Línea de transformación",
+    "subtitle": "Las fotos de progreso permanecen en este dispositivo salvo que actives la copia en la nube",
+    "angles": { "front": "Frontal", "side": "Lateral" },
+    "capture": {
+      "alignGuide": "Alinea tu cuerpo dentro de la silueta",
+      "permissionTitle": "Se necesita acceso a la cámara",
+      "permissionBody": "Permite la cámara para capturar fotos con la guía de alineación.",
+      "permissionDenied": "Permiso de cámara denegado.",
+      "allowCamera": "Permitir cámara",
+      "captureFailed": "No se pudo capturar la foto.",
+      "previewTitle": "¿Guardar esta foto de progreso?",
+      "backupOptIn": "También respaldar en la nube de NexRep (opcional)",
+      "retake": "Repetir",
+      "save": "Guardar localmente",
+      "saveFailed": "No se pudo guardar la foto de progreso.",
+      "webFallback": "En web, la silueta en vivo es limitada. Aún puedes capturar una foto.",
+      "openCamera": "Abrir cámara"
+    },
+    "gallery": {
+      "title": "Tus fotos",
+      "emptyTitle": "Aún no hay fotos de progreso",
+      "emptyBody": "Captura tu primera foto para iniciar una línea visual. Las fotos se guardan localmente por defecto.",
+      "captureCta": "Capturar foto",
+      "backedUp": "Respaldada"
+    },
+    "summary": {
+      "title": "Resumen de transformación",
+      "weight": "Peso",
+      "workouts": "Días de entreno",
+      "prs": "Nuevos PR",
+      "level": "Nivel",
+      "noWeightData": "Sin registros de peso en el rango",
+      "weightStable": "Peso sin cambios",
+      "weightUp": "+{{kg}} kg",
+      "weightDown": "−{{kg}} kg",
+      "refresh": "Actualizar resumen",
+      "loadFailed": "No se pudo cargar el resumen de transformación.",
+      "proGateTitle": "El resumen comparativo es Pro",
+      "proGateBody": "Mejora tu plan para ver deltas de peso, entrenos y fuerza en cualquier rango de fechas."
+    }
+  },
   "common": {
     "cancel": "Cancelar",
     "save": "Ahorrar",
@@ -479,6 +576,48 @@
       "alerts": {
         "loadFailed": "No se pudo cargar el ranking ahora.",
         "settingsFailed": "No se pudo actualizar la configuracion del ranking."
+      }
+    },
+    "squads": {
+      "title": "Gym squads",
+      "open": "Gym squads",
+      "openSub": "Quién registró hoy · compartir opcional",
+      "create": "Crear",
+      "accept": "Aceptar",
+      "decline": "Rechazar",
+      "active": "Tus squads",
+      "invites": "Invitaciones",
+      "empty": "Crea un squad e invita amigos.",
+      "memberCount": "{{count}} / {{max}} miembros",
+      "streak": "Racha de {{count}} días",
+      "invitedBy": "Invitado por {{name}}",
+      "roster": "Lista de hoy",
+      "shareTitle": "Compartir mi estado diario",
+      "shareSub": "Si está activo, los compañeros ven entrenamientos y comidas registrados.",
+      "statusPrivate": "Privado",
+      "statusPending": "Sin registrar aún",
+      "statusComplete": "Entreno + comidas hechos",
+      "workoutDone": "Entreno",
+      "mealsDone": "Comidas",
+      "done": "Hecho",
+      "leaveTitle": "¿Salir del squad?",
+      "leaveBody": "Solo puedes volver con una nueva invitación.",
+      "leaveConfirm": "Salir",
+      "form": {
+        "title": "Crear gym squad",
+        "squadName": "Nombre del squad",
+        "namePlaceholder": "Morning lifters",
+        "nameRequired": "Introduce un nombre.",
+        "inviteFriends": "Invitar amigos ({{count}}/{{max}})",
+        "noFriends": "Añade amigos primero.",
+        "create": "Crear squad"
+      },
+      "alerts": {
+        "loadFailed": "No se pudieron cargar los squads.",
+        "saveFailed": "No se pudo crear el squad.",
+        "unavailable": "Los gym squads aún no están disponibles en este servidor. Despliega el backend más reciente o usa una API local.",
+        "actionFailed": "No se pudo actualizar el squad.",
+        "shareFailed": "No se pudo actualizar la preferencia."
       }
     },
     "challenges": {
@@ -1781,6 +1920,10 @@
       "unlockAll": "Desbloquea todas las funciones",
       "upgradePrice": "Pro INR 999/mes · Élite INR 1999/mes",
       "upgrade": "Mejora"
+    },
+    "reflow": {
+      "appliedTitle": "Plan adaptado",
+      "appliedBody": "Smart Reflow movió {{count}} ejercicios prioritarios perdidos a los próximos días."
     },
     "workoutPlannerScreen": {
       "balancedHint": "Equilibrado: todos los grupos de músculos se entrenarán por igual",

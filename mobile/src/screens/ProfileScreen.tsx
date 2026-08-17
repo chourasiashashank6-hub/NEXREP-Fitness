@@ -31,6 +31,7 @@ import { getProfile, removeProfilePhoto, uploadProfilePhoto } from "../api/user"
 import { getWorkoutHistory } from "../api/workout";
 import { BottomSheetPicker } from "../components/BottomSheetPicker";
 import DevSubscriptionToggle from "../components/DevSubscriptionToggle";
+import { ProfileXpCard } from "../components/ProfileXpCard";
 import { ScreenContainer } from "../components/ScreenContainer";
 import { UserAvatar } from "../components/UserAvatar";
 import { TIER_COLORS } from "../constants/tierColors";
@@ -44,6 +45,7 @@ import { prepareFoodImagePayload } from "../utils/foodImagePayload";
 import { confirmUser, notifyUser } from "../utils/notify";
 import { navigationRef } from "../navigation/navigationRef";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
+import { useFeatureAccess } from "../hooks/useFeatureAccess";
 
 type GoalTag = "Fat Loss" | "Muscle Gain" | "Strength";
 
@@ -61,6 +63,7 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 const DAY_WINDOW = 30;
 const MAX_SELECTABLE_RANGE_DAYS = 30;
 const CALENDAR_NAV_YEARS = 10;
+const FOCUS_STALE_MS = 45_000;
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
@@ -176,6 +179,9 @@ const LANGUAGE_OPTIONS = [
 export const ProfileScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
+  const { hasFeatureAccess } = useFeatureAccess();
+  const canManageFasting = hasFeatureAccess("fasting_aware_meals");
+  const canProgressPhotos = hasFeatureAccess("progress_photos");
   const language = useLanguageStore((s) => s.explicitLanguage || s.language);
   const setLanguage = useLanguageStore((s) => s.setLanguage);
   const tapCount = useRef(0);
@@ -251,8 +257,95 @@ export const ProfileScreen = () => {
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
   const fetchPayments = useSubscriptionStore((s) => s.fetchPayments);
   const subscriptionTier: PlanTier = useSubscriptionStore((s) => s.subscription?.tier ?? "FREE");
+  const lastCoreLoadAt = useRef(0);
+  const historyLoadedRef = useRef(false);
 
-  const load = useCallback(async () => {
+  const loadHistoryData = useCallback(async () => {
+    const dates15 = listPastDates(DAY_WINDOW);
+    const [workoutHistory15d, calorieLogs15d] = await Promise.all([
+      getWorkoutHistory(24 * DAY_WINDOW).catch(() => ({ items: [] })),
+      Promise.all(dates15.map((date) => getDailyCalorieLog(date).catch(() => null))),
+    ]);
+
+    const workoutsByDate = new Map<
+      string,
+      {
+        caloriesBurned: number;
+        workouts: Array<{
+          id: number;
+          bodyPart: string;
+          exerciseName: string;
+          sets: number;
+          reps: number;
+          duration: number;
+          caloriesBurned: number;
+        }>;
+      }
+    >();
+    (workoutHistory15d.items || []).forEach((item) => {
+      const rawDate = String(item?.date || "");
+      const date = rawDate.slice(0, 10);
+      if (!dates15.includes(date)) return;
+      const existing = workoutsByDate.get(date) || { caloriesBurned: 0, workouts: [] };
+      const calories = Number(item?.caloriesBurned) || 0;
+      existing.caloriesBurned += calories;
+      const explicitBodyPart = typeof item?.bodyPart === "string" ? item.bodyPart.trim() : "";
+      const bodyPartFromNotes = parseBodyPartFromNotes(item?.notes);
+      const muscles = Array.isArray(item?.musclesTrained) ? item.musclesTrained.filter((m) => typeof m === "string" && m.trim()) : [];
+      const bodyPart = explicitBodyPart || bodyPartFromNotes || (muscles.length ? muscles.join("/") : "Workout");
+      existing.workouts.push({
+        id: Number(item?.id || 0),
+        bodyPart,
+        exerciseName: String(item?.exerciseName || item?.type || "Workout"),
+        sets: Number(item?.sets || 0),
+        reps: Number(item?.reps || 0),
+        duration: Number(item?.duration || 0),
+        caloriesBurned: round1(calories),
+      });
+      workoutsByDate.set(date, existing);
+    });
+    const calorieByDate = new Map<
+      string,
+      { protein: number; fat: number; fiber: number; water: number; carbs: number; totalCalories: number }
+    >();
+    dates15.forEach((date, idx) => {
+      const day = calorieLogs15d[idx];
+      const log = day?.log;
+      const water = day?.water;
+      calorieByDate.set(date, {
+        protein: round1(Number(log?.total_protein_g || 0)),
+        fat: round1(Number(log?.total_fat_g || 0)),
+        fiber: round1(Number(log?.total_fiber_g || 0)),
+        water: round1(Number(water?.total_water_l || 0)),
+        carbs: round1(Number(log?.total_carbs_g || 0)),
+        totalCalories: round1(Number(log?.total_calories || 0)),
+      });
+    });
+
+    setExerciseHistory15d(
+      dates15.map((date) => ({
+        date,
+        caloriesBurned: round1(workoutsByDate.get(date)?.caloriesBurned || 0),
+        workouts: workoutsByDate.get(date)?.workouts || [],
+      })),
+    );
+    setCalorieHistory15d(
+      dates15.map((date) => {
+        const nutrition = calorieByDate.get(date);
+        return {
+          date,
+          protein: nutrition?.protein || 0,
+          fat: nutrition?.fat || 0,
+          fiber: nutrition?.fiber || 0,
+          water: nutrition?.water || 0,
+          carbs: nutrition?.carbs || 0,
+        };
+      }),
+    );
+    historyLoadedRef.current = true;
+  }, []);
+
+  const load = useCallback(async (force = false) => {
     try {
       const [profile, onboardingRes, burnRes, historyRes, strengthProgressRes] = await Promise.all([
         getProfile(),
@@ -262,10 +355,6 @@ export const ProfileScreen = () => {
         getStrengthProgress().catch(() => null),
       ]);
       const dates15 = listPastDates(DAY_WINDOW);
-      const [workoutHistory15d, calorieLogs15d] = await Promise.all([
-        getWorkoutHistory(24 * DAY_WINDOW).catch(() => ({ items: [] })),
-        Promise.all(dates15.map((date) => getDailyCalorieLog(date).catch(() => null))),
-      ]);
 
       const fullName = String(profile.name || "").trim();
       const [f = "", ...rest] = fullName.split(" ");
@@ -320,80 +409,6 @@ export const ProfileScreen = () => {
         currentDayStreak: streak,
         avgSessionsPerWeek: avgSessions,
       });
-      const workoutsByDate = new Map<
-        string,
-        {
-          caloriesBurned: number;
-          workouts: Array<{
-            id: number;
-            bodyPart: string;
-            exerciseName: string;
-            sets: number;
-            reps: number;
-            duration: number;
-            caloriesBurned: number;
-          }>;
-        }
-      >();
-      (workoutHistory15d.items || []).forEach((item) => {
-        const rawDate = String(item?.date || "");
-        const date = rawDate.slice(0, 10);
-        if (!dates15.includes(date)) return;
-        const existing = workoutsByDate.get(date) || { caloriesBurned: 0, workouts: [] };
-        const calories = Number(item?.caloriesBurned) || 0;
-        existing.caloriesBurned += calories;
-        const explicitBodyPart = typeof item?.bodyPart === "string" ? item.bodyPart.trim() : "";
-        const bodyPartFromNotes = parseBodyPartFromNotes(item?.notes);
-        const muscles = Array.isArray(item?.musclesTrained) ? item.musclesTrained.filter((m) => typeof m === "string" && m.trim()) : [];
-        const bodyPart = explicitBodyPart || bodyPartFromNotes || (muscles.length ? muscles.join("/") : "Workout");
-        existing.workouts.push({
-          id: Number(item?.id || 0),
-          bodyPart,
-          exerciseName: String(item?.exerciseName || item?.type || "Workout"),
-          sets: Number(item?.sets || 0),
-          reps: Number(item?.reps || 0),
-          duration: Number(item?.duration || 0),
-          caloriesBurned: round1(calories),
-        });
-        workoutsByDate.set(date, existing);
-      });
-      const calorieByDate = new Map<
-        string,
-        { protein: number; fat: number; fiber: number; water: number; carbs: number; totalCalories: number }
-      >();
-      dates15.forEach((date, idx) => {
-        const day = calorieLogs15d[idx];
-        const log = day?.log;
-        const water = day?.water;
-        calorieByDate.set(date, {
-          protein: round1(Number(log?.total_protein_g || 0)),
-          fat: round1(Number(log?.total_fat_g || 0)),
-          fiber: round1(Number(log?.total_fiber_g || 0)),
-          water: round1(Number(water?.total_water_l || 0)),
-          carbs: round1(Number(log?.total_carbs_g || 0)),
-          totalCalories: round1(Number(log?.total_calories || 0)),
-        });
-      });
-
-      const nextExerciseHistory = dates15.map((date) => ({
-        date,
-        caloriesBurned: round1(workoutsByDate.get(date)?.caloriesBurned || 0),
-        workouts: workoutsByDate.get(date)?.workouts || [],
-      }));
-      setExerciseHistory15d(nextExerciseHistory);
-
-      const nextCalorieHistory = dates15.map((date) => {
-        const nutrition = calorieByDate.get(date);
-        return {
-          date,
-          protein: nutrition?.protein || 0,
-          fat: nutrition?.fat || 0,
-          fiber: nutrition?.fiber || 0,
-          water: nutrition?.water || 0,
-          carbs: nutrition?.carbs || 0,
-        };
-      });
-      setCalorieHistory15d(nextCalorieHistory);
       const baseFrom = dates15[dates15.length - 1] || dates15[0] || "";
       const defaultTo = dates15[0] || "";
       const effectiveRegistration = registrationIso || baseFrom;
@@ -403,6 +418,7 @@ export const ProfileScreen = () => {
       setExerciseToDate((prev) => prev || defaultTo);
       setCalorieFromDate((prev) => prev || defaultFrom);
       setCalorieToDate((prev) => prev || defaultTo);
+      lastCoreLoadAt.current = Date.now();
     } catch {
       Alert.alert(t("profile.alerts.error"), t("profile.alerts.loadFailed"));
     }
@@ -427,7 +443,7 @@ export const ProfileScreen = () => {
           },
         });
         if (!res.ok) throw new Error("Reset failed");
-        await load();
+        await load(true);
       } catch {
         notifyUser("Error", "Could not reset journey. Please try again.");
       } finally {
@@ -436,15 +452,21 @@ export const ProfileScreen = () => {
     })();
   }, [load, token]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now();
+      if (lastCoreLoadAt.current > 0 && now - lastCoreLoadAt.current < FOCUS_STALE_MS) {
+        return;
+      }
       void load();
     }, [load]),
   );
+
+  useEffect(() => {
+    if (!showExerciseHistory && !showCalorieHistory) return;
+    if (historyLoadedRef.current) return;
+    void loadHistoryData();
+  }, [showExerciseHistory, showCalorieHistory, loadHistoryData]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1150,6 +1172,8 @@ export const ProfileScreen = () => {
         )}
       </View>
 
+      <ProfileXpCard />
+
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>{t("profile.activityOverview")}</Text>
         <View style={styles.activityStatsRow}>
@@ -1255,6 +1279,24 @@ export const ProfileScreen = () => {
           <Text style={styles.footerLabel}>{t("profile.notificationPreferences")}</Text>
           <Text style={styles.footerChevron}>›</Text>
         </Pressable>
+        {canManageFasting ? (
+          <Pressable style={styles.footerRow} onPress={() => navigation.navigate("FastingPreferences")}>
+            <View style={styles.footerIconTile}>
+              <Text style={styles.footerEmoji}>🪔</Text>
+            </View>
+            <Text style={styles.footerLabel}>{t("profile.fastingPreferences")}</Text>
+            <Text style={styles.footerChevron}>›</Text>
+          </Pressable>
+        ) : null}
+        {canProgressPhotos ? (
+          <Pressable style={styles.footerRow} onPress={() => navigation.navigate("TransformationTimeline")}>
+            <View style={styles.footerIconTile}>
+              <Text style={styles.footerEmoji}>📸</Text>
+            </View>
+            <Text style={styles.footerLabel}>{t("profile.transformationTimeline")}</Text>
+            <Text style={styles.footerChevron}>›</Text>
+          </Pressable>
+        ) : null}
         <View style={styles.footerPickerRow}>
           <View style={styles.footerIconTile}>
             <Text style={styles.footerEmoji}>🌐</Text>

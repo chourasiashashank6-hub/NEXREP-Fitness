@@ -18,6 +18,7 @@ export type RootStackParamList = {
     streakIncremented: boolean;
   };
   DailyGamePlan: undefined;
+  ProgressPhotoCapture: { angle?: "front" | "side" } | undefined;
 };
 
 export type OnboardingStackParamList = {
@@ -48,6 +49,8 @@ export type ProfileStackParamList = {
   PlanPicker: undefined;
   Payment: { planId: PlanId; displayPrice: number; isYearly: boolean };
   PaymentSuccess: { planName: string; paymentId: string };
+  FastingPreferences: undefined;
+  TransformationTimeline: undefined;
 };
 
 export type SocialStackParamList = {
@@ -64,4 +67,7 @@ export type SocialStackParamList = {
   SocialChat: { threadId?: number; dmConversationId?: number; title?: string };
   SocialChallengeCreate: undefined;
   SocialChallengeDetail: { challengeId: number };
+  SocialGymSquads: undefined;
+  SocialGymSquadCreate: undefined;
+  SocialGymSquadDetail: { squadId: number };
 };

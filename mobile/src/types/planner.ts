@@ -209,6 +209,8 @@ export type WorkoutExercise = {
   muscle: string;
   note: string;
   rest_seconds: number;
+  /** Set when Smart Reflow moved this exercise from a missed plan day. */
+  reflow_source_day?: number;
 };
 
 export type WorkoutDayPlan = {

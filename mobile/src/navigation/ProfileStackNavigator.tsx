@@ -7,6 +7,8 @@ import { PaymentScreen } from "../screens/PaymentScreen";
 import { PaymentSuccessScreen } from "../screens/PaymentSuccessScreen";
 import { ManageSubscriptionScreen } from "../screens/ManageSubscriptionScreen";
 import { PlanPickerScreen } from "../screens/PlanPickerScreen";
+import { FastingPreferencesScreen } from "../screens/FastingPreferencesScreen";
+import { TransformationTimelineScreen } from "../screens/TransformationTimelineScreen";
 import type { ProfileStackParamList } from "./types";
 
 export type { ProfileStackParamList };
@@ -19,6 +21,8 @@ export function ProfileStackNavigator() {
       <Stack.Screen name="ProfileMain" component={ProfileScreen} />
       <Stack.Screen name="MySupplementStack" component={MySupplementStackScreen} />
       <Stack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
+      <Stack.Screen name="FastingPreferences" component={FastingPreferencesScreen} />
+      <Stack.Screen name="TransformationTimeline" component={TransformationTimelineScreen} />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
       <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
       <Stack.Screen name="PlanPicker" component={PlanPickerScreen} />

@@ -17,9 +17,10 @@ import { resolveApiBaseUrl } from "../api/client";
 import { fetchMealPlanCurrent } from "../api/mealPlanner";
 import { fetchOnboardingMeShared } from "../api/onboarding";
 import { getWorkoutCatalog, getWorkoutHistory } from "../api/workout";
-import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
+import { fetchWorkoutPlanCurrent, fetchWeeklyWorkoutReview, applyWeeklyWorkoutReview } from "../api/workoutPlanner";
 import { DailyGamePlanCard } from "../components/DailyGamePlanCard";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
+import { runSmartReflowDetection } from "../services/smartReflowRunner";
 import { useAuthStore } from "../store/authStore";
 import type { MealDayPlan, WorkoutPlanCurrent } from "../types/planner";
 import { isWeeklyPlannerCurrent } from "../types/planner";
@@ -50,6 +51,7 @@ export default function GamePlanModalScreen() {
   const { hasFeatureAccess } = useFeatureAccess();
   const hasMealPlannerAccess = hasFeatureAccess("meal_plan_generation");
   const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
+  const canSmartReflow = hasFeatureAccess("smart_reflow");
 
   const [loading, setLoading] = useState(true);
   const [calorieDay, setCalorieDay] = useState<CalorieDayPayload | null>(null);
@@ -58,6 +60,7 @@ export default function GamePlanModalScreen() {
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistoryRow[]>([]);
   const [weightKg, setWeightKg] = useState(70);
   const [workoutCatalog, setWorkoutCatalog] = useState<CatalogEquipmentRow[]>([]);
+  const [weeklyReviewMessage, setWeeklyReviewMessage] = useState<string | null>(null);
 
   const dismiss = useCallback(() => {
     navigation.goBack();
@@ -89,7 +92,6 @@ export default function GamePlanModalScreen() {
       ]);
 
       setCalorieDay(dayRes);
-      setTodayWorkoutPlan(workoutPlanRes);
       const mealToday = mealPlanRes
         ? isWeeklyPlannerCurrent(mealPlanRes)
           ? mealPlanRes.current_week?.today ?? null
@@ -122,15 +124,52 @@ export default function GamePlanModalScreen() {
           equipment: item.equipment,
         })),
       );
+
+      let workoutPlan = workoutPlanRes;
+      if (workoutPlan && canSmartReflow) {
+        const reflowResult = await runSmartReflowDetection(workoutPlan);
+        if (reflowResult.status === "applied") {
+          workoutPlan = reflowResult.plan;
+        }
+      }
+      setTodayWorkoutPlan(workoutPlan);
+
+      if (canSmartReflow) {
+        try {
+          const review = await fetchWeeklyWorkoutReview();
+          const isSundayWindow = new Date().getDay() === 0 || new Date().getDay() === 1;
+          if (review.weekly_summary_enabled && isSundayWindow && review.message) {
+            setWeeklyReviewMessage(review.message);
+            if (new Date().getDay() === 0 && workoutPlan?.plan_id) {
+              const applied = await applyWeeklyWorkoutReview(workoutPlan.plan_id).catch(() => null);
+              if (applied?.summary?.message) {
+                setWeeklyReviewMessage(applied.summary.message);
+              }
+              if (applied?.applied_days?.length) {
+                const refreshedPlan = await fetchWorkoutPlanCurrent().catch(() => workoutPlan);
+                setTodayWorkoutPlan(refreshedPlan);
+              }
+            }
+          } else {
+            setWeeklyReviewMessage(null);
+          }
+        } catch (error) {
+          console.warn("[smart-reflow] weekly review failed:", error);
+          setWeeklyReviewMessage(null);
+        }
+      } else {
+        setWeeklyReviewMessage(null);
+      }
     } catch {
       setCalorieDay(null);
       setTodayWorkoutPlan(null);
       setTodayMealPlan(null);
       setWorkoutHistory([]);
+      setWeeklyReviewMessage(null);
     } finally {
       setLoading(false);
     }
-  }, [token, hasMealPlannerAccess]);
+  }, [token, hasMealPlannerAccess, canSmartReflow]);
 
   useEffect(() => {
     void load();
@@ -215,6 +254,7 @@ export default function GamePlanModalScreen() {
                 weightKg={weightKg}
                 equipmentItems={equipmentItems}
                 ingredientNames={ingredientNames}
+                weeklyReviewMessage={weeklyReviewMessage}
               />
             </ScrollView>
           )}

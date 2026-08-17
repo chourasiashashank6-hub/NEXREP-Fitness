@@ -1,0 +1,1631 @@
+[
+  {
+    "id": 10001,
+    "name": "Sabudana Khichdi",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 202.0,
+    "kcal": 420.0,
+    "protein_g": 12.0,
+    "fat_g": 14.0,
+    "carbs_g": 62.0,
+    "fibre_g": 4.5,
+    "protein_pct_kcal": 11.4,
+    "prep_min": 25,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "sabudana",
+        "label": "Sabudana (tapioca pearls)",
+        "grams": 80
+      },
+      {
+        "key": "peanut",
+        "label": "Roasted peanuts, crushed",
+        "grams": 25
+      },
+      {
+        "key": "potato",
+        "label": "Potato, diced",
+        "grams": 60
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 8
+      },
+      {
+        "key": "curry_leaves",
+        "label": "Curry leaves",
+        "grams": 2
+      },
+      {
+        "key": "green_chilli",
+        "label": "Green chilli",
+        "grams": 5
+      }
+    ],
+    "steps": [
+      "Soak sabudana 4-6 hours; drain well.",
+      "Heat ghee, add curry leaves and green chilli.",
+      "Add potato; cook until tender.",
+      "Add sabudana, peanuts and sendha namak; stir-fry 8-10 min until pearls turn translucent.",
+      "Serve hot with lemon wedge."
+    ]
+  },
+  {
+    "id": 10002,
+    "name": "Kuttu Aloo Paratha",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 176.0,
+    "kcal": 385.0,
+    "protein_g": 11.0,
+    "fat_g": 12.0,
+    "carbs_g": 54.0,
+    "fibre_g": 5.2,
+    "protein_pct_kcal": 11.4,
+    "prep_min": 20,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "kuttu_atta",
+        "label": "Kuttu (buckwheat) flour",
+        "grams": 60
+      },
+      {
+        "key": "potato",
+        "label": "Boiled potato, mashed",
+        "grams": 80
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee for cooking",
+        "grams": 10
+      },
+      {
+        "key": "green_chilli",
+        "label": "Green chilli, minced",
+        "grams": 4
+      }
+    ],
+    "steps": [
+      "Mix kuttu flour, mashed potato, sendha namak and chilli into soft dough.",
+      "Divide into 2 balls; roll between plastic sheets.",
+      "Cook on tawa with ghee until golden spots appear both sides.",
+      "Serve with fresh curd (optional)."
+    ]
+  },
+  {
+    "id": 10003,
+    "name": "Rajgira Paratha",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 156.0,
+    "kcal": 360.0,
+    "protein_g": 13.0,
+    "fat_g": 10.0,
+    "carbs_g": 48.0,
+    "fibre_g": 6.0,
+    "protein_pct_kcal": 14.4,
+    "prep_min": 18,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "rajgira_atta",
+        "label": "Rajgira (amaranth) flour",
+        "grams": 55
+      },
+      {
+        "key": "potato",
+        "label": "Boiled potato",
+        "grams": 70
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 8
+      },
+      {
+        "key": "cumin",
+        "label": "Cumin seeds",
+        "grams": 1
+      }
+    ],
+    "steps": [
+      "Knead rajgira flour with mashed potato, sendha namak and cumin.",
+      "Roll 2 parathas; cook on medium heat with ghee.",
+      "Serve warm with mint chutney."
+    ]
+  },
+  {
+    "id": 10004,
+    "name": "Singhara Atta Cheela",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 148.0,
+    "kcal": 310.0,
+    "protein_g": 14.0,
+    "fat_g": 8.0,
+    "carbs_g": 42.0,
+    "fibre_g": 4.8,
+    "protein_pct_kcal": 18.1,
+    "prep_min": 15,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "singhara_atta",
+        "label": "Singhara (water chestnut) flour",
+        "grams": 50
+      },
+      {
+        "key": "paneer",
+        "label": "Paneer, crumbled",
+        "grams": 40
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 6
+      },
+      {
+        "key": "tomato",
+        "label": "Tomato, chopped",
+        "grams": 30
+      }
+    ],
+    "steps": [
+      "Whisk singhara flour with water into pourable batter.",
+      "Heat ghee on tawa; pour batter, spread thin.",
+      "Top with paneer and tomato; flip and cook until crisp.",
+      "Season with sendha namak and serve."
+    ]
+  },
+  {
+    "id": 10005,
+    "name": "Samak Rice Pulao",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 166.0,
+    "kcal": 395.0,
+    "protein_g": 11.0,
+    "fat_g": 9.0,
+    "carbs_g": 68.0,
+    "fibre_g": 3.5,
+    "protein_pct_kcal": 11.1,
+    "prep_min": 22,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "samak_rice",
+        "label": "Samak rice (barnyard millet)",
+        "grams": 70
+      },
+      {
+        "key": "peanut",
+        "label": "Peanuts",
+        "grams": 15
+      },
+      {
+        "key": "potato",
+        "label": "Potato cubes",
+        "grams": 50
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 8
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "cumin",
+        "label": "Cumin",
+        "grams": 1
+      }
+    ],
+    "steps": [
+      "Rinse samak rice; soak 15 minutes.",
+      "Heat ghee; temper cumin and peanuts.",
+      "Add potato; sauté 3 min.",
+      "Add rice, sendha namak and 1.5 cups water; simmer covered 15 min.",
+      "Fluff and serve."
+    ]
+  },
+  {
+    "id": 10006,
+    "name": "Makhana Raita Bowl",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 243.0,
+    "kcal": 285.0,
+    "protein_g": 16.0,
+    "fat_g": 12.0,
+    "carbs_g": 28.0,
+    "fibre_g": 3.2,
+    "protein_pct_kcal": 22.5,
+    "prep_min": 10,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "makhana",
+        "label": "Roasted makhana",
+        "grams": 30
+      },
+      {
+        "key": "curd",
+        "label": "Fresh curd",
+        "grams": 150
+      },
+      {
+        "key": "cucumber",
+        "label": "Cucumber, diced",
+        "grams": 40
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "cumin_powder",
+        "label": "Roasted cumin powder",
+        "grams": 1
+      }
+    ],
+    "steps": [
+      "Lightly crush roasted makhana.",
+      "Whisk curd smooth; fold in cucumber and makhana.",
+      "Season with sendha namak and cumin powder.",
+      "Chill 10 min before serving."
+    ]
+  },
+  {
+    "id": 10007,
+    "name": "Aloo Tamatar Sabzi",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 236.0,
+    "kcal": 245.0,
+    "protein_g": 6.0,
+    "fat_g": 9.0,
+    "carbs_g": 34.0,
+    "fibre_g": 4.5,
+    "protein_pct_kcal": 9.8,
+    "prep_min": 18,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "potato",
+        "label": "Potato, cubed",
+        "grams": 120
+      },
+      {
+        "key": "tomato",
+        "label": "Tomato, pureed",
+        "grams": 80
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 8
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "cumin",
+        "label": "Cumin seeds",
+        "grams": 1
+      },
+      {
+        "key": "ginger",
+        "label": "Ginger, grated",
+        "grams": 5
+      }
+    ],
+    "steps": [
+      "Heat ghee; crackle cumin and ginger.",
+      "Add potato; sauté 5 min.",
+      "Add tomato puree and sendha namak; cover and cook until potatoes are tender.",
+      "Mash lightly for thicker gravy; serve hot."
+    ]
+  },
+  {
+    "id": 10008,
+    "name": "Sabudana Vada",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 184.0,
+    "kcal": 340.0,
+    "protein_g": 10.0,
+    "fat_g": 16.0,
+    "carbs_g": 38.0,
+    "fibre_g": 3.8,
+    "protein_pct_kcal": 11.8,
+    "prep_min": 20,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "sabudana",
+        "label": "Sabudana",
+        "grams": 70
+      },
+      {
+        "key": "peanut",
+        "label": "Peanuts, crushed",
+        "grams": 20
+      },
+      {
+        "key": "potato",
+        "label": "Boiled potato",
+        "grams": 60
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "oil",
+        "label": "Oil for shallow fry",
+        "grams": 12
+      }
+    ],
+    "steps": [
+      "Mix soaked sabudana, potato, peanuts and sendha namak.",
+      "Shape into patties.",
+      "Shallow fry on medium heat until golden and crisp.",
+      "Drain on paper; serve with mint chutney."
+    ]
+  },
+  {
+    "id": 10009,
+    "name": "Fruit & Makhana Bowl",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 235.0,
+    "kcal": 265.0,
+    "protein_g": 8.0,
+    "fat_g": 6.0,
+    "carbs_g": 48.0,
+    "fibre_g": 5.5,
+    "protein_pct_kcal": 12.1,
+    "prep_min": 8,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "apple",
+        "label": "Apple, chopped",
+        "grams": 80
+      },
+      {
+        "key": "banana",
+        "label": "Banana",
+        "grams": 60
+      },
+      {
+        "key": "pomegranate",
+        "label": "Pomegranate arils",
+        "grams": 40
+      },
+      {
+        "key": "makhana",
+        "label": "Roasted makhana",
+        "grams": 25
+      },
+      {
+        "key": "honey",
+        "label": "Honey",
+        "grams": 10
+      }
+    ],
+    "steps": [
+      "Combine chopped fruits in a bowl.",
+      "Top with makhana and drizzle honey.",
+      "Serve immediately."
+    ]
+  },
+  {
+    "id": 10010,
+    "name": "Paneer Kuttu Tikki",
+    "category": "Fasting Navratri",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 177.0,
+    "kcal": 375.0,
+    "protein_g": 22.0,
+    "fat_g": 18.0,
+    "carbs_g": 28.0,
+    "fibre_g": 2.5,
+    "protein_pct_kcal": 23.5,
+    "prep_min": 22,
+    "dietary_tags": [
+      "fasting_navratri"
+    ],
+    "items": [
+      {
+        "key": "paneer",
+        "label": "Paneer, grated",
+        "grams": 80
+      },
+      {
+        "key": "kuttu_atta",
+        "label": "Kuttu flour",
+        "grams": 25
+      },
+      {
+        "key": "potato",
+        "label": "Boiled potato",
+        "grams": 40
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 10
+      }
+    ],
+    "steps": [
+      "Mix paneer, kuttu flour, potato and sendha namak.",
+      "Shape into tikkis.",
+      "Pan-fry in ghee until crisp outside.",
+      "Serve with yogurt dip."
+    ]
+  },
+  {
+    "id": 10011,
+    "name": "Dates & Laban Smoothie",
+    "category": "Fasting Ramadan",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 340.0,
+    "kcal": 320.0,
+    "protein_g": 14.0,
+    "fat_g": 8.0,
+    "carbs_g": 48.0,
+    "fibre_g": 4.0,
+    "protein_pct_kcal": 17.5,
+    "prep_min": 5,
+    "dietary_tags": [
+      "fasting_ramadan"
+    ],
+    "items": [
+      {
+        "key": "dates",
+        "label": "Medjool dates, pitted",
+        "grams": 50
+      },
+      {
+        "key": "laban",
+        "label": "Laban (yogurt drink)",
+        "grams": 200
+      },
+      {
+        "key": "banana",
+        "label": "Banana",
+        "grams": 60
+      },
+      {
+        "key": "honey",
+        "label": "Honey",
+        "grams": 10
+      }
+    ],
+    "steps": [
+      "Blend dates, laban, banana and honey until smooth.",
+      "Serve chilled for iftar or suhoor."
+    ]
+  },
+  {
+    "id": 10012,
+    "name": "Chicken Haleem Bowl",
+    "category": "Fasting Ramadan",
+    "diet": "non_vegetarian",
+    "servings": 1,
+    "serving_grams": 236.0,
+    "kcal": 480.0,
+    "protein_g": 38.0,
+    "fat_g": 14.0,
+    "carbs_g": 48.0,
+    "fibre_g": 6.5,
+    "protein_pct_kcal": 31.7,
+    "prep_min": 45,
+    "dietary_tags": [
+      "fasting_ramadan"
+    ],
+    "items": [
+      {
+        "key": "chicken",
+        "label": "Chicken breast, shredded",
+        "grams": 120
+      },
+      {
+        "key": "wheat_dalia",
+        "label": "Broken wheat",
+        "grams": 40
+      },
+      {
+        "key": "lentil",
+        "label": "Masoor dal",
+        "grams": 25
+      },
+      {
+        "key": "onion",
+        "label": "Fried onion",
+        "grams": 20
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 8
+      },
+      {
+        "key": "spices",
+        "label": "Haleem spice mix",
+        "grams": 3
+      }
+    ],
+    "steps": [
+      "Pressure-cook wheat, lentils and chicken with spices until mushy.",
+      "Temper with fried onion and ghee.",
+      "Simmer to thick consistency; serve with lemon."
+    ]
+  },
+  {
+    "id": 10013,
+    "name": "Grilled Fish with Herbs",
+    "category": "Fasting Ramadan",
+    "diet": "non_vegetarian",
+    "servings": 1,
+    "serving_grams": 200.0,
+    "kcal": 395.0,
+    "protein_g": 42.0,
+    "fat_g": 16.0,
+    "carbs_g": 8.0,
+    "fibre_g": 1.2,
+    "protein_pct_kcal": 42.5,
+    "prep_min": 18,
+    "dietary_tags": [
+      "fasting_ramadan"
+    ],
+    "items": [
+      {
+        "key": "fish",
+        "label": "Fish fillet (rohu/salmon)",
+        "grams": 150
+      },
+      {
+        "key": "lemon",
+        "label": "Lemon juice",
+        "grams": 15
+      },
+      {
+        "key": "olive_oil",
+        "label": "Olive oil",
+        "grams": 8
+      },
+      {
+        "key": "herbs",
+        "label": "Fresh herbs",
+        "grams": 5
+      },
+      {
+        "key": "salt",
+        "label": "Salt",
+        "grams": 2
+      }
+    ],
+    "steps": [
+      "Marinate fish with lemon, oil, herbs and salt 15 min.",
+      "Grill 4-5 min per side until flaky.",
+      "Serve with salad."
+    ]
+  },
+  {
+    "id": 10014,
+    "name": "Chickpea & Veg Stew",
+    "category": "Fasting Ramadan",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 234.0,
+    "kcal": 410.0,
+    "protein_g": 18.0,
+    "fat_g": 12.0,
+    "carbs_g": 56.0,
+    "fibre_g": 12.0,
+    "protein_pct_kcal": 17.6,
+    "prep_min": 30,
+    "dietary_tags": [
+      "fasting_ramadan"
+    ],
+    "items": [
+      {
+        "key": "chickpea",
+        "label": "Chickpeas, cooked",
+        "grams": 100
+      },
+      {
+        "key": "tomato",
+        "label": "Tomato",
+        "grams": 60
+      },
+      {
+        "key": "spinach",
+        "label": "Spinach",
+        "grams": 40
+      },
+      {
+        "key": "olive_oil",
+        "label": "Olive oil",
+        "grams": 8
+      },
+      {
+        "key": "cumin",
+        "label": "Cumin",
+        "grams": 2
+      },
+      {
+        "key": "garlic",
+        "label": "Garlic",
+        "grams": 4
+      }
+    ],
+    "steps": [
+      "Sauté garlic and cumin in olive oil.",
+      "Add tomato; cook 5 min.",
+      "Add chickpeas and spinach; simmer 10 min.",
+      "Adjust seasoning; serve with whole wheat pita (optional)."
+    ]
+  },
+  {
+    "id": 10015,
+    "name": "Egg & Avocado Suhoor Plate",
+    "category": "Fasting Ramadan",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 255.0,
+    "kcal": 445.0,
+    "protein_g": 24.0,
+    "fat_g": 28.0,
+    "carbs_g": 22.0,
+    "fibre_g": 8.5,
+    "protein_pct_kcal": 21.6,
+    "prep_min": 12,
+    "dietary_tags": [
+      "fasting_ramadan"
+    ],
+    "items": [
+      {
+        "key": "egg",
+        "label": "Boiled eggs",
+        "grams": 100
+      },
+      {
+        "key": "avocado",
+        "label": "Avocado",
+        "grams": 80
+      },
+      {
+        "key": "whole_wheat_bread",
+        "label": "Whole wheat bread",
+        "grams": 50
+      },
+      {
+        "key": "olive_oil",
+        "label": "Olive oil",
+        "grams": 5
+      }
+    ],
+    "steps": [
+      "Boil eggs to desired doneness.",
+      "Mash avocado with olive oil and salt.",
+      "Serve eggs with avocado spread on toast."
+    ]
+  },
+  {
+    "id": 10016,
+    "name": "Lamb Keema with Peas",
+    "category": "Fasting Ramadan",
+    "diet": "non_vegetarian",
+    "servings": 1,
+    "serving_grams": 283.0,
+    "kcal": 520.0,
+    "protein_g": 36.0,
+    "fat_g": 28.0,
+    "carbs_g": 24.0,
+    "fibre_g": 4.5,
+    "protein_pct_kcal": 27.7,
+    "prep_min": 35,
+    "dietary_tags": [
+      "fasting_ramadan"
+    ],
+    "items": [
+      {
+        "key": "lamb",
+        "label": "Lamb mince",
+        "grams": 120
+      },
+      {
+        "key": "peas",
+        "label": "Green peas",
+        "grams": 50
+      },
+      {
+        "key": "onion",
+        "label": "Onion",
+        "grams": 40
+      },
+      {
+        "key": "tomato",
+        "label": "Tomato",
+        "grams": 40
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 10
+      },
+      {
+        "key": "spices",
+        "label": "Garam masala",
+        "grams": 3
+      }
+    ],
+    "steps": [
+      "Brown lamb mince in ghee with onion.",
+      "Add tomato and spices; cook until oil separates.",
+      "Add peas; simmer 10 min.",
+      "Serve with rice or roti."
+    ]
+  },
+  {
+    "id": 10017,
+    "name": "Lentil Soup (Harira Style)",
+    "category": "Fasting Ramadan",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 198.0,
+    "kcal": 360.0,
+    "protein_g": 22.0,
+    "fat_g": 8.0,
+    "carbs_g": 48.0,
+    "fibre_g": 10.0,
+    "protein_pct_kcal": 24.4,
+    "prep_min": 40,
+    "dietary_tags": [
+      "fasting_ramadan"
+    ],
+    "items": [
+      {
+        "key": "lentil",
+        "label": "Red lentils",
+        "grams": 60
+      },
+      {
+        "key": "chickpea",
+        "label": "Chickpeas",
+        "grams": 40
+      },
+      {
+        "key": "tomato",
+        "label": "Tomato",
+        "grams": 50
+      },
+      {
+        "key": "celery",
+        "label": "Celery",
+        "grams": 20
+      },
+      {
+        "key": "olive_oil",
+        "label": "Olive oil",
+        "grams": 6
+      },
+      {
+        "key": "spices",
+        "label": "Cinnamon & cumin",
+        "grams": 2
+      }
+    ],
+    "steps": [
+      "Simmer lentils, chickpeas, tomato and celery with spices.",
+      "Blend partially for body.",
+      "Finish with olive oil; serve hot."
+    ]
+  },
+  {
+    "id": 10018,
+    "name": "Grilled Chicken Shawarma Bowl",
+    "category": "Fasting Ramadan",
+    "diet": "non_vegetarian",
+    "servings": 1,
+    "serving_grams": 325.0,
+    "kcal": 465.0,
+    "protein_g": 40.0,
+    "fat_g": 18.0,
+    "carbs_g": 32.0,
+    "fibre_g": 4.0,
+    "protein_pct_kcal": 34.4,
+    "prep_min": 25,
+    "dietary_tags": [
+      "fasting_ramadan"
+    ],
+    "items": [
+      {
+        "key": "chicken",
+        "label": "Chicken thigh, grilled",
+        "grams": 130
+      },
+      {
+        "key": "yogurt",
+        "label": "Greek yogurt",
+        "grams": 40
+      },
+      {
+        "key": "cucumber",
+        "label": "Cucumber",
+        "grams": 40
+      },
+      {
+        "key": "tomato",
+        "label": "Tomato",
+        "grams": 40
+      },
+      {
+        "key": "pita",
+        "label": "Mini pita",
+        "grams": 45
+      },
+      {
+        "key": "tahini",
+        "label": "Tahini",
+        "grams": 10
+      }
+    ],
+    "steps": [
+      "Grill spiced chicken until charred and cooked through.",
+      "Slice and serve over pita with yogurt, cucumber, tomato and tahini.",
+      "Eat immediately."
+    ]
+  },
+  {
+    "id": 10019,
+    "name": "Sabudana Thalipeeth",
+    "category": "Fasting Ekadashi",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 175.0,
+    "kcal": 350.0,
+    "protein_g": 10.0,
+    "fat_g": 12.0,
+    "carbs_g": 50.0,
+    "fibre_g": 3.8,
+    "protein_pct_kcal": 11.4,
+    "prep_min": 20,
+    "dietary_tags": [
+      "fasting_ekadashi"
+    ],
+    "items": [
+      {
+        "key": "sabudana",
+        "label": "Sabudana",
+        "grams": 75
+      },
+      {
+        "key": "peanut",
+        "label": "Peanuts",
+        "grams": 20
+      },
+      {
+        "key": "potato",
+        "label": "Potato",
+        "grams": 50
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 8
+      }
+    ],
+    "steps": [
+      "Mix soaked sabudana, potato, peanuts and salt.",
+      "Press into thick flatbread on tawa with ghee.",
+      "Cook both sides until crisp.",
+      "Serve with coconut chutney."
+    ]
+  },
+  {
+    "id": 10020,
+    "name": "Buckwheat Dosa",
+    "category": "Fasting Ekadashi",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 143.0,
+    "kcal": 290.0,
+    "protein_g": 12.0,
+    "fat_g": 8.0,
+    "carbs_g": 40.0,
+    "fibre_g": 4.2,
+    "protein_pct_kcal": 16.6,
+    "prep_min": 15,
+    "dietary_tags": [
+      "fasting_ekadashi"
+    ],
+    "items": [
+      {
+        "key": "kuttu_atta",
+        "label": "Kuttu flour",
+        "grams": 45
+      },
+      {
+        "key": "curd",
+        "label": "Curd",
+        "grams": 30
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 6
+      },
+      {
+        "key": "potato",
+        "label": "Potato filling",
+        "grams": 40
+      }
+    ],
+    "steps": [
+      "Ferment kuttu batter with curd 30 min.",
+      "Spread thin dosa on hot tawa.",
+      "Add potato filling; fold and serve."
+    ]
+  },
+  {
+    "id": 10021,
+    "name": "Sweet Potato & Peanut Chaat",
+    "category": "Fasting Ekadashi",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 177.0,
+    "kcal": 310.0,
+    "protein_g": 9.0,
+    "fat_g": 14.0,
+    "carbs_g": 36.0,
+    "fibre_g": 5.5,
+    "protein_pct_kcal": 11.6,
+    "prep_min": 15,
+    "dietary_tags": [
+      "fasting_ekadashi"
+    ],
+    "items": [
+      {
+        "key": "sweet_potato",
+        "label": "Roasted sweet potato",
+        "grams": 120
+      },
+      {
+        "key": "peanut",
+        "label": "Roasted peanuts",
+        "grams": 20
+      },
+      {
+        "key": "lemon",
+        "label": "Lemon juice",
+        "grams": 10
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "coriander",
+        "label": "Coriander",
+        "grams": 5
+      }
+    ],
+    "steps": [
+      "Cube roasted sweet potato.",
+      "Toss with peanuts, lemon, sendha namak and coriander.",
+      "Serve warm or at room temperature."
+    ]
+  },
+  {
+    "id": 10022,
+    "name": "Makhana Kheer",
+    "category": "Fasting Ekadashi",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 267.0,
+    "kcal": 380.0,
+    "protein_g": 12.0,
+    "fat_g": 14.0,
+    "carbs_g": 52.0,
+    "fibre_g": 2.8,
+    "protein_pct_kcal": 12.6,
+    "prep_min": 25,
+    "dietary_tags": [
+      "fasting_ekadashi"
+    ],
+    "items": [
+      {
+        "key": "makhana",
+        "label": "Makhana",
+        "grams": 35
+      },
+      {
+        "key": "milk",
+        "label": "Full-fat milk",
+        "grams": 180
+      },
+      {
+        "key": "jaggery",
+        "label": "Jaggery",
+        "grams": 25
+      },
+      {
+        "key": "cardamom",
+        "label": "Cardamom powder",
+        "grams": 1
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 6
+      }
+    ],
+    "steps": [
+      "Roast makhana in ghee until crisp.",
+      "Simmer milk; add makhana and jaggery.",
+      "Cook until thickened; finish with cardamom.",
+      "Serve warm or chilled."
+    ]
+  },
+  {
+    "id": 10023,
+    "name": "Coconut & Fruit Bowl",
+    "category": "Fasting Ekadashi",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 198.0,
+    "kcal": 275.0,
+    "protein_g": 6.0,
+    "fat_g": 10.0,
+    "carbs_g": 42.0,
+    "fibre_g": 6.0,
+    "protein_pct_kcal": 8.7,
+    "prep_min": 8,
+    "dietary_tags": [
+      "fasting_ekadashi"
+    ],
+    "items": [
+      {
+        "key": "coconut",
+        "label": "Fresh coconut, grated",
+        "grams": 30
+      },
+      {
+        "key": "papaya",
+        "label": "Papaya",
+        "grams": 80
+      },
+      {
+        "key": "banana",
+        "label": "Banana",
+        "grams": 60
+      },
+      {
+        "key": "honey",
+        "label": "Honey",
+        "grams": 8
+      }
+    ],
+    "steps": [
+      "Combine fruit in bowl.",
+      "Top with coconut and honey.",
+      "Serve fresh."
+    ]
+  },
+  {
+    "id": 10024,
+    "name": "Paneer Singhara Cheela",
+    "category": "Fasting Ekadashi",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 141.0,
+    "kcal": 340.0,
+    "protein_g": 20.0,
+    "fat_g": 14.0,
+    "carbs_g": 32.0,
+    "fibre_g": 3.0,
+    "protein_pct_kcal": 23.5,
+    "prep_min": 18,
+    "dietary_tags": [
+      "fasting_ekadashi"
+    ],
+    "items": [
+      {
+        "key": "singhara_atta",
+        "label": "Singhara flour",
+        "grams": 45
+      },
+      {
+        "key": "paneer",
+        "label": "Paneer, grated",
+        "grams": 60
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 10
+      },
+      {
+        "key": "green_chilli",
+        "label": "Green chilli",
+        "grams": 4
+      }
+    ],
+    "steps": [
+      "Make batter from singhara flour and water.",
+      "Cook cheela; top with paneer and chilli.",
+      "Fold and serve hot."
+    ]
+  },
+  {
+    "id": 10025,
+    "name": "Rajgira Ladoo Snack Plate",
+    "category": "Fasting Ekadashi",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 235.0,
+    "kcal": 320.0,
+    "protein_g": 10.0,
+    "fat_g": 12.0,
+    "carbs_g": 44.0,
+    "fibre_g": 4.5,
+    "protein_pct_kcal": 12.5,
+    "prep_min": 12,
+    "dietary_tags": [
+      "fasting_ekadashi"
+    ],
+    "items": [
+      {
+        "key": "rajgira_ladoo",
+        "label": "Rajgira ladoos",
+        "grams": 50
+      },
+      {
+        "key": "milk",
+        "label": "Warm milk",
+        "grams": 150
+      },
+      {
+        "key": "almond",
+        "label": "Almonds",
+        "grams": 15
+      }
+    ],
+    "steps": [
+      "Warm milk in a glass.",
+      "Serve with rajgira ladoos and almonds for a light ekadashi meal."
+    ]
+  },
+  {
+    "id": 10026,
+    "name": "Potato & Yogurt Bowl",
+    "category": "Fasting Ekadashi",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 248.0,
+    "kcal": 260.0,
+    "protein_g": 10.0,
+    "fat_g": 8.0,
+    "carbs_g": 34.0,
+    "fibre_g": 3.2,
+    "protein_pct_kcal": 15.4,
+    "prep_min": 12,
+    "dietary_tags": [
+      "fasting_ekadashi"
+    ],
+    "items": [
+      {
+        "key": "potato",
+        "label": "Boiled potato",
+        "grams": 100
+      },
+      {
+        "key": "curd",
+        "label": "Fresh curd",
+        "grams": 120
+      },
+      {
+        "key": "sendha_namak",
+        "label": "Sendha namak",
+        "grams": 2
+      },
+      {
+        "key": "black_pepper",
+        "label": "Black pepper",
+        "grams": 1
+      },
+      {
+        "key": "coriander",
+        "label": "Coriander",
+        "grams": 5
+      }
+    ],
+    "steps": [
+      "Dice boiled potatoes.",
+      "Whisk curd with sendha namak and pepper.",
+      "Combine and garnish with coriander.",
+      "Serve chilled."
+    ]
+  },
+  {
+    "id": 10027,
+    "name": "Oats & Banana Smoothie",
+    "category": "Fasting Custom",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 340.0,
+    "kcal": 340.0,
+    "protein_g": 14.0,
+    "fat_g": 8.0,
+    "carbs_g": 52.0,
+    "fibre_g": 6.5,
+    "protein_pct_kcal": 16.5,
+    "prep_min": 5,
+    "dietary_tags": [
+      "fasting_custom"
+    ],
+    "items": [
+      {
+        "key": "oats",
+        "label": "Rolled oats",
+        "grams": 40
+      },
+      {
+        "key": "banana",
+        "label": "Banana",
+        "grams": 80
+      },
+      {
+        "key": "milk",
+        "label": "Milk",
+        "grams": 180
+      },
+      {
+        "key": "peanut_butter",
+        "label": "Peanut butter",
+        "grams": 12
+      },
+      {
+        "key": "honey",
+        "label": "Honey",
+        "grams": 8
+      }
+    ],
+    "steps": [
+      "Blend all ingredients until smooth.",
+      "Serve immediately."
+    ]
+  },
+  {
+    "id": 10028,
+    "name": "Tofu Veg Stir Fry",
+    "category": "Fasting Custom",
+    "diet": "vegan",
+    "servings": 1,
+    "serving_grams": 246.0,
+    "kcal": 320.0,
+    "protein_g": 22.0,
+    "fat_g": 14.0,
+    "carbs_g": 24.0,
+    "fibre_g": 6.0,
+    "protein_pct_kcal": 27.5,
+    "prep_min": 18,
+    "dietary_tags": [
+      "fasting_custom"
+    ],
+    "items": [
+      {
+        "key": "tofu",
+        "label": "Firm tofu",
+        "grams": 100
+      },
+      {
+        "key": "bell_pepper",
+        "label": "Bell pepper",
+        "grams": 60
+      },
+      {
+        "key": "broccoli",
+        "label": "Broccoli florets",
+        "grams": 50
+      },
+      {
+        "key": "soy_sauce",
+        "label": "Low-sodium soy sauce",
+        "grams": 10
+      },
+      {
+        "key": "sesame_oil",
+        "label": "Sesame oil",
+        "grams": 6
+      }
+    ],
+    "steps": [
+      "Cube and pan-sear tofu until golden.",
+      "Stir-fry vegetables in sesame oil.",
+      "Add tofu and soy sauce; toss 2 min.",
+      "Serve over rice (optional)."
+    ]
+  },
+  {
+    "id": 10029,
+    "name": "Greek Yogurt Parfait",
+    "category": "Fasting Custom",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 268.0,
+    "kcal": 295.0,
+    "protein_g": 18.0,
+    "fat_g": 10.0,
+    "carbs_g": 32.0,
+    "fibre_g": 4.0,
+    "protein_pct_kcal": 24.4,
+    "prep_min": 8,
+    "dietary_tags": [
+      "fasting_custom"
+    ],
+    "items": [
+      {
+        "key": "yogurt",
+        "label": "Greek yogurt",
+        "grams": 150
+      },
+      {
+        "key": "granola",
+        "label": "Granola",
+        "grams": 30
+      },
+      {
+        "key": "berries",
+        "label": "Mixed berries",
+        "grams": 60
+      },
+      {
+        "key": "honey",
+        "label": "Honey",
+        "grams": 8
+      }
+    ],
+    "steps": [
+      "Layer yogurt, granola and berries in a glass.",
+      "Drizzle honey on top.",
+      "Serve immediately."
+    ]
+  },
+  {
+    "id": 10030,
+    "name": "Moong Dal Cheela",
+    "category": "Fasting Custom",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 125.0,
+    "kcal": 310.0,
+    "protein_g": 18.0,
+    "fat_g": 8.0,
+    "carbs_g": 38.0,
+    "fibre_g": 7.5,
+    "protein_pct_kcal": 23.2,
+    "prep_min": 20,
+    "dietary_tags": [
+      "fasting_custom"
+    ],
+    "items": [
+      {
+        "key": "moong_dal",
+        "label": "Split moong dal, soaked",
+        "grams": 60
+      },
+      {
+        "key": "onion",
+        "label": "Onion, chopped",
+        "grams": 30
+      },
+      {
+        "key": "green_chilli",
+        "label": "Green chilli",
+        "grams": 4
+      },
+      {
+        "key": "oil",
+        "label": "Oil",
+        "grams": 6
+      },
+      {
+        "key": "coriander",
+        "label": "Coriander",
+        "grams": 5
+      }
+    ],
+    "steps": [
+      "Grind soaked dal to smooth batter.",
+      "Mix in onion, chilli and coriander.",
+      "Spread on tawa with oil; cook both sides.",
+      "Serve with mint chutney."
+    ]
+  },
+  {
+    "id": 10031,
+    "name": "Vegetable Clear Soup",
+    "category": "Fasting Custom",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 334.0,
+    "kcal": 180.0,
+    "protein_g": 8.0,
+    "fat_g": 4.0,
+    "carbs_g": 24.0,
+    "fibre_g": 5.0,
+    "protein_pct_kcal": 17.8,
+    "prep_min": 25,
+    "dietary_tags": [
+      "fasting_custom"
+    ],
+    "items": [
+      {
+        "key": "carrot",
+        "label": "Carrot",
+        "grams": 40
+      },
+      {
+        "key": "beans",
+        "label": "French beans",
+        "grams": 40
+      },
+      {
+        "key": "corn",
+        "label": "Sweet corn",
+        "grams": 30
+      },
+      {
+        "key": "vegetable_stock",
+        "label": "Vegetable stock",
+        "grams": 200
+      },
+      {
+        "key": "ginger",
+        "label": "Ginger",
+        "grams": 4
+      }
+    ],
+    "steps": [
+      "Simmer vegetables in stock with ginger 15 min.",
+      "Season lightly; serve hot."
+    ]
+  },
+  {
+    "id": 10032,
+    "name": "Paneer Bhurji Wrap",
+    "category": "Fasting Custom",
+    "diet": "vegetarian",
+    "servings": 1,
+    "serving_grams": 211.0,
+    "kcal": 385.0,
+    "protein_g": 24.0,
+    "fat_g": 16.0,
+    "carbs_g": 32.0,
+    "fibre_g": 4.5,
+    "protein_pct_kcal": 24.9,
+    "prep_min": 15,
+    "dietary_tags": [
+      "fasting_custom"
+    ],
+    "items": [
+      {
+        "key": "paneer",
+        "label": "Paneer, crumbled",
+        "grams": 80
+      },
+      {
+        "key": "whole_wheat_roti",
+        "label": "Whole wheat roti",
+        "grams": 45
+      },
+      {
+        "key": "onion",
+        "label": "Onion",
+        "grams": 30
+      },
+      {
+        "key": "tomato",
+        "label": "Tomato",
+        "grams": 30
+      },
+      {
+        "key": "ghee",
+        "label": "Ghee",
+        "grams": 6
+      }
+    ],
+    "steps": [
+      "Sauté onion and tomato in ghee.",
+      "Add crumbled paneer; cook 5 min.",
+      "Fill roti and roll.",
+      "Serve warm."
+    ]
+  }
+]

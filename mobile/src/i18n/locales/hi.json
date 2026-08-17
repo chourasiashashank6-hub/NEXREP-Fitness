@@ -107,7 +107,9 @@
       "ingredientsTitle": "ज़रूरी सामग्री",
       "noEquipmentNeeded": "आज के वर्कआउट के लिए कोई उपकरण नहीं चाहिए।",
       "noEquipmentMatched": "उपकरण सूचीबद्ध नहीं — आज की एक्सरसाइज़ के लिए कैटलॉग मैच उपलब्ध नहीं।",
-      "noIngredientsListed": "आज के भोजन के लिए कोई सामग्री सूचीबद्ध नहीं।"
+      "noIngredientsListed": "आज के भोजन के लिए कोई सामग्री सूचीबद्ध नहीं।",
+      "reflowNote": "{{count}} exercises missed day {{days}} se yahan shift kiye gaye",
+      "weeklyReviewTitle": "Weekly review"
     }
   },
   "profile": {
@@ -161,6 +163,19 @@
     "logWeight": "वजन लॉग करें",
     "lastWeight": "अंतिम: {{weight}} kg",
     "startTracking": "ट्रैकिंग शुरू करें",
+    "xp": {
+      "title": "प्रोग्रेस XP",
+      "level": "LVL",
+      "totalXp": "कुल {{xp}} XP",
+      "nextLevel": "अगले लेवल तक {{current}} / {{total}} XP",
+      "maxLevel": "अधिकतम लेवल पूरा",
+      "comebackBonus": "कमबैक बोनस · {{count}} सेशन 2× XP पर बाकी",
+      "seasonXp": "{{xp}} सीज़न XP",
+      "friendsLeaderboard": "दोस्तों की सीज़न लीडरबोर्ड",
+      "leaderboardEmpty": "लीडरबोर्ड पर चढ़ने के लिए वर्कआउट और मील लॉग करें।",
+      "loadFailed": "XP सिंक नहीं हो सका — सर्वर अपडेट होने तक डिफ़ॉल्ट दिख रहे हैं।",
+      "you": "आप"
+    },
     "activityOverview": "एक्टिविटी ओवरव्यू",
     "workouts": "वर्कआउट्स",
     "kcalBurned": "kcal जल गया",
@@ -173,6 +188,8 @@
     "goToAdmin": "Admin पर जाएँ",
     "feedback": "प्रतिक्रिया",
     "notificationPreferences": "अधिसूचना प्राथमिकताएँ",
+    "fastingPreferences": "व्रत/उपवास भोजन कैलेंडर",
+    "transformationTimeline": "ट्रांसफॉर्मेशन टाइमलाइन",
     "language": "भाषा",
     "languagePlaceholder": "भाषा चुनें",
     "logout": "लॉगआउट करें",
@@ -399,6 +416,86 @@
       "snacks": "नाश्ता"
     }
   },
+  "fasting": {
+    "title": "उपवास भोजन",
+    "subtitle": "आपकी तारीखों के दौरान भोजन योजना उपवास-अनुकूल रेसिपी का उपयोग करेगी",
+    "activeNow": "अभी सक्रिय",
+    "activeHint": "भोजन योजनाकार केवल इस उपवास अवधि के लिए टैग की गई रेसिपी चुनेगा।",
+    "noActive": "कोई सक्रिय उपवास अवधि नहीं। भोजन योजना सामान्य रेसिपी पूल का उपयोग करती है।",
+    "addPeriod": "उपवास अवधि जोड़ें",
+    "periodType": "अवधि प्रकार",
+    "startDate": "प्रारंभ तिथि",
+    "endDate": "समाप्ति तिथि",
+    "save": "अवधि सहेजें",
+    "manualDatesNote": "नवरात्रि, रमजान और एकादशी की तारीखें हर साल बदलती हैं — अपनी तारीखें दर्ज करें।",
+    "savedPeriods": "सहेजी गई अवधियाँ",
+    "dateRange": "{{start}} → {{end}}",
+    "statusActive": "सक्रिय",
+    "statusInactive": "निष्क्रिय",
+    "deactivate": "समाप्त",
+    "deactivateTitle": "उपवास अवधि समाप्त करें?",
+    "deactivateBody": "इसके बाद भोजन योजना सामान्य रेसिपी पूल पर लौट आएगी।",
+    "deactivateConfirm": "अवधि समाप्त करें",
+    "plannerBannerTitle": "उपवास-जागरूक भोजन चालू",
+    "plannerBannerBody": "{{period}} · {{start}} से {{end}} — केवल उपवास-अनुकूल रेसिपी।",
+    "periods": {
+      "navratri": "नवरात्रि",
+      "ramadan": "रमजान",
+      "ekadashi": "एकादशी",
+      "custom": "कस्टम उपवास"
+    },
+    "alerts": {
+      "loadFailed": "उपवास प्राथमिकताएँ लोड नहीं हो सकीं।",
+      "saveFailed": "उपवास अवधि सहेजी नहीं जा सकी।",
+      "actionFailed": "उपवास अवधि अपडेट नहीं हो सकी।",
+      "invalidRange": "समाप्ति तिथि प्रारंभ तिथि के बाद या उसी दिन होनी चाहिए।",
+      "savedTitle": "सहेजा गया",
+      "savedBody": "आपकी उपवास अवधि भोजन योजना के लिए सक्रिय है।",
+      "unavailable": "इस सर्वर पर उपवास भोजन अभी उपलब्ध नहीं है। माइग्रेशन 027 के साथ नया बैकएंड डिप्लॉय करें।"
+    }
+  },
+  "transformation": {
+    "title": "ट्रांसफॉर्मेशन टाइमलाइन",
+    "subtitle": "प्रगति फोटो इस डिवाइस पर रहती हैं जब तक आप क्लाउड बैकअप न चुनें",
+    "angles": { "front": "सामने", "side": "बगल" },
+    "capture": {
+      "alignGuide": "अपने शरीर को सिल्हूट के अंदर संरेखित करें",
+      "permissionTitle": "कैमरा एक्सेस आवश्यक",
+      "permissionBody": "संरेखण गाइड के साथ फोटो लेने के लिए कैमरा अनुमति दें।",
+      "permissionDenied": "कैमरा अनुमति अस्वीकार की गई।",
+      "allowCamera": "कैमरा अनुमति दें",
+      "captureFailed": "फोटो कैप्चर नहीं हो सका।",
+      "previewTitle": "यह प्रगति फोटो सहेजें?",
+      "backupOptIn": "NexRep क्लाउड में भी बैकअप करें (वैकल्पिक)",
+      "retake": "दोबारा लें",
+      "save": "स्थानीय रूप से सहेजें",
+      "saveFailed": "प्रगति फोटो सहेजी नहीं जा सकी।",
+      "webFallback": "वेब पर लाइव सिल्हूट सीमित है। आप फिर भी फोटो ले सकते हैं।",
+      "openCamera": "कैमरा खोलें"
+    },
+    "gallery": {
+      "title": "आपकी फोटो",
+      "emptyTitle": "अभी कोई प्रगति फोटो नहीं",
+      "emptyBody": "विज़ुअल टाइमलाइन शुरू करने के लिए पहली फोटो लें। फोटो डिफ़ॉल्ट रूप से स्थानीय रूप से सहेजी जाती हैं।",
+      "captureCta": "फोटो लें",
+      "backedUp": "बैकअप हो गया"
+    },
+    "summary": {
+      "title": "ट्रांसफॉर्मेशन सारांश",
+      "weight": "वजन",
+      "workouts": "वर्कआउट दिन",
+      "prs": "नए PR",
+      "level": "स्तर",
+      "noWeightData": "रेंज में कोई वजन लॉग नहीं",
+      "weightStable": "वजन में कोई बदलाव नहीं",
+      "weightUp": "+{{kg}} kg",
+      "weightDown": "−{{kg}} kg",
+      "refresh": "सारांश रीफ़्रेश करें",
+      "loadFailed": "ट्रांसफॉर्मेशन सारांश लोड नहीं हो सका।",
+      "proGateTitle": "तुलना सारांश Pro फीचर है",
+      "proGateBody": "किसी भी तारीख सीमा के लिए वजन, वर्कआउट और ताकत डेल्टा देखने के लिए अपग्रेड करें।"
+    }
+  },
   "common": {
     "cancel": "रद्द करें",
     "save": "सहेजें",
@@ -479,6 +576,48 @@
       "alerts": {
         "loadFailed": "अभी leaderboard load नहीं हो सका।",
         "settingsFailed": "Leaderboard settings update नहीं हो सकीं।"
+      }
+    },
+    "squads": {
+      "title": "Gym squads",
+      "open": "Gym squads",
+      "openSub": "आज किसने log किया · opt-in sharing",
+      "create": "बनाएं",
+      "accept": "स्वीकार",
+      "decline": "अस्वीकार",
+      "active": "आपके squads",
+      "invites": "Squad invites",
+      "empty": "Squad बनाएं और दोस्तों को invite करें।",
+      "memberCount": "{{count}} / {{max}} members",
+      "streak": "{{count}}-day squad streak",
+      "invitedBy": "{{name}} ने invite किया",
+      "roster": "आज की roster",
+      "shareTitle": "मेरी daily status share करें",
+      "shareSub": "On होने पर squadmates देखेंगे कि workout/meals log हुए या नहीं।",
+      "statusPrivate": "Private",
+      "statusPending": "अभी log नहीं",
+      "statusComplete": "Workout + meals done",
+      "workoutDone": "Workout",
+      "mealsDone": "Meals",
+      "done": "Done",
+      "leaveTitle": "Squad छोड़ें?",
+      "leaveBody": "दोबारा join tab invite मिलेगा।",
+      "leaveConfirm": "Squad छोड़ें",
+      "form": {
+        "title": "Gym squad बनाएं",
+        "squadName": "Squad name",
+        "namePlaceholder": "Morning lifters",
+        "nameRequired": "Squad name दर्ज करें।",
+        "inviteFriends": "Friends invite ({{count}}/{{max}})",
+        "noFriends": "पहले friends add करें।",
+        "create": "Squad बनाएं"
+      },
+      "alerts": {
+        "loadFailed": "Gym squads load नहीं हो सके।",
+        "saveFailed": "Squad create नहीं हो सका।",
+        "unavailable": "Gym squads अभी इस server पर उपलब्ध नहीं हैं। Latest backend deploy करें या local API use करें।",
+        "actionFailed": "Squad update नहीं हो सका।",
+        "shareFailed": "Sharing preference update नहीं हो सकी।"
       }
     },
     "challenges": {
@@ -1781,6 +1920,10 @@
       "unlockAll": "सभी सुविधाएं अनलॉक करें",
       "upgradePrice": "Pro ₹999/महीना · Elite ₹1,999/महीना",
       "upgrade": "अपग्रेड करें"
+    },
+    "reflow": {
+      "appliedTitle": "Plan adapt ho gaya",
+      "appliedBody": "Smart Reflow ne {{count}} missed priority exercises upcoming days mein shift kiye."
     },
     "workoutPlannerScreen": {
       "balancedHint": "संतुलित - सभी मांसपेशी समूहों को समान रूप से प्रशिक्षित किया जाएगा",

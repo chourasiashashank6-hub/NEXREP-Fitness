@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -15,6 +17,11 @@ from src.services.workout_planner_service import (
     swap_exercise,
     workout_plan_current_response,
     workout_plan_month_response,
+)
+from src.services.plan_reflow_service import (
+    apply_reflow_patches,
+    apply_weekly_compensation,
+    build_weekly_review,
 )
 from src.services.planner_test_users import is_planner_days_unlocked_user, is_planner_test_user
 from src.utils.auth import get_current_user
@@ -56,6 +63,21 @@ class WorkoutRegenerateDayRequest(BaseModel):
 class RegenerateRemainingWorkoutRequest(BaseModel):
     plan_id: int
     focus_muscles: list[str] | None = None
+
+
+class ReflowDayPatch(BaseModel):
+    day: int
+    exercises: list[dict[str, Any]]
+    estimated_duration_min: int | None = None
+
+
+class ReflowApplyRequest(BaseModel):
+    plan_id: int
+    patches: list[ReflowDayPatch]
+
+
+class WeeklyCompensationRequest(BaseModel):
+    plan_id: int
 
 
 def _normalize_focus_muscles(muscles: list[str] | None) -> list[str]:
@@ -213,6 +235,71 @@ def post_swap_exercise(
         )
     except SwapLimitExceeded as e:
         raise HTTPException(status_code=429, detail=str(e)) from e
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.post("/reflow")
+def post_reflow(
+    body: ReflowApplyRequest,
+    local_date: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return apply_reflow_patches(
+            db,
+            current_user,
+            plan_id=body.plan_id,
+            patches=[patch.model_dump() for patch in body.patches],
+            local_date=local_date,
+        )
+    except LookupError as e:
+        import logging
+
+        logging.getLogger(__name__).warning("reflow 404 user_id=%s plan_id=%s: %s", current_user.id, body.plan_id, e)
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except ValueError as e:
+        import logging
+
+        logging.getLogger(__name__).warning("reflow 400 user_id=%s plan_id=%s: %s", current_user.id, body.plan_id, e)
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        import logging
+
+        logging.getLogger(__name__).exception("reflow failed user_id=%s plan_id=%s", current_user.id, body.plan_id)
+        raise HTTPException(status_code=500, detail="Reflow failed") from e
+
+
+@router.get("/weekly-review")
+def get_weekly_review(
+    local_date: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    summary = build_weekly_review(db, current_user, local_date)
+    return summary
+
+
+@router.post("/weekly-review/apply")
+def post_weekly_review_apply(
+    body: WeeklyCompensationRequest,
+    local_date: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        result = apply_weekly_compensation(
+            db,
+            current_user,
+            plan_id=body.plan_id,
+            local_date=local_date,
+        )
+        if result is None:
+            raise HTTPException(status_code=404, detail="Plan not found")
+        return result
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except ValueError as e:

@@ -107,7 +107,9 @@
       "ingredientsTitle": "Ingrédients nécessaires",
       "noEquipmentNeeded": "Aucun équipement requis pour la séance du jour.",
       "noEquipmentMatched": "Équipement non listé — correspondance catalogue indisponible pour les exercices du jour.",
-      "noIngredientsListed": "Aucun ingrédient listé pour les repas du jour."
+      "noIngredientsListed": "Aucun ingrédient listé pour les repas du jour.",
+      "reflowNote": "{{count}} exercices déplacés ici depuis le jour manqué {{days}}",
+      "weeklyReviewTitle": "Bilan hebdomadaire"
     }
   },
   "profile": {
@@ -161,6 +163,19 @@
     "logWeight": "Journal du poids",
     "lastWeight": "dernier : {{weight}} kg",
     "startTracking": "démarrer le suivi",
+    "xp": {
+      "title": "XP DE PROGRESSION",
+      "level": "NIV",
+      "totalXp": "{{xp}} XP au total",
+      "nextLevel": "{{current}} / {{total}} XP avant le niveau suivant",
+      "maxLevel": "Niveau maximum atteint",
+      "comebackBonus": "Bonus retour · {{count}} séances restantes à XP ×2",
+      "seasonXp": "{{xp}} XP de saison",
+      "friendsLeaderboard": "CLASSEMENT SAISON ENTRE AMIS",
+      "leaderboardEmpty": "Enregistrez entraînements et repas pour monter au classement.",
+      "loadFailed": "XP non synchronisé — valeurs par défaut affichées.",
+      "you": "Vous"
+    },
     "activityOverview": "APERÇU DE L’ACTIVITÉ",
     "workouts": "Entraînements",
     "kcalBurned": "kcal brûlé",
@@ -173,6 +188,8 @@
     "goToAdmin": "Aller dans Admin",
     "feedback": "Commentaires",
     "notificationPreferences": "Préférences de notification",
+    "fastingPreferences": "Calendrier repas de jeûne",
+    "transformationTimeline": "Chronologie de transformation",
     "language": "Langue",
     "languagePlaceholder": "Choisir la langue",
     "logout": "Déconnexion",
@@ -399,6 +416,86 @@
       "snacks": "Collations"
     }
   },
+  "fasting": {
+    "title": "Repas de jeûne",
+    "subtitle": "Les plans utiliseront des recettes adaptées au jeûne pendant vos dates",
+    "activeNow": "Actif maintenant",
+    "activeHint": "Le planificateur ne choisira que des recettes étiquetées pour cette période de jeûne.",
+    "noActive": "Aucune période de jeûne active. Les plans utilisent le catalogue habituel.",
+    "addPeriod": "Ajouter une période de jeûne",
+    "periodType": "Type de période",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "save": "Enregistrer la période",
+    "manualDatesNote": "Navratri, Ramadan et Ekadashi changent de date chaque année — saisissez les vôtres.",
+    "savedPeriods": "Périodes enregistrées",
+    "dateRange": "{{start}} → {{end}}",
+    "statusActive": "Actif",
+    "statusInactive": "Inactif",
+    "deactivate": "Terminer",
+    "deactivateTitle": "Terminer la période de jeûne ?",
+    "deactivateBody": "Les plans reviendront au catalogue habituel après cela.",
+    "deactivateConfirm": "Terminer la période",
+    "plannerBannerTitle": "Repas de jeûne activés",
+    "plannerBannerBody": "{{period}} · {{start}} au {{end}} — recettes adaptées au jeûne uniquement.",
+    "periods": {
+      "navratri": "Navratri",
+      "ramadan": "Ramadan",
+      "ekadashi": "Ekadashi",
+      "custom": "Jeûne personnalisé"
+    },
+    "alerts": {
+      "loadFailed": "Impossible de charger les préférences de jeûne.",
+      "saveFailed": "Impossible d'enregistrer la période de jeûne.",
+      "actionFailed": "Impossible de mettre à jour la période de jeûne.",
+      "invalidRange": "La date de fin doit être égale ou postérieure à la date de début.",
+      "savedTitle": "Enregistré",
+      "savedBody": "Votre période de jeûne est active pour la planification des repas.",
+      "unavailable": "Les repas de jeûne ne sont pas disponibles sur ce serveur. Déployez le backend avec la migration 027."
+    }
+  },
+  "transformation": {
+    "title": "Chronologie de transformation",
+    "subtitle": "Les photos restent sur cet appareil sauf si vous activez la sauvegarde cloud",
+    "angles": { "front": "Face", "side": "Profil" },
+    "capture": {
+      "alignGuide": "Alignez votre corps dans la silhouette",
+      "permissionTitle": "Accès caméra requis",
+      "permissionBody": "Autorisez la caméra pour capturer des photos avec le guide d'alignement.",
+      "permissionDenied": "Autorisation caméra refusée.",
+      "allowCamera": "Autoriser la caméra",
+      "captureFailed": "Impossible de capturer la photo.",
+      "previewTitle": "Enregistrer cette photo de progrès ?",
+      "backupOptIn": "Sauvegarder aussi sur le cloud NexRep (optionnel)",
+      "retake": "Reprendre",
+      "save": "Enregistrer localement",
+      "saveFailed": "Impossible d'enregistrer la photo de progrès.",
+      "webFallback": "Sur le web, la silhouette en direct est limitée. Vous pouvez quand même capturer une photo.",
+      "openCamera": "Ouvrir la caméra"
+    },
+    "gallery": {
+      "title": "Vos photos",
+      "emptyTitle": "Aucune photo de progrès",
+      "emptyBody": "Capturez votre première photo pour démarrer une chronologie visuelle. Les photos sont stockées localement par défaut.",
+      "captureCta": "Capturer une photo",
+      "backedUp": "Sauvegardée"
+    },
+    "summary": {
+      "title": "Résumé de transformation",
+      "weight": "Poids",
+      "workouts": "Jours d'entraînement",
+      "prs": "Nouveaux PR",
+      "level": "Niveau",
+      "noWeightData": "Aucun poids enregistré sur la période",
+      "weightStable": "Poids stable",
+      "weightUp": "+{{kg}} kg",
+      "weightDown": "−{{kg}} kg",
+      "refresh": "Actualiser le résumé",
+      "loadFailed": "Impossible de charger le résumé de transformation.",
+      "proGateTitle": "Le résumé comparatif est réservé au Pro",
+      "proGateBody": "Passez au Pro pour voir les deltas poids, entraînement et force sur n'importe quelle période."
+    }
+  },
   "common": {
     "cancel": "Annuler",
     "save": "Enregistrer",
@@ -479,6 +576,48 @@
       "alerts": {
         "loadFailed": "Impossible de charger le classement pour le moment.",
         "settingsFailed": "Impossible de mettre a jour les reglages du classement."
+      }
+    },
+    "squads": {
+      "title": "Gym squads",
+      "open": "Gym squads",
+      "openSub": "Qui a loggé aujourd'hui · partage opt-in",
+      "create": "Créer",
+      "accept": "Accepter",
+      "decline": "Refuser",
+      "active": "Vos squads",
+      "invites": "Invitations",
+      "empty": "Créez un squad et invitez des amis.",
+      "memberCount": "{{count}} / {{max}} membres",
+      "streak": "Série de {{count}} jours",
+      "invitedBy": "Invité par {{name}}",
+      "roster": "Effectif du jour",
+      "shareTitle": "Partager mon statut quotidien",
+      "shareSub": "Si activé, les coéquipiers voient entraînements et repas loggés.",
+      "statusPrivate": "Privé",
+      "statusPending": "Pas encore loggé",
+      "statusComplete": "Entraînement + repas faits",
+      "workoutDone": "Entraînement",
+      "mealsDone": "Repas",
+      "done": "Fait",
+      "leaveTitle": "Quitter le squad ?",
+      "leaveBody": "Rejoindre à nouveau nécessite une invitation.",
+      "leaveConfirm": "Quitter",
+      "form": {
+        "title": "Créer un gym squad",
+        "squadName": "Nom du squad",
+        "namePlaceholder": "Morning lifters",
+        "nameRequired": "Entrez un nom.",
+        "inviteFriends": "Inviter des amis ({{count}}/{{max}})",
+        "noFriends": "Ajoutez des amis d'abord.",
+        "create": "Créer le squad"
+      },
+      "alerts": {
+        "loadFailed": "Impossible de charger les squads.",
+        "saveFailed": "Impossible de créer le squad.",
+        "unavailable": "Les gym squads ne sont pas encore disponibles sur ce serveur. Déploie le backend ou utilise une API locale.",
+        "actionFailed": "Impossible de mettre à jour le squad.",
+        "shareFailed": "Impossible de mettre à jour le partage."
       }
     },
     "challenges": {
@@ -1781,6 +1920,10 @@
       "unlockAll": "Déverrouiller toutes les fonctionnalités",
       "upgradePrice": "Pro 999 ₹/mois · Elite 1 999 ₹/mois",
       "upgrade": "Mise à niveau"
+    },
+    "reflow": {
+      "appliedTitle": "Plan adapté",
+      "appliedBody": "Smart Reflow a déplacé {{count}} exercices prioritaires manqués vers les jours à venir."
     },
     "workoutPlannerScreen": {
       "balancedHint": "Équilibré — tous les groupes musculaires seront entraînés de la même manière",

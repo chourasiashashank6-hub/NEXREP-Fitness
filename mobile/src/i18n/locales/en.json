@@ -107,7 +107,9 @@
       "ingredientsTitle": "Ingredients needed",
       "noEquipmentNeeded": "No equipment needed for today's workout.",
       "noEquipmentMatched": "Equipment not listed — catalog match unavailable for today's exercises.",
-      "noIngredientsListed": "No ingredients listed for today's meals."
+      "noIngredientsListed": "No ingredients listed for today's meals.",
+      "reflowNote": "{{count}} exercises moved here from missed day {{days}}",
+      "weeklyReviewTitle": "Weekly review"
     }
   },
   "profile": {
@@ -161,6 +163,20 @@
     "logWeight": "Log weight",
     "lastWeight": "last: {{weight}} kg",
     "startTracking": "start tracking",
+    "xp": {
+      "title": "PROGRESS XP",
+      "level": "LVL",
+      "totalXp": "{{xp}} XP total",
+      "nextLevel": "{{current}} / {{total}} XP to next level",
+      "maxLevel": "Max level reached",
+      "comebackBonus": "Comeback bonus · {{count}} sessions left at 2× XP",
+      "seasonXp": "{{xp}} season XP",
+      "friendsLeaderboard": "FRIENDS SEASON LEADERBOARD",
+      "leaderboardEmpty": "Log workouts and meals to climb the board.",
+      "loadFailed": "Could not load XP from {{base}}. Restart Expo after changing .env.development.",
+      "notDeployed": "XP is not on {{base}} yet (404). Use local API (127.0.0.1:8000) or deploy the server.",
+      "you": "You"
+    },
     "activityOverview": "ACTIVITY OVERVIEW",
     "workouts": "Workouts",
     "kcalBurned": "kcal burned",
@@ -173,6 +189,8 @@
     "goToAdmin": "Go to Admin",
     "feedback": "Feedback",
     "notificationPreferences": "Notification preferences",
+    "fastingPreferences": "Fasting meal calendar",
+    "transformationTimeline": "Transformation timeline",
     "language": "Language",
     "languagePlaceholder": "Choose language",
     "logout": "Logout",
@@ -408,6 +426,89 @@
       "snacks": "Snacks"
     }
   },
+  "fasting": {
+    "title": "Fasting meals",
+    "subtitle": "Meal plans use fasting-friendly recipes during your dates",
+    "activeNow": "Active now",
+    "activeHint": "Your meal planner will only pick recipes tagged for this fasting period.",
+    "noActive": "No active fasting period. Meal plans use the regular recipe pool.",
+    "addPeriod": "Add fasting period",
+    "periodType": "Period type",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "save": "Save period",
+    "manualDatesNote": "Navratri, Ramadan, and Ekadashi dates shift every year — enter the dates that apply to you.",
+    "savedPeriods": "Saved periods",
+    "dateRange": "{{start}} → {{end}}",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "deactivate": "End",
+    "deactivateTitle": "End fasting period?",
+    "deactivateBody": "Meal plans will go back to the regular recipe pool after this.",
+    "deactivateConfirm": "End period",
+    "plannerBannerTitle": "Fasting-aware meals on",
+    "plannerBannerBody": "{{period}} · {{start}} to {{end}} — only fasting-friendly recipes are used.",
+    "periods": {
+      "navratri": "Navratri",
+      "ramadan": "Ramadan",
+      "ekadashi": "Ekadashi",
+      "custom": "Custom fast"
+    },
+    "alerts": {
+      "loadFailed": "Could not load fasting preferences.",
+      "saveFailed": "Could not save fasting period.",
+      "actionFailed": "Could not update fasting period.",
+      "invalidRange": "End date must be on or after the start date.",
+      "savedTitle": "Saved",
+      "savedBody": "Your fasting period is active for meal planning.",
+      "unavailable": "Fasting meals are not available on this server yet. Deploy the latest backend with migration 027."
+    }
+  },
+  "transformation": {
+    "title": "Transformation timeline",
+    "subtitle": "Progress photos stay on this device unless you opt in to cloud backup",
+    "angles": {
+      "front": "Front",
+      "side": "Side"
+    },
+    "capture": {
+      "alignGuide": "Align your body inside the silhouette",
+      "permissionTitle": "Camera access needed",
+      "permissionBody": "Allow camera access to capture progress photos with the alignment guide.",
+      "permissionDenied": "Camera permission was denied.",
+      "allowCamera": "Allow camera",
+      "captureFailed": "Could not capture the photo.",
+      "previewTitle": "Save this progress photo?",
+      "backupOptIn": "Also back up to NexRep cloud (optional)",
+      "retake": "Retake",
+      "save": "Save locally",
+      "saveFailed": "Could not save the progress photo.",
+      "webFallback": "On web, the live silhouette overlay is limited. You can still capture a photo.",
+      "openCamera": "Open camera"
+    },
+    "gallery": {
+      "title": "Your photos",
+      "emptyTitle": "No progress photos yet",
+      "emptyBody": "Capture your first photo to start a visual timeline. Photos are stored locally by default.",
+      "captureCta": "Capture photo",
+      "backedUp": "Backed up"
+    },
+    "summary": {
+      "title": "Transformation summary",
+      "weight": "Weight",
+      "workouts": "Workout days",
+      "prs": "New PRs",
+      "level": "Level",
+      "noWeightData": "No weight logs in range",
+      "weightStable": "Weight unchanged",
+      "weightUp": "+{{kg}} kg",
+      "weightDown": "−{{kg}} kg",
+      "refresh": "Refresh summary",
+      "loadFailed": "Could not load transformation summary.",
+      "proGateTitle": "Comparison summary is a Pro feature",
+      "proGateBody": "Upgrade to see weight, workout, and strength deltas for any date range."
+    }
+  },
   "common": {
     "cancel": "Cancel",
     "and": "and",
@@ -491,6 +592,48 @@
       "alerts": {
         "loadFailed": "Could not load leaderboard right now.",
         "settingsFailed": "Could not update leaderboard settings."
+      }
+    },
+    "squads": {
+      "title": "Gym squads",
+      "open": "Gym squads",
+      "openSub": "See who's logged today · opt-in sharing",
+      "create": "Create",
+      "accept": "Accept",
+      "decline": "Decline",
+      "active": "Your squads",
+      "invites": "Squad invites",
+      "empty": "Create a squad and invite friends to train together.",
+      "memberCount": "{{count}} / {{max}} members",
+      "streak": "{{count}}-day squad streak",
+      "invitedBy": "Invited by {{name}}",
+      "roster": "Today's roster",
+      "shareTitle": "Share my daily status",
+      "shareSub": "When on, squadmates see if you logged workouts and meals. Off shows private.",
+      "statusPrivate": "Private",
+      "statusPending": "Not logged yet",
+      "statusComplete": "Workout + meals done",
+      "workoutDone": "Workout",
+      "mealsDone": "Meals",
+      "done": "Done",
+      "leaveTitle": "Leave squad?",
+      "leaveBody": "You can rejoin only if someone invites you again.",
+      "leaveConfirm": "Leave squad",
+      "form": {
+        "title": "Create gym squad",
+        "squadName": "Squad name",
+        "namePlaceholder": "Morning lifters",
+        "nameRequired": "Enter a squad name.",
+        "inviteFriends": "Invite friends ({{count}}/{{max}})",
+        "noFriends": "Add friends first to invite them.",
+        "create": "Create squad"
+      },
+      "alerts": {
+        "loadFailed": "Could not load gym squads right now.",
+        "saveFailed": "Could not create the squad.",
+        "unavailable": "Gym squads are not available on this server yet. Deploy the latest backend or switch to a local API for development.",
+        "actionFailed": "Could not update the squad.",
+        "shareFailed": "Could not update sharing preference."
       }
     },
     "challenges": {
@@ -1812,6 +1955,10 @@
       "unlockAll": "Unlock all features",
       "upgradePrice": "Pro ₹999/mo · Elite ₹1,999/mo",
       "upgrade": "Upgrade"
+    },
+    "reflow": {
+      "appliedTitle": "Plan adapted",
+      "appliedBody": "Smart Reflow moved {{count}} missed priority exercises into upcoming days."
     },
     "workoutPlannerScreen": {
       "balancedHint": "Balanced — all muscle groups will be trained equally",

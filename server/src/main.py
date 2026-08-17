@@ -30,10 +30,12 @@ from src.models.meal_plan import (  # noqa: F401
     MonthlyWorkoutPlan,
 )
 from src.models.recipes import Recipe, UserMealPlan  # noqa: F401
-from src.scripts.import_recipe_seed import load_recipe_seed_if_empty
+from src.models.progress_photos import ProgressPhoto  # noqa: F401
+from src.scripts.import_recipe_seed import load_fasting_recipe_seed, load_recipe_seed_if_empty
 from src.models.weight_log import WeightLog  # noqa: F401
 from src.routes.meal_planner import router as meal_planner_router
 from src.routes.workout_planner import router as workout_planner_router
+from src.routes.xp import router as xp_router
 from src.schemas.schemas import (
     ActivityRequest,
     ChatRequest,
@@ -73,6 +75,7 @@ from src.services.notification_service import (
     stop_notification_scheduler,
 )
 from src.services.activity_feed_service import emit_activity_event, emit_streak_milestone_if_needed
+from src.services.xp_service import award_xp_for_workout_log
 from src.services.language_service import ai_language_instruction
 from src.services.language_service import normalize_language_tag
 from src.services.subscription_service import (
@@ -93,6 +96,9 @@ from src.routes.messages import router as messages_router
 from src.routes.supplement_stacks import router as supplement_stacks_router
 from src.routes.feed import router as feed_router
 from src.routes.social_challenges import challenges_router, leaderboard_router
+from src.routes.squads import router as squads_router
+from src.routes.fasting import router as fasting_router
+from src.routes.progress_photos import router as progress_photos_router
 from src.routers.body_types import router as body_types_router
 from src.routes.workout_sessions import router as workout_sessions_router
 from src.services.ai_logger import log_groq_call
@@ -107,7 +113,9 @@ app = FastAPI(title="Fitness API", version="1.0.0")
 
 UPLOAD_ROOT = Path(__file__).resolve().parents[1] / "uploads"
 PROFILE_PHOTO_DIR = UPLOAD_ROOT / "profile_photos"
+PROGRESS_PHOTO_DIR = UPLOAD_ROOT / "progress_photos"
 PROFILE_PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+PROGRESS_PHOTO_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_ROOT)), name="uploads")
 
 MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024
@@ -155,6 +163,7 @@ app.include_router(subscriptions_router)
 app.include_router(invoices_router)
 app.include_router(admin_router)
 app.include_router(social_router)
+app.include_router(xp_router)
 app.include_router(places_router)
 app.include_router(threads_router)
 app.include_router(messages_router)
@@ -163,6 +172,9 @@ app.include_router(feed_router)
 app.include_router(body_types_router)
 app.include_router(leaderboard_router)
 app.include_router(challenges_router)
+app.include_router(squads_router)
+app.include_router(fasting_router)
+app.include_router(progress_photos_router)
 app.include_router(workout_sessions_router)
 
 
@@ -251,6 +263,9 @@ def startup():
     load_workout_catalog_if_empty(engine)
     load_global_exercises_if_empty(engine)
     load_recipe_seed_if_empty(engine)
+    fasting_seed = load_fasting_recipe_seed(engine)
+    if fasting_seed.get("inserted"):
+        print(f"Fasting recipes seeded: {fasting_seed['inserted']} new rows")
     seed_catalog_labels(engine)
     from src.services.quote_seed_service import load_motivational_quotes_if_needed
 
@@ -2257,6 +2272,7 @@ def add_workout(
     db.add(dashboard_activity)
     db.commit()
     emit_streak_milestone_if_needed(db, user_id=current_user.id, source="workout", source_id=workout.id)
+    award_xp_for_workout_log(db, user_id=current_user.id, workout_id=workout.id)
 
     return {"id": workout.id, "exercise_id": workout.exercise_id}
 

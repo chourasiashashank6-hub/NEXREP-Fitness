@@ -28,6 +28,13 @@ FEATURE_TIERS: dict[str, str] = {
     "preworkout_recommendation": "pro",
     "guided_warmup_session": "elite",
     "daily_game_plan": "pro",
+    "gym_squads_join": "free",
+    "gym_squads_create": "pro",
+    "smart_reflow": "pro",
+    "progress_xp": "free",
+    "fasting_aware_meals": "free",
+    "progress_photos": "free",
+    "progress_photo_comparison": "pro",
     # ── Free tier features (listed for completeness) ───────────────
     "workout_logging": "free",
     "calorie_logging": "free",

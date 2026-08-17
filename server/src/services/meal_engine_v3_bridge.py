@@ -25,7 +25,13 @@ def _calorie_log_daily_from_ctx(ctx: dict[str, Any]) -> v3.MacroTarget:
     )
 
 
-def _daily_target_for_user(db: Session, user: User) -> tuple[v3.DietFilter, v3.GoalType, v3.MacroTarget, int, dict[str, Any]]:
+def _fasting_tag_for_user(db: Session, user: User) -> str | None:
+    from src.services.fasting_service import get_active_fasting_tag
+
+    return get_active_fasting_tag(db, user.id)
+
+
+def _daily_target_for_user(db: Session, user: User) -> tuple[v3.DietFilter, v3.GoalType, v3.MacroTarget, int, dict[str, Any], str | None]:
     from src.services.meal_planner_service import _build_meal_ctx
 
     ctx = _build_meal_ctx(db, user)
@@ -33,7 +39,8 @@ def _daily_target_for_user(db: Session, user: User) -> tuple[v3.DietFilter, v3.G
     goal = v3.normalize_goal(str(ctx.get("goal") or "maintain"))
     meals_per_day = v3.clamp_meals_per_day(int(ctx.get("meals_per_day") or 3))
     daily = _calorie_log_daily_from_ctx(ctx)
-    return diet, goal, daily, meals_per_day, ctx
+    fasting_tag = _fasting_tag_for_user(db, user)
+    return diet, goal, daily, meals_per_day, ctx, fasting_tag
 
 
 def _v3_ctx(db: Session, user: User) -> tuple[v3.DietFilter, v3.GoalType, float, int]:
@@ -63,15 +70,18 @@ def sync_day_entry(
     goal: v3.GoalType | None = None,
     daily_kcal: float | None = None,
     meals_per_day: int | None = None,
+    fasting_tag: str | None = None,
 ) -> DailyMealPlanEntry:
     # Prefer caller-supplied ctx so we do not re-resolve targets after the week
     # plan row has been flushed (resolve_user_targets used to db.rollback()).
     if diet is None or goal is None or daily_kcal is None or meals_per_day is None:
-        diet, goal, daily, meals_per_day, _ctx = _daily_target_for_user(db, user)
+        diet, goal, daily, meals_per_day, _ctx, fasting_tag = _daily_target_for_user(db, user)
     else:
         from src.services.meal_planner_service import _build_meal_ctx
 
         daily = _calorie_log_daily_from_ctx(_build_meal_ctx(db, user))
+        if fasting_tag is None:
+            fasting_tag = _fasting_tag_for_user(db, user)
     plan_date = _calendar_date(int(plan.year), int(plan.month), int(day))
 
     rows = v3.ensure_day_plan(
@@ -84,6 +94,7 @@ def sync_day_entry(
         meals_per_day=meals_per_day,
         force=force,
         daily_override=daily,
+        fasting_tag=fasting_tag,
     )
     payload = v3.day_payload_from_assignments(plan_date, rows, daily)
     return _write_day_entry(db, plan, day=day, payload=payload)
@@ -157,7 +168,7 @@ def generate_or_refresh_week_v3(
         raise ValueError(f"No week starting on day {week_start_day} in {month}/{year}")
 
     # Resolve targets once before any plan flush — avoid mid-txn target probes.
-    diet, goal, daily, meals_per_day, ctx = _daily_target_for_user(db, user)
+    diet, goal, daily, meals_per_day, ctx, fasting_tag = _daily_target_for_user(db, user)
     ctx = {**ctx, "budget_level": budget_level}
 
     existing = get_weekly_plan_by_start_day(db, user.id, month, year, week_start_day)
@@ -175,6 +186,7 @@ def generate_or_refresh_week_v3(
                 goal=goal,
                 daily_kcal=daily.kcal,
                 meals_per_day=meals_per_day,
+                fasting_tag=fasting_tag,
             )
         _apply_plan_display_targets(existing, ctx)
         # Soft refresh must not rewrite a real snapshot (would clear the banner without
@@ -229,6 +241,7 @@ def generate_or_refresh_week_v3(
             goal=goal,
             daily_kcal=daily.kcal,
             meals_per_day=meals_per_day,
+            fasting_tag=fasting_tag,
         )
 
     # Drop leftover days outside this week (should be rare).
@@ -256,7 +269,7 @@ def swap_meal_v3(
     day: int,
     meal_type: str,
 ) -> DailyMealPlanEntry:
-    diet, goal, daily, meals_per_day, _ctx = _daily_target_for_user(db, user)
+    diet, goal, daily, meals_per_day, _ctx, fasting_tag = _daily_target_for_user(db, user)
     slot = v3.parse_slot_from_meal_type(meal_type)
     plan_date = _calendar_date(int(plan.year), int(plan.month), int(day))
 
@@ -270,6 +283,7 @@ def swap_meal_v3(
         meals_per_day=meals_per_day,
         force=False,
         daily_override=daily,
+        fasting_tag=fasting_tag,
     )
     swapped = v3.swap_slot(
         db,
@@ -281,6 +295,7 @@ def swap_meal_v3(
         daily_kcal=daily.kcal,
         meals_per_day=meals_per_day,
         daily_override=daily,
+        fasting_tag=fasting_tag,
     )
     rows = [swapped if row.slot == slot else row for row in rows]
     rows, _reconcile_meta = v3.reconcile_day_kcal(
@@ -310,7 +325,7 @@ def regenerate_day_v3(
     Uses the user's *current* meals_per_day (self-heals days generated under a
     different count). Bumps each slot's swap_version so repeated regenerates vary.
     """
-    diet, goal, daily, meals_per_day, _ctx = _daily_target_for_user(db, user)
+    diet, goal, daily, meals_per_day, _ctx, fasting_tag = _daily_target_for_user(db, user)
     plan_date = _calendar_date(int(plan.year), int(plan.month), int(day))
     schedule = v3.slot_schedule(meals_per_day)
 
@@ -325,6 +340,7 @@ def regenerate_day_v3(
         meals_per_day=meals_per_day,
         force=True,
         daily_override=daily,
+        fasting_tag=fasting_tag,
     )
 
     forward_dates = [
@@ -366,6 +382,7 @@ def regenerate_day_v3(
             exclude_recipe_ids=exclude,
             match_current_macros=False,
             daily_override=daily,
+            fasting_tag=fasting_tag,
         )
         same_day_picked.add(int(row.recipe_id))
         regenerated_rows.append(row)
@@ -399,7 +416,7 @@ def protein_gap_v3(
     year: int,
     month: int,
 ) -> dict[str, Any]:
-    diet, goal, daily, meals_per_day, _ctx = _daily_target_for_user(db, user)
+    diet, goal, daily, meals_per_day, _ctx, fasting_tag = _daily_target_for_user(db, user)
     plan_date = _calendar_date(year, month, day)
     v3.ensure_day_plan(
         db,
@@ -411,6 +428,7 @@ def protein_gap_v3(
         meals_per_day=meals_per_day,
         force=False,
         daily_override=daily,
+        fasting_tag=fasting_tag,
     )
     result = v3.protein_gap_suggestions(
         db,

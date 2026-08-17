@@ -17,6 +17,7 @@ from src.services import meal_engine_v3 as v3
 from src.services.meal_engine_v3_bridge import regenerate_day_v3
 
 SEED = Path(__file__).resolve().parents[1] / "nexrep_recipes_seed.json"
+FASTING_SEED = Path(__file__).resolve().parents[1] / "nexrep_fasting_recipes_seed.json"
 
 
 @pytest.fixture(scope="module")
@@ -26,6 +27,8 @@ def db() -> Session:
         count = session.query(Recipe).count()
         if count < 100 and SEED.exists():
             upsert_recipes(session, load_seed(SEED))
+        if FASTING_SEED.exists():
+            upsert_recipes(session, load_seed(FASTING_SEED))
         yield session
     finally:
         session.close()
@@ -806,3 +809,77 @@ def test_day_reconcile_respects_ceiling_and_logs_residual(db: Session, monkeypat
     total = sum(float(r.kcal) for r in rows)
     assert total < daily.kcal * (1 - v3.DAY_KCAL_TOLERANCE_FRAC)
     assert any("reconcile_residual_gap" in r.message for r in caplog.records)
+
+
+def test_fasting_seed_import(db: Session):
+    if not FASTING_SEED.exists():
+        pytest.skip("fasting seed file missing")
+    summary = upsert_recipes(db, load_seed(FASTING_SEED))
+    assert summary["total_seed"] == 32
+    tagged = db.query(Recipe).filter(Recipe.external_id >= 10001).all()
+    assert len(tagged) >= 32
+    assert all((r.dietary_tags or []) for r in tagged)
+
+
+def test_no_fasting_period_identical_output(db: Session):
+    if db.query(Recipe).count() < 40:
+        pytest.skip("recipes not imported")
+    user_id = _ensure_user(db, "meal_v3_no_fasting@test.local")
+    _clean_plans(db, user_id)
+    plan_date = date(2031, 3, 15)
+    kwargs = dict(
+        user_id=user_id,
+        plan_date=plan_date,
+        diet="vegetarian",
+        goal="maintain",
+        daily_kcal=2200,
+        meals_per_day=3,
+        force=True,
+    )
+    rows_a = v3.ensure_day_plan(db, **kwargs)
+    _clean_plans(db, user_id)
+    rows_b = v3.ensure_day_plan(db, fasting_tag=None, **kwargs)
+    assert [r.recipe_id for r in rows_a] == [r.recipe_id for r in rows_b]
+    db.commit()
+
+
+def test_fasting_tag_limits_recipe_pool(db: Session):
+    if db.query(Recipe).count() < 40:
+        pytest.skip("recipes not imported")
+    user_id = _ensure_user(db, "meal_v3_fasting_tag@test.local")
+    _clean_plans(db, user_id)
+    plan_date = date(2031, 3, 16)
+    rows = v3.ensure_day_plan(
+        db,
+        user_id=user_id,
+        plan_date=plan_date,
+        diet="vegetarian",
+        goal="maintain",
+        daily_kcal=2200,
+        meals_per_day=3,
+        force=True,
+        fasting_tag="fasting_navratri",
+    )
+    assert len(rows) == 3
+    for row in rows:
+        recipe = db.query(Recipe).filter(Recipe.id == row.recipe_id).one()
+        assert "fasting_navratri" in (recipe.dietary_tags or [])
+    db.commit()
+
+
+def test_empty_fasting_pool_raises(db: Session):
+    if db.query(Recipe).count() < 40:
+        pytest.skip("recipes not imported")
+    user_id = _ensure_user(db, "meal_v3_empty_fasting@test.local")
+    with pytest.raises(RuntimeError, match="Empty recipe pool"):
+        v3.ensure_day_plan(
+            db,
+            user_id=user_id,
+            plan_date=date(2031, 3, 17),
+            diet="vegan",
+            goal="maintain",
+            daily_kcal=2200,
+            meals_per_day=3,
+            force=True,
+            fasting_tag="fasting_navratri",
+        )

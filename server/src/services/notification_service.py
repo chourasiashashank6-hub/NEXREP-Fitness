@@ -414,6 +414,18 @@ def _run_quote_of_the_day(db: Session, user: User, now: datetime) -> None:
 def _run_weekly_digest(db: Session, user: User, now: datetime) -> None:
     if now.weekday() != 6 or now.hour != 18:
         return
+    from src.services.plan_reflow_service import (
+        apply_weekly_compensation,
+        build_weekly_review,
+        weekly_review_message,
+        weekly_summary_enabled,
+    )
+    from src.services.workout_planner_service import get_existing_workout_plan
+
+    if not weekly_summary_enabled(db, user.id):
+        return
+    local_date = now.date().isoformat()
+    summary = build_weekly_review(db, user, local_date)
     week_start = now.date() - timedelta(days=6)
     meals_logged = (
         db.query(func.count(DailyNutritionLog.log_id))
@@ -421,12 +433,7 @@ def _run_weekly_digest(db: Session, user: User, now: datetime) -> None:
         .scalar()
         or 0
     )
-    workouts_logged = (
-        db.query(func.count(Workout.id))
-        .filter(Workout.user_id == user.id, Workout.date >= datetime.combine(week_start, datetime.min.time()))
-        .scalar()
-        or 0
-    )
+    workouts_logged = int(summary.get("workouts_logged") or 0)
     prs = (
         db.query(func.count(StrengthLift.id))
         .filter(StrengthLift.user_id == user.id, StrengthLift.date >= datetime.combine(week_start, datetime.min.time()))
@@ -444,9 +451,15 @@ def _run_weekly_digest(db: Session, user: User, now: datetime) -> None:
             {"mealsLogged": meals_logged, "workoutsLogged": workouts_logged, "strengthLifts": prs},
         ),
         event_key=f"weekly-digest:{user.id}:{now.date().isoformat()}",
-        data={"kind": "weekly_digest"},
+        data={"kind": "weekly_digest", "review_message": weekly_review_message(summary)},
         now=now,
     )
+    try:
+        plan = get_existing_workout_plan(db, user.id, now.month, now.year)
+        if plan:
+            apply_weekly_compensation(db, user, plan_id=plan.id, local_date=local_date)
+    except Exception:
+        pass
 
 
 def run_hourly_notification_checks(now: datetime | None = None) -> None:
@@ -456,6 +469,9 @@ def run_hourly_notification_checks(now: datetime | None = None) -> None:
         from src.services.social_challenge_service import complete_expired_challenges
 
         complete_expired_challenges(db)
+        from src.services.squad_service import run_squad_nudges
+
+        run_squad_nudges(db, as_of=now)
         for user in _users_with_active_tokens(db):
             _run_macro_checkpoint(db, user, now)
             _run_missing_log_checks(db, user, now)

@@ -22,6 +22,7 @@ mobile/.env.production
 
 # Node
 mobile/node_modules/
+node_modules/
 
 # Python / test artifacts
 .pytest_cache/

@@ -107,7 +107,9 @@
       "ingredientsTitle": "Ingredients needed",
       "noEquipmentNeeded": "Aaj ke workout ke liye koi equipment nahi chahiye.",
       "noEquipmentMatched": "Equipment listed nahi — aaj ki exercises ke liye catalog match unavailable.",
-      "noIngredientsListed": "Aaj ke meals ke liye koi ingredients listed nahi."
+      "noIngredientsListed": "Aaj ke meals ke liye koi ingredients listed nahi.",
+      "reflowNote": "{{count}} exercises missed day {{days}} se yahan move kiye gaye",
+      "weeklyReviewTitle": "Weekly review"
     }
   },
   "profile": {
@@ -161,6 +163,19 @@
     "logWeight": "Weight log karein",
     "lastWeight": "last: {{weight}} kg",
     "startTracking": "tracking start karein",
+    "xp": {
+      "title": "PROGRESS XP",
+      "level": "LVL",
+      "totalXp": "{{xp}} XP total",
+      "nextLevel": "{{current}} / {{total}} XP next level tak",
+      "maxLevel": "Max level reach ho gaya",
+      "comebackBonus": "Comeback bonus · {{count}} sessions 2× XP par baki",
+      "seasonXp": "{{xp}} season XP",
+      "friendsLeaderboard": "FRIENDS SEASON LEADERBOARD",
+      "leaderboardEmpty": "Board par chadhne ke liye workouts aur meals log karo.",
+      "loadFailed": "XP sync nahi hua — server update hone tak defaults dikhenge.",
+      "you": "Aap"
+    },
     "activityOverview": "ACTIVITY OVERVIEW",
     "workouts": "Workouts",
     "kcalBurned": "kcal burned",
@@ -173,6 +188,8 @@
     "goToAdmin": "Admin par jayein",
     "feedback": "Feedback",
     "notificationPreferences": "Notification preferences",
+    "fastingPreferences": "Fasting meal calendar",
+    "transformationTimeline": "Transformation timeline",
     "language": "Language",
     "languagePlaceholder": "Language choose karein",
     "logout": "Logout",
@@ -400,6 +417,86 @@
       "snacks": "Snacks"
     }
   },
+  "fasting": {
+    "title": "Fasting meals",
+    "subtitle": "Aapki dates ke dauran meal plan fasting-friendly recipes use karega",
+    "activeNow": "Abhi active",
+    "activeHint": "Meal planner sirf is fasting period ke tagged recipes choose karega.",
+    "noActive": "Koi active fasting period nahi. Meal plans regular recipe pool use karte hain.",
+    "addPeriod": "Fasting period add karo",
+    "periodType": "Period type",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "save": "Period save karo",
+    "manualDatesNote": "Navratri, Ramadan aur Ekadashi ki dates har saal badalti hain — apni dates daalo.",
+    "savedPeriods": "Saved periods",
+    "dateRange": "{{start}} → {{end}}",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "deactivate": "End",
+    "deactivateTitle": "Fasting period khatam karein?",
+    "deactivateBody": "Iske baad meal plans regular recipe pool par wapas aa jayenge.",
+    "deactivateConfirm": "Period end karo",
+    "plannerBannerTitle": "Fasting-aware meals on",
+    "plannerBannerBody": "{{period}} · {{start}} se {{end}} — sirf fasting-friendly recipes.",
+    "periods": {
+      "navratri": "Navratri",
+      "ramadan": "Ramadan",
+      "ekadashi": "Ekadashi",
+      "custom": "Custom fast"
+    },
+    "alerts": {
+      "loadFailed": "Fasting preferences load nahi ho payi.",
+      "saveFailed": "Fasting period save nahi ho paya.",
+      "actionFailed": "Fasting period update nahi ho paya.",
+      "invalidRange": "End date start date ke baad ya same honi chahiye.",
+      "savedTitle": "Saved",
+      "savedBody": "Aapka fasting period meal planning ke liye active hai.",
+      "unavailable": "Is server par fasting meals abhi available nahi hain. Migration 027 ke saath latest backend deploy karo."
+    }
+  },
+  "transformation": {
+    "title": "Transformation timeline",
+    "subtitle": "Progress photos is device par rehti hain jab tak aap cloud backup opt-in na karo",
+    "angles": { "front": "Front", "side": "Side" },
+    "capture": {
+      "alignGuide": "Apne body ko silhouette ke andar align karo",
+      "permissionTitle": "Camera access chahiye",
+      "permissionBody": "Alignment guide ke saath photo lene ke liye camera allow karo.",
+      "permissionDenied": "Camera permission deny ho gayi.",
+      "allowCamera": "Camera allow karo",
+      "captureFailed": "Photo capture fail ho gaya.",
+      "previewTitle": "Yeh progress photo save karein?",
+      "backupOptIn": "NexRep cloud par bhi backup karo (optional)",
+      "retake": "Retake",
+      "save": "Locally save karo",
+      "saveFailed": "Progress photo save nahi ho payi.",
+      "webFallback": "Web par live silhouette limited hai. Aap phir bhi photo le sakte ho.",
+      "openCamera": "Camera kholo"
+    },
+    "gallery": {
+      "title": "Aapki photos",
+      "emptyTitle": "Abhi koi progress photo nahi",
+      "emptyBody": "Visual timeline shuru karne ke liye pehli photo lo. Photos default local save hoti hain.",
+      "captureCta": "Photo capture karo",
+      "backedUp": "Backed up"
+    },
+    "summary": {
+      "title": "Transformation summary",
+      "weight": "Weight",
+      "workouts": "Workout days",
+      "prs": "New PRs",
+      "level": "Level",
+      "noWeightData": "Range mein weight logs nahi",
+      "weightStable": "Weight same hai",
+      "weightUp": "+{{kg}} kg",
+      "weightDown": "−{{kg}} kg",
+      "refresh": "Summary refresh karo",
+      "loadFailed": "Transformation summary load nahi ho payi.",
+      "proGateTitle": "Comparison summary Pro feature hai",
+      "proGateBody": "Kisi bhi date range ke weight, workout aur strength deltas ke liye upgrade karo."
+    }
+  },
   "common": {
     "cancel": "Cancel",
     "save": "Save",
@@ -480,6 +577,48 @@
       "alerts": {
         "loadFailed": "Leaderboard abhi load nahi ho paya.",
         "settingsFailed": "Leaderboard settings update nahi ho payi."
+      }
+    },
+    "squads": {
+      "title": "Gym squads",
+      "open": "Gym squads",
+      "openSub": "Dekho aaj kisne log kiya · opt-in sharing",
+      "create": "Create",
+      "accept": "Accept",
+      "decline": "Decline",
+      "active": "Your squads",
+      "invites": "Squad invites",
+      "empty": "Squad banao aur friends ko invite karo.",
+      "memberCount": "{{count}} / {{max}} members",
+      "streak": "{{count}}-day squad streak",
+      "invitedBy": "{{name}} ne invite kiya",
+      "roster": "Aaj ki roster",
+      "shareTitle": "Meri daily status share karo",
+      "shareSub": "On par squadmates dekhenge workout/meals log hua ya nahi.",
+      "statusPrivate": "Private",
+      "statusPending": "Abhi log nahi",
+      "statusComplete": "Workout + meals done",
+      "workoutDone": "Workout",
+      "mealsDone": "Meals",
+      "done": "Done",
+      "leaveTitle": "Squad chhodein?",
+      "leaveBody": "Dobara join tab invite milega.",
+      "leaveConfirm": "Squad chhodein",
+      "form": {
+        "title": "Gym squad create karein",
+        "squadName": "Squad name",
+        "namePlaceholder": "Morning lifters",
+        "nameRequired": "Squad name enter karein.",
+        "inviteFriends": "Friends invite ({{count}}/{{max}})",
+        "noFriends": "Pehle friends add karein.",
+        "create": "Squad create"
+      },
+      "alerts": {
+        "loadFailed": "Gym squads load nahi ho sake.",
+        "saveFailed": "Squad create nahi ho saka.",
+        "unavailable": "Gym squads abhi is server par available nahi hain. Latest backend deploy karein ya local API use karein.",
+        "actionFailed": "Squad update nahi ho saka.",
+        "shareFailed": "Sharing preference update nahi ho saki."
       }
     },
     "challenges": {
@@ -1785,6 +1924,10 @@
       "unlockAll": "Unlock all features",
       "upgradePrice": "Pro ₹999/mo · Elite ₹1,999/mo",
       "upgrade": "Upgrade"
+    },
+    "reflow": {
+      "appliedTitle": "Plan adapt ho gaya",
+      "appliedBody": "Smart Reflow ne {{count}} missed priority exercises upcoming days mein shift kar diye."
     },
     "workoutPlannerScreen": {
       "balancedHint": "Balanced — all muscle groups will be trained equally",
