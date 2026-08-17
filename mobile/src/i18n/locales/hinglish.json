@@ -88,7 +88,27 @@
     "sessionsDoneToday": "🔥 Sessions done today",
     "emptySessions": "No sessions logged yet",
     "sessionBoxLabel": "Session",
-    "restDayNoSession": "Today is a rest day 🛌 — no session scheduled"
+    "restDayNoSession": "Today is a rest day 🛌 — no session scheduled",
+    "gamePlan": {
+      "openButton": "Game plan",
+      "title": "Aaj ka game plan",
+      "exerciseCount": "Exercises",
+      "mealCount": "Meals",
+      "estBurn": "Est. burn",
+      "workoutTitle": "Aaj ka workout",
+      "workoutMeta": "{{split}} · {{muscles}} · {{minutes}} min",
+      "mealsTitle": "Aaj ke meals",
+      "macros": "P {{protein}}g · C {{carbs}}g · F {{fat}}g",
+      "recoveryNote": "Aapka {{muscle}} abhi bhi {{day}} se recover ho raha hai. Aaj form par focus karein.",
+      "noWorkoutPlan": "Abhi workout plan nahi — Workout Planner khol kar generate karein.",
+      "noMealPlan": "Abhi meal plan nahi — Meal Planner khol kar generate karein.",
+      "noMealsLoggedFree": "Aaj abhi tak koi meal log nahi.",
+      "equipmentTitle": "Equipment needed",
+      "ingredientsTitle": "Ingredients needed",
+      "noEquipmentNeeded": "Aaj ke workout ke liye koi equipment nahi chahiye.",
+      "noEquipmentMatched": "Equipment listed nahi — aaj ki exercises ke liye catalog match unavailable.",
+      "noIngredientsListed": "Aaj ke meals ke liye koi ingredients listed nahi."
+    }
   },
   "profile": {
     "alerts": {

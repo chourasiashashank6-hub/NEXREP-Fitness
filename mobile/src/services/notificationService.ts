@@ -4,7 +4,7 @@ import * as Notifications from "expo-notifications";
 import { Linking, PermissionsAndroid, Platform } from "react-native";
 import i18n from "../i18n";
 import { DEFAULT_NOTIFICATION_PREFERENCES, getNotificationPreferences, registerPushToken, type NotificationPreferences } from "../api/notifications";
-import { getRandomQuote, type QuoteCategory } from "../api/quotes";
+import { getDailyQuote, type QuoteCategory } from "../api/quotes";
 import type { MealDayPlan, MealPlanCurrent, WorkoutPlanCurrent } from "../types/planner";
 
 type NotificationCategory = "workout" | "meals" | "macro-checkins" | "logging-nudges" | "motivational-quotes";
@@ -438,9 +438,9 @@ const formatQuoteNotificationBody = (quote: string, author: string) => {
   return i18n.t("notifications.scheduled.dailyFuelBody");
 };
 
-async function fetchMotivationalQuote(category?: Exclude<QuoteCategory, "general">) {
+async function fetchMotivationalQuote(category?: Exclude<QuoteCategory, "general">, localDate?: string) {
   try {
-    return await getRandomQuote(category);
+    return await getDailyQuote(category, localDate);
   } catch (err) {
     console.warn("[Notifications] Could not fetch motivational quote:", err);
     return null;
@@ -464,7 +464,8 @@ export async function rescheduleMotivationalQuoteReminder(
     base.setDate(today.getDate() + dayOffset);
     const { hour, minute } = parseTime(time, DEFAULT_MOTIVATION_TIME);
     const date = new Date(base.getFullYear(), base.getMonth(), base.getDate(), hour, minute, 0, 0);
-    const quote = await fetchMotivationalQuote(category);
+    const localDate = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, "0")}-${String(base.getDate()).padStart(2, "0")}`;
+    const quote = await fetchMotivationalQuote(category, localDate);
     const id = await scheduleOne({
       title: i18n.t("notifications.scheduled.dailyFuelTitle"),
       body: quote ? formatQuoteNotificationBody(quote.quote, quote.author) : i18n.t("notifications.scheduled.dailyFuelBody"),

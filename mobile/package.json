@@ -31,6 +31,7 @@
     "axios": "^1.15.0",
     "babel-preset-expo": "~54.0.10",
     "expo": "~54.0.35",
+    "expo-blur": "~15.0.7",
     "expo-build-properties": "~1.0.10",
     "expo-camera": "~17.0.10",
     "expo-constants": "~18.0.13",

@@ -90,6 +90,26 @@ export function buildLoggedExerciseIdMap(
   return next;
 }
 
+/** True when at least one planner-checkbox log exists for this plan day. */
+export function hasAnyPlannerLogForDay(
+  items: WorkoutHistoryMatchItem[],
+  exercises: Pick<WorkoutExercise, "name">[],
+  dayKey: string,
+): boolean {
+  return Object.keys(buildLoggedExerciseIdMap(items, exercises, dayKey)).length > 0;
+}
+
+/** True when every exercise in the day's plan has a planner-checkbox log. */
+export function allPlannerExercisesLogged(
+  items: WorkoutHistoryMatchItem[],
+  exercises: Pick<WorkoutExercise, "name">[],
+  dayKey: string,
+): boolean {
+  if (!exercises.length) return false;
+  const map = buildLoggedExerciseIdMap(items, exercises, dayKey);
+  return exercises.every((ex, i) => map[exerciseLogKey(ex, i)] != null);
+}
+
 const OPTIMISTIC_GRACE_MS = 15_000;
 
 /** Keep very recent optimistic checkbox state across a history refetch race. */

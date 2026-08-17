@@ -1,4 +1,5 @@
 import base64
+import hashlib
 from datetime import date, datetime, timedelta
 from io import BytesIO
 import json
@@ -1708,6 +1709,42 @@ def get_random_motivational_quote(
     quote = query.order_by(func.random()).first()
     if not quote:
         raise HTTPException(status_code=404, detail="No active quotes found")
+    return {
+        "id": quote.id,
+        "quote": quote.quote,
+        "author": quote.author,
+        "category": quote.category,
+        "notification_context": quote.notification_context,
+    }
+
+
+@app.get("/api/quotes/daily")
+def get_daily_motivational_quote(
+    category: str | None = Query(default=None),
+    local_date: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    valid_categories = {"fat_loss", "muscle_gain", "strength"}
+    normalized_category = category.strip().lower() if isinstance(category, str) and category.strip() else None
+    if normalized_category and normalized_category not in valid_categories:
+        raise HTTPException(status_code=422, detail="category must be one of: fat_loss, muscle_gain, strength")
+
+    date_key = local_date.strip() if isinstance(local_date, str) and local_date.strip() else date.today().isoformat()
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_key):
+        raise HTTPException(status_code=422, detail="local_date must be YYYY-MM-DD")
+
+    query = db.query(MotivationalQuote).filter(MotivationalQuote.is_active.is_(True))
+    if normalized_category:
+        query = query.filter(MotivationalQuote.category.in_([normalized_category, "general"]))
+
+    quotes = query.order_by(MotivationalQuote.id).all()
+    if not quotes:
+        raise HTTPException(status_code=404, detail="No active quotes found")
+
+    category_key = normalized_category or "general"
+    seed = f"{date_key}:{category_key}"
+    idx = int(hashlib.sha256(seed.encode()).hexdigest(), 16) % len(quotes)
+    quote = quotes[idx]
     return {
         "id": quote.id,
         "quote": quote.quote,

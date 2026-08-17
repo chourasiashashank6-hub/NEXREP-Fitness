@@ -61,6 +61,14 @@ import type { WorkoutPlanCurrent } from "../types/planner";
 import type { MainTabParamList } from "../navigation/types";
 import { useAppTheme } from "../theme";
 import { formatDate } from "../utils/date";
+import {
+  isActiveSessionPartialLog,
+  isGuidedWarmupLog,
+  resolveWorkoutLogSource,
+  WORKOUT_LOG_SOURCE_I18N_KEY,
+  type WorkoutLogSource,
+} from "../utils/workoutLogSource";
+import { allPlannerExercisesLogged } from "../utils/workoutPlannerLog";
 import { calcExerciseEstimateKcal } from "../utils/sessionCalories";
 import { navigationRef } from "../navigation/navigationRef";
 import MonthlyWorkoutPlannerScreen from "./Coach/MonthlyWorkoutPlannerScreen";
@@ -198,6 +206,16 @@ const parseBodyPartFromNotes = (notes?: string | null): string => {
   if (!notes) return "";
   const match = String(notes).match(/body_part=([^;]+)/i);
   return match?.[1]?.trim() || "";
+};
+
+const WORKOUT_SOURCE_BADGE_STYLE: Record<
+  WorkoutLogSource,
+  { backgroundColor: string; color: string }
+> = {
+  manual: { backgroundColor: "#EEF2F7", color: "#475569" },
+  workout_planner: { backgroundColor: "#FFF1EE", color: "#993C1D" },
+  guided_warmup: { backgroundColor: "#F0EEF9", color: "#7B68CC" },
+  active_session: { backgroundColor: "#E8F5EE", color: "#0F6E56" },
 };
 
 const sessionHistoryLabel = (item: WorkoutHistoryItem): string => {
@@ -1258,6 +1276,13 @@ export const WorkoutScreen = () => {
     if (!todayKey) return [];
     return history.filter((item) => toDateKey(item?.date) === todayKey);
   }, [history, todayKey]);
+  const todayPlanDay = todayPlan?.today ?? null;
+  const allTodayPlannerExercisesLogged = useMemo(() => {
+    if (!todayPlanDay || todayPlanDay.is_rest_day || !todayPlanDay.exercises?.length || !todayKey) {
+      return false;
+    }
+    return allPlannerExercisesLogged(history, todayPlanDay.exercises, todayKey);
+  }, [history, todayKey, todayPlanDay]);
   const latestTodayWorkout = todayHistory[0];
   const todayCaloriesBurned = useMemo(
     () => todayHistory.reduce((sum, item) => sum + (Number(item?.caloriesBurned) || 0), 0),
@@ -1374,10 +1399,15 @@ export const WorkoutScreen = () => {
                     kcal
                   </Text>
                   <Pressable
-                    style={styles.startSessionBtn}
+                    style={[styles.startSessionBtn, allTodayPlannerExercisesLogged && styles.startSessionBtnCompleted]}
                     onPress={() => setShowSessionPicker(true)}
+                    disabled={allTodayPlannerExercisesLogged}
                   >
-                    <Text style={styles.startSessionBtnTxt}>Start active session</Text>
+                    <Text style={styles.startSessionBtnTxt}>
+                      {allTodayPlannerExercisesLogged
+                        ? t("workoutLog.workoutCompletedForToday")
+                        : t("workoutLog.startActiveSession")}
+                    </Text>
                   </Pressable>
                 </View>
                 <SessionTypePickerModal
@@ -1884,7 +1914,9 @@ export const WorkoutScreen = () => {
                 <Text style={styles.emptyHistorySub}>{t("workoutLog.emptyHistorySub")}</Text>
               </View>
             ) : (
-              todayHistory.map((item, idx) => (
+              todayHistory.map((item, idx) => {
+                const logSource = resolveWorkoutLogSource(item);
+                return (
                 <View
                   key={item.id}
                   style={[styles.historyRow, idx === todayHistory.length - 1 ? styles.historyRowLast : null]}
@@ -1895,7 +1927,22 @@ export const WorkoutScreen = () => {
                       <Text style={styles.historySessionLine} numberOfLines={2}>
                         {sessionHistoryLabel(item)}
                       </Text>
-                      {String(item.notes || "").startsWith("active_session_partial") ? (
+                      <View
+                        style={[
+                          styles.sourceBadge,
+                          { backgroundColor: WORKOUT_SOURCE_BADGE_STYLE[logSource].backgroundColor },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.sourceBadgeText,
+                            { color: WORKOUT_SOURCE_BADGE_STYLE[logSource].color },
+                          ]}
+                        >
+                          {t(WORKOUT_LOG_SOURCE_I18N_KEY[logSource])}
+                        </Text>
+                      </View>
+                      {isActiveSessionPartialLog(item) ? (
                         <View style={styles.partialBadge}>
                           <Text style={styles.partialBadgeText}>Partial</Text>
                         </View>
@@ -1916,14 +1963,16 @@ export const WorkoutScreen = () => {
                     ) : null}
                   </View>
                   <View style={styles.historyActions}>
-                    <Pressable
-                      style={styles.editLogBtn}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      onPress={() => openEditModal(item)}
-                      disabled={deletingId === item.id}
-                    >
-                      <Text style={styles.editLogText}>{t("workoutLog.edit")}</Text>
-                    </Pressable>
+                    {!isGuidedWarmupLog(item) ? (
+                      <Pressable
+                        style={styles.editLogBtn}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        onPress={() => openEditModal(item)}
+                        disabled={deletingId === item.id}
+                      >
+                        <Text style={styles.editLogText}>{t("workoutLog.edit")}</Text>
+                      </Pressable>
+                    ) : null}
                     <Pressable
                       style={styles.deleteLogBtn}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -1934,7 +1983,8 @@ export const WorkoutScreen = () => {
                     </Pressable>
                   </View>
                 </View>
-              ))
+              );
+              })
             )
           ) : null}
         </View>
@@ -2278,6 +2328,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
   },
+  startSessionBtnCompleted: { opacity: 0.72 },
   startSessionBtnTxt: { color: GREEN, fontWeight: "800", fontSize: 14 },
   orManual: {
     textAlign: "center",
@@ -2662,9 +2713,16 @@ const styles = StyleSheet.create({
   historyRowLast: { borderBottomWidth: 0 },
   historyStripe: { width: 4, height: 40, borderRadius: 2, marginRight: 12, backgroundColor: GREEN },
   historyBody: { flex: 1, minWidth: 0, justifyContent: "center", paddingRight: 6 },
-  historyTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  historySessionLine: { fontWeight: "700", fontSize: 14, lineHeight: 19, color: TEXT },
+  historyTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  historySessionLine: { fontWeight: "700", fontSize: 14, lineHeight: 19, color: TEXT, flexShrink: 1 },
   historySessionMeta: { fontSize: 11, fontWeight: "600", marginTop: 4, color: MUTED },
+  sourceBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    flexShrink: 0,
+  },
+  sourceBadgeText: { fontSize: 10, fontWeight: "800" },
   historyStrengthMeta: { fontSize: 11, fontWeight: "700", marginTop: 4, color: GREEN },
   newPrBadge: {
     backgroundColor: "#FFF4CC",

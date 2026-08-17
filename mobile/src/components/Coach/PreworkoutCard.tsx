@@ -12,6 +12,7 @@ import {
 
 const PURPLE = "#7B68CC";
 const PURPLE_LIGHT = "#F0EEF9";
+const GREEN = "#0F6E56";
 const TEXT = "#1A1A18";
 const MUTED = "#6B7280";
 const BORDER = "#ECEAE5";
@@ -20,10 +21,11 @@ const WHITE = "#FFFFFF";
 type Props = {
   profile: PreworkoutProfile;
   dayMuscleFocus: string[];
+  guidedWarmupCompleted?: boolean;
   onStartGuided?: (plan: PreworkoutPlan) => void;
 };
 
-export function PreworkoutCard({ profile, dayMuscleFocus, onStartGuided }: Props) {
+export function PreworkoutCard({ profile, dayMuscleFocus, guidedWarmupCompleted = false, onStartGuided }: Props) {
   const { t } = useTranslation();
   const { hasFeatureAccess } = useFeatureAccess();
   const canView = hasFeatureAccess("preworkout_recommendation");
@@ -82,12 +84,22 @@ export function PreworkoutCard({ profile, dayMuscleFocus, onStartGuided }: Props
 
       {showGuidedButton ? (
         <Pressable
-          style={styles.guidedBtn}
+          style={[styles.guidedBtn, guidedWarmupCompleted && styles.guidedBtnCompleted]}
           onPress={() => onStartGuided?.(plan)}
+          disabled={guidedWarmupCompleted}
           accessibilityRole="button"
+          accessibilityState={{ disabled: guidedWarmupCompleted }}
         >
-          <Ionicons name="play-circle" size={18} color={WHITE} />
-          <Text style={styles.guidedBtnText}>{t("coach.workoutPlannerScreen.preworkout.startGuided")}</Text>
+          <Ionicons
+            name={guidedWarmupCompleted ? "checkmark-circle" : "play-circle"}
+            size={18}
+            color={WHITE}
+          />
+          <Text style={styles.guidedBtnText}>
+            {guidedWarmupCompleted
+              ? t("coach.workoutPlannerScreen.preworkout.warmupCompleted")
+              : t("coach.workoutPlannerScreen.preworkout.startGuided")}
+          </Text>
         </Pressable>
       ) : null}
     </View>
@@ -164,6 +176,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingHorizontal: 14,
+  },
+  guidedBtnCompleted: {
+    backgroundColor: GREEN,
+    opacity: 0.92,
   },
   guidedBtnText: { color: WHITE, fontSize: 14, fontWeight: "900" },
 });

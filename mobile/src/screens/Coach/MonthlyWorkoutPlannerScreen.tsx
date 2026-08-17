@@ -50,8 +50,10 @@ import {
   estimatePlannerTimeTaken,
   exerciseLogKey,
   mergeLoggedExerciseIdMap,
+  hasAnyPlannerLogForDay,
   parsePlannerReps,
 } from "../../utils/workoutPlannerLog";
+import { findGuidedWarmupLogForDay } from "../../utils/workoutLogSource";
 import { fullDayLabel, getNextMonthResetLabel, isPastPlanDay, localDateIso, monthYearLabel } from "../../utils/localDate";
 import { navigationRef } from "../../navigation/navigationRef";
 import { unlockWebSpeech } from "../../services/aiTrainer/audioCoach";
@@ -317,6 +319,8 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const [exerciseListVersion, setExerciseListVersion] = useState(0);
   const [onboardingProfile, setOnboardingProfile] = useState<PreworkoutProfile | null>(null);
   const [logExerciseRefreshError, setLogExerciseRefreshError] = useState<string | null>(null);
+  const [guidedWarmupLogged, setGuidedWarmupLogged] = useState(false);
+  const [hasAnyPlannerLog, setHasAnyPlannerLog] = useState(false);
   const optimisticLogEntriesRef = useRef<Record<string, { id: number; at: number }>>({});
 
   const handleStartGuidedWarmup = (warmupPlan: PreworkoutPlan) => {
@@ -326,7 +330,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
     if (
       existing &&
       existing.plan_day_number === dayDetail.day &&
-      (existing.status === "active" || existing.status === "paused")
+      (existing.status === "active" || existing.status === "paused" || existing.status === "preparing")
     ) {
       navigationRef.navigate("GuidedWarmupSession");
       return;
@@ -359,6 +363,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
     !dayDetail.locked &&
     !isWorkoutRestDay(dayDetail) &&
     !selectedDayIsPast &&
+    !hasAnyPlannerLog &&
     (selectedWorkoutOverview?.is_today || selectedWorkoutOverview?.is_future || canViewFutureDays),
   );
   const canPressRegenerateWorkout =
@@ -515,30 +520,36 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
     setLoggedExerciseIds(mergeLoggedExerciseIdMap(fetched, optimisticLogEntriesRef.current));
   }, []);
 
-  const refreshLoggedExercises = useCallback(async () => {
+  const refreshPlannerDayLogs = useCallback(async () => {
     if (!dayDetail || isWorkoutRestDay(dayDetail) || !dayDetail.exercises?.length) {
       setLoggedExerciseIds({});
+      setGuidedWarmupLogged(false);
+      setHasAnyPlannerLog(false);
       setLogExerciseRefreshError(null);
       return;
     }
-    if (!canLogExercises) return;
     try {
       setLogExerciseRefreshError(null);
-      const { items } = await getWorkoutHistory(24 * 2);
-      syncLoggedExercises(items ?? [], dayDetail.exercises, selectedLogDateKey);
+      const { items } = await getWorkoutHistory(24 * 14);
+      const historyItems = items ?? [];
+      setGuidedWarmupLogged(Boolean(findGuidedWarmupLogForDay(historyItems, selectedLogDateKey)));
+      setHasAnyPlannerLog(hasAnyPlannerLogForDay(historyItems, dayDetail.exercises, selectedLogDateKey));
+      if (canLogExercises) {
+        syncLoggedExercises(historyItems, dayDetail.exercises, selectedLogDateKey);
+      }
     } catch {
       setLogExerciseRefreshError(t("coach.workoutPlannerScreen.logRefreshFailed"));
     }
   }, [canLogExercises, dayDetail, selectedLogDateKey, syncLoggedExercises, t]);
 
   useEffect(() => {
-    void refreshLoggedExercises();
-  }, [refreshLoggedExercises]);
+    void refreshPlannerDayLogs();
+  }, [refreshPlannerDayLogs]);
 
   useFocusEffect(
     useCallback(() => {
-      void refreshLoggedExercises();
-    }, [refreshLoggedExercises]),
+      void refreshPlannerDayLogs();
+    }, [refreshPlannerDayLogs]),
   );
 
   const handleToggleLogExercise = async (exercise: WorkoutExercise, index: number) => {
@@ -555,6 +566,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
           return next;
         });
         delete optimisticLogEntriesRef.current[key];
+        void refreshPlannerDayLogs();
         return;
       }
       const sets = Math.max(1, Number(exercise.sets) || 1);
@@ -582,8 +594,9 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       if (Number.isFinite(savedId) && savedId > 0) {
         optimisticLogEntriesRef.current[key] = { id: savedId, at: Date.now() };
         setLoggedExerciseIds((prev) => ({ ...prev, [key]: savedId }));
+        setHasAnyPlannerLog(true);
       } else {
-        await refreshLoggedExercises();
+        await refreshPlannerDayLogs();
       }
     } catch {
       notifyUser(t("coach.workoutPlannerScreen.alerts.error"), t("coach.workoutPlannerScreen.alerts.logExerciseFailed"));
@@ -1007,6 +1020,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                         <PreworkoutCard
                           profile={onboardingProfile}
                           dayMuscleFocus={dayDetail.focus_muscles}
+                          guidedWarmupCompleted={guidedWarmupLogged}
                           onStartGuided={handleStartGuidedWarmup}
                         />
                       ) : null}

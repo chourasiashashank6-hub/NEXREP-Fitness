@@ -15,6 +15,7 @@ import ActiveWorkoutScreen from "../screens/ActiveWorkoutScreen";
 import AICameraWorkoutScreen from "../screens/AICameraWorkoutScreen";
 import AITrainerCalibrationScreen from "../screens/aiTrainer/AITrainerCalibrationScreen";
 import WorkoutCompletionScreen from "../screens/WorkoutCompletionScreen";
+import GamePlanModalScreen from "../screens/GamePlanModalScreen";
 import CoachNavigator from "../screens/Coach/CoachNavigator";
 import { ProfileStackNavigator } from "./ProfileStackNavigator";
 import SocialNavigator from "./SocialNavigator";
@@ -318,6 +319,17 @@ export const RootNavigator = () => {
             name="WorkoutCompletion"
             component={WorkoutCompletionScreen}
             options={{ headerShown: false, presentation: "modal", gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="DailyGamePlan"
+            component={GamePlanModalScreen}
+            options={{
+              headerShown: false,
+              presentation: "transparentModal",
+              animation: "fade",
+              contentStyle: { backgroundColor: "transparent" },
+              gestureEnabled: true,
+            }}
           />
         </>
       ) : (

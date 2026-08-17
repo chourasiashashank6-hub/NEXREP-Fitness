@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Alert,
   BackHandler,
   Platform,
   Pressable,
@@ -11,12 +12,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
+import { postSessionComplete } from "../api/workoutSessions";
 import { speakPlainCue, unlockWebSpeech } from "../services/aiTrainer/audioCoach";
 import {
   getPhaseRemainingSec,
+  getPreparingRemainingSec,
   getSessionElapsedSec,
   useGuidedWarmupStore,
 } from "../store/guidedWarmupStore";
+import {
+  buildGuidedWarmupCompletePayload,
+  estimateGuidedWarmupKcal,
+  finalizePhaseDurations,
+} from "../utils/guidedWarmupComplete";
 import type { WarmupPhase } from "../utils/generatePreworkoutPlan";
 
 const PURPLE = "#7B68CC";
@@ -43,7 +51,7 @@ function phaseIcon(type: WarmupPhase["type"]): keyof typeof Ionicons.glyphMap {
 function speakPhaseTransition(phase: WarmupPhase, t: (key: string, opts?: Record<string, unknown>) => string) {
   const text = t("coach.workoutPlannerScreen.preworkout.phaseCue", {
     speed: phase.speed_kmh,
-    incline: phase.incline_pct,
+    incline: phase.incline_level,
   });
   speakPlainCue(text);
 }
@@ -52,6 +60,7 @@ export default function GuidedWarmupScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const session = useGuidedWarmupStore((s) => s.session);
+  const activateFromPreparing = useGuidedWarmupStore((s) => s.activateFromPreparing);
   const pauseSession = useGuidedWarmupStore((s) => s.pauseSession);
   const resumeSession = useGuidedWarmupStore((s) => s.resumeSession);
   const advancePhase = useGuidedWarmupStore((s) => s.advancePhase);
@@ -62,7 +71,9 @@ export default function GuidedWarmupScreen() {
 
   const [, tick] = useState(0);
   const lastPhaseIndexRef = useRef<number | null>(null);
+  const persistedRef = useRef(false);
   const [showTransitionBanner, setShowTransitionBanner] = useState(false);
+  const [displayKcal, setDisplayKcal] = useState<number | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => tick((n) => n + 1), 1000);
@@ -75,18 +86,54 @@ export default function GuidedWarmupScreen() {
     }
   }, [navigation, session]);
 
+  const isPreparing = session?.status === "preparing";
   const currentPhase = session?.phases[session.current_phase_index];
   const nextPhase = session ? session.phases[session.current_phase_index + 1] : undefined;
+  const preparingRemainingSec = getPreparingRemainingSec(session);
   const remainingSec = getPhaseRemainingSec(session);
   const elapsedSec = getSessionElapsedSec(session);
 
+  const persistSession = useCallback(
+    async (status: "completed" | "abandoned") => {
+      if (!session || persistedRef.current) return;
+      const durations = finalizePhaseDurations(session);
+      if (durations.every((d) => d <= 0)) return;
+
+      const actualKcal = estimateGuidedWarmupKcal(session.phases, durations, session.weight_kg);
+      const payload = buildGuidedWarmupCompletePayload(session, status, durations);
+      persistedRef.current = true;
+      setDisplayKcal(actualKcal);
+
+      if (payload) {
+        try {
+          await postSessionComplete(payload);
+        } catch {
+          // best-effort — client totals still shown
+        }
+      }
+
+      if (status === "completed") {
+        completeSession(actualKcal);
+      } else {
+        abandonSession();
+      }
+    },
+    [abandonSession, completeSession, session],
+  );
+
+  useEffect(() => {
+    if (!session || session.status !== "preparing") return;
+    if (preparingRemainingSec > 0) return;
+    activateFromPreparing();
+    const first = session.phases[0];
+    if (first) speakPhaseTransition(first, t);
+    lastPhaseIndexRef.current = 0;
+  }, [activateFromPreparing, preparingRemainingSec, session, t]);
+
   const handlePhaseAdvance = useCallback(() => {
-    if (!session || !currentPhase) return;
-    const hasNext = advancePhase();
-    if (!hasNext) {
-      completeSession();
-    }
-  }, [advancePhase, completeSession, currentPhase, session]);
+    if (!session || !currentPhase || session.status !== "active") return;
+    advancePhase();
+  }, [advancePhase, currentPhase, session]);
 
   useEffect(() => {
     if (!session || session.status !== "active" || !currentPhase) return;
@@ -95,7 +142,12 @@ export default function GuidedWarmupScreen() {
   }, [currentPhase, handlePhaseAdvance, remainingSec, session]);
 
   useEffect(() => {
-    if (!session || !currentPhase) return;
+    if (!session || session.status !== "completed" || persistedRef.current) return;
+    void persistSession("completed");
+  }, [persistSession, session?.status]);
+
+  useEffect(() => {
+    if (!session || !currentPhase || session.status !== "active") return;
     if (lastPhaseIndexRef.current === session.current_phase_index) return;
     if (lastPhaseIndexRef.current === null) {
       lastPhaseIndexRef.current = session.current_phase_index;
@@ -108,11 +160,51 @@ export default function GuidedWarmupScreen() {
     return () => clearTimeout(timer);
   }, [currentPhase, session, t]);
 
-  const handleEnd = useCallback(() => {
+  const exitWithoutProgress = useCallback(() => {
     abandonSession();
     clearSession();
     navigation.goBack();
   }, [abandonSession, clearSession, navigation]);
+
+  const confirmEndSession = useCallback(
+    (onConfirm: () => void) => {
+      Alert.alert(
+        t("coach.workoutPlannerScreen.preworkout.endConfirmTitle"),
+        t("coach.workoutPlannerScreen.preworkout.endConfirmBody"),
+        [
+          { text: t("coach.workoutPlannerScreen.preworkout.endConfirmCancel"), style: "cancel" },
+          {
+            text: t("coach.workoutPlannerScreen.preworkout.endConfirmAction"),
+            style: "destructive",
+            onPress: onConfirm,
+          },
+        ],
+      );
+    },
+    [t],
+  );
+
+  const handleEndConfirmed = useCallback(async () => {
+    if (!session) return;
+    if (getSessionElapsedSec(session) <= 0) {
+      exitWithoutProgress();
+      return;
+    }
+    await persistSession("abandoned");
+    clearSession();
+    navigation.goBack();
+  }, [clearSession, exitWithoutProgress, navigation, persistSession, session]);
+
+  const handleEnd = useCallback(() => {
+    if (!session) return;
+    if (getSessionElapsedSec(session) <= 0) {
+      exitWithoutProgress();
+      return;
+    }
+    confirmEndSession(() => {
+      void handleEndConfirmed();
+    });
+  }, [confirmEndSession, exitWithoutProgress, handleEndConfirmed, session]);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -123,7 +215,6 @@ export default function GuidedWarmupScreen() {
   }, [handleEnd]);
 
   const handleComplete = () => {
-    completeSession();
     clearSession();
     navigation.goBack();
   };
@@ -134,6 +225,7 @@ export default function GuidedWarmupScreen() {
 
   const isPaused = session.status === "paused";
   const isCompleted = session.status === "completed";
+  const kcalShown = displayKcal ?? session.actual_kcal ?? session.estimated_kcal;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -153,7 +245,7 @@ export default function GuidedWarmupScreen() {
               styles.progressSegment,
               index < session.current_phase_index
                 ? styles.progressDone
-                : index === session.current_phase_index
+                : index === session.current_phase_index && !isPreparing
                   ? styles.progressActive
                   : styles.progressPending,
             ]}
@@ -163,53 +255,74 @@ export default function GuidedWarmupScreen() {
 
       {showTransitionBanner ? (
         <View style={styles.transitionBanner}>
-          <Text style={styles.transitionText}>{t("coach.workoutPlannerScreen.preworkout.transitionBanner")}</Text>
+          <Text style={styles.transitionText}>
+            {t("coach.workoutPlannerScreen.preworkout.transitionBanner", {
+              speed: currentPhase.speed_kmh,
+              incline: currentPhase.incline_level,
+            })}
+          </Text>
         </View>
       ) : null}
 
       <View style={styles.main}>
-        <View style={styles.phaseIconWrap}>
-          <Ionicons name={phaseIcon(currentPhase.type)} size={34} color={PURPLE} />
-        </View>
-        <Text style={styles.phaseLabel}>{currentPhase.label}</Text>
-        <Text style={styles.timer}>{isCompleted ? "00:00" : formatClock(remainingSec)}</Text>
-        <Text style={styles.elapsed}>
-          {t("coach.workoutPlannerScreen.preworkout.elapsed", { time: formatClock(elapsedSec) })}
-        </Text>
-
-        <View style={styles.statRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>{t("coach.workoutPlannerScreen.preworkout.speed")}</Text>
-            <Text style={styles.statValue}>{currentPhase.speed_kmh} km/h</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>{t("coach.workoutPlannerScreen.preworkout.incline")}</Text>
-            <Text style={styles.statValue}>{currentPhase.incline_pct}%</Text>
-          </View>
-        </View>
-
-        {nextPhase && !isCompleted ? (
-          <Text style={styles.nextPreview}>
-            {t("coach.workoutPlannerScreen.preworkout.nextPhase", {
-              label: nextPhase.label,
-              speed: nextPhase.speed_kmh,
-              incline: nextPhase.incline_pct,
-            })}
-          </Text>
-        ) : null}
-
-        {isCompleted ? (
-          <View style={styles.completeBox}>
-            <Text style={styles.completeTitle}>{t("coach.workoutPlannerScreen.preworkout.completeTitle")}</Text>
-            <Text style={styles.completeBody}>
-              {t("coach.workoutPlannerScreen.preworkout.completeBody", { kcal: session.estimated_kcal })}
+        {isPreparing ? (
+          <>
+            <Text style={styles.preparingTitle}>{t("coach.workoutPlannerScreen.preworkout.preparingTitle")}</Text>
+            <Text style={styles.preparingCountdown}>{preparingRemainingSec}</Text>
+            <Text style={styles.preparingHint}>{t("coach.workoutPlannerScreen.preworkout.preparingHint")}</Text>
+          </>
+        ) : (
+          <>
+            <View style={styles.phaseIconWrap}>
+              <Ionicons name={phaseIcon(currentPhase.type)} size={34} color={PURPLE} />
+            </View>
+            <Text style={styles.phaseLabel}>{currentPhase.label}</Text>
+            <Text style={styles.timer}>{isCompleted ? "00:00" : formatClock(remainingSec)}</Text>
+            <Text style={styles.elapsed}>
+              {t("coach.workoutPlannerScreen.preworkout.elapsed", { time: formatClock(elapsedSec) })}
             </Text>
-          </View>
-        ) : null}
+
+            <View style={styles.statRow}>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>{t("coach.workoutPlannerScreen.preworkout.speed")}</Text>
+                <Text style={styles.statValue}>{currentPhase.speed_kmh} km/h</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>{t("coach.workoutPlannerScreen.preworkout.incline")}</Text>
+                <Text style={styles.statValue}>
+                  {t("coach.workoutPlannerScreen.preworkout.inclineLevel", { level: currentPhase.incline_level })}
+                </Text>
+              </View>
+            </View>
+
+            {nextPhase && !isCompleted ? (
+              <Text style={styles.nextPreview}>
+                {t("coach.workoutPlannerScreen.preworkout.nextPhase", {
+                  label: nextPhase.label,
+                  speed: nextPhase.speed_kmh,
+                  incline: nextPhase.incline_level,
+                })}
+              </Text>
+            ) : null}
+
+            {isCompleted ? (
+              <View style={styles.completeBox}>
+                <Text style={styles.completeTitle}>{t("coach.workoutPlannerScreen.preworkout.completeTitle")}</Text>
+                <Text style={styles.completeBody}>
+                  {t("coach.workoutPlannerScreen.preworkout.completeBody", { kcal: kcalShown })}
+                </Text>
+              </View>
+            ) : null}
+          </>
+        )}
       </View>
 
       <View style={styles.footer}>
-        {!isCompleted ? (
+        {isPreparing ? (
+          <Pressable style={styles.primaryBtn} onPress={handleEnd}>
+            <Text style={styles.primaryBtnText}>{t("coach.workoutPlannerScreen.preworkout.end")}</Text>
+          </Pressable>
+        ) : !isCompleted ? (
           <>
             <Pressable
               style={styles.secondaryBtn}
@@ -270,6 +383,9 @@ const styles = StyleSheet.create({
   },
   transitionText: { color: PURPLE, fontSize: 12, fontWeight: "800", textAlign: "center" },
   main: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
+  preparingTitle: { color: TEXT, fontSize: 18, fontWeight: "900", textAlign: "center", marginBottom: 12 },
+  preparingCountdown: { color: PURPLE, fontSize: 72, fontWeight: "900", fontVariant: ["tabular-nums"] },
+  preparingHint: { color: MUTED, fontSize: 14, marginTop: 12, textAlign: "center", lineHeight: 20 },
   phaseIconWrap: {
     width: 72,
     height: 72,

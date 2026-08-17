@@ -8,7 +8,8 @@ export type WarmupPhase = {
   label: string;
   duration_sec: number;
   speed_kmh: number;
-  incline_pct: number;
+  /** Treadmill incline level (1–15), not a percentage. */
+  incline_level: number;
   met: number;
 };
 
@@ -109,66 +110,100 @@ function estimateKcal(phases: WarmupPhase[], weightKg: number): number {
   return roundToNearest5(raw);
 }
 
+function walkInclineLevel(pace: "slow" | "moderate" | "aggressive"): number {
+  if (pace === "slow") return 3;
+  if (pace === "aggressive") return 7;
+  return 5;
+}
+
+function briskInclineLevel(pace: "slow" | "moderate" | "aggressive"): number {
+  if (pace === "slow") return 2;
+  if (pace === "aggressive") return 4;
+  return 3;
+}
+
+function inclineLevelForPhase(
+  type: WarmupPhaseType,
+  pace: "slow" | "moderate" | "aggressive",
+): number {
+  if (type === "run") return 1;
+  if (type === "brisk_walk") return briskInclineLevel(pace);
+  return walkInclineLevel(pace);
+}
+
 function makePhase(
   type: WarmupPhaseType,
   label: string,
   durationSec: number,
   speedKmh: number,
-  inclinePct: number,
+  pace: "slow" | "moderate" | "aggressive",
 ): WarmupPhase {
   const duration = Math.max(1, Math.round(durationSec));
+  const inclineLevel = inclineLevelForPhase(type, pace);
   return {
     id: `${type}-${label}-${duration}`,
     type,
     label,
     duration_sec: duration,
     speed_kmh: Math.round(speedKmh * 10) / 10,
-    incline_pct: inclinePct,
+    incline_level: inclineLevel,
     met: metForPhase(type, speedKmh),
   };
 }
 
-function buildBeginnerPhases(totalSec: number, speeds: ReturnType<typeof speedProfile>): WarmupPhase[] {
-  return [makePhase("walk", "Continuous walk", totalSec, speeds.walk, 1)];
+function buildBeginnerPhases(
+  totalSec: number,
+  speeds: ReturnType<typeof speedProfile>,
+  pace: "slow" | "moderate" | "aggressive",
+): WarmupPhase[] {
+  return [makePhase("walk", "Continuous walk", totalSec, speeds.walk, pace)];
 }
 
-function buildIntermediatePhases(totalSec: number, speeds: ReturnType<typeof speedProfile>): WarmupPhase[] {
+function buildIntermediatePhases(
+  totalSec: number,
+  speeds: ReturnType<typeof speedProfile>,
+  pace: "slow" | "moderate" | "aggressive",
+): WarmupPhase[] {
   const walkSec = Math.round(totalSec * 0.25);
   const runSec = Math.round(totalSec * 0.5);
   const briskSec = totalSec - walkSec - runSec;
   return [
-    makePhase("walk", "Warm-up walk", walkSec, speeds.walk, 1),
-    makePhase("run", "Run", runSec, speeds.run, 1),
-    makePhase("brisk_walk", "Brisk walk", briskSec, speeds.brisk, 2),
+    makePhase("walk", "Warm-up walk", walkSec, speeds.walk, pace),
+    makePhase("run", "Run", runSec, speeds.run, pace),
+    makePhase("brisk_walk", "Brisk walk", briskSec, speeds.brisk, pace),
   ];
 }
 
-function buildAdvancedPhases(totalSec: number, speeds: ReturnType<typeof speedProfile>): WarmupPhase[] {
+function buildAdvancedPhases(
+  totalSec: number,
+  speeds: ReturnType<typeof speedProfile>,
+  pace: "slow" | "moderate" | "aggressive",
+): WarmupPhase[] {
   const warmupSec = Math.round(totalSec * 0.15);
   const cooldownSec = Math.round(totalSec * 0.15);
   let budget = totalSec - warmupSec - cooldownSec;
-  const phases: WarmupPhase[] = [makePhase("walk", "Warm-up walk", warmupSec, speeds.walk, 1)];
+  const phases: WarmupPhase[] = [makePhase("walk", "Warm-up walk", warmupSec, speeds.walk, pace)];
 
   while (budget >= 180) {
-    phases.push(makePhase("run", "Run interval", 120, speeds.run, 1));
+    phases.push(makePhase("run", "Run interval", 120, speeds.run, pace));
     budget -= 120;
-    phases.push(makePhase("walk", "Recovery walk", 60, speeds.walk, 1));
+    phases.push(makePhase("walk", "Recovery walk", 60, speeds.walk, pace));
     budget -= 60;
   }
 
   if (budget >= 120) {
-    phases.push(makePhase("run", "Run interval", 120, speeds.run, 1));
+    phases.push(makePhase("run", "Run interval", 120, speeds.run, pace));
     budget -= 120;
   } else if (budget >= 60) {
-    phases.push(makePhase("walk", "Recovery walk", budget, speeds.walk, 1));
+    phases.push(makePhase("walk", "Recovery walk", budget, speeds.walk, pace));
     budget = 0;
   }
 
   if (budget > 0) {
-    phases.push(makePhase("walk", "Steady walk", budget, speeds.walk, 1));
+    phases.push(makePhase("walk", "Steady walk", budget, speeds.walk, pace));
   }
 
-  phases.push(makePhase("brisk_walk", "Cooldown", cooldownSec, speeds.brisk, 2));
+  phases.push(makePhase("brisk_walk", "Cooldown", cooldownSec, speeds.brisk, pace));
   return phases;
 }
 
@@ -256,10 +291,10 @@ export function generatePreworkoutPlan(profile: PreworkoutProfile, dayMuscleFocu
     const speeds = speedProfile(pace, difficulty);
     const phases =
       difficulty === "beginner"
-        ? buildBeginnerPhases(totalSec, speeds)
+        ? buildBeginnerPhases(totalSec, speeds, pace)
         : difficulty === "advanced"
-          ? buildAdvancedPhases(totalSec, speeds)
-          : buildIntermediatePhases(totalSec, speeds);
+          ? buildAdvancedPhases(totalSec, speeds, pace)
+          : buildIntermediatePhases(totalSec, speeds, pace);
 
     return {
       kind: "cardio",

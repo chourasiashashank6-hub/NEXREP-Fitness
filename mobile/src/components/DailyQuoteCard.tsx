@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Animated, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { getRandomQuote, type MotivationalQuote, type QuoteCategory } from "../api/quotes";
+import { getDailyQuote, type MotivationalQuote, type QuoteCategory } from "../api/quotes";
 
 type GoalLabel = "Fat Loss" | "Muscle Gain" | "Strength" | string | null | undefined;
 
@@ -44,44 +44,33 @@ export function DailyQuoteCard({ goal }: { goal?: GoalLabel }) {
   const { t } = useTranslation();
   const [quote, setQuote] = useState<MotivationalQuote | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const fade = useRef(new Animated.Value(1)).current;
   const category = goalToQuoteCategory(goal);
 
-  const loadQuote = useCallback(
-    async (isRefresh = false) => {
-      if (isRefresh) setRefreshing(true);
-      else setLoading(true);
-      try {
-        const next = await getRandomQuote(category);
-        Animated.sequence([
-          Animated.timing(fade, { toValue: 0.35, duration: 120, useNativeDriver: true }),
-          Animated.timing(fade, { toValue: 1, duration: 180, useNativeDriver: true }),
-        ]).start();
-        setQuote(next);
-      } catch (err) {
-        setQuote(null);
-        const detail =
-          err && typeof err === "object" && "response" in err
-            ? String((err as { response?: { status?: number; data?: { detail?: string } } }).response?.status ?? "")
-            : err instanceof Error
-              ? err.message
-              : String(err);
-        const message =
-          err && typeof err === "object" && "response" in err
-            ? String((err as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? "")
-            : "";
-        console.warn("[DailyQuoteCard] Quote unavailable:", message || detail || "unknown error");
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [category, fade],
-  );
+  const loadQuote = useCallback(async () => {
+    setLoading(true);
+    try {
+      const next = await getDailyQuote(category);
+      setQuote(next);
+    } catch (err) {
+      setQuote(null);
+      const detail =
+        err && typeof err === "object" && "response" in err
+          ? String((err as { response?: { status?: number; data?: { detail?: string } } }).response?.status ?? "")
+          : err instanceof Error
+            ? err.message
+            : String(err);
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? String((err as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? "")
+          : "";
+      console.warn("[DailyQuoteCard] Quote unavailable:", message || detail || "unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }, [category]);
 
   useEffect(() => {
-    void loadQuote(false);
+    void loadQuote();
   }, [loadQuote]);
 
   const meta = CATEGORY_META[quote?.category ?? "general"];
@@ -105,7 +94,7 @@ export function DailyQuoteCard({ goal }: { goal?: GoalLabel }) {
             <View style={[styles.skeletonLine, styles.skeletonShort]} />
           </View>
         ) : quote ? (
-          <Animated.View style={{ opacity: fade }}>
+          <View>
             <Text style={styles.quoteText}>"{quote.quote}"</Text>
             <View style={styles.authorRow}>
               <View style={[styles.authorAvatar, { backgroundColor: meta.avatarBg }]}>
@@ -113,19 +102,10 @@ export function DailyQuoteCard({ goal }: { goal?: GoalLabel }) {
               </View>
               <Text style={styles.authorName}>{quote.author}</Text>
             </View>
-          </Animated.View>
+          </View>
         ) : (
           <Text style={styles.emptyText}>{t("components.dailyQuote.empty")}</Text>
         )}
-
-        <TouchableOpacity
-          style={styles.refreshBtn}
-          activeOpacity={0.75}
-          onPress={() => void loadQuote(true)}
-          disabled={loading || refreshing}
-        >
-          {refreshing ? <ActivityIndicator size="small" color="rgba(255,255,255,0.35)" /> : <Text style={styles.refreshText}>{t("components.dailyQuote.refresh")}</Text>}
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -158,7 +138,7 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
   badgeText: { fontSize: 11, fontWeight: "800" },
   quoteText: { color: "#F0F0F0", fontSize: 17, lineHeight: 26, fontWeight: "600" },
-  authorRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, paddingRight: 34 },
+  authorRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 },
   authorAvatar: {
     width: 24,
     height: 24,
@@ -168,19 +148,8 @@ const styles = StyleSheet.create({
   },
   authorInitial: { fontSize: 12, fontWeight: "900" },
   authorName: { color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: "700", flex: 1 },
-  refreshBtn: {
-    position: "absolute",
-    right: 14,
-    bottom: 14,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  refreshText: { color: "rgba(255,255,255,0.25)", fontSize: 18, fontWeight: "900" },
   loadingBox: { gap: 10, paddingVertical: 6 },
   skeletonLine: { height: 13, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.08)", width: "92%" },
   skeletonShort: { width: "68%" },
-  emptyText: { color: "rgba(255,255,255,0.65)", fontSize: 14, lineHeight: 21 },
+  emptyText: { color: "#F0F0F0", fontSize: 17, lineHeight: 26, fontWeight: "600" },
 });

@@ -88,7 +88,27 @@
     "sessionsDoneToday": "🔥 आज के सेशन",
     "emptySessions": "अभी तक कोई सेशन लॉग नहीं किया गया",
     "sessionBoxLabel": "सेशन",
-    "restDayNoSession": "आज रेस्ट डे है 🛌 — कोई सेशन शेड्यूल नहीं"
+    "restDayNoSession": "आज रेस्ट डे है 🛌 — कोई सेशन शेड्यूल नहीं",
+    "gamePlan": {
+      "openButton": "गेम प्लान",
+      "title": "आज का गेम प्लान",
+      "exerciseCount": "एक्सरसाइज़",
+      "mealCount": "भोजन",
+      "estBurn": "अनुमानित बर्न",
+      "workoutTitle": "आज का वर्कआउट",
+      "workoutMeta": "{{split}} · {{muscles}} · {{minutes}} मिनट",
+      "mealsTitle": "आज के भोजन",
+      "macros": "P {{protein}}g · C {{carbs}}g · F {{fat}}g",
+      "recoveryNote": "आपका {{muscle}} अभी भी {{day}} से रिकवर हो रहा है। आज फॉर्म पर ध्यान दें।",
+      "noWorkoutPlan": "अभी कोई वर्कआउट प्लान नहीं — वर्कआउट प्लानर खोलकर बनाएं।",
+      "noMealPlan": "अभी कोई मील प्लान नहीं — मील प्लानर खोलकर बनाएं।",
+      "noMealsLoggedFree": "आज अभी तक कोई भोजन लॉग नहीं।",
+      "equipmentTitle": "ज़रूरी उपकरण",
+      "ingredientsTitle": "ज़रूरी सामग्री",
+      "noEquipmentNeeded": "आज के वर्कआउट के लिए कोई उपकरण नहीं चाहिए।",
+      "noEquipmentMatched": "उपकरण सूचीबद्ध नहीं — आज की एक्सरसाइज़ के लिए कैटलॉग मैच उपलब्ध नहीं।",
+      "noIngredientsListed": "आज के भोजन के लिए कोई सामग्री सूचीबद्ध नहीं।"
+    }
   },
   "profile": {
     "alerts": {

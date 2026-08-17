@@ -10,6 +10,8 @@ import {
   View,
 } from "react-native";
 import { getWorkoutHistory, getWorkoutTotalBurn, type WorkoutHistoryItem } from "../api/workout";
+import { useTranslation } from "react-i18next";
+import { resolveWorkoutLogSource, WORKOUT_LOG_SOURCE_I18N_KEY } from "../utils/workoutLogSource";
 
 const GREEN = "#0F6E56";
 const BG = "#F7F6F3";
@@ -87,6 +89,7 @@ const rowSubtitle = (item: WorkoutHistoryItem): string => {
 };
 
 export default function AllTimeHistoryModal({ visible, onClose }: Props) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<WorkoutHistoryItem[]>([]);
   const [search, setSearch] = useState("");
   const [totalCount, setTotalCount] = useState(0);
@@ -200,7 +203,9 @@ export default function AllTimeHistoryModal({ visible, onClose }: Props) {
                 ) : null
               }
               renderSectionHeader={({ section }) => <Text style={styles.dateHeader}>{section.title}</Text>}
-              renderItem={({ item }) => (
+              renderItem={({ item }) => {
+                const logSource = resolveWorkoutLogSource(item);
+                return (
                 <View style={styles.historyRow}>
                   <View style={styles.checkCircle}>
                     <Text style={styles.checkText}>✓</Text>
@@ -210,12 +215,13 @@ export default function AllTimeHistoryModal({ visible, onClose }: Props) {
                       {item.exerciseName || "Workout"}
                     </Text>
                     <Text style={styles.subtitle} numberOfLines={1}>
-                      {rowSubtitle(item)}
+                      {rowSubtitle(item)} · {t(WORKOUT_LOG_SOURCE_I18N_KEY[logSource])}
                     </Text>
                   </View>
                   <Text style={styles.kcalText}>{Math.round(Number(item.caloriesBurned) || 0)} kcal</Text>
                 </View>
-              )}
+              );
+              }}
             />
           )}
         </Pressable>

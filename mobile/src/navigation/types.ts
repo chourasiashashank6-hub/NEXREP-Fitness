@@ -17,6 +17,7 @@ export type RootStackParamList = {
     setsCompleted: number;
     streakIncremented: boolean;
   };
+  DailyGamePlan: undefined;
 };
 
 export type OnboardingStackParamList = {

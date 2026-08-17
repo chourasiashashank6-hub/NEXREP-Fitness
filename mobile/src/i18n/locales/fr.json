@@ -88,7 +88,27 @@
     "sessionsDoneToday": "🔥 Séances d'aujourd'hui",
     "emptySessions": "Aucune séance enregistrée pour le moment",
     "sessionBoxLabel": "Séance",
-    "restDayNoSession": "Aujourd'hui c'est un jour de repos 🛌 — aucune séance prévue"
+    "restDayNoSession": "Aujourd'hui c'est un jour de repos 🛌 — aucune séance prévue",
+    "gamePlan": {
+      "openButton": "Plan du jour",
+      "title": "Plan du jour",
+      "exerciseCount": "Exercices",
+      "mealCount": "Repas",
+      "estBurn": "Dépense est.",
+      "workoutTitle": "Séance du jour",
+      "workoutMeta": "{{split}} · {{muscles}} · {{minutes}} min",
+      "mealsTitle": "Repas du jour",
+      "macros": "P {{protein}}g · G {{carbs}}g · L {{fat}}g",
+      "recoveryNote": "Votre {{muscle}} se remet encore de {{day}}. Concentrez-vous sur la forme aujourd'hui.",
+      "noWorkoutPlan": "Pas encore de plan d'entraînement — ouvrez le Planificateur pour en générer un.",
+      "noMealPlan": "Pas encore de plan de repas — ouvrez le Planificateur pour en générer un.",
+      "noMealsLoggedFree": "Aucun repas enregistré aujourd'hui.",
+      "equipmentTitle": "Équipement nécessaire",
+      "ingredientsTitle": "Ingrédients nécessaires",
+      "noEquipmentNeeded": "Aucun équipement requis pour la séance du jour.",
+      "noEquipmentMatched": "Équipement non listé — correspondance catalogue indisponible pour les exercices du jour.",
+      "noIngredientsListed": "Aucun ingrédient listé pour les repas du jour."
+    }
   },
   "profile": {
     "alerts": {

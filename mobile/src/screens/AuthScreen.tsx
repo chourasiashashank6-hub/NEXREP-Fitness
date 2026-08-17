@@ -6,8 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { firebaseLogin, signup, syncPasswordFromFirebase } from "../api/auth";
-import { resolveApiBaseUrl } from "../api/client";
+import { firebaseLogin, signup } from "../api/auth";
 import { AppInput } from "../components/AppInput";
 import { PasswordRequirementsChecklist } from "../components/PasswordRequirementsChecklist";
 import {
@@ -16,6 +15,7 @@ import {
   signOutFirebaseOnly,
   signUp as firebaseSignUp,
 } from "../services/authService";
+import { notifyUser } from "../utils/notify";
 import { PASSWORD_MAX_LEN, PASSWORD_MIN_LEN, isPasswordPolicySatisfied } from "../utils/passwordPolicy";
 
 type Props = { onAuth: (token: string, mode: "login" | "signup") => Promise<void> };
@@ -34,13 +34,12 @@ const BORDER = "#ECEAE5";
 const detailFromAxios = (error: unknown, t: TFunction): string => {
   if (axios.isAxiosError(error)) {
     const d = error.response?.data?.detail;
-    if (typeof d === "string") return d;
+    if (typeof d === "string" && d.trim()) return d;
     if (!error.response) {
-      const base = resolveApiBaseUrl();
-      return t("auth.errors.apiUnreachable", { base });
+      return t("auth.errors.generic");
     }
   }
-  return t("auth.errors.tryAgain");
+  return t("auth.errors.generic");
 };
 
 /** After Firebase succeeds, 401 from our API means the fitness DB user/password does not match. */
@@ -60,7 +59,6 @@ export const AuthScreen = ({ onAuth }: Props) => {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
   const [forgotOpen, setForgotOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
@@ -69,12 +67,15 @@ export const AuthScreen = ({ onAuth }: Props) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  const showAuthError = (message: string) => {
+    notifyUser(t("common.error"), message);
+  };
+
   const resetForm = () => {
     setName("");
     setEmail("");
     setPassword("");
     setConfirm("");
-    setErrorMsg("");
   };
 
   const setModeAndReset = (next: "login" | "signup") => {
@@ -111,22 +112,21 @@ export const AuthScreen = ({ onAuth }: Props) => {
   };
 
   const onSubmit = async () => {
-    setErrorMsg("");
     const emailTrim = email.trim();
     const nameTrim = name.trim();
 
     if (!emailTrim || !password || (mode === "signup" && !nameTrim)) {
-      setErrorMsg(t("auth.errors.fillFields"));
+      showAuthError(t("auth.errors.fillFields"));
       return;
     }
     if (mode === "signup") {
       if (!isPasswordPolicySatisfied(password)) {
-        setErrorMsg(t("auth.errors.passwordPolicy", { min: PASSWORD_MIN_LEN, max: PASSWORD_MAX_LEN }));
+        showAuthError(t("auth.errors.passwordPolicy", { min: PASSWORD_MIN_LEN, max: PASSWORD_MAX_LEN }));
         return;
       }
     }
     if (mode === "signup" && password !== confirm) {
-      setErrorMsg(t("auth.errors.passwordMismatch"));
+      showAuthError(t("auth.errors.passwordMismatch"));
       return;
     }
 
@@ -137,11 +137,11 @@ export const AuthScreen = ({ onAuth }: Props) => {
       if (mode === "login") {
         const fb = await firebaseSignIn(emailTrim, password);
         if (fb.error) {
-          setErrorMsg(fb.error);
+          showAuthError(fb.error);
           return;
         }
         if (!fb.user) {
-          setErrorMsg(t("auth.errors.generic"));
+          showAuthError(t("auth.errors.generic"));
           return;
         }
         try {
@@ -153,20 +153,20 @@ export const AuthScreen = ({ onAuth }: Props) => {
           const accessToken = data?.access_token;
           if (!accessToken || typeof accessToken !== "string") {
             await signOutFirebaseOnly();
-            setErrorMsg(t("auth.errors.unexpectedServer"));
+            showAuthError(t("auth.errors.unexpectedServer"));
             return;
           }
           await onAuth(accessToken, "login");
         } catch (e) {
           await signOutFirebaseOnly();
-          setErrorMsg(detailFromAxios(e, t));
+          showAuthError(mapBackendLoginError(e, t));
         }
         return;
       }
 
       const fb = await firebaseSignUp(nameTrim, emailTrim, password);
       if (fb.error) {
-        setErrorMsg(fb.error);
+        showAuthError(fb.error);
         return;
       }
       try {
@@ -174,7 +174,7 @@ export const AuthScreen = ({ onAuth }: Props) => {
         const accessToken = data?.access_token;
         if (!accessToken || typeof accessToken !== "string") {
           await signOutFirebaseOnly();
-          setErrorMsg(t("auth.errors.unexpectedServer"));
+          showAuthError(t("auth.errors.unexpectedServer"));
           return;
         }
         await onAuth(accessToken, "signup");
@@ -187,7 +187,7 @@ export const AuthScreen = ({ onAuth }: Props) => {
               const signIn = await firebaseSignIn(emailTrim, password);
               if (signIn.error || !signIn.user) {
                 await signOutFirebaseOnly();
-                setErrorMsg(signIn.error ?? t("auth.errors.couldNotSignIn"));
+                showAuthError(signIn.error ?? t("auth.errors.couldNotSignIn"));
                 return;
               }
               firebaseUser = signIn.user;
@@ -201,17 +201,17 @@ export const AuthScreen = ({ onAuth }: Props) => {
             const accessToken = data?.access_token;
             if (!accessToken || typeof accessToken !== "string") {
               await signOutFirebaseOnly();
-              setErrorMsg(t("auth.errors.unexpectedServer"));
+              showAuthError(t("auth.errors.unexpectedServer"));
               return;
             }
             await onAuth(accessToken, "login");
           } catch (e2) {
             await signOutFirebaseOnly();
-            setErrorMsg(mapBackendLoginError(e2, t));
+            showAuthError(mapBackendLoginError(e2, t));
           }
         } else {
           await signOutFirebaseOnly();
-          setErrorMsg(msg);
+          showAuthError(msg);
         }
       }
     } finally {
@@ -350,12 +350,6 @@ export const AuthScreen = ({ onAuth }: Props) => {
             onEyePress={() => setShowConfirm((v) => !v)}
           />
         )}
-
-        {errorMsg ? (
-          <Text style={styles.errorText} accessibilityLiveRegion="polite">
-            {errorMsg}
-          </Text>
-        ) : null}
 
         <Pressable
           style={[styles.submitButton, loading && styles.submitButtonDisabled]}
@@ -521,17 +515,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   eyeButton: { width: 26, height: 26, alignItems: "center", justifyContent: "center" },
-  errorText: {
-    backgroundColor: ORANGE_LIGHT,
-    color: ORANGE,
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 12,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    lineHeight: 17,
-  },
   forgotWrap: { alignSelf: "flex-end", marginBottom: 8, marginTop: -4 },
   forgotLink: { color: GREEN, fontSize: 12, fontWeight: "900" },
   submitButton: {

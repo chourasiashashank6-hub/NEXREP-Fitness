@@ -27,6 +27,7 @@ FEATURE_TIERS: dict[str, str] = {
     "ai_rep_counter": "pro",
     "preworkout_recommendation": "pro",
     "guided_warmup_session": "elite",
+    "daily_game_plan": "pro",
     # ── Free tier features (listed for completeness) ───────────────
     "workout_logging": "free",
     "calorie_logging": "free",

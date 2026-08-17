@@ -5,6 +5,7 @@ import {
   Animated,
   Easing,
   Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -27,6 +29,7 @@ import { TodaysGoalRing } from "../components/TodaysGoalRing";
 import { useAuthStore } from "../store/authStore";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
+import { navigationRef } from "../navigation/navigationRef";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
 import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
 import { fillMealSlots, buildLoggedMealMilestones } from "../utils/mealSlotSchedule";
@@ -680,6 +683,17 @@ export const HomeScreen = () => {
                 </View>
               </View>
               <View style={styles.streakBestCol}>
+                <Pressable
+                  style={styles.gamePlanBtn}
+                  onPress={() => {
+                    if (navigationRef.isReady()) navigationRef.navigate("DailyGamePlan");
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("home.gamePlan.openButton")}
+                >
+                  <Ionicons name="sparkles-outline" size={11} color={TEXT_MUTED} />
+                  <Text style={styles.gamePlanBtnText}>{t("home.gamePlan.openButton")}</Text>
+                </Pressable>
                 <Text style={styles.streakBestLabel}>{t("home.best")}</Text>
                 <Text style={styles.streakBestValue}>
                   {displayBestStreak} 🏆
@@ -725,84 +739,84 @@ export const HomeScreen = () => {
         ) : null}
 
         <Animated.View style={[styles.section, animatedStyle(2)]}>
-          <View style={styles.heroRow}>
-            <TodaysGoalRing
-              caloriesEatenToday={eatenToday}
-              dailyCalorieTarget={dailyGoal}
-              caloriesBurnedToday={caloriesBurnedSoFar}
-              dailyBurnTarget={exerciseDeltaDisplay}
-              restDayActive={restDayActive}
-              size={168}
-            />
-            <View style={styles.kpiColumn}>
-              <View style={styles.kpiPill}>
-                <View style={styles.kpiPillLeft}>
-                  <Text style={styles.kpiEmoji}>🍽️</Text>
-                  <Text style={styles.kpiLabel}>{t("home.toEat")}</Text>
-                </View>
-                <Text style={styles.kpiValue}>{formatNum(dailyGoal)}</Text>
-              </View>
-              {restDayActive ? (
-                <View style={[styles.kpiPill, styles.kpiPillRestDay]}>
-                  <View style={styles.kpiPillLeft}>
-                    <Text style={styles.kpiEmoji}>🌙</Text>
-                    <Text style={styles.kpiLabelRestDay}>{t("home.restDayNoBurn")}</Text>
-                  </View>
-                </View>
-              ) : (
+            <View style={styles.heroRow}>
+              <TodaysGoalRing
+                caloriesEatenToday={eatenToday}
+                dailyCalorieTarget={dailyGoal}
+                caloriesBurnedToday={caloriesBurnedSoFar}
+                dailyBurnTarget={exerciseDeltaDisplay}
+                restDayActive={restDayActive}
+                size={168}
+              />
+              <View style={styles.kpiColumn}>
                 <View style={styles.kpiPill}>
                   <View style={styles.kpiPillLeft}>
-                    <Text style={styles.kpiEmoji}>🔥</Text>
-                    <Text style={styles.kpiLabel}>{t("home.toBurn")}</Text>
+                    <Text style={styles.kpiEmoji}>🍽️</Text>
+                    <Text style={styles.kpiLabel}>{t("home.toEat")}</Text>
                   </View>
-                  <Text style={[styles.kpiValue, styles.kpiValueOrange]}>{formatNum(exerciseDeltaDisplay)}</Text>
+                  <Text style={styles.kpiValue}>{formatNum(dailyGoal)}</Text>
                 </View>
-              )}
-              <View style={styles.kpiPill}>
-                <View style={styles.kpiPillLeft}>
-                  <Text style={styles.kpiEmoji}>{deltaKpiEmoji}</Text>
-                  <Text style={styles.kpiLabel}>{deltaKpiLabel}</Text>
+                {restDayActive ? (
+                  <View style={[styles.kpiPill, styles.kpiPillRestDay]}>
+                    <View style={styles.kpiPillLeft}>
+                      <Text style={styles.kpiEmoji}>🌙</Text>
+                      <Text style={styles.kpiLabelRestDay}>{t("home.restDayNoBurn")}</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.kpiPill}>
+                    <View style={styles.kpiPillLeft}>
+                      <Text style={styles.kpiEmoji}>🔥</Text>
+                      <Text style={styles.kpiLabel}>{t("home.toBurn")}</Text>
+                    </View>
+                    <Text style={[styles.kpiValue, styles.kpiValueOrange]}>{formatNum(exerciseDeltaDisplay)}</Text>
+                  </View>
+                )}
+                <View style={styles.kpiPill}>
+                  <View style={styles.kpiPillLeft}>
+                    <Text style={styles.kpiEmoji}>{deltaKpiEmoji}</Text>
+                    <Text style={styles.kpiLabel}>{deltaKpiLabel}</Text>
+                  </View>
+                  <Text style={styles.kpiValue}>{formatNum(deltaDisplay)}</Text>
                 </View>
-                <Text style={styles.kpiValue}>{formatNum(deltaDisplay)}</Text>
               </View>
             </View>
-          </View>
-        </Animated.View>
+          </Animated.View>
 
         <Animated.View style={[styles.section, animatedStyle(3)]}>
-          <View style={styles.tdeeCard}>
-            <View style={styles.tdeeLeft}>
-              <View style={styles.tdeeTitleRow}>
-                <Text style={styles.tdeeEmoji}>⚡</Text>
-                <Text style={styles.tdeeTitle}>{t("home.tdee")}</Text>
+            <View style={styles.tdeeCard}>
+              <View style={styles.tdeeLeft}>
+                <View style={styles.tdeeTitleRow}>
+                  <Text style={styles.tdeeEmoji}>⚡</Text>
+                  <Text style={styles.tdeeTitle}>{t("home.tdee")}</Text>
+                </View>
+                <View style={styles.tdeePill}>
+                  <Text style={styles.tdeePillText}>{t("home.tdeeFull")}</Text>
+                </View>
+                <Text style={styles.tdeeDesc}>{t("home.tdeeDescription")}</Text>
               </View>
-              <View style={styles.tdeePill}>
-                <Text style={styles.tdeePillText}>{t("home.tdeeFull")}</Text>
+              <View style={styles.tdeeRight}>
+                <Text style={styles.tdeeValue}>{formatNum(tdeeValue)}</Text>
+                <Text style={styles.tdeeUnit}>{t("home.kcalPerDay")}</Text>
               </View>
-              <Text style={styles.tdeeDesc}>{t("home.tdeeDescription")}</Text>
             </View>
-            <View style={styles.tdeeRight}>
-              <Text style={styles.tdeeValue}>{formatNum(tdeeValue)}</Text>
-              <Text style={styles.tdeeUnit}>{t("home.kcalPerDay")}</Text>
-            </View>
-          </View>
 
-          <MilestoneBoxes
-            title={t("home.mealsLoggedToday")}
-            items={mealMilestoneItems}
-            accent="green"
-            emptyMessage={mealMilestoneItems.length === 0 ? t("calorieLog.emptyMeals") : null}
-          />
-          <MilestoneBoxes
-            title={t("home.sessionsDoneToday")}
-            items={sessionMilestoneItems}
-            accent="orange"
-            emptyMessage={
-              sessionsRestMessage ??
-              (sessionMilestoneItems.length === 0 ? t("home.emptySessions") : null)
-            }
-          />
-        </Animated.View>
+            <MilestoneBoxes
+              title={t("home.mealsLoggedToday")}
+              items={mealMilestoneItems}
+              accent="green"
+              emptyMessage={mealMilestoneItems.length === 0 ? t("calorieLog.emptyMeals") : null}
+            />
+            <MilestoneBoxes
+              title={t("home.sessionsDoneToday")}
+              items={sessionMilestoneItems}
+              accent="orange"
+              emptyMessage={
+                sessionsRestMessage ??
+                (sessionMilestoneItems.length === 0 ? t("home.emptySessions") : null)
+              }
+            />
+          </Animated.View>
 
         <Animated.View style={[styles.section, animatedStyle(4)]}>
           {isStrengthGoal ? (
@@ -955,6 +969,13 @@ const styles = StyleSheet.create({
   streakCountLine: { fontSize: 16, fontWeight: "700", color: ORANGE },
   streakMotivation: { fontSize: 11, color: "#C07050", marginTop: 2 },
   streakBestCol: { alignItems: "flex-end" },
+  gamePlanBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 6,
+  },
+  gamePlanBtnText: { fontSize: 10, fontWeight: "600", color: TEXT_MUTED },
   streakBestLabel: { fontSize: 10, color: TEXT_MUTED, marginBottom: 2 },
   streakBestValue: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY },
   streakDivider: { height: 1, backgroundColor: "#ECEAE5", marginVertical: 14 },

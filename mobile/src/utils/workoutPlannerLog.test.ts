@@ -9,6 +9,8 @@ import {
   findPlannerWorkoutLog,
   isPlannerLoggedWorkout,
   mergeLoggedExerciseIdMap,
+  hasAnyPlannerLogForDay,
+  allPlannerExercisesLogged,
   parsePlannerReps,
 } from "./workoutPlannerLog";
 
@@ -58,6 +60,11 @@ const match = findPlannerWorkoutLog(history, bench, today);
 assert(match?.id === 101, "matches planner log for today by name");
 
 assert(findPlannerWorkoutLog(history, squat, today) === undefined, "manual same-day log does not fill checkbox");
+
+const allLogged = buildLoggedExerciseIdMap(history, [bench, squat], today);
+assert(hasAnyPlannerLogForDay(history, [bench, squat], today) === true, "any planner log detected");
+assert(allPlannerExercisesLogged(history, [bench], today) === true, "single exercise fully logged");
+assert(allPlannerExercisesLogged(history, [bench, squat], today) === false, "partial day not all logged");
 
 const map = buildLoggedExerciseIdMap(history, [bench, squat], today);
 assert(map["n:0:barbell bench press"] === 101, "bench maps to planner workout id");

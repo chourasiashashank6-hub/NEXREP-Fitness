@@ -99,7 +99,29 @@ describe("generatePreworkoutPlan", () => {
     expect(plan.estimatedKcal).toBe(Math.round(raw / 5) * 5);
   });
 
-  it("isCardioGoal matches explicit cardio goal list", () => {
+  it("intermediate cardio uses treadmill incline levels (not percentages)", () => {
+    const plan = generatePreworkoutPlan(baseProfile, ["Chest"]);
+    expect(plan.kind).toBe("cardio");
+    if (plan.kind !== "cardio") return;
+    const walk = plan.phases.find((p) => p.type === "walk");
+    const run = plan.phases.find((p) => p.type === "run");
+    const brisk = plan.phases.find((p) => p.type === "brisk_walk");
+    expect(walk?.incline_level).toBe(5);
+    expect(run?.incline_level).toBe(1);
+    expect(brisk?.incline_level).toBe(3);
+    for (const phase of plan.phases) {
+      expect(phase.incline_level).toBeGreaterThanOrEqual(1);
+      expect(phase.incline_level).toBeLessThanOrEqual(15);
+    }
+  });
+
+  it("aggressive pace raises walk incline level", () => {
+    const plan = generatePreworkoutPlan({ ...baseProfile, goalPace: "aggressive" }, ["Legs"]);
+    expect(plan.kind).toBe("cardio");
+    if (plan.kind !== "cardio") return;
+    const walk = plan.phases.find((p) => p.type === "walk");
+    expect(walk?.incline_level).toBe(7);
+  });
     expect(isCardioGoal("fat_loss")).toBe(true);
     expect(isCardioGoal("endurance")).toBe(true);
     expect(isCardioGoal("strength")).toBe(false);

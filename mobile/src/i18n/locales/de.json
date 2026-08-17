@@ -88,7 +88,27 @@
     "sessionsDoneToday": "🔥 Heutige Einheiten",
     "emptySessions": "Noch keine Einheiten geloggt",
     "sessionBoxLabel": "Einheit",
-    "restDayNoSession": "Heute ist Ruhetag 🛌 — keine Einheit geplant"
+    "restDayNoSession": "Heute ist Ruhetag 🛌 — keine Einheit geplant",
+    "gamePlan": {
+      "openButton": "Tagesplan",
+      "title": "Heutiger Tagesplan",
+      "exerciseCount": "Übungen",
+      "mealCount": "Mahlzeiten",
+      "estBurn": "Geschätzter Verbrauch",
+      "workoutTitle": "Heutiges Training",
+      "workoutMeta": "{{split}} · {{muscles}} · {{minutes}} Min.",
+      "mealsTitle": "Heutige Mahlzeiten",
+      "macros": "P {{protein}}g · K {{carbs}}g · F {{fat}}g",
+      "recoveryNote": "Dein {{muscle}} erholt sich noch von {{day}}. Konzentriere dich heute auf die Form.",
+      "noWorkoutPlan": "Noch kein Trainingsplan — öffne den Trainingsplaner, um einen zu erstellen.",
+      "noMealPlan": "Noch kein Essensplan — öffne den Mahlzeitenplaner, um einen zu erstellen.",
+      "noMealsLoggedFree": "Heute noch keine Mahlzeiten geloggt.",
+      "equipmentTitle": "Benötigtes Equipment",
+      "ingredientsTitle": "Benötigte Zutaten",
+      "noEquipmentNeeded": "Für das heutige Training ist kein Equipment nötig.",
+      "noEquipmentMatched": "Equipment nicht aufgeführt — kein Katalogtreffer für die heutigen Übungen.",
+      "noIngredientsListed": "Für die heutigen Mahlzeiten sind keine Zutaten aufgeführt."
+    }
   },
   "profile": {
     "alerts": {
