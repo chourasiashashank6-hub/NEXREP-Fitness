@@ -2,13 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { fetchJourneyEvents, type JourneyEventItem } from "../../api/journey";
+import { fetchJourneyEvents, runJourneyDetection, type JourneyEventItem } from "../../api/journey";
+import { todayLocal } from "../../api/caloriesLog";
 
 type Props = {
   domain?: string;
   titleKey?: string;
   accentColor?: string;
   limit?: number;
+  refreshOnLoad?: boolean;
 };
 
 const TEXT = "#1A1A18";
@@ -22,6 +24,7 @@ export function CoachJourneySection({
   titleKey = "coach.journey.sectionTitle",
   accentColor = "#0F6E56",
   limit = 5,
+  refreshOnLoad = false,
 }: Props) {
   const { t } = useTranslation();
   const [items, setItems] = useState<JourneyEventItem[]>([]);
@@ -58,8 +61,23 @@ export function CoachJourneySection({
   );
 
   useEffect(() => {
-    void load(0, false);
-  }, [load]);
+    let cancelled = false;
+    (async () => {
+      try {
+        if (refreshOnLoad) {
+          await runJourneyDetection(todayLocal());
+        }
+      } catch {
+        // Still fetch whatever events exist if refresh fails.
+      }
+      if (!cancelled) {
+        await load(0, false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [load, refreshOnLoad]);
 
   if (loading) {
     return (

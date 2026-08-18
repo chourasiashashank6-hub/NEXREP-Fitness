@@ -369,7 +369,7 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
                 </View>
               </View>
 
-              <CoachJourneySection domain="nutrition" accentColor={GREEN} />
+              <CoachJourneySection domain="nutrition" accentColor={GREEN} refreshOnLoad />
 
               <View style={styles.sectionCard}>
                 <Text style={styles.sectionLabel}>{t("coach.calorie.card.macroBreakdown")}</Text>

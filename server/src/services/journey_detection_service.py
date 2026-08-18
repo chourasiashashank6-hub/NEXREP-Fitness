@@ -137,7 +137,7 @@ def detect_protein_gap_streak(db: Session, user: User, today: date) -> None:
 
     streak_days = 0
     streak_start: date | None = None
-    latest_protein = 0.0
+    today_protein = nutrition_day_actuals(db, user, today)["protein_g"]
     for offset in range(PROTEIN_GAP_MIN_DAYS + 4):
         day = today - timedelta(days=offset)
         actuals = nutrition_day_actuals(db, user, day)
@@ -145,7 +145,6 @@ def detect_protein_gap_streak(db: Session, user: User, today: date) -> None:
         if protein < target_protein * PROTEIN_GAP_RATIO:
             streak_days += 1
             streak_start = day
-            latest_protein = protein
         else:
             break
 
@@ -160,7 +159,7 @@ def detect_protein_gap_streak(db: Session, user: User, today: date) -> None:
             payload={
                 "streak_days": streak_days,
                 "streak_started_at": streak_start.isoformat(),
-                "protein_g": round(latest_protein, 1),
+                "protein_g": round(today_protein, 1),
                 "target_protein_g": round(target_protein, 1),
             },
         )

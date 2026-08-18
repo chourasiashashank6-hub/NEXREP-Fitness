@@ -28,3 +28,9 @@ export async function fetchJourneyEvents(params?: {
   const { data } = await apiClient.get<JourneyEventsResponse>("/api/journey/events", { params });
   return data;
 }
+
+export async function runJourneyDetection(localDate?: string): Promise<void> {
+  await apiClient.post("/api/journey/run-detection", null, {
+    params: localDate ? { local_date: localDate } : undefined,
+  });
+}

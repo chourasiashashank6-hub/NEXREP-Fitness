@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -151,3 +151,60 @@ def test_protein_gap_resolves_when_recalculated_protein_meets_target(db: Session
         .count()
     )
     assert active == 0
+
+
+def test_protein_gap_payload_uses_today_protein_not_oldest_streak_day(db: Session):
+    user = _ensure_user(db, "journey_protein_today_display@test.local")
+    today = date(2099, 9, 10)
+    targets = {"target_protein_g": 165}
+
+    for offset, protein_g in [(0, 119.0), (1, 0.0), (2, 0.0), (3, 0.0), (4, 0.0)]:
+        day = today - timedelta(days=offset)
+        log = _get_or_create_daily_log(db, user, day)
+        db.query(MealEntry).filter(MealEntry.log_id == log.log_id).delete()
+        if protein_g > 0:
+            db.add(
+                MealEntry(
+                    log_id=log.log_id,
+                    user_id=user.id,
+                    meal_type="lunch",
+                    source_type="database",
+                    food_name="Protein meal",
+                    quantity_g=Decimal("100"),
+                    calories_per_100g=Decimal("200"),
+                    protein_per_100g=Decimal(str(protein_g)),
+                    carbs_per_100g=Decimal("10"),
+                    fat_per_100g=Decimal("5"),
+                    fiber_per_100g=Decimal("1"),
+                    total_calories=Decimal("200"),
+                    total_protein_g=Decimal(str(protein_g)),
+                    total_carbs_g=Decimal("10"),
+                    total_fat_g=Decimal("5"),
+                    total_fiber_g=Decimal("1"),
+                )
+            )
+        else:
+            log.total_protein_g = Decimal("0")
+        db.commit()
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(
+            "src.services.journey_detection_service.get_calorie_log_targets",
+            lambda _db, _user: targets,
+        )
+        detect_protein_gap_streak(db, user, today)
+        db.commit()
+
+    from src.models.journey_event import JourneyEvent
+
+    row = (
+        db.query(JourneyEvent)
+        .filter(
+            JourneyEvent.user_id == user.id,
+            JourneyEvent.event_type == "protein_gap_streak",
+            JourneyEvent.status == "active",
+        )
+        .one()
+    )
+    assert row.payload_json["protein_g"] == 119.0
+    assert row.payload_json["streak_days"] >= 3
