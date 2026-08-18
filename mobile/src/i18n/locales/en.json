@@ -152,7 +152,7 @@
     "targetKg": "{{current}} kg / target {{target}} kg",
     "strengthEmptyTitle": "Set key lifts to track strength",
     "strengthEmptyBody": "Add up to 3 target lifts in onboarding to see PR and estimated 1RM progress here.",
-    "weightJourney": "⚖️ Weight journey",
+    "weightJourney": "WEIGHT JOURNEY",
     "goalReachedPill": "🏁 Goal reached!",
     "start": "Start",
     "target": "Target",
@@ -178,6 +178,7 @@
       "comebackBonus": "Comeback bonus · {{count}} sessions left at 2× XP",
       "seasonXp": "{{xp}} season XP",
       "friendsLeaderboard": "FRIENDS SEASON LEADERBOARD",
+      "viewAll": "View all",
       "leaderboardEmpty": "Log workouts and meals to climb the board.",
       "loadFailed": "Could not load XP from {{base}}. Restart Expo after changing .env.development.",
       "notDeployed": "XP is not on {{base}} yet (404). Use local API (127.0.0.1:8000) or deploy the server.",
@@ -478,9 +479,10 @@
       "side": "Side"
     },
     "capture": {
-      "alignGuide": "Align your body inside the silhouette",
+      "framingHint": "Step back so your full body is visible",
+      "flipCamera": "Flip camera",
       "permissionTitle": "Camera access needed",
-      "permissionBody": "Allow camera access to capture progress photos with the alignment guide.",
+      "permissionBody": "Allow camera access to capture progress photos.",
       "permissionDenied": "Camera permission was denied.",
       "allowCamera": "Allow camera",
       "captureFailed": "Could not capture the photo.",
@@ -489,7 +491,7 @@
       "retake": "Retake",
       "save": "Save locally",
       "saveFailed": "Could not save the progress photo.",
-      "webFallback": "On web, the live silhouette overlay is limited. You can still capture a photo.",
+      "webFallback": "On web, use your device camera to capture a progress photo.",
       "openCamera": "Open camera"
     },
     "gallery": {

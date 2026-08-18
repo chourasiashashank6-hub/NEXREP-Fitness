@@ -26,7 +26,7 @@ import {
   MealType,
   deleteAIFoodMeal,
   deleteCalorieMeal,
-  ensureDailyCalorieLog,
+  getDailyCalorieLog,
   invalidateCaloriesRoutePrefix,
   lookupFoodNutrition,
   patchCalorieMealQty,
@@ -378,6 +378,7 @@ export const CalorieLog = () => {
   const [day, setDay] = useState<CalorieDayPayload | null>(null);
   const [mealsExpanded, setMealsExpanded] = useState(false);
   const [allTimeMealHistoryOpen, setAllTimeMealHistoryOpen] = useState(false);
+  const [mealHistoryRevision, setMealHistoryRevision] = useState(0);
   const [logDate] = useState(() => todayLocal());
   const [targets, setTargets] = useState<any>(null);
   const [burnProfile, setBurnProfile] = useState<BurnProfile | null>(null);
@@ -412,12 +413,21 @@ export const CalorieLog = () => {
   const animF = useRef(new Animated.Value(0)).current;
   const animW = useRef(new Animated.Value(0)).current;
   const animFi = useRef(new Animated.Value(0)).current;
+  const viewModeInitialized = useRef(false);
 
   const refresh = useCallback(async () => {
-    const d = await ensureDailyCalorieLog(logDate);
+    const d = await getDailyCalorieLog(logDate);
     setDay(d);
     setLoadError(null);
+    setMealHistoryRevision((n) => n + 1);
+    return d;
   }, [logDate]);
+
+  const applyCalorieDay = useCallback((payload: CalorieDayPayload) => {
+    setDay(payload);
+    setLoadError(null);
+    setMealHistoryRevision((n) => n + 1);
+  }, []);
 
   const loadTargets = useCallback(async () => {
     if (!token) {
@@ -450,8 +460,22 @@ export const CalorieLog = () => {
     useCallback(() => {
       void loadTargets();
       setMealType(mealTypeFromLocalTime());
-    }, [loadTargets]),
+      void refresh().catch(() => {
+        // Keep the last loaded day if a background refresh fails.
+      });
+    }, [loadTargets, refresh]),
   );
+
+  useEffect(() => {
+    if (!viewModeInitialized.current) {
+      viewModeInitialized.current = true;
+      return;
+    }
+    if (viewMode !== "log") return;
+    void refresh().catch(() => {
+      // Keep the last loaded day if a background refresh fails.
+    });
+  }, [refresh, viewMode]);
 
   useFocusEffect(
     useCallback(() => {
@@ -667,7 +691,7 @@ export const CalorieLog = () => {
           confidence: aiConfidence,
           estimated_serving_size: aiServingSize || undefined,
         });
-        if (aiSaved?.day) setDay(aiSaved.day);
+        if (aiSaved?.day) applyCalorieDay(aiSaved.day);
         else await refresh();
       } else {
         const safeQty = round2(clamp(sanitizeFinite(qtyN), 0.01, 999999.99));
@@ -684,7 +708,7 @@ export const CalorieLog = () => {
           fat_per_100g: round2(clamp(sanitizeFinite(f100N), 0, 9999.99)),
           fiber_per_100g: round2(clamp(sanitizeFinite(fi100N), 0, 9999.99)),
         });
-        setDay(d);
+        applyCalorieDay(d);
       }
       setFoodName("");
       setFoodQuery("");
@@ -795,8 +819,7 @@ export const CalorieLog = () => {
       setSaving(true);
       const d = sourceType === "camera_ai" ? await deleteAIFoodMeal(Math.abs(mealId)) : await deleteCalorieMeal(mealId);
       // Reflect server deletion immediately.
-      setDay(d);
-      // Re-sync from server to keep meal list + nutrition totals fully authoritative.
+      applyCalorieDay(d);
       await refresh();
     } catch {
       Alert.alert(t("calorieLog.alerts.error"), t("calorieLog.alerts.deleteFailed"));
@@ -820,7 +843,7 @@ export const CalorieLog = () => {
     try {
       setSaving(true);
       const d = await patchCalorieMealQty(editMealId, nextQty);
-      setDay(d);
+      applyCalorieDay(d);
       setEditMealId(null);
       setEditQty("");
     } catch {
@@ -1238,7 +1261,7 @@ export const CalorieLog = () => {
       >
         {plannerMounted ? (
           hasMealPlannerAccess ? (
-            <MonthlyMealPlannerScreen embedded />
+            <MonthlyMealPlannerScreen embedded onCalorieDayChanged={applyCalorieDay} />
           ) : (
             <PlannerLockedUpsell
               feature="meal_plan_generation"
@@ -1277,7 +1300,11 @@ export const CalorieLog = () => {
         </Pressable>
       </Modal>
 
-      <AllTimeMealHistoryModal visible={allTimeMealHistoryOpen} onClose={() => setAllTimeMealHistoryOpen(false)} />
+      <AllTimeMealHistoryModal
+        visible={allTimeMealHistoryOpen}
+        refreshToken={mealHistoryRevision}
+        onClose={() => setAllTimeMealHistoryOpen(false)}
+      />
 
       <Modal visible={editMealId !== null} transparent animationType="fade" onRequestClose={() => setEditMealId(null)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setEditMealId(null)}>

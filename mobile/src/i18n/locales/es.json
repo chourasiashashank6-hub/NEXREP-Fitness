@@ -152,7 +152,7 @@
     "targetKg": "{{current}}kg/ objetivo{{target}}kg",
     "strengthEmptyTitle": "Configure levantamientos clave para realizar un seguimiento de la fuerza",
     "strengthEmptyBody": "Agregue hasta 3 aumentos de objetivos en la incorporación para verPRy el progreso estimado de1RMaquí.",
-    "weightJourney": "⚖️ Viaje de peso",
+    "weightJourney": "VIAJE DE PESO",
     "goalReachedPill": "🏁 ¡Objetivo alcanzado!",
     "start": "Inicio",
     "target": "Meta",
@@ -178,6 +178,7 @@
       "comebackBonus": "Bonus de regreso · {{count}} sesiones restantes con XP ×2",
       "seasonXp": "{{xp}} XP de temporada",
       "friendsLeaderboard": "CLASIFICACIÓN DE TEMPORADA ENTRE AMIGOS",
+      "viewAll": "Ver todo",
       "leaderboardEmpty": "Registra entrenamientos y comidas para subir en la tabla.",
       "loadFailed": "No se pudo sincronizar XP — se muestran valores predeterminados.",
       "you": "Tú"
@@ -465,9 +466,10 @@
     "subtitle": "Las fotos de progreso permanecen en este dispositivo salvo que actives la copia en la nube",
     "angles": { "front": "Frontal", "side": "Lateral" },
     "capture": {
-      "alignGuide": "Alinea tu cuerpo dentro de la silueta",
+      "framingHint": "Aléjate para que se vea todo tu cuerpo",
+      "flipCamera": "Cambiar cámara",
       "permissionTitle": "Se necesita acceso a la cámara",
-      "permissionBody": "Permite la cámara para capturar fotos con la guía de alineación.",
+      "permissionBody": "Permite la cámara para capturar fotos de progreso.",
       "permissionDenied": "Permiso de cámara denegado.",
       "allowCamera": "Permitir cámara",
       "captureFailed": "No se pudo capturar la foto.",
@@ -476,7 +478,7 @@
       "retake": "Repetir",
       "save": "Guardar localmente",
       "saveFailed": "No se pudo guardar la foto de progreso.",
-      "webFallback": "En web, la silueta en vivo es limitada. Aún puedes capturar una foto.",
+      "webFallback": "En web, usa la cámara del dispositivo para capturar una foto de progreso.",
       "openCamera": "Abrir cámara"
     },
     "gallery": {

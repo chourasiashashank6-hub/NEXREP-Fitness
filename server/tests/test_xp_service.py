@@ -251,7 +251,7 @@ def test_workout_xp_reversal_is_idempotent(db: Session):
     assert reversal_count == 1
 
 
-def test_level_stays_sticky_after_xp_reversal(db: Session):
+def test_level_steps_back_after_xp_reversal(db: Session):
     user_id = _ensure_user(db, "xp_sticky_level@test.local")
     _reset_user_xp(db, user_id)
 
@@ -276,7 +276,7 @@ def test_level_stays_sticky_after_xp_reversal(db: Session):
     db.commit()
     db.refresh(totals)
     assert int(totals.total_xp) == 0
-    assert int(totals.level) == 2
+    assert int(totals.level) == 1
 
 
 def test_meal_bonus_reversal_after_delete(db: Session):

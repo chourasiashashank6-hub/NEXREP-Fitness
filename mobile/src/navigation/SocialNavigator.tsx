@@ -28,6 +28,7 @@ import { subscribeToSocialUnreadChanges } from "../utils/socialUnreadEvents";
 const Stack = createNativeStackNavigator<SocialStackParamList>();
 
 const GREEN = "#0F6E56";
+const GREEN_LIGHT = "#E8F5EE";
 const BG = "#F7F6F3";
 const MUTED = "#6F766F";
 const BORDER = "#ECEAE5";
@@ -194,6 +195,19 @@ function ChatsRouteScreen() {
   );
 }
 
+function SocialStackBackHeader() {
+  const navigation = useNavigation<any>();
+  const { t } = useTranslation();
+
+  return (
+    <View style={styles.stackBackHeader}>
+      <Pressable accessibilityRole="button" style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Text style={styles.backText}>{t("common.back")}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function LeaderboardRouteScreen() {
   return (
     <ScreenContainer bg={BG}>
@@ -206,7 +220,7 @@ function LeaderboardRouteScreen() {
 function FriendsRouteScreen() {
   return (
     <ScreenContainer bg={BG}>
-      <SocialBrandHeader />
+      <SocialStackBackHeader />
       <FriendsScreen />
     </ScreenContainer>
   );
@@ -215,7 +229,7 @@ function FriendsRouteScreen() {
 function PendingRequestsRouteScreen() {
   return (
     <ScreenContainer bg={BG}>
-      <SocialBrandHeader />
+      <SocialStackBackHeader />
       <FriendsScreen initialView="pending" />
     </ScreenContainer>
   );
@@ -246,6 +260,21 @@ export default function SocialNavigator() {
 }
 
 const styles = StyleSheet.create({
+  stackBackHeader: {
+    marginBottom: 8,
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  backText: {
+    color: GREEN,
+    fontSize: 13,
+    fontWeight: "900",
+  },
   brandHeader: {
     alignItems: "center",
     flexDirection: "row",

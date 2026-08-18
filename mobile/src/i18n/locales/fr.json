@@ -152,7 +152,7 @@
     "targetKg": "{{current}} kg / cible {{target}} kg",
     "strengthEmptyTitle": "Définir les levées de touches pour suivre la force",
     "strengthEmptyBody": "Ajoutez jusqu'à 3 augmentations cibles lors de l'intégration pour voir les relations publiques et la progression estimée de 1RM ici.",
-    "weightJourney": "⚖️ Parcours poids",
+    "weightJourney": "PARCOURS POIDS",
     "goalReachedPill": "🏁 Objectif atteint !",
     "start": "Démarrer",
     "target": "Cible",
@@ -178,6 +178,7 @@
       "comebackBonus": "Bonus retour · {{count}} séances restantes à XP ×2",
       "seasonXp": "{{xp}} XP de saison",
       "friendsLeaderboard": "CLASSEMENT SAISON ENTRE AMIS",
+      "viewAll": "Tout voir",
       "leaderboardEmpty": "Enregistrez entraînements et repas pour monter au classement.",
       "loadFailed": "XP non synchronisé — valeurs par défaut affichées.",
       "you": "Vous"
@@ -465,9 +466,10 @@
     "subtitle": "Les photos restent sur cet appareil sauf si vous activez la sauvegarde cloud",
     "angles": { "front": "Face", "side": "Profil" },
     "capture": {
-      "alignGuide": "Alignez votre corps dans la silhouette",
+      "framingHint": "Reculez pour que tout votre corps soit visible",
+      "flipCamera": "Inverser la caméra",
       "permissionTitle": "Accès caméra requis",
-      "permissionBody": "Autorisez la caméra pour capturer des photos avec le guide d'alignement.",
+      "permissionBody": "Autorisez la caméra pour capturer des photos de progrès.",
       "permissionDenied": "Autorisation caméra refusée.",
       "allowCamera": "Autoriser la caméra",
       "captureFailed": "Impossible de capturer la photo.",
@@ -476,7 +478,7 @@
       "retake": "Reprendre",
       "save": "Enregistrer localement",
       "saveFailed": "Impossible d'enregistrer la photo de progrès.",
-      "webFallback": "Sur le web, la silhouette en direct est limitée. Vous pouvez quand même capturer une photo.",
+      "webFallback": "Sur le web, utilisez la caméra de l'appareil pour capturer une photo de progrès.",
       "openCamera": "Ouvrir la caméra"
     },
     "gallery": {

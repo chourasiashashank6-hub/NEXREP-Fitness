@@ -152,7 +152,7 @@
     "targetKg": "{{current}} kg / Ziel {{target}} kg",
     "strengthEmptyTitle": "Stell die wichtigsten Übungen so ein, dass du die Kraft verfolgen",
     "strengthEmptyBody": "Füge beim Onboarding bis zu 3 Zielsteigerungen hinzu, um hier PR und den geschätzten 1RM-Fortschritt zu sehen.",
-    "weightJourney": "⚖️ Gewichtsreise",
+    "weightJourney": "GEWICHTSREISE",
     "goalReachedPill": "🏁Ziel erreicht!",
     "start": "Starten",
     "target": "Ziel",
@@ -178,6 +178,7 @@
       "comebackBonus": "Comeback-Bonus · {{count}} Sessions mit 2× XP übrig",
       "seasonXp": "{{xp}} Saison-XP",
       "friendsLeaderboard": "FREUNDE-SAISON-RANGLISTE",
+      "viewAll": "Alle anzeigen",
       "leaderboardEmpty": "Logge Workouts und Mahlzeiten, um in der Rangliste aufzusteigen.",
       "loadFailed": "XP konnte nicht synchronisiert werden — Standardwerte werden angezeigt.",
       "you": "Du"
@@ -465,9 +466,10 @@
     "subtitle": "Fortschrittsfotos bleiben auf diesem Gerät, es sei denn du aktivierst Cloud-Backup",
     "angles": { "front": "Front", "side": "Seite" },
     "capture": {
-      "alignGuide": "Richte deinen Körper an der Silhouette aus",
+      "framingHint": "Treten Sie zurück, damit Ihr ganzer Körper sichtbar ist",
+      "flipCamera": "Kamera wechseln",
       "permissionTitle": "Kamerazugriff erforderlich",
-      "permissionBody": "Erlaube die Kamera für Fotos mit Ausrichtungshilfe.",
+      "permissionBody": "Erlaube die Kamera, um Fortschrittsfotos aufzunehmen.",
       "permissionDenied": "Kameraberechtigung verweigert.",
       "allowCamera": "Kamera erlauben",
       "captureFailed": "Foto konnte nicht aufgenommen werden.",
@@ -476,7 +478,7 @@
       "retake": "Erneut aufnehmen",
       "save": "Lokal speichern",
       "saveFailed": "Fortschrittsfoto konnte nicht gespeichert werden.",
-      "webFallback": "Im Web ist die Live-Silhouette eingeschränkt. Du kannst trotzdem ein Foto aufnehmen.",
+      "webFallback": "Im Web nutze die Gerätekamera für ein Fortschrittsfoto.",
       "openCamera": "Kamera öffnen"
     },
     "gallery": {

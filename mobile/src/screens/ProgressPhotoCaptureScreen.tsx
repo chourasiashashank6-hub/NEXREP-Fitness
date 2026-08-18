@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -9,14 +9,12 @@ import {
   View,
 } from "react-native";
 import { CameraView, useCameraPermissions, type CameraViewRef } from "expo-camera";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
-import { fetchOnboardingMe } from "../api/onboarding";
 import { uploadProgressPhotoBackup } from "../api/progressPhotos";
-import { BodyFigureSVG } from "../components/BodyFigureSVG";
-import { BODY_DATA, type BodyGender } from "../data/bodyTypeData";
 import type { RootStackParamList } from "../navigation/types";
 import {
   markLocalProgressPhotoBackedUp,
@@ -30,6 +28,8 @@ const GREEN = "#0F6E56";
 const TEXT = "#FFFFFF";
 const MUTED = "rgba(255,255,255,0.72)";
 
+type CameraFacing = "front" | "back";
+
 export default function ProgressPhotoCaptureScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
@@ -38,37 +38,21 @@ export default function ProgressPhotoCaptureScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraViewRef>(null);
   const [angle, setAngle] = useState<ProgressPhotoAngle>(initialAngle);
+  const [cameraFacing, setCameraFacing] = useState<CameraFacing>("front");
   const [capturing, setCapturing] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [backupToCloud, setBackupToCloud] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [bodyGender, setBodyGender] = useState<BodyGender>("male");
-  const [bodyParams, setBodyParams] = useState(BODY_DATA.male.current[2]?.params ?? BODY_DATA.male.current[0].params);
-
-  useEffect(() => {
-    void fetchOnboardingMe()
-      .then((resp) => {
-        const bt = resp?.onboarding?.body_type;
-        const gender = (bt?.gender === "female" ? "female" : "male") as BodyGender;
-        const currentId = bt?.current_body_id;
-        const catalog = BODY_DATA[gender].current;
-        const match = catalog.find((item) => item.id === currentId) ?? catalog[2] ?? catalog[0];
-        setBodyGender(gender);
-        setBodyParams(match.params);
-      })
-      .catch(() => undefined);
-  }, []);
-
-  const silhouette = useMemo(
-    () => <BodyFigureSVG params={bodyParams} gender={bodyGender} uid="progress-capture" width={180} />,
-    [bodyGender, bodyParams],
-  );
 
   const ensurePermission = useCallback(async () => {
     if (permission?.granted) return true;
     const result = await requestPermission();
     return Boolean(result?.granted);
   }, [permission?.granted, requestPermission]);
+
+  const toggleCameraFacing = () => {
+    setCameraFacing((current) => (current === "front" ? "back" : "front"));
+  };
 
   const capture = async () => {
     if (Platform.OS === "web") {
@@ -163,17 +147,30 @@ export default function ProgressPhotoCaptureScreen() {
           </Pressable>
         </View>
       ) : (
-        <CameraView ref={cameraRef} style={styles.camera} facing="front" mirror>
+        <CameraView ref={cameraRef} style={styles.camera} facing={cameraFacing} mirror={cameraFacing === "front"}>
           <View style={styles.overlay} pointerEvents="none">
-            <View style={styles.silhouetteWrap}>{silhouette}</View>
-            <Text style={styles.guideText}>{t("transformation.capture.alignGuide")}</Text>
+            <Text style={styles.guideText}>{t("transformation.capture.framingHint")}</Text>
           </View>
         </CameraView>
       )}
-      <View style={styles.controls}>
-        <Pressable style={styles.closeBtn} onPress={() => navigation.goBack()}>
+      <View style={styles.topBar}>
+        <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()} accessibilityRole="button">
           <Text style={styles.closeBtnText}>×</Text>
         </Pressable>
+        {Platform.OS !== "web" ? (
+          <Pressable
+            style={styles.iconBtn}
+            onPress={toggleCameraFacing}
+            accessibilityRole="button"
+            accessibilityLabel={t("transformation.capture.flipCamera")}
+          >
+            <Ionicons name="camera-reverse-outline" size={22} color={TEXT} />
+          </Pressable>
+        ) : (
+          <View style={styles.iconBtnPlaceholder} />
+        )}
+      </View>
+      <View style={styles.controls}>
         <View style={styles.angleRow}>
           {(["front", "side"] as ProgressPhotoAngle[]).map((value) => (
             <Pressable
@@ -196,11 +193,28 @@ export default function ProgressPhotoCaptureScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000" },
   camera: { flex: 1 },
-  overlay: { flex: 1, alignItems: "center", justifyContent: "center" },
-  silhouetteWrap: { opacity: 0.55 },
-  guideText: { color: TEXT, marginTop: 12, fontSize: 14, fontWeight: "600", textAlign: "center", paddingHorizontal: 24 },
+  overlay: { flex: 1, justifyContent: "flex-end", paddingBottom: 180 },
+  guideText: { color: TEXT, fontSize: 14, fontWeight: "600", textAlign: "center", paddingHorizontal: 24 },
+  topBar: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 54 : 24,
+    left: 20,
+    right: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconBtnPlaceholder: { width: 40, height: 40 },
   controls: { position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: 36, paddingHorizontal: 20, gap: 16 },
-  closeBtn: { alignSelf: "flex-start", width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center" },
+  closeBtn: { marginTop: 8 },
   closeBtnText: { color: TEXT, fontSize: 24, lineHeight: 28 },
   angleRow: { flexDirection: "row", justifyContent: "center", gap: 10 },
   anglePill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.14)" },

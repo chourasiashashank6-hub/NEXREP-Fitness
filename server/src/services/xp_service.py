@@ -99,10 +99,9 @@ def _find_award_event(db: Session, user_id: int, idempotency_key: str) -> XpEven
 
 
 def _update_totals_after_xp_change(totals: UserXpTotal) -> None:
-    """Total XP reflects earned work; level is a sticky high-water mark."""
-    totals.total_xp = int(totals.total_xp or 0)
-    computed_level = level_for_total_xp(totals.total_xp)
-    totals.level = max(int(totals.level or 1), computed_level)
+    """Keep total XP and level in sync — level drops when XP is reversed."""
+    totals.total_xp = max(0, int(totals.total_xp or 0))
+    totals.level = level_for_total_xp(totals.total_xp)
     totals.updated_at = datetime.utcnow()
 
 
@@ -481,12 +480,17 @@ def award_xp_for_meal_log(db: Session, *, user_id: int, log_date: date) -> None:
 
 def serialize_xp_summary(db: Session, user_id: int) -> dict[str, Any]:
     totals = _get_or_create_totals(db, user_id)
+    computed_level = level_for_total_xp(int(totals.total_xp or 0))
+    if int(totals.level or 1) != computed_level:
+        totals.level = computed_level
+        totals.updated_at = datetime.utcnow()
+        db.commit()
     into_level, to_next = xp_to_next_level(int(totals.total_xp or 0))
     season = ensure_default_season(db)
     season_xp = season_xp_for_user(db, user_id, season) if season else 0
     return {
         "total_xp": int(totals.total_xp or 0),
-        "level": int(totals.level or 1),
+        "level": computed_level,
         "xp_into_level": into_level,
         "xp_to_next_level": to_next,
         "comeback_sessions_remaining": int(totals.comeback_sessions_remaining or 0),

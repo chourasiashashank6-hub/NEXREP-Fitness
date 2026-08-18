@@ -29,6 +29,7 @@ const PAGE_SIZE = 20;
 type Props = {
   visible: boolean;
   onClose: () => void;
+  refreshToken?: number;
 };
 
 type MealHistorySection = {
@@ -103,7 +104,7 @@ const mealSubtitle = (item: CalorieMealHistoryItem): string => {
 const dayTotalLine = (total: CalorieMealDayTotal): string =>
   `${fmt1(total.total_calories)} kcal · ${fmt1(total.total_protein_g)}p · ${fmt1(total.total_carbs_g)}c · ${fmt1(total.total_fat_g)}f · ${fmt1(total.total_fiber_g || 0)}fi`;
 
-export default function AllTimeMealHistoryModal({ visible, onClose }: Props) {
+export default function AllTimeMealHistoryModal({ visible, onClose, refreshToken = 0 }: Props) {
   const [items, setItems] = useState<CalorieMealHistoryItem[]>([]);
   const [dayTotals, setDayTotals] = useState<Record<string, CalorieMealDayTotal>>({});
   const [search, setSearch] = useState("");
@@ -153,7 +154,7 @@ export default function AllTimeMealHistoryModal({ visible, onClose }: Props) {
     setDayTotals({});
     setHistoryTotal(0);
     void loadPage(0, search);
-  }, [loadPage, search, visible]);
+  }, [loadPage, refreshToken, search, visible]);
 
   const loadMore = () => {
     if (loading || loadingMore || !hasMore) return;

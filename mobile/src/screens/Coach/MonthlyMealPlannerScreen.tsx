@@ -261,9 +261,10 @@ function SupplementItem({ supplement }: { supplement: SupplementRecommendation }
 type Props = {
   /** When true, hide back button and nest safely inside Log tab. */
   embedded?: boolean;
+  onCalorieDayChanged?: (day: CalorieDayPayload) => void;
 };
 
-export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
+export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDayChanged }: Props) {
   const { t } = useTranslation();
   const { hasFeatureAccess } = useFeatureAccess();
   const hasMealPlannerAccess = hasFeatureAccess("meal_plan_generation");
@@ -757,6 +758,7 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
       if (existingId) {
         const dayPayload = await deleteCalorieMeal(existingId);
         syncLoggedMeals(dayPayload, dayDetail?.meals ?? [meal]);
+        onCalorieDayChanged?.(dayPayload);
         return;
       }
       const grams = mealServingGrams(meal);
@@ -775,6 +777,7 @@ export default function MonthlyMealPlannerScreen({ embedded = false }: Props) {
         fiber_per_100g: per100FromTotal(meal.total_fiber ?? meal.items.reduce((s, i) => s + (i.fiber || 0), 0), grams),
       });
       syncLoggedMeals(dayPayload, dayDetail?.meals ?? [meal]);
+      onCalorieDayChanged?.(dayPayload);
     } catch {
       notifyUser(t("coach.mealPlannerScreen.alerts.error"), t("coach.mealPlannerScreen.alerts.logMealFailed"));
     } finally {

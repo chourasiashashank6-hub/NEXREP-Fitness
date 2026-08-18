@@ -152,7 +152,7 @@
     "targetKg": "{{current}} kg / target {{target}} kg",
     "strengthEmptyTitle": "Strength track karne ke liye key lifts set karein",
     "strengthEmptyBody": "up to 3 target lifts in onboarding to see PR and estimated 1RM progress here. add karein",
-    "weightJourney": "⚖️ Weight journey",
+    "weightJourney": "WEIGHT JOURNEY",
     "goalReachedPill": "🏁 Goal reached!",
     "start": "Start",
     "target": "Target",
@@ -178,6 +178,7 @@
       "comebackBonus": "Comeback bonus · {{count}} sessions 2× XP par baki",
       "seasonXp": "{{xp}} season XP",
       "friendsLeaderboard": "FRIENDS SEASON LEADERBOARD",
+      "viewAll": "View all",
       "leaderboardEmpty": "Board par chadhne ke liye workouts aur meals log karo.",
       "loadFailed": "XP sync nahi hua — server update hone tak defaults dikhenge.",
       "you": "Aap"
@@ -466,9 +467,10 @@
     "subtitle": "Progress photos is device par rehti hain jab tak aap cloud backup opt-in na karo",
     "angles": { "front": "Front", "side": "Side" },
     "capture": {
-      "alignGuide": "Apne body ko silhouette ke andar align karo",
+      "framingHint": "Step back so your full body is visible",
+      "flipCamera": "Flip camera",
       "permissionTitle": "Camera access chahiye",
-      "permissionBody": "Alignment guide ke saath photo lene ke liye camera allow karo.",
+      "permissionBody": "Progress photos lene ke liye camera allow karo.",
       "permissionDenied": "Camera permission deny ho gayi.",
       "allowCamera": "Camera allow karo",
       "captureFailed": "Photo capture fail ho gaya.",
@@ -477,7 +479,7 @@
       "retake": "Retake",
       "save": "Locally save karo",
       "saveFailed": "Progress photo save nahi ho payi.",
-      "webFallback": "Web par live silhouette limited hai. Aap phir bhi photo le sakte ho.",
+      "webFallback": "Web par device camera se progress photo capture karo.",
       "openCamera": "Camera kholo"
     },
     "gallery": {

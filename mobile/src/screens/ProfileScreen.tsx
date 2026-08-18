@@ -203,6 +203,7 @@ export const ProfileScreen = () => {
   const [resettingJourney, setResettingJourney] = useState(false);
   const [transformationSummary, setTransformationSummary] = useState<TransformationSummary | null>(null);
   const [paceKgPerWeek, setPaceKgPerWeek] = useState(0.5);
+  const [dailyDeltaKcal, setDailyDeltaKcal] = useState<number | null>(null);
   const [age, setAge] = useState(25);
   const [stats, setStats] = useState({
     totalWorkoutsDone: 0,
@@ -300,12 +301,13 @@ export const ProfileScreen = () => {
 
   const load = useCallback(async (force = false) => {
     try {
-      const [profile, onboardingRes, burnRes, historyRes, strengthProgressRes] = await Promise.all([
+      const [profile, onboardingRes, burnRes, historyRes, strengthProgressRes, goalProgressRes] = await Promise.all([
         getProfile(),
         fetchOnboardingMe().catch(() => null),
         apiClient.get<{ totalCaloriesBurned: number; sessionCount: number }>("/workout/total-burn").catch(() => ({ data: { totalCaloriesBurned: 0, sessionCount: 0 } })),
         apiClient.get<{ items: Array<{ date: string }> }>("/workout/history", { params: { hours: 24 * 30 } }).catch(() => ({ data: { items: [] } })),
         getStrengthProgress().catch(() => null),
+        apiClient.get<{ daily_delta_kcal?: number }>("/api/goal-progress", { params: { local_date: todayLocal() } }).catch(() => ({ data: null })),
       ]);
       const dates15 = listPastDates(DAY_WINDOW);
 
@@ -353,6 +355,15 @@ export const ProfileScreen = () => {
       setGoalTag(toGoalTag(profile.goalTag));
       setStrengthProgress(strengthProgressRes);
       setPaceKgPerWeek(pace);
+      const deltaFromGoal = Number(goalProgressRes.data?.daily_delta_kcal);
+      const deltaFromTargets = Number(onboardingRes?.targets?.timeline?.daily_delta_kcal);
+      setDailyDeltaKcal(
+        Number.isFinite(deltaFromGoal)
+          ? deltaFromGoal
+          : Number.isFinite(deltaFromTargets)
+            ? deltaFromTargets
+            : null,
+      );
       setAge(Number(profile.age || 25));
       setMemberSince(monthYear(new Date().toISOString()));
       setStats({
@@ -740,10 +751,11 @@ export const ProfileScreen = () => {
   };
 
   const dailyCalorieAdjustment = useMemo(() => {
+    if (dailyDeltaKcal != null && Number.isFinite(dailyDeltaKcal)) return dailyDeltaKcal;
     if (goalTag === "Fat Loss") return -(paceKgPerWeek * 1000);
     if (goalTag === "Muscle Gain") return +(paceKgPerWeek * 500);
     return +(paceKgPerWeek * 400);
-  }, [goalTag, paceKgPerWeek]);
+  }, [dailyDeltaKcal, goalTag, paceKgPerWeek]);
 
   const filteredExerciseHistory = useMemo(() => {
     if (!exerciseFromDate || !exerciseToDate) return exerciseHistory15d;
@@ -1007,6 +1019,8 @@ export const ProfileScreen = () => {
         </View>
       </View>
 
+      <ProfileXpCard />
+
       <View style={styles.card}>
         {isStrengthGoal ? (
           <>
@@ -1052,7 +1066,7 @@ export const ProfileScreen = () => {
         ) : (
           <>
             <View style={styles.cardHeaderRow}>
-              <Text style={styles.cardTitle}>{t("profile.weightJourney")}</Text>
+              <Text style={[styles.sectionLabel, styles.sectionLabelInRow]}>{t("profile.weightJourney")}</Text>
               {progressPct >= 100 ? (
                 <View style={styles.goalReachedPill}>
                   <Text style={styles.goalReachedText}>{t("profile.goalReachedPill")}</Text>
@@ -1149,8 +1163,6 @@ export const ProfileScreen = () => {
           </>
         )}
       </View>
-
-      <ProfileXpCard />
 
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>{t("profile.activityOverview")}</Text>
@@ -1565,6 +1577,7 @@ const styles = StyleSheet.create({
   strengthEmptyTitle: { color: TEXT, fontSize: 13, fontWeight: "900", marginBottom: 4 },
   strengthEmptyText: { color: MUTED, fontSize: 11, lineHeight: 16 },
   sectionLabel: { color: MUTED, fontSize: 11, fontWeight: "900", letterSpacing: 0.8, marginBottom: 12 },
+  sectionLabelInRow: { marginBottom: 0, flex: 1 },
   activityStatsRow: { flexDirection: "row" },
   statTile: { flex: 1, alignItems: "center", paddingHorizontal: 6, borderRightWidth: 1, borderRightColor: BORDER },
   statTileLast: { borderRightWidth: 0 },
