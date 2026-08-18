@@ -478,8 +478,22 @@ def run_hourly_notification_checks(now: datetime | None = None) -> None:
             _run_streak_risk_check(db, user, now)
             _run_quote_of_the_day(db, user, now)
             _run_weekly_digest(db, user, now)
+            _run_journey_detection(db, user, now)
     finally:
         db.close()
+
+
+def _run_journey_detection(db: Session, user: User, now: datetime) -> None:
+    from src.services.journey_detection_service import run_journey_detection_for_user
+    from src.services.journey_engine_config import JOURNEY_DETECTION_HOUR_UTC, journey_engine_enabled
+
+    if not journey_engine_enabled() or now.hour != JOURNEY_DETECTION_HOUR_UTC:
+        return
+    try:
+        run_journey_detection_for_user(db, user, now)
+        db.commit()
+    except Exception:
+        db.rollback()
 
 
 def start_notification_scheduler() -> None:

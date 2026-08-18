@@ -12,6 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import ProGateModal from "../../components/ProGateModal";
+import { CoachJourneySection } from "../../components/Coach/CoachJourneySection";
 import { getRequiredPlan } from "../../constants/featureTiers";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
@@ -189,6 +190,8 @@ export default function CoachHomeScreen() {
               </View>
             </View>
           </TouchableOpacity>
+
+          <CoachJourneySection titleKey="coach.journey.timelineTitle" accentColor={GREEN} limit={8} />
         </View>
       </ScrollView>
 

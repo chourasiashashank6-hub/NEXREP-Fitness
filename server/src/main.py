@@ -99,6 +99,7 @@ from src.routes.social_challenges import challenges_router, leaderboard_router
 from src.routes.squads import router as squads_router
 from src.routes.fasting import router as fasting_router
 from src.routes.progress_photos import router as progress_photos_router
+from src.routes.journey import router as journey_router
 from src.routers.body_types import router as body_types_router
 from src.routes.workout_sessions import router as workout_sessions_router
 from src.services.ai_logger import log_groq_call
@@ -176,6 +177,7 @@ app.include_router(squads_router)
 app.include_router(fasting_router)
 app.include_router(progress_photos_router)
 app.include_router(workout_sessions_router)
+app.include_router(journey_router)
 
 
 _ACTIVITY_SKIP_PATHS = {

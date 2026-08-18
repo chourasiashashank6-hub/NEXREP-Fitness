@@ -8,6 +8,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 import CoachingTips from "../../components/Coach/CoachingTips";
+import { CoachJourneySection } from "../../components/Coach/CoachJourneySection";
 import { CircularScore } from "../../components/Coach/CircularScore";
 import { InsightBubble } from "../../components/Coach/InsightBubble";
 import MuscleRecoveryMap from "../../components/Coach/MuscleRecoveryMap";
@@ -333,6 +334,7 @@ export default function AIWorkoutCoachScreen() {
         ) : null}
 
         <View style={styles.tipsSection}>
+          <CoachJourneySection domain="workout" accentColor={WC_COLORS.PURPLE_MID} />
           <CoachingTips tips={coachingTips} loading={loading} />
         </View>
       </View>

@@ -8,6 +8,7 @@ import { ensureDailyCalorieLog, todayLocal } from "../../api/caloriesLog";
 import { getSummary } from "../../api/dashboard";
 import { AICoachCard } from "../../components/Coach/AICoachCard";
 import { ActionPlanCard } from "../../components/Coach/ActionPlanCard";
+import { CoachJourneySection } from "../../components/Coach/CoachJourneySection";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import type { AICoachResponse, NutritionData } from "../../types/coach";
 import type { CoachStackParamList } from "./CoachHomeScreen";
@@ -112,6 +113,7 @@ export default function AICalorieCoachScreen() {
           onLoadingChange={setCoachRefreshing}
         />
         <ActionPlanCard nutritionData={nutritionData} coachResult={coachResult} accentColor="#a78bfa" />
+        <CoachJourneySection domain="nutrition" accentColor={GREEN} />
       </ScrollView>
     </ScreenContainer>
   );

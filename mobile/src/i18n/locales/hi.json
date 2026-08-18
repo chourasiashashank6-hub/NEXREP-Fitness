@@ -1692,6 +1692,21 @@
       "notTrainedRecently": "हाल ही में प्रशिक्षित नहीं किया गया",
       "noWorkoutYet": "अभी तक कोई workout नहीं"
     },
+    "journey": {
+      "sectionTitle": "कोच ने नोटिस किया",
+      "timelineTitle": "आपकी यात्रा",
+      "active": "सक्रिय",
+      "resolved": "हल",
+      "loadMore": "और लोड करें",
+      "recommendations": {
+        "proteinGapStreak": "आप {{days}} दिनों से प्रोटीन लक्ष्य ({{proteinG}}g बनाम {{targetProteinG}}g) से कम हैं। ग्रीक योगर्ट, पनीर, अंडे या प्रोटीन शेक जोड़ें।",
+        "adherenceTrend": "मजबूत सप्ताह — पिछले {{windowDays}} दिनों में {{daysOnTarget}} दिन कैलोरी और प्रोटीन लक्ष्य पर रहे। इस लय को बनाए रखें।",
+        "volumeSpike": "{{muscle}} सेट वॉल्यूम इस सप्ताह {{percentIncrease}}% बढ़ा ({{currentSets}} बनाम {{previousSets}} सेट)। रिकवरी के लिए थोड़ा आराम करें।",
+        "plateau": "{{exerciseName}} ~{{weeksFlat}} सप्ताह से स्थिर है (सर्वश्रेष्ठ {{bestWeightKg}} kg)। अगले सत्र में छोटी प्रगति आज़माएं।",
+        "disengagement": "{{daysSince}} दिनों से कोई {{domain}} लॉग नहीं। आज एक त्वरित लॉग आपकी स्ट्रीक फिर से शुरू करता है।",
+        "generic": "कोच ने आपके हाल के डेटा में एक पैटर्न देखा।"
+      }
+    },
     "calorie": {
       "title": "कैलोरी कोच",
       "emptyTitle": "AI अंतर्दृष्टि प्राप्त करने के लिए पहले अपना भोजन लॉग करें",

@@ -1692,6 +1692,21 @@
       "notTrainedRecently": "No entrenado recientemente",
       "noWorkoutYet": "Aún no hay entrenamiento"
     },
+    "journey": {
+      "sectionTitle": "EL ENTRENADOR NOTÓ",
+      "timelineTitle": "TU VIAJE",
+      "active": "Activo",
+      "resolved": "Resuelto",
+      "loadMore": "Cargar más",
+      "recommendations": {
+        "proteinGapStreak": "Llevas {{days}} días por debajo de tu objetivo de proteína ({{proteinG}}g vs {{targetProteinG}}g). Añade yogur griego, queso paneer, huevos o un batido de proteína.",
+        "adherenceTrend": "Semana fuerte — {{daysOnTarget}} de los últimos {{windowDays}} días cumplieron calorías y proteína. Mantén este ritmo.",
+        "volumeSpike": "El volumen de series de {{muscle}} subió {{percentIncrease}}% esta semana ({{currentSets}} vs {{previousSets}} series). Considera reducir un poco para recuperarte.",
+        "plateau": "{{exerciseName}} lleva ~{{weeksFlat}} semanas plano (mejor {{bestWeightKg}} kg). Prueba una pequeña progresión de carga o repeticiones.",
+        "disengagement": "Sin {{domain}} registrado en {{daysSince}} días. Un registro rápido hoy reinicia tu racha.",
+        "generic": "El entrenador detectó un patrón en tus datos recientes."
+      }
+    },
     "calorie": {
       "title": "Entrenador de calorías",
       "emptyTitle": "Registre sus comidas primero para obtener información de la IA",

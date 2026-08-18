@@ -1726,6 +1726,21 @@
       "notTrainedRecently": "Not trained recently",
       "noWorkoutYet": "No workout yet"
     },
+    "journey": {
+      "sectionTitle": "COACH NOTICED",
+      "timelineTitle": "YOUR JOURNEY",
+      "active": "Active",
+      "resolved": "Resolved",
+      "loadMore": "Load more",
+      "recommendations": {
+        "proteinGapStreak": "You've been under your protein target ({{proteinG}}g vs {{targetProteinG}}g) for {{days}} days. Add Greek yogurt, paneer, eggs, or a protein shake to close the gap.",
+        "adherenceTrend": "Strong week — {{daysOnTarget}} of the last {{windowDays}} days hit calorie and protein targets. Keep this rhythm going.",
+        "volumeSpike": "{{muscle}} set volume jumped {{percentIncrease}}% this week ({{currentSets}} vs {{previousSets}} sets). Consider easing back slightly to manage recovery.",
+        "plateau": "{{exerciseName}} has been flat for ~{{weeksFlat}} weeks (best {{bestWeightKg}} kg). Try a small load or rep progression next session.",
+        "disengagement": "No {{domain}} logged in {{daysSince}} days. A quick log today restarts your streak and keeps coaching accurate.",
+        "generic": "Coach noticed a pattern in your recent data."
+      }
+    },
     "calorie": {
       "title": "Calorie Coach",
       "emptyTitle": "Log your meals first to get AI insights",

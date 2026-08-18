@@ -64,6 +64,8 @@ class Settings(BaseSettings):
     # Comma-separated emails allowed to use /dev/subscription-toggle (development only)
     DEV_TIER_TOGGLE_EMAILS: str = "shashank1@gmail.com"
     DEV_TOGGLE_SECRET: str = "nexrep-dev-toggle-2026"
+    # Coach Journey Engine — default off; when false, detectors, cron, API, and UI stay inert.
+    JOURNEY_ENGINE_ENABLED: bool = False
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod

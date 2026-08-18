@@ -1692,6 +1692,21 @@
       "notTrainedRecently": "Kürzlich nicht trainiert",
       "noWorkoutYet": "Noch kein Training"
     },
+    "journey": {
+      "sectionTitle": "COACH HAT BEMERKT",
+      "timelineTitle": "DEINE REISE",
+      "active": "Aktiv",
+      "resolved": "Erledigt",
+      "loadMore": "Mehr laden",
+      "recommendations": {
+        "proteinGapStreak": "Du liegst seit {{days}} Tagen unter deinem Proteinziel ({{proteinG}}g vs {{targetProteinG}}g). Füge griechischen Joghurt, Paneer, Eier oder einen Proteinshake hinzu.",
+        "adherenceTrend": "Starke Woche — {{daysOnTarget}} der letzten {{windowDays}} Tage trafen Kalorien- und Proteinziele. Behalte dieses Tempo bei.",
+        "volumeSpike": "{{muscle}} Satzvolumen stieg diese Woche um {{percentIncrease}}% ({{currentSets}} vs {{previousSets}} Sätze). Erwäge etwas zurückzufahren für die Erholung.",
+        "plateau": "{{exerciseName}} ist seit ~{{weeksFlat}} Wochen flach (bestes {{bestWeightKg}} kg). Probiere eine kleine Steigerung von Gewicht oder Wiederholungen.",
+        "disengagement": "Kein {{domain}} seit {{daysSince}} Tagen geloggt. Ein schneller Log heute startet deine Serie neu.",
+        "generic": "Der Coach hat ein Muster in deinen jüngsten Daten bemerkt."
+      }
+    },
     "calorie": {
       "title": "Kalorientrainer",
       "emptyTitle": "Logge zuerst deine Mahlzeiten, um KI-Einblicke zu erhalten",

@@ -1696,6 +1696,21 @@
       "notTrainedRecently": "Not trained recently",
       "noWorkoutYet": "Abhi koi workout nahi hai."
     },
+    "journey": {
+      "sectionTitle": "COACH NE NOTICE KIYA",
+      "timelineTitle": "AAPKI JOURNEY",
+      "active": "Active",
+      "resolved": "Resolved",
+      "loadMore": "Aur load karo",
+      "recommendations": {
+        "proteinGapStreak": "Aap {{days}} din se protein target ({{proteinG}}g vs {{targetProteinG}}g) se neeche ho. Greek yogurt, paneer, eggs ya protein shake add karo.",
+        "adherenceTrend": "Strong week — last {{windowDays}} din mein {{daysOnTarget}} din calories aur protein target pe rahe. Is rhythm ko continue karo.",
+        "volumeSpike": "{{muscle}} set volume is week {{percentIncrease}}% badha ({{currentSets}} vs {{previousSets}} sets). Recovery ke liye thoda ease back karo.",
+        "plateau": "{{exerciseName}} ~{{weeksFlat}} weeks se flat hai (best {{bestWeightKg}} kg). Next session mein chhoti load ya rep progression try karo.",
+        "disengagement": "{{daysSince}} din se koi {{domain}} log nahi. Aaj ek quick log streak restart karta hai.",
+        "generic": "Coach ne aapke recent data mein ek pattern notice kiya."
+      }
+    },
     "calorie": {
       "title": "Calorie Coach",
       "emptyTitle": "your meals first to get AI insights log karein",

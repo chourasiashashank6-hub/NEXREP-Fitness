@@ -1692,6 +1692,21 @@
       "notTrainedRecently": "Pas de formation récente",
       "noWorkoutYet": "Pas encore d'entraînement"
     },
+    "journey": {
+      "sectionTitle": "LE COACH A REMARQUÉ",
+      "timelineTitle": "VOTRE PARCOURS",
+      "active": "Actif",
+      "resolved": "Résolu",
+      "loadMore": "Charger plus",
+      "recommendations": {
+        "proteinGapStreak": "Vous êtes sous votre objectif protéines ({{proteinG}}g vs {{targetProteinG}}g) depuis {{days}} jours. Ajoutez yaourt grec, paneer, œufs ou un shake protéiné.",
+        "adherenceTrend": "Belle semaine — {{daysOnTarget}} des {{windowDays}} derniers jours ont atteint calories et protéines. Gardez ce rythme.",
+        "volumeSpike": "Le volume de séries {{muscle}} a augmenté de {{percentIncrease}}% cette semaine ({{currentSets}} vs {{previousSets}} séries). Envisagez de réduire légèrement pour récupérer.",
+        "plateau": "{{exerciseName}} stagne depuis ~{{weeksFlat}} semaines (meilleur {{bestWeightKg}} kg). Essayez une petite progression de charge ou de reps.",
+        "disengagement": "Aucun {{domain}} enregistré depuis {{daysSince}} jours. Un enregistrement rapide aujourd'hui relance votre série.",
+        "generic": "Le coach a remarqué un schéma dans vos données récentes."
+      }
+    },
     "calorie": {
       "title": "Coach calorique",
       "emptyTitle": "Enregistrez d'abord vos repas pour obtenir des informations sur l'IA",
