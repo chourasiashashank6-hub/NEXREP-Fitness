@@ -15,6 +15,7 @@ from src.models.nutrition_calories import DailyNutritionLog, MealEntry
 from src.services.calorie_log_targets import get_calorie_log_targets
 from src.services.coach_volume_read import BASE_MUSCLES, read_muscle_sets_in_window
 from src.services.journey_engine_config import journey_engine_enabled
+from src.services.nutrition_log_read import nutrition_day_actuals, resolve_user_log_today
 
 logger = logging.getLogger(__name__)
 
@@ -139,12 +140,8 @@ def detect_protein_gap_streak(db: Session, user: User, today: date) -> None:
     latest_protein = 0.0
     for offset in range(PROTEIN_GAP_MIN_DAYS + 4):
         day = today - timedelta(days=offset)
-        log = (
-            db.query(DailyNutritionLog)
-            .filter(DailyNutritionLog.user_id == user.id, DailyNutritionLog.log_date == day)
-            .first()
-        )
-        protein = float(log.total_protein_g or 0) if log else 0.0
+        actuals = nutrition_day_actuals(db, user, day)
+        protein = actuals["protein_g"]
         if protein < target_protein * PROTEIN_GAP_RATIO:
             streak_days += 1
             streak_start = day
@@ -175,19 +172,13 @@ def detect_adherence_trend(db: Session, user: User, today: date) -> None:
     days_on_target = 0
     for offset in range(ADHERENCE_WINDOW_DAYS):
         day = today - timedelta(days=offset)
-        log = (
-            db.query(DailyNutritionLog)
-            .filter(DailyNutritionLog.user_id == user.id, DailyNutritionLog.log_date == day)
-            .first()
-        )
-        if not log:
-            continue
-        target_cal = float(log.target_calories or 0)
-        protein_target = float(log.target_protein_g or 0)
+        actuals = nutrition_day_actuals(db, user, day)
+        target_cal = actuals["target_calories"]
+        protein_target = actuals["target_protein_g"]
         if target_cal <= 0 or protein_target <= 0:
             continue
-        calories = float(log.total_calories or 0)
-        protein = float(log.total_protein_g or 0)
+        calories = actuals["calories"]
+        protein = actuals["protein_g"]
         if calories >= target_cal * 0.9 and protein >= protein_target * 0.9:
             days_on_target += 1
 
@@ -358,11 +349,17 @@ def detect_disengagement(db: Session, user: User, today: date) -> None:
             resolve_active_event(db, user_id=user.id, domain="engagement", event_type="disengagement", pattern_key=pattern_key)
 
 
-def run_journey_detection_for_user(db: Session, user: User, now: datetime | None = None) -> None:
+def run_journey_detection_for_user(
+    db: Session,
+    user: User,
+    now: datetime | None = None,
+    *,
+    log_today: date | None = None,
+) -> None:
     if not journey_engine_enabled():
         return
     now = now or datetime.utcnow()
-    today = now.date()
+    today = log_today or resolve_user_log_today(db, user.id, now)
     detect_protein_gap_streak(db, user, today)
     detect_adherence_trend(db, user, today)
     detect_volume_spikes(db, user, now)

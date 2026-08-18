@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { getCalorieCoachInsight, hasOpenAiKey } from "../../services/aiCoachService";
+import { CoachJourneySection } from "./CoachJourneySection";
 import type { AICoachResponse, MacroStatus, NutritionData } from "../../types/coach";
 
 const GREEN = "#0F6E56";
@@ -367,6 +368,8 @@ export const AICoachCard = forwardRef<AICoachCardHandle, Props>(function AICoach
                   <Text style={[styles.bodyImpactText, isStaleInsight && styles.staleTextMuted]}>{result.bodyImpact}</Text>
                 </View>
               </View>
+
+              <CoachJourneySection domain="nutrition" accentColor={GREEN} />
 
               <View style={styles.sectionCard}>
                 <Text style={styles.sectionLabel}>{t("coach.calorie.card.macroBreakdown")}</Text>

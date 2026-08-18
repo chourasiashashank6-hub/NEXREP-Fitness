@@ -80,6 +80,7 @@ def list_journey_events(
 
 @router.post("/run-detection")
 def run_journey_detection_now(
+    local_date: str | None = Query(default=None, max_length=10),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -88,7 +89,10 @@ def run_journey_detection_now(
     if not _journey_table_ready(db):
         raise HTTPException(status_code=503, detail="journey_events table missing — run alembic upgrade head")
 
-    run_journey_detection_for_user(db, current_user, datetime.utcnow())
+    from src.services.planner_common import parse_local_date
+
+    log_today = parse_local_date(local_date) if local_date else None
+    run_journey_detection_for_user(db, current_user, datetime.utcnow(), log_today=log_today)
     db.commit()
     return {
         "ok": True,
