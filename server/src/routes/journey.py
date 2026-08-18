@@ -2,17 +2,37 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from src.core.config import settings
 from src.db.session import get_db
 from src.models.journey_event import JourneyEvent
 from src.models.models import User
+from src.services.journey_detection_service import run_journey_detection, run_journey_detection_for_user
 from src.services.journey_engine_config import journey_engine_enabled
 from src.services.journey_recommendations import recommendation_for_event
 from src.utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/journey", tags=["journey"])
+
+
+def _journey_table_ready(db: Session) -> bool:
+    row = db.execute(
+        text("SELECT to_regclass('public.journey_events') IS NOT NULL AS ready")
+    ).mappings().first()
+    return bool(row and row.get("ready"))
+
+
+def _active_event_count(db: Session, user_id: int) -> int:
+    return (
+        db.query(JourneyEvent)
+        .filter(JourneyEvent.user_id == user_id, JourneyEvent.status == "active")
+        .count()
+    )
 
 
 def _serialize_event(row: JourneyEvent) -> dict:
@@ -56,3 +76,40 @@ def list_journey_events(
         "limit": limit,
         "offset": offset,
     }
+
+
+@router.post("/run-detection")
+def run_journey_detection_now(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not journey_engine_enabled():
+        raise HTTPException(status_code=503, detail="Journey engine is disabled")
+    if not _journey_table_ready(db):
+        raise HTTPException(status_code=503, detail="journey_events table missing — run alembic upgrade head")
+
+    run_journey_detection_for_user(db, current_user, datetime.utcnow())
+    db.commit()
+    return {
+        "ok": True,
+        "user_id": current_user.id,
+        "active_events": _active_event_count(db, current_user.id),
+    }
+
+
+@router.post("/run-detection-all")
+def run_journey_detection_all(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    secret = request.headers.get("X-Dev-Secret", "")
+    if secret != settings.DEV_TOGGLE_SECRET:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    if not journey_engine_enabled():
+        raise HTTPException(status_code=503, detail="Journey engine is disabled")
+    if not _journey_table_ready(db):
+        raise HTTPException(status_code=503, detail="journey_events table missing — run alembic upgrade head")
+
+    run_journey_detection(db, datetime.utcnow())
+    total_active = db.query(JourneyEvent).filter(JourneyEvent.status == "active").count()
+    return {"ok": True, "active_events_total": total_active}
