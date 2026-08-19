@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import ProGateModal from "../../components/ProGateModal";
 import { CoachJourneySection } from "../../components/Coach/CoachJourneySection";
 import { getRequiredPlan } from "../../constants/featureTiers";
+import { useCoachRedesignEnabled } from "../../hooks/useCoachRedesign";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
 
@@ -42,6 +43,7 @@ const SCREEN_BG = "#FFFFFF";
 export default function CoachHomeScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
+  const { enabled: redesignEnabled } = useCoachRedesignEnabled();
   const { hasFeatureAccess } = useFeatureAccess();
   const [gate, setGate] = useState<GateConfig | null>(null);
 
@@ -191,7 +193,9 @@ export default function CoachHomeScreen() {
             </View>
           </TouchableOpacity>
 
-          <CoachJourneySection titleKey="coach.journey.timelineTitle" accentColor={GREEN} limit={8} />
+          {!redesignEnabled ? (
+            <CoachJourneySection titleKey="coach.journey.timelineTitle" accentColor={GREEN} limit={8} />
+          ) : null}
         </View>
       </ScrollView>
 

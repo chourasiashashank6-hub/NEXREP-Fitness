@@ -8,6 +8,9 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 import CoachingTips from "../../components/Coach/CoachingTips";
+import { CoachCadenceLockedPanel } from "../../components/Coach/CoachCadenceLockedPanel";
+import { CoachCadenceSelector } from "../../components/Coach/CoachCadenceSelector";
+import { WorkoutCoachSummaryViews } from "../../components/Coach/workout/WorkoutCoachSummaryViews";
 import { CoachJourneySection } from "../../components/Coach/CoachJourneySection";
 import { CircularScore } from "../../components/Coach/CircularScore";
 import { InsightBubble } from "../../components/Coach/InsightBubble";
@@ -20,6 +23,8 @@ import { fetchOnboardingMe } from "../../api/onboarding";
 import { getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { WC_COLORS } from "../../constants/workoutCoach";
+import { useCoachCadence } from "../../hooks/useCoachCadence";
+import { useCoachRedesignEnabled } from "../../hooks/useCoachRedesign";
 import { buildFallbackCoachingTips, normalizeWorkoutCoachResponse } from "../../services/coachNormalize";
 import { getFallbackInsight, getWorkoutCoachInsight } from "../../services/workoutCoachService";
 import type { OnboardingData } from "../../types/onboarding";
@@ -31,12 +36,6 @@ import { inferMusclesFromWorkout, parseWorkoutTimestamp } from "../../utils/work
 
 const CACHE_KEY = "workout_coach_insight";
 const BASE_MUSCLES = ["Chest", "Shoulders", "Triceps", "Back", "Legs", "Biceps"] as const;
-function formatTimestamp(): string {
-  const now = new Date();
-  return i18n.t("coach.workout.analyzedAt", {
-    time: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
-  });
-}
 
 function relativeLabel(dateIso: string): string {
   const d = new Date(dateIso).getTime();
@@ -120,14 +119,16 @@ function buildWorkoutDataFromHistory(items: WorkoutHistoryItem[], onboardingData
 export default function AIWorkoutCoachScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
+  const { enabled: redesignEnabled } = useCoachRedesignEnabled();
+  const { cadence, setCadence, isCadenceLocked, handleYearlyPress } = useCoachCadence();
   const [data, setData] = useState<WorkoutData | null>(null);
   const [insight, setInsight] = useState<WorkoutCoachInsight | null>(null);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [timestamp, setTimestamp] = useState(t("coach.workout.notAnalyzed"));
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
+  const [summaryRefresh, setSummaryRefresh] = useState(0);
   const loadingDataRef = useRef(false);
   const cacheHydratedRef = useRef(false);
   const defaultWorkoutData = useMemo(() => buildWorkoutDataFromHistory([], onboardingData), [onboardingData]);
@@ -182,12 +183,10 @@ export default function AIWorkoutCoachScreen() {
     try {
       const next = await getWorkoutCoachInsight(data, onboardingData);
       setInsight(next);
-      setTimestamp(formatTimestamp());
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(next));
     } catch (e) {
       const fallback = getFallbackInsight(data, onboardingData);
       setInsight(fallback);
-      setTimestamp(t("coach.workout.offlineEstimate"));
       setError(e instanceof Error ? t("coach.workout.fallbackInsight", { message: e.message }) : t("coach.workout.couldNotReachAi"));
     } finally {
       setLoading(false);
@@ -206,7 +205,6 @@ export default function AIWorkoutCoachScreen() {
         const normalized = normalizeWorkoutCoachResponse(parsed, defaultWorkoutData, onboardingData);
         if (normalized.insightText) {
           setInsight(normalized);
-          setTimestamp(t("coach.workout.previousSession"));
         }
       } catch {
         // ignore cache parsing failures
@@ -224,6 +222,28 @@ export default function AIWorkoutCoachScreen() {
     return buildFallbackCoachingTips(source, score);
   }, [insight, data, defaultWorkoutData]);
 
+  const showLegacyContent = !redesignEnabled;
+
+  const handleRefresh = () => {
+    if (redesignEnabled) {
+      setSummaryRefresh((n) => n + 1);
+      void loadWorkoutData();
+      return;
+    }
+    void fetchInsight();
+  };
+
+  const renderCadenceBody = () => {
+    if (!redesignEnabled) return null;
+    if (cadence === "yearly" || (cadence === "monthly" && isCadenceLocked("monthly"))) {
+      return <CoachCadenceLockedPanel cadence={cadence === "yearly" ? "yearly" : "monthly"} accentColor={WC_COLORS.PURPLE_MID} />;
+    }
+    if (cadence === "daily" || cadence === "weekly" || cadence === "monthly") {
+      return <WorkoutCoachSummaryViews cadence={cadence} refreshToken={summaryRefresh} />;
+    }
+    return null;
+  };
+
   return (
     <ScreenContainer bg={WC_COLORS.SCREEN_BG} contentStyle={styles.screenContent}>
       <View style={styles.topHeader}>
@@ -231,7 +251,7 @@ export default function AIWorkoutCoachScreen() {
           <Ionicons name="chevron-back" size={18} color={WC_COLORS.TEXT} />
         </Pressable>
         <Text style={styles.headerTitle}>{t("coach.workout.title")}</Text>
-        <Pressable style={[styles.headerRefresh, (loading || dataLoading) && styles.disabled]} onPress={() => void fetchInsight()} disabled={loading || dataLoading}>
+        <Pressable style={[styles.headerRefresh, (loading || dataLoading) && styles.disabled]} onPress={handleRefresh} disabled={loading || dataLoading}>
           {loading || dataLoading ? (
             <ActivityIndicator size="small" color={WC_COLORS.PURPLE_MID} />
           ) : (
@@ -241,6 +261,17 @@ export default function AIWorkoutCoachScreen() {
         </Pressable>
         <View style={styles.onlineDot} />
       </View>
+      {redesignEnabled ? (
+        <CoachCadenceSelector
+          value={cadence}
+          accentColor={WC_COLORS.PURPLE_MID}
+          onChange={setCadence}
+          onYearlyPress={handleYearlyPress}
+          isCadenceLocked={isCadenceLocked}
+        />
+      ) : null}
+      {renderCadenceBody()}
+      {showLegacyContent ? (
       <View>
         <View style={styles.heroCard}>
           <View style={styles.heroCircleOne} />
@@ -338,6 +369,7 @@ export default function AIWorkoutCoachScreen() {
           <CoachingTips tips={coachingTips} loading={loading} />
         </View>
       </View>
+      ) : null}
     </ScreenContainer>
   );
 }

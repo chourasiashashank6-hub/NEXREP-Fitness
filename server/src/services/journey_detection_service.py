@@ -15,12 +15,13 @@ from src.models.nutrition_calories import DailyNutritionLog, MealEntry
 from src.services.calorie_log_targets import get_calorie_log_targets
 from src.services.coach_volume_read import BASE_MUSCLES, read_muscle_sets_in_window
 from src.services.journey_engine_config import journey_engine_enabled
-from src.services.nutrition_log_read import nutrition_day_actuals, resolve_user_log_today
+from src.services.nutrition_log_read import nutrition_day_actuals, nutrition_day_has_meals, resolve_user_log_today
 
 logger = logging.getLogger(__name__)
 
 PROTEIN_GAP_RATIO = 0.8
 PROTEIN_GAP_MIN_DAYS = 3
+PROTEIN_GAP_MAX_LOOKBACK_DAYS = 21
 ADHERENCE_MIN_DAYS = 5
 ADHERENCE_WINDOW_DAYS = 7
 VOLUME_SPIKE_MIN_PREVIOUS_SETS = 2
@@ -138,8 +139,12 @@ def detect_protein_gap_streak(db: Session, user: User, today: date) -> None:
     streak_days = 0
     streak_start: date | None = None
     today_protein = nutrition_day_actuals(db, user, today)["protein_g"]
-    for offset in range(PROTEIN_GAP_MIN_DAYS + 4):
+    offset = 0
+    while streak_days < PROTEIN_GAP_MIN_DAYS + 1 and offset < PROTEIN_GAP_MAX_LOOKBACK_DAYS:
         day = today - timedelta(days=offset)
+        offset += 1
+        if not nutrition_day_has_meals(db, user, day):
+            continue
         actuals = nutrition_day_actuals(db, user, day)
         protein = actuals["protein_g"]
         if protein < target_protein * PROTEIN_GAP_RATIO:

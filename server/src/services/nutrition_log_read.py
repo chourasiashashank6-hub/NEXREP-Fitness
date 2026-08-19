@@ -38,6 +38,14 @@ def resolve_user_log_today(db: Session, user_id: int, now_utc: datetime) -> date
     return utc_today
 
 
+def nutrition_day_has_meals(db: Session, user, log_date: date) -> bool:
+    """True when the user logged at least one meal on this log date."""
+    from src.routes.calories import _get_or_create_daily_log
+
+    log = _get_or_create_daily_log(db, user, log_date)
+    return db.query(MealEntry).filter(MealEntry.log_id == log.log_id).count() > 0
+
+
 def nutrition_day_actuals(db: Session, user, log_date: date) -> dict[str, float]:
     """Return recalculated day totals — same path as GET /api/calories/daily-log."""
     from src.routes.calories import _get_or_create_daily_log, recalculate_daily_log

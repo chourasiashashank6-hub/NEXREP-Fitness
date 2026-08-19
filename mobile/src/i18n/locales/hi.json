@@ -464,7 +464,10 @@
   "transformation": {
     "title": "ट्रांसफॉर्मेशन टाइमलाइन",
     "subtitle": "प्रगति फोटो इस डिवाइस पर रहती हैं जब तक आप क्लाउड बैकअप न चुनें",
-    "angles": { "front": "सामने", "side": "बगल" },
+    "angles": {
+      "front": "सामने",
+      "side": "बगल"
+    },
     "capture": {
       "framingHint": "पीछे हटें ताकि आपका पूरा शरीर दिखाई दे",
       "flipCamera": "कैमरा पलटें",
@@ -1705,6 +1708,201 @@
         "plateau": "{{exerciseName}} ~{{weeksFlat}} सप्ताह से स्थिर है (सर्वश्रेष्ठ {{bestWeightKg}} kg)। अगले सत्र में छोटी प्रगति आज़माएं।",
         "disengagement": "{{daysSince}} दिनों से कोई {{domain}} लॉग नहीं। आज एक त्वरित लॉग आपकी स्ट्रीक फिर से शुरू करता है।",
         "generic": "कोच ने आपके हाल के डेटा में एक पैटर्न देखा।"
+      }
+    },
+    "redesign": {
+      "cadence": {
+        "daily": "दैनिक",
+        "weekly": "साप्ताहिक",
+        "monthly": "मासिक",
+        "yearly": "वार्षिक"
+      },
+      "locked": {
+        "kicker": "एलीट फीचर",
+        "eliteBadge": "एलीट प्लान",
+        "upgradeCta": "एलीट में अपग्रेड करें",
+        "monthly": {
+          "title": "मासिक विश्लेषण",
+          "body": "वजन रुझान, आवर्ती पैटर्न और महीने-दर-महीने प्रगति — एलीट पर अनलॉक।"
+        },
+        "yearly": {
+          "title": "वर्ष समीक्षा",
+          "body": "पूर्ण वर्ष रिकैप, निरंतरता हीटमैप, ताकत लाभ और मील के पत्थर — एलीट पर अनलॉक।"
+        }
+      },
+      "placeholder": {
+        "weekly": {
+          "kicker": "साप्ताहिक दृश्य",
+          "title": "आपका सप्ताह एक नज़र में",
+          "body": "अनुपालन बars, मैक्रो औसत और अगले सप्ताह के लिए मार्गदर्शन अगले अपडेट में यहाँ दिखेगा।"
+        },
+        "monthly": {
+          "kicker": "मासिक दृश्य",
+          "title": "आपका महीना एक नज़र में",
+          "body": "वजन रुझान, आवर्ती पैटर्न और महीने-दर-महीने तुलना अगले अपडेट में यहाँ दिखेगी।"
+        }
+      },
+      "yearly": {
+        "title": "आपका वर्ष",
+        "share": "शेयर",
+        "heroKicker": "वर्ष समीक्षा",
+        "comingSoonTitle": "आपका वर्ष बन रहा है",
+        "comingSoonBody": "पर्याप्त इतिहास होने पर सत्र, वजन यात्रा, ताकत लाभ और मील के पत्थर यहाँ दिखेंगे।",
+        "historyKicker": "Unlocks with history",
+        "historyTitle": "Your year in review",
+        "historyBodyCountdown": "Keep logging — your year recap unlocks in {{count}} more days ({{total}} days of nutrition or workout history required).",
+        "historyBodySoon": "You're almost there — year in review unlocks after {{total}} days of logged activity."
+      }
+    },
+    "summary": {
+      "loading": "विश्लेषण तैयार हो रहा है…",
+      "loadFailed": "कोच सारांश लोड नहीं हो सका। पुनः प्रयास के लिए रीफ़्रेश टैप करें।",
+      "nutrition": {
+        "daily": {
+          "heroSubtitle": "कैलोरी · मैक्रो · हाइड्रेशन · समय",
+          "focusLabel": "आज का फोकस",
+          "focusLogMeals": "आज के लिए मैक्रो कोचिंग के लिए पहला भोजन लॉग करें।",
+          "focusProteinGap": "आप {{gapG}}g प्रोटीन से कम हैं — अगले भोजन में पनीर, अंडे या दही जोड़ें।",
+          "focusCarbsGap": "आप {{gapG}}g कार्ब्स से कम हैं — चावल, रोटी या ओट्स जोड़ें।",
+          "focusFatGap": "आप {{gapG}}g फैट से कम हैं — बादाम, ऑलिव ऑयल या एवोकाडो जोड़ें।",
+          "focusBalancedMeal": "आपके पास {{remaining}} kcal बचे हैं — दिन पूरा करने के लिए एक संतुलित भोजन प्लान करें।",
+          "focusOnTrack": "मैक्रो ठीक लग रहे हैं। लॉग करते रहें और हाइड्रेटेड रहें।"
+        },
+        "weekly": {
+          "heroTitle": "अच्छा सप्ताह",
+          "heroSubtitle": "7-दिन अनुपालन · मैक्रो · पैटर्न",
+          "daysOnTarget": "दिन लक्ष्य पर",
+          "adherence": "अनुपालन",
+          "partialDays": "अब तक {{count}}/{{total}} दिन लॉग",
+          "whatChangedLabel": "क्या बदला",
+          "whatChanged": "पिछले सप्ताह की तुलना में अनुपालन {{prevPct}}% से {{currPct}}% हो गया।",
+          "dailyAdherence": "दैनिक अनुपालन",
+          "macroAverages": "साप्ताहिक औसत",
+          "fixNextLabel": "अगले सप्ताह ठीक करें",
+          "fixMacro": "साप्ताहिक {{macro}} औसत सबसे कम रहा — सप्ताह की शुरुआत में {{macro}} बढ़ाएँ।",
+          "hydrationAvg": "औसत दैनिक {{avg}} L / {{target}} L"
+        },
+        "monthly": {
+          "heroSubtitle": "30-दिन समीक्षा · लक्ष्य गति",
+          "weightDelta": "kg इस महीने",
+          "avgAdherence": "औसत अनुपालन",
+          "partialMonth": "महीने के दिन {{day}} तक",
+          "patternLabel": "आवर्ती पैटर्न",
+          "patternAdherenceDown": "पिछले महीने की तुलना में अनुपालन {{delta}} अंक गिरा — वीकेंड लॉगिंग कम हुई।",
+          "patternAdherenceUp": "महीने-दर-महीने अनुपालन {{delta}} अंक बेहतर — यही लय बनाए रखें।",
+          "weightTrend": "वजन रुझान",
+          "start": "शुरू",
+          "momLabel": "महीने की तुलना",
+          "momAdherence": "अनुपालन",
+          "momProtein": "औसत प्रोटीन",
+          "momDaysLogged": "लॉग किए दिन",
+          "biggestWin": "सबसे बड़ी जीत",
+          "winWeight": "इस महीने {{changeKg}} kg कम — निरंतरता बनी रही।",
+          "winAdherence": "{{daysOnTarget}} दिन लक्ष्य पर — अब तक का सबसे consistent महीना।",
+          "nextMonth": "अगला महीना",
+          "nextProtein": "औसत प्रोटीन {{avgProteinG}}g है — रिकवरी के लिए रोज +15g लक्ष्य रखें।",
+          "pacingDefault": "लक्ष्य {{target}} kg · सटीक गति के लिए हफ्ते में वजन लॉग करें",
+          "pacing": {
+            "on_pace_now": "लक्ष्य {{target}} kg · अभी सही गति पर",
+            "on_pace_1w": "लक्ष्य {{target}} kg · ~1 सप्ताह में",
+            "on_pace_2w": "लक्ष्य {{target}} kg · ~2 सप्ताह में",
+            "on_pace_3w": "लक्ष्य {{target}} kg · ~3 सप्ताह में",
+            "on_pace_4w": "लक्ष्य {{target}} kg · ~4 सप्ताह में"
+          }
+        }
+      },
+      "label": {
+        "perfect": "Perfect",
+        "excellent": "Excellent",
+        "solidDay": "Solid Day",
+        "gettingThere": "Getting There",
+        "needsWork": "Needs Work",
+        "peakReadiness": "Peak readiness",
+        "readyToPush": "Ready to push",
+        "trainModerately": "Train moderately",
+        "lightActivityOnly": "Light activity only",
+        "restDayRecommended": "Rest day recommended"
+      },
+      "workout": {
+        "daily": {
+          "heroSubtitle": "Readiness · recovery · weekly volume",
+          "insightLabel": "Today's read",
+          "insightFresh": "{{muscle}} is fresh — good day for quality volume.",
+          "insightRecovery": "Recovery is moderate ({{score}}/100) — manage intensity today.",
+          "recoveryTitle": "Recovery cards",
+          "factorMuscleFresh": "{{muscle}} fresh",
+          "factorMuscleSore": "{{muscle}} sore",
+          "factorLowSoreness": "Low muscle soreness",
+          "factorWeeklyVolume": "Weekly volume {{percent}}% complete",
+          "factorSleep": "Prioritize sleep tonight",
+          "tipRestMuscle": "Rest {{muscle}} today",
+          "tipRestMuscleBody": "{{muscle}} is still recovering. Avoid heavy loading and prioritize sleep.",
+          "tipCloseGap": "Close the {{muscle}} gap",
+          "tipCloseGapBody": "Only {{current}} sets for {{muscle}} vs a {{target}}-set target. Add a focused session before the week ends.",
+          "tipPrioritizeRecovery": "Prioritize recovery today",
+          "tipPrioritizeRecoveryBody": "Readiness is {{score}}/100. Keep today's session light and aim for 7–8 hours of sleep.",
+          "tipPushVolume": "Push {{muscle}} volume",
+          "tipPushVolumeBody": "{{muscle}} is fresh — add quality sets while form stays crisp.",
+          "tipSlowEccentric": "Slow the eccentric",
+          "tipSlowEccentricBody": "Slow the lowering phase to 3 seconds for more time under tension without adding weight.",
+          "tipHydrate": "Hydrate before training",
+          "tipHydrateBody": "Drink 500ml of water 30 minutes before your session.",
+          "tipLogWorkouts": "Log workouts for insights",
+          "tipLogWorkoutsBody": "Start logging workouts to unlock personalized coaching tips."
+        },
+        "weekly": {
+          "heroStrong": "Strong week",
+          "heroBuilding": "Building",
+          "heroLight": "Light week",
+          "heroSubtitle": "Volume · consistency · muscle balance",
+          "sessions": "sessions",
+          "whatChangedLabel": "What changed",
+          "whatChanged": "Weekly sets moved from {{prevSets}} to {{currSets}} vs last week.",
+          "undertrainedLabel": "Undertrained",
+          "undertrained": "{{muscle}} is below half its weekly set target — schedule it before the week ends.",
+          "consistency": "Training consistency",
+          "adjustNextLabel": "Adjust next week",
+          "adjustNext": "You're at {{percent}}% of your weekly set target — plan one more session to close the gap.",
+          "progressInsight": "{{percent}}% of weekly set target"
+        },
+        "monthly": {
+          "heroTitle": "Training month",
+          "partialMonth": "Through day {{day}} of the month",
+          "sessions": "sessions",
+          "totalSets": "total sets",
+          "patternLabel": "Recurring pattern",
+          "patternVolumeUp": "Volume rose {{percent}}% vs last month — watch recovery as load climbs.",
+          "patternVolumeDown": "Volume dropped {{percent}}% vs last month — rebuild consistency next month.",
+          "volumeByWeek": "Volume by week",
+          "weekN": "W{{n}}",
+          "strengthTitle": "Strength progression",
+          "liftBench": "Bench press",
+          "liftSquat": "Squat",
+          "liftDeadlift": "Deadlift",
+          "plateauLabel": "Plateau watch",
+          "plateau": "{{lift}} has been flat this month — try a small load or rep progression.",
+          "biggestWin": "Biggest win",
+          "winStrength": "{{lift}} up {{deltaKg}} kg this month.",
+          "nextMonthLabel": "Next month",
+          "nextMonthFocus": "You logged {{sessions}} sessions — aim for +1 session per week to keep momentum."
+        },
+        "recovery": {
+          "sleepTitle": "Sleep 7–8 hours",
+          "sleepBody": "Recovery improves with consistent sleep tonight.",
+          "hydrateTitle": "Hydrate well",
+          "hydrateBody": "Drink water through the day to reduce soreness.",
+          "stretchTitle": "Mobility work",
+          "stretchBody": "Add 10 minutes of stretching for tight muscle groups."
+        }
+      },
+      "partial": {
+        "noMealsToday": "No meals logged today — log food to unlock macro coaching.",
+        "noDaysLoggedWeek": "No days logged this week yet.",
+        "noDaysLoggedMonth": "No nutrition logged this month yet.",
+        "noWorkoutsYet": "No workouts logged yet — your first session unlocks readiness coaching.",
+        "noWorkoutsWeek": "No training sessions this week yet.",
+        "noWorkoutsMonth": "No training sessions this month yet.",
+        "trainingDaysSoFar": "{{count}} of {{total}} days trained so far"
       }
     },
     "calorie": {

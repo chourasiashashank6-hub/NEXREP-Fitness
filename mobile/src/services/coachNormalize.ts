@@ -188,11 +188,14 @@ export const CALORIE_COACH_DEFAULTS: AICoachResponse = {
   alerts: [],
 };
 
+const MACRO_ON_TRACK_RATIO = 0.8;
+const MACRO_HIGH_RATIO = 1.15;
+
 function macroStatus(consumed: number, target: number): MacroStatus {
   if (target <= 0) return "on_track";
   const ratio = consumed / target;
-  if (ratio < 0.7) return "low";
-  if (ratio > 1.15) return "high";
+  if (ratio < MACRO_ON_TRACK_RATIO) return "low";
+  if (ratio > MACRO_HIGH_RATIO) return "high";
   return "on_track";
 }
 

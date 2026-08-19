@@ -13,6 +13,7 @@ Set these on the **API** service (`server/`):
 | `APP_ENV` | `production` |
 | `RAZORPAY_*` | Keys and `RAZORPAY_WEBHOOK_SECRET` when live |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` | Server-side AI only |
+| `COACH_REDESIGN_ENABLED` | `true` to enable tiered coach cadence views and `/api/coach/*` (default `false`) |
 
 Mobile (EAS / Expo): set `EXPO_PUBLIC_API_URL` to your public API URL in EAS secrets or `mobile/.env.production` at build time.
 

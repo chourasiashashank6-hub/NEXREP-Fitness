@@ -209,13 +209,17 @@ CALORIE_COACH_SYSTEM_PROMPT = (
 )
 
 
+MACRO_ON_TRACK_RATIO = 0.8
+MACRO_HIGH_RATIO = 1.15
+
+
 def _macro_status(consumed: float, target: float) -> str:
     if target <= 0:
         return "on_track"
     ratio = consumed / target
-    if ratio < 0.7:
+    if ratio < MACRO_ON_TRACK_RATIO:
         return "low"
-    if ratio > 1.15:
+    if ratio > MACRO_HIGH_RATIO:
         return "high"
     return "on_track"
 
@@ -523,7 +527,7 @@ def _normalize_coach_response(parsed: dict[str, Any], day_payload: dict[str, Any
                 "type": "nutrition",
                 "icon": "nutrition",
                 "title": "Nutrition Alert",
-                "subtitle": f"Protein intake is {int(round(p))}g — add a protein-rich snack" if p < pt * 0.7 else f"Protein at {int(round(p))}g looks solid",
+                "subtitle": f"Protein intake is {int(round(p))}g — add a protein-rich snack" if p < pt * MACRO_ON_TRACK_RATIO else f"Protein at {int(round(p))}g looks solid",
             },
         ]
         for fa in fallback_alerts:

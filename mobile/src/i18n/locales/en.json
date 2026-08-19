@@ -1741,6 +1741,201 @@
         "generic": "Coach noticed a pattern in your recent data."
       }
     },
+    "redesign": {
+      "cadence": {
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "yearly": "Yearly"
+      },
+      "locked": {
+        "kicker": "Elite feature",
+        "eliteBadge": "Elite plan",
+        "upgradeCta": "Upgrade to Elite",
+        "monthly": {
+          "title": "Monthly analysis",
+          "body": "See weight trends, recurring patterns, and month-over-month progress — unlocked on Elite."
+        },
+        "yearly": {
+          "title": "Year in review",
+          "body": "Your full year recap with consistency heatmap, strength gains, and milestones — unlocked on Elite."
+        }
+      },
+      "placeholder": {
+        "weekly": {
+          "kicker": "Weekly view",
+          "title": "Your week at a glance",
+          "body": "Adherence bars, macro averages, and fix-next-week guidance will appear here in the next update."
+        },
+        "monthly": {
+          "kicker": "Monthly view",
+          "title": "Your month at a glance",
+          "body": "Weight trend, recurring patterns, and month-over-month comparisons will appear here in the next update."
+        }
+      },
+      "yearly": {
+        "title": "Your year",
+        "share": "Share",
+        "heroKicker": "Year in review",
+        "comingSoonTitle": "Building your year",
+        "comingSoonBody": "Sessions, weight journey, strength gains, and milestones will appear here once you have enough history.",
+        "historyKicker": "Unlocks with history",
+        "historyTitle": "Your year in review",
+        "historyBodyCountdown": "Keep logging — your year recap unlocks in {{count}} more days ({{total}} days of nutrition or workout history required).",
+        "historyBodySoon": "You're almost there — year in review unlocks after {{total}} days of logged activity."
+      }
+    },
+    "summary": {
+      "loading": "Building your analysis…",
+      "loadFailed": "Could not load coach summary. Tap refresh to try again.",
+      "partial": {
+        "noMealsToday": "No meals logged today — log food to unlock macro coaching.",
+        "noDaysLoggedWeek": "No days logged this week yet.",
+        "noDaysLoggedMonth": "No nutrition logged this month yet.",
+        "noWorkoutsYet": "No workouts logged yet — your first session unlocks readiness coaching.",
+        "noWorkoutsWeek": "No training sessions this week yet.",
+        "noWorkoutsMonth": "No training sessions this month yet.",
+        "trainingDaysSoFar": "{{count}} of {{total}} days trained so far"
+      },
+      "label": {
+        "perfect": "Perfect",
+        "excellent": "Excellent",
+        "solidDay": "Solid Day",
+        "gettingThere": "Getting There",
+        "needsWork": "Needs Work",
+        "peakReadiness": "Peak readiness",
+        "readyToPush": "Ready to push",
+        "trainModerately": "Train moderately",
+        "lightActivityOnly": "Light activity only",
+        "restDayRecommended": "Rest day recommended"
+      },
+      "nutrition": {
+        "daily": {
+          "heroSubtitle": "Calories · macros · hydration · timing",
+          "focusLabel": "Today's focus",
+          "focusLogMeals": "Log your first meal to unlock macro coaching for today.",
+          "focusProteinGap": "You're {{gapG}}g short on protein — add paneer, eggs, or Greek yogurt to your next meal.",
+          "focusCarbsGap": "You're {{gapG}}g short on carbs — add rice, roti, or oats before the day ends.",
+          "focusFatGap": "You're {{gapG}}g short on fat — add almonds, olive oil, or avocado.",
+          "focusBalancedMeal": "You have {{remaining}} kcal left — plan one balanced meal to close the day.",
+          "focusOnTrack": "Macros look solid. Keep logging and stay hydrated through the evening."
+        },
+        "weekly": {
+          "heroTitle": "Good week",
+          "heroSubtitle": "7-day adherence · macros · patterns",
+          "daysOnTarget": "days on target",
+          "adherence": "adherence",
+          "partialDays": "{{count}} of {{total}} days logged so far",
+          "whatChangedLabel": "What changed",
+          "whatChanged": "Adherence moved from {{prevPct}}% to {{currPct}}% vs last week.",
+          "dailyAdherence": "Daily adherence",
+          "macroAverages": "Weekly averages",
+          "fixNextLabel": "Fix next week",
+          "fixMacro": "Your weekly {{macro}} average ran lowest — front-load {{macro}} earlier in the week.",
+          "hydrationAvg": "Average daily {{avg}} L / {{target}} L"
+        },
+        "monthly": {
+          "heroSubtitle": "30-day review · goal pacing",
+          "weightDelta": "kg this month",
+          "avgAdherence": "avg adherence",
+          "partialMonth": "Through day {{day}} of the month",
+          "patternLabel": "Recurring pattern",
+          "patternAdherenceDown": "Adherence slipped {{delta}} points vs the prior month — weekend logging dropped off.",
+          "patternAdherenceUp": "Adherence improved {{delta}} points month over month — keep the same meal rhythm.",
+          "weightTrend": "Weight trend",
+          "start": "Start",
+          "momLabel": "Month over month",
+          "momAdherence": "Adherence",
+          "momProtein": "Avg protein",
+          "momDaysLogged": "Days logged",
+          "biggestWin": "Biggest win",
+          "winWeight": "Down {{changeKg}} kg this month while staying consistent.",
+          "winAdherence": "{{daysOnTarget}} days on target — your most consistent month yet.",
+          "nextMonth": "Next month",
+          "nextProtein": "Average protein is {{avgProteinG}}g — push +15g daily to accelerate recovery.",
+          "pacingDefault": "Target {{target}} kg · log weight weekly to refine pacing",
+          "pacing": {
+            "on_pace_now": "Target {{target}} kg · on pace now",
+            "on_pace_1w": "Target {{target}} kg · on pace within ~1 week",
+            "on_pace_2w": "Target {{target}} kg · on pace within ~2 weeks",
+            "on_pace_3w": "Target {{target}} kg · on pace within ~3 weeks",
+            "on_pace_4w": "Target {{target}} kg · on pace within ~4 weeks"
+          }
+        }
+      },
+      "workout": {
+        "daily": {
+          "heroSubtitle": "Readiness · recovery · weekly volume",
+          "insightLabel": "Today's read",
+          "insightFresh": "{{muscle}} is fresh — good day for quality volume.",
+          "insightRecovery": "Recovery is moderate ({{score}}/100) — manage intensity today.",
+          "recoveryTitle": "Recovery cards",
+          "factorMuscleFresh": "{{muscle}} fresh",
+          "factorMuscleSore": "{{muscle}} sore",
+          "factorLowSoreness": "Low muscle soreness",
+          "factorWeeklyVolume": "Weekly volume {{percent}}% complete",
+          "factorSleep": "Prioritize sleep tonight",
+          "tipRestMuscle": "Rest {{muscle}} today",
+          "tipRestMuscleBody": "{{muscle}} is still recovering. Avoid heavy loading and prioritize sleep.",
+          "tipCloseGap": "Close the {{muscle}} gap",
+          "tipCloseGapBody": "Only {{current}} sets for {{muscle}} vs a {{target}}-set target. Add a focused session before the week ends.",
+          "tipPrioritizeRecovery": "Prioritize recovery today",
+          "tipPrioritizeRecoveryBody": "Readiness is {{score}}/100. Keep today's session light and aim for 7–8 hours of sleep.",
+          "tipPushVolume": "Push {{muscle}} volume",
+          "tipPushVolumeBody": "{{muscle}} is fresh — add quality sets while form stays crisp.",
+          "tipSlowEccentric": "Slow the eccentric",
+          "tipSlowEccentricBody": "Slow the lowering phase to 3 seconds for more time under tension without adding weight.",
+          "tipHydrate": "Hydrate before training",
+          "tipHydrateBody": "Drink 500ml of water 30 minutes before your session.",
+          "tipLogWorkouts": "Log workouts for insights",
+          "tipLogWorkoutsBody": "Start logging workouts to unlock personalized coaching tips."
+        },
+        "weekly": {
+          "heroStrong": "Strong week",
+          "heroBuilding": "Building",
+          "heroLight": "Light week",
+          "heroSubtitle": "Volume · consistency · muscle balance",
+          "sessions": "sessions",
+          "whatChangedLabel": "What changed",
+          "whatChanged": "Weekly sets moved from {{prevSets}} to {{currSets}} vs last week.",
+          "undertrainedLabel": "Undertrained",
+          "undertrained": "{{muscle}} is below half its weekly set target — schedule it before the week ends.",
+          "consistency": "Training consistency",
+          "adjustNextLabel": "Adjust next week",
+          "adjustNext": "You're at {{percent}}% of your weekly set target — plan one more session to close the gap.",
+          "progressInsight": "{{percent}}% of weekly set target"
+        },
+        "monthly": {
+          "heroTitle": "Training month",
+          "partialMonth": "Through day {{day}} of the month",
+          "sessions": "sessions",
+          "totalSets": "total sets",
+          "patternLabel": "Recurring pattern",
+          "patternVolumeUp": "Volume rose {{percent}}% vs last month — watch recovery as load climbs.",
+          "patternVolumeDown": "Volume dropped {{percent}}% vs last month — rebuild consistency next month.",
+          "volumeByWeek": "Volume by week",
+          "weekN": "W{{n}}",
+          "strengthTitle": "Strength progression",
+          "liftBench": "Bench press",
+          "liftSquat": "Squat",
+          "liftDeadlift": "Deadlift",
+          "plateauLabel": "Plateau watch",
+          "plateau": "{{lift}} has been flat this month — try a small load or rep progression.",
+          "biggestWin": "Biggest win",
+          "winStrength": "{{lift}} up {{deltaKg}} kg this month.",
+          "nextMonthLabel": "Next month",
+          "nextMonthFocus": "You logged {{sessions}} sessions — aim for +1 session per week to keep momentum."
+        },
+        "recovery": {
+          "sleepTitle": "Sleep 7–8 hours",
+          "sleepBody": "Recovery improves with consistent sleep tonight.",
+          "hydrateTitle": "Hydrate well",
+          "hydrateBody": "Drink water through the day to reduce soreness.",
+          "stretchTitle": "Mobility work",
+          "stretchBody": "Add 10 minutes of stretching for tight muscle groups."
+        }
+      }
+    },
     "calorie": {
       "title": "Calorie Coach",
       "emptyTitle": "Log your meals first to get AI insights",

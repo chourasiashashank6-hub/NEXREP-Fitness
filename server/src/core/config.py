@@ -66,6 +66,8 @@ class Settings(BaseSettings):
     DEV_TOGGLE_SECRET: str = "nexrep-dev-toggle-2026"
     # Coach Journey Engine — default off; when false, detectors, cron, API, and UI stay inert.
     JOURNEY_ENGINE_ENABLED: bool = False
+    # Tiered coach cadence redesign — default off; when false, coach screens render as before.
+    COACH_REDESIGN_ENABLED: bool = False
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
