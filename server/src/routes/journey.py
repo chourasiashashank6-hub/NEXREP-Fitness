@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from secrets import compare_digest
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import text
@@ -18,6 +19,10 @@ from src.services.journey_recommendations import recommendation_for_event
 from src.utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/journey", tags=["journey"])
+
+
+def _dev_toggle_email_set() -> set[str]:
+    return {e.strip().lower() for e in settings.DEV_TIER_TOGGLE_EMAILS.split(",") if e.strip()}
 
 
 def _journey_table_ready(db: Session) -> bool:
@@ -104,11 +109,16 @@ def run_journey_detection_now(
 @router.post("/run-detection-all")
 def run_journey_detection_all(
     request: Request,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if (settings.APP_ENV or "").lower() != "development":
+        raise HTTPException(status_code=403, detail="Not available in production")
     secret = request.headers.get("X-Dev-Secret", "")
-    if secret != settings.DEV_TOGGLE_SECRET:
+    if not compare_digest(secret, settings.DEV_TOGGLE_SECRET or ""):
         raise HTTPException(status_code=403, detail="Not allowed")
+    if current_user.email.lower() not in _dev_toggle_email_set():
+        raise HTTPException(status_code=403, detail="Not allowed for this user")
     if not journey_engine_enabled():
         raise HTTPException(status_code=503, detail="Journey engine is disabled")
     if not _journey_table_ready(db):
