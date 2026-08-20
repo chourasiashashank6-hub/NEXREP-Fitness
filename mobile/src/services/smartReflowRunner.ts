@@ -12,12 +12,14 @@ import {
   buildSmartReflowPatches,
   daySnapshotFromPlanDay,
   type ReflowDaySnapshot,
+  type SmartReflowPatch,
 } from "../utils/smartReflow";
+import { extractReflowMoves, type ReflowMove } from "../utils/reflowNotifyMessage";
 
 export type SmartReflowRunResult =
   | { status: "skipped"; reason: string }
   | { status: "noop" }
-  | { status: "applied"; patchCount: number; appliedDays: number[]; plan: WorkoutPlanCurrent };
+  | { status: "applied"; patchCount: number; appliedDays: number[]; plan: WorkoutPlanCurrent; moves: ReflowMove[]; patches: SmartReflowPatch[] };
 
 function logReflowFailure(context: string, error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -93,11 +95,14 @@ export async function runSmartReflowDetection(currentPlan: WorkoutPlanCurrent): 
     const refreshed = await fetchWorkoutPlanCurrent();
     const plan = refreshed ?? currentPlan;
     updateGamePlanCacheWorkoutPlan(plan);
+    const moves = extractReflowMoves(patches);
     return {
       status: "applied",
       patchCount: patches.length,
       appliedDays,
       plan,
+      moves,
+      patches,
     };
   } catch (error) {
     logReflowFailure("detection", error);

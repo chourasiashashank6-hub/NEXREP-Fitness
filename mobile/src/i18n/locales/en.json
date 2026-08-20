@@ -2204,7 +2204,12 @@
     },
     "reflow": {
       "appliedTitle": "Plan adapted",
-      "appliedBody": "Smart Reflow moved {{count}} missed priority exercises into upcoming days.",
+      "appliedFallback": "Smart Reflow updated your upcoming workout days.",
+      "appliedSingle": "{{name}} moved from Day {{source}} to Day {{target}}.",
+      "appliedSameRoute": "{{count}} exercise moved from Day {{source}} to Day {{target}}: {{names}}.",
+      "appliedSameRoute_plural": "{{count}} exercises moved from Day {{source}} to Day {{target}}: {{names}}.",
+      "appliedMultiIntro": "Smart Reflow updated your plan:",
+      "appliedLine": "• {{name}}: Day {{source}} → Day {{target}}",
       "movedFromDay": "→ Moved from Day {{day}}"
     },
     "workoutPlannerScreen": {

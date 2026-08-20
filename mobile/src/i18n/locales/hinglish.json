@@ -2025,7 +2025,12 @@
     },
     "reflow": {
       "appliedTitle": "Plan adapt ho gaya",
-      "appliedBody": "Smart Reflow ne {{count}} missed priority exercises upcoming days mein shift kar diye.",
+      "appliedFallback": "Smart Reflow ne aapke upcoming workout days update kar diye.",
+      "appliedSingle": "{{name}} Day {{source}} se Day {{target}} par move ho gaya.",
+      "appliedSameRoute": "Day {{source}} se Day {{target}} par {{count}} exercise move hua: {{names}}.",
+      "appliedSameRoute_plural": "Day {{source}} se Day {{target}} par {{count}} exercises move hue: {{names}}.",
+      "appliedMultiIntro": "Smart Reflow ne aapka plan update kiya:",
+      "appliedLine": "• {{name}}: Day {{source}} → Day {{target}}",
       "movedFromDay": "→ Day {{day}} se move kiya"
     },
     "workoutPlannerScreen": {

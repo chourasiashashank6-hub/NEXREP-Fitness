@@ -47,6 +47,7 @@ import type { FocusMuscle, WorkoutDayPlan, WorkoutExercise, WorkoutPlanCurrent }
 import { isWorkoutRestDay } from "../../utils/workoutRestDay";
 import { runSmartReflowDetection } from "../../services/smartReflowRunner";
 import { type ReflowTaggedExercise } from "../../utils/reflowExerciseMeta";
+import { formatReflowAppliedBody } from "../../utils/reflowNotifyMessage";
 import {
   buildLoggedExerciseIdMap,
   estimatePlannerTimeTaken,
@@ -330,6 +331,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const exerciseSwapsLimit = 5;
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadSeqRef = useRef(0);
+  const loadDaySeqRef = useRef(0);
   const selectedDayRef = useRef(selectedDay);
   selectedDayRef.current = selectedDay;
   const initialLoadDoneRef = useRef(false);
@@ -404,7 +406,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
     return `${plan.year}-${String(plan.month).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
   }, [plan, selectedDay]);
 
-  const applyPlan = useCallback((current: WorkoutPlanCurrent | null) => {
+  const applyPlan = useCallback((current: WorkoutPlanCurrent | null, opts?: { preserveSelectedDay?: boolean }) => {
     setPlan(current);
     if (current) {
       syncWorkoutRegenStats(
@@ -417,13 +419,54 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       );
       syncMonthPlanRegenStats(current, setMonthPlanRegensUsed, setMonthPlanRegensLimit, setMonthPlanRegensRemaining);
       setSelectedMuscles(planFocusMuscles(current));
-      const todayDay =
-        current.today?.day ??
-        current.month_overview.find((d) => d.is_today)?.day ??
-        current.month_overview[0]?.day;
-      if (todayDay) setSelectedDay(todayDay);
+      if (!opts?.preserveSelectedDay) {
+        const todayDay =
+          current.today?.day ??
+          current.month_overview.find((d) => d.is_today)?.day ??
+          current.month_overview[0]?.day;
+        if (todayDay) setSelectedDay(todayDay);
+      }
     }
   }, []);
+
+  const syncDayDetailForPlan = useCallback(async (current: WorkoutPlanCurrent, day: number) => {
+    const seq = ++loadDaySeqRef.current;
+    if (current.today && day === current.today.day) {
+      const todayDetail = dayDetailFromPlanToday(current);
+      if (seq !== loadDaySeqRef.current) return;
+      if (todayDetail) {
+        setDayDetail(todayDetail);
+        syncWorkoutRegenStats(todayDetail, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+        setExerciseListVersion((v) => v + 1);
+      }
+      return;
+    }
+    const overview = current.month_overview.find((entry) => entry.day === day);
+    if (overview?.is_future && !canViewFutureDays) {
+      if (seq !== loadDaySeqRef.current) return;
+      setDayDetail({
+        day,
+        is_rest_day: false,
+        split_name: overview.split_name,
+        focus_muscles: [],
+        exercises: [],
+        estimated_duration_min: 0,
+        locked: true,
+        message: t("coach.workoutPlannerScreen.unlocksOn", { date: fullDayLabel(current.month, current.year, day) }),
+      });
+      return;
+    }
+    try {
+      const detail = await fetchWorkoutPlanDay(day);
+      if (seq !== loadDaySeqRef.current) return;
+      setDayDetail(detail);
+      if (typeof detail.swaps_used_today === "number") setExerciseSwapsUsed(detail.swaps_used_today);
+      syncWorkoutRegenStats(detail, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+      setExerciseListVersion((v) => v + 1);
+    } catch {
+      // Keep the previous day detail — a stale or failed fetch must not blank the planner.
+    }
+  }, [canViewFutureDays, t]);
 
   const loadPlan = useCallback(async (opts?: { silent?: boolean }) => {
     const seq = ++loadSeqRef.current;
@@ -442,17 +485,17 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
         }
       }
       if (current && canSmartReflow) {
-        void runSmartReflowDetection(current).then((result) => {
+        void runSmartReflowDetection(current).then(async (result) => {
           if (seq !== loadSeqRef.current) return;
           if (result.status === "applied") {
-            notifyUser(t("coach.reflow.appliedTitle"), t("coach.reflow.appliedBody", { count: result.patchCount }));
-            applyPlan(result.plan);
-            const refreshedToday = dayDetailFromPlanToday(result.plan);
-            if (refreshedToday && refreshedToday.day === selectedDayRef.current) {
-              setDayDetail(refreshedToday);
-              setExerciseListVersion((v) => v + 1);
-              syncWorkoutRegenStats(refreshedToday, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-            }
+            const dayToShow = selectedDayRef.current;
+            loadDaySeqRef.current += 1;
+            applyPlan(result.plan, { preserveSelectedDay: true });
+            await syncDayDetailForPlan(result.plan, dayToShow);
+            notifyUser(
+              t("coach.reflow.appliedTitle"),
+              formatReflowAppliedBody(result.moves, t),
+            );
           }
         });
       }
@@ -467,13 +510,15 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
         setLoading(false);
       }
     }
-  }, [applyPlan, canSmartReflow, t]);
+  }, [applyPlan, canSmartReflow, syncDayDetailForPlan, t]);
 
   const loadDay = useCallback(
     async (day: number) => {
       if (!plan || regeneratingWorkoutRef.current || regeneratingMonthPlanRef.current) return;
+      const seq = ++loadDaySeqRef.current;
       const overview = plan.month_overview.find((d) => d.day === day);
       if (overview?.is_future && !canViewFutureDays) {
+        if (seq !== loadDaySeqRef.current) return;
         setDayDetail({
           day,
           is_rest_day: false,
@@ -488,11 +533,13 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       }
       try {
         const d = await fetchWorkoutPlanDay(day);
+        if (seq !== loadDaySeqRef.current) return;
         setDayDetail(d);
         if (typeof d.swaps_used_today === "number") setExerciseSwapsUsed(d.swaps_used_today);
         syncWorkoutRegenStats(d, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
       } catch {
-        setDayDetail(null);
+        if (seq !== loadDaySeqRef.current) return;
+        // Keep existing day detail — stale responses must not wipe the planner.
       }
     },
     [canViewFutureDays, plan, t],
@@ -969,7 +1016,13 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
             regenerating={isRegeneratingStale}
           />
         ) : null}
-        <ScrollView style={styles.screenScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
+        <ScrollView
+          style={styles.screenScroll}
+          contentContainerStyle={styles.screenScrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="always"
+          nestedScrollEnabled
+        >
           {!plan && !generating ? (
             <View style={styles.panel}>
               <Text style={styles.panelTitle}>{t("coach.workoutPlannerScreen.generateTitle", { month: headerTitle })}</Text>
@@ -1249,6 +1302,7 @@ const styles = StyleSheet.create({
   screenRoot: { flex: 1, paddingBottom: 0 },
   screenBody: { flex: 1, minHeight: 0 },
   screenScroll: { flex: 1 },
+  screenScrollContent: { paddingBottom: 24 },
   header: { paddingHorizontal: 2, paddingTop: 0, paddingBottom: 10, flexDirection: "row", alignItems: "center", gap: 12, zIndex: 2 },
   backBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: BORDER, borderRadius: 10, backgroundColor: BG },
   backBtnText: { color: TEXT, fontSize: 17, fontWeight: "800" },

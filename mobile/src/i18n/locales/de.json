@@ -2021,7 +2021,12 @@
     },
     "reflow": {
       "appliedTitle": "Plan angepasst",
-      "appliedBody": "Smart Reflow hat {{count}} verpasste Prioritätsübungen in kommende Tage verschoben.",
+      "appliedFallback": "Smart Reflow hat deine kommenden Trainingstage aktualisiert.",
+      "appliedSingle": "{{name}} von Tag {{source}} auf Tag {{target}} verschoben.",
+      "appliedSameRoute": "{{count}} Übung von Tag {{source}} auf Tag {{target}} verschoben: {{names}}.",
+      "appliedSameRoute_plural": "{{count}} Übungen von Tag {{source}} auf Tag {{target}} verschoben: {{names}}.",
+      "appliedMultiIntro": "Smart Reflow hat deinen Plan aktualisiert:",
+      "appliedLine": "• {{name}}: Tag {{source}} → Tag {{target}}",
       "movedFromDay": "→ Von Tag {{day}} verschoben"
     },
     "workoutPlannerScreen": {

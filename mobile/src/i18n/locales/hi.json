@@ -2171,9 +2171,14 @@
       "upgrade": "अपग्रेड करें"
     },
     "reflow": {
-      "appliedTitle": "Plan adapt ho gaya",
-      "appliedBody": "Smart Reflow ne {{count}} missed priority exercises upcoming days mein shift kiye.",
-      "movedFromDay": "→ Day {{day}} se shift kiya"
+      "appliedTitle": "योजना अपडेट हुई",
+      "appliedFallback": "Smart Reflow ने आपके आगामी वर्कआउट दिन अपडेट कर दिए।",
+      "appliedSingle": "{{name}} को दिन {{source}} से दिन {{target}} पर स्थानांतरित किया गया।",
+      "appliedSameRoute": "दिन {{source}} से दिन {{target}} पर {{count}} व्यायाम स्थानांतरित: {{names}}।",
+      "appliedSameRoute_plural": "दिन {{source}} से दिन {{target}} पर {{count}} व्यायाम स्थानांतरित: {{names}}।",
+      "appliedMultiIntro": "Smart Reflow ने आपकी योजना अपडेट की:",
+      "appliedLine": "• {{name}}: दिन {{source}} → दिन {{target}}",
+      "movedFromDay": "→ दिन {{day}} से स्थानांतरित"
     },
     "workoutPlannerScreen": {
       "balancedHint": "संतुलित - सभी मांसपेशी समूहों को समान रूप से प्रशिक्षित किया जाएगा",

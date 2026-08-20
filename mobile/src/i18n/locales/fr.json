@@ -2021,7 +2021,12 @@
     },
     "reflow": {
       "appliedTitle": "Plan adapté",
-      "appliedBody": "Smart Reflow a déplacé {{count}} exercices prioritaires manqués vers les jours à venir.",
+      "appliedFallback": "Smart Reflow a mis à jour vos prochains jours d'entraînement.",
+      "appliedSingle": "{{name}} déplacé du jour {{source}} au jour {{target}}.",
+      "appliedSameRoute": "{{count}} exercice déplacé du jour {{source}} au jour {{target}} : {{names}}.",
+      "appliedSameRoute_plural": "{{count}} exercices déplacés du jour {{source}} au jour {{target}} : {{names}}.",
+      "appliedMultiIntro": "Smart Reflow a mis à jour votre plan :",
+      "appliedLine": "• {{name}} : jour {{source}} → jour {{target}}",
       "movedFromDay": "→ Déplacé du jour {{day}}"
     },
     "workoutPlannerScreen": {

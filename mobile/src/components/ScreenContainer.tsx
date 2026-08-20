@@ -37,8 +37,17 @@ export const ScreenContainer = ({
       <View style={styles.inner}>{children}</View>
     </ScrollView>
   ) : (
-    <View style={[styles.root, styles.content, embedded && styles.contentEmbedded, contentStyle, { backgroundColor: bg }]}>
-      <View style={styles.inner}>{children}</View>
+    <View
+      style={[
+        styles.root,
+        styles.content,
+        embedded && styles.contentEmbedded,
+        contentStyle,
+        { backgroundColor: bg },
+        styles.nonScrollRoot,
+      ]}
+    >
+      <View style={[styles.inner, styles.nonScrollInner]}>{children}</View>
     </View>
   );
 
@@ -59,4 +68,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
   contentEmbedded: { paddingTop: 4 },
   inner: { width: "100%", maxWidth: 860, alignSelf: "center" },
+  /** Lets nested ScrollViews fill the screen when scroll={false}. */
+  nonScrollRoot: { flex: 1, minHeight: 0 },
+  nonScrollInner: { flex: 1, minHeight: 0 },
 });
