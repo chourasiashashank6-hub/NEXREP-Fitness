@@ -1335,7 +1335,7 @@ export const WorkoutScreen = () => {
     !cameraTracking.orientationOk;
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.chrome}>
         <Text style={styles.greetingTitle}>{t("workoutLog.title")}</Text>
         <LogPlannerSegment mode={viewMode} onChange={selectViewMode} />

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,9 +37,10 @@ type Props = {
   emptyMessage?: string | null;
 };
 
-/** Beyond this many items the row scrolls horizontally, sized so exactly this many fill the card. */
 const VISIBLE_COUNT = 5;
 const ITEM_GAP = 8;
+/** Matches `styles.card` padding — used to derive inner row width from card layout. */
+const CARD_PADDING = 14;
 const MIN_BOX_SIZE = 28;
 const MAX_BOX_SIZE = 44;
 /** Used for the first frame only, before onLayout reports the card's content width. */
@@ -49,6 +51,12 @@ function boxSizeForCount(count: number): number {
   if (count === 4) return 42;
   if (count === 5) return 38;
   return 34;
+}
+
+function exactItemWidth(contentWidth: number): number {
+  if (contentWidth <= 0) return FALLBACK_ITEM_WIDTH;
+  const gapsTotal = ITEM_GAP * (VISIBLE_COUNT - 1);
+  return (contentWidth - gapsTotal) / VISIBLE_COUNT;
 }
 
 function boxSizeForItemWidth(itemWidth: number): number {
@@ -70,7 +78,7 @@ export function MilestoneBoxes({ title, items, accent = "green", emptyMessage }:
     setAtEnd(false);
   }, [total]);
 
-  const handleRowLayout = useCallback((event: LayoutChangeEvent) => {
+  const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
     const width = event.nativeEvent.layout.width;
     setContentWidth((prev) => (Math.abs(prev - width) > 0.5 ? width : prev));
   }, []);
@@ -92,14 +100,14 @@ export function MilestoneBoxes({ title, items, accent = "green", emptyMessage }:
   }
 
   // Exactly VISIBLE_COUNT items span the card's content width, gaps included.
-  const measuredItemWidth =
-    contentWidth > 0 ? (contentWidth - ITEM_GAP * (VISIBLE_COUNT - 1)) / VISIBLE_COUNT : 0;
-  const itemWidth = measuredItemWidth > 0 ? measuredItemWidth : FALLBACK_ITEM_WIDTH;
+  const itemWidth = exactItemWidth(contentWidth);
   const size = scrollable ? boxSizeForItemWidth(itemWidth) : boxSizeForCount(total);
+
+  const viewportWidth = contentWidth > 0 ? contentWidth : undefined;
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
+      <View style={styles.header} onLayout={handleHeaderLayout}>
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
@@ -110,20 +118,28 @@ export function MilestoneBoxes({ title, items, accent = "green", emptyMessage }:
         </View>
       </View>
 
-      <View style={styles.rowWrap} onLayout={handleRowLayout}>
+      <View style={styles.rowWrap}>
         {scrollable ? (
-          <ScrollView
-            horizontal
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
+          <View
+            style={[
+              styles.scrollViewport,
+              viewportWidth != null ? { width: viewportWidth, maxWidth: viewportWidth } : null,
+            ]}
           >
-            {items.map((item) => (
-              <MilestoneBox key={item.key} item={item} size={size} solid={solid} soft={soft} fixedWidth={itemWidth} />
-            ))}
-          </ScrollView>
+            <ScrollView
+              horizontal
+              style={[styles.scroll, viewportWidth != null ? { width: viewportWidth } : null]}
+              contentContainerStyle={styles.scrollContent}
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              nestedScrollEnabled
+            >
+              {items.map((item) => (
+                <MilestoneBox key={item.key} item={item} size={size} solid={solid} soft={soft} fixedWidth={itemWidth} />
+              ))}
+            </ScrollView>
+          </View>
         ) : (
           <View style={styles.boxRow}>
             {items.map((item) => (
@@ -131,13 +147,12 @@ export function MilestoneBoxes({ title, items, accent = "green", emptyMessage }:
             ))}
           </View>
         )}
+        {scrollable ? (
+          <View style={[styles.moreHint, atEnd && styles.moreHintHidden]} pointerEvents="none">
+            <Ionicons name="chevron-forward" size={14} color={solid} />
+          </View>
+        ) : null}
       </View>
-
-      {scrollable ? (
-        <View style={[styles.moreHint, atEnd && styles.moreHintHidden]} pointerEvents="none">
-          <Ionicons name="chevron-forward" size={14} color={solid} />
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -204,10 +219,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: BORDER,
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 10,
+    padding: CARD_PADDING,
     marginBottom: 10,
+    width: "100%",
+    alignSelf: "stretch",
+    overflow: "hidden",
+    minWidth: 0,
   },
   header: {
     flexDirection: "row",
@@ -234,15 +251,27 @@ const styles = StyleSheet.create({
   },
   rowWrap: {
     width: "100%",
+    position: "relative",
+    alignSelf: "stretch",
+  },
+  scrollViewport: {
+    width: "100%",
+    overflow: "hidden",
+    flexGrow: 0,
+    flexShrink: 1,
+    minWidth: 0,
+    ...(Platform.OS === "web" ? { maxWidth: "100%" as unknown as number } : null),
   },
   boxRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     width: "100%",
+    alignSelf: "stretch",
   },
   scroll: {
-    width: "100%",
     flexGrow: 0,
+    flexShrink: 1,
+    minWidth: 0,
   },
   scrollContent: {
     flexDirection: "row",
@@ -253,7 +282,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     minWidth: 0,
-    paddingHorizontal: 2,
   },
   /** Used inside the horizontal ScrollView — must not inherit boxCol's flex:1
    * (which sets flexBasis:0%) or the column collapses instead of scrolling. */
@@ -262,6 +290,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     flexBasis: "auto",
     alignItems: "center",
+    ...(Platform.OS === "web" ? { flexShrink: 0 as const } : null),
   },
   box: {
     borderWidth: 1.5,
@@ -296,10 +325,11 @@ const styles = StyleSheet.create({
     opacity: 0.85,
     marginTop: 1,
   },
-  /** Reserved row so toggling the hint's visibility never shifts card height. */
+  /** Overlays the row — no extra card height. */
   moreHint: {
-    alignSelf: "flex-end",
-    marginTop: 2,
+    position: "absolute",
+    right: 0,
+    bottom: 0,
     opacity: 0.55,
   },
   moreHintHidden: {

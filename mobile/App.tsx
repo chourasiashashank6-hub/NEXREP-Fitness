@@ -1,7 +1,16 @@
 import { Component, useEffect, type ErrorInfo, type ReactNode } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import { AppState, Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  AppState,
+  Dimensions,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { setupNotificationChannels } from "./src/services/notificationService";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./src/i18n";
@@ -95,13 +104,17 @@ function I18nBootstrap() {
 }
 
 export default function App() {
+  // Re-render on browser resize so RN Web recalculates % widths instead of
+  // staying locked to the initial Dimensions.get("window") pixel width.
+  useWindowDimensions();
+
   useEffect(() => {
     void setupNotificationChannels().catch(() => undefined);
   }, []);
 
   return (
     <AppErrorBoundary>
-      <SafeAreaProvider>
+      <SafeAreaProvider style={styles.root}>
         <AppThemeProvider>
           <I18nBootstrap />
           <NavigationContainer ref={navigationRef} onReady={flushPendingNotificationNavigation}>
@@ -115,3 +128,11 @@ export default function App() {
     </AppErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    width: "100%",
+    ...(Platform.OS === "web" ? { minHeight: "100vh" as unknown as number } : null),
+  },
+});

@@ -16,6 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SCREEN_SAFE_AREA_EDGES } from "../utils/safeAreaEdges";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
 import type { CalorieDayPayload } from "../api/caloriesLog";
@@ -682,7 +683,7 @@ export const HomeScreen = () => {
   const strengthLiftCount = strengthProgress?.lifts.length ?? 0;
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safe} edges={SCREEN_SAFE_AREA_EDGES}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Animated.View style={animatedStyle(0)}>
           <View style={styles.greetingRow}>

@@ -861,7 +861,7 @@ export default function AICameraWorkoutScreen() {
         : formQualityPct;
 
     return (
-      <SafeAreaView style={styles.safeCream} edges={["top", "left", "right"]}>
+      <SafeAreaView style={styles.safeCream} edges={["top"]}>
         <View style={styles.checkpointWrap}>
           <View style={styles.checkCircle}>
             <Ionicons name="checkmark" size={36} color="#fff" />
@@ -930,7 +930,7 @@ export default function AICameraWorkoutScreen() {
         : nextLabel;
 
     return (
-      <SafeAreaView style={styles.safeDark} edges={["top", "left", "right"]}>
+      <SafeAreaView style={styles.safeDark} edges={["top"]}>
         <View style={styles.cameraShell}>
           {trackable ? (
             <CameraWorkoutShell
@@ -1034,7 +1034,7 @@ export default function AICameraWorkoutScreen() {
   // —— Manual fallback (camera fully unmounted) ——
   if (phase === "manual_fallback" || !trackable || forceManual) {
     return (
-      <SafeAreaView style={styles.safeCream} edges={["top", "left", "right"]}>
+      <SafeAreaView style={styles.safeCream} edges={["top"]}>
         <View style={styles.headerRow}>
           <Text style={styles.headerStatus}>
             {session.day_name} · {formatElapsed(elapsedSec)}
@@ -1124,7 +1124,7 @@ export default function AICameraWorkoutScreen() {
   const trackingRunning = cameraActive && !sessionPaused && !countingPaused;
 
   return (
-    <SafeAreaView style={styles.safeDark} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safeDark} edges={["top"]}>
       <View style={styles.cameraShell}>
         {cameraActive ? (
           <CameraWorkoutShell

@@ -870,7 +870,7 @@ export const CalorieLog = () => {
   const totalGlasses = Math.round((log?.target_water_l ?? 0) / 0.25);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.chrome}>
         <Text style={styles.pageTitle}>{t("calorieLog.title")}</Text>
         <LogPlannerSegment mode={viewMode} onChange={selectViewMode} />

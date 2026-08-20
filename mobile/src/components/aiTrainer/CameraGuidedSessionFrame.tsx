@@ -14,7 +14,7 @@ type CameraGuidedSessionFrameProps = CameraWorkoutShellProps & {
  */
 export function CameraGuidedSessionFrame({ children, ...shellProps }: CameraGuidedSessionFrameProps) {
   return (
-    <SafeAreaView style={styles.safeDark} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safeDark} edges={["top"]}>
       <View style={styles.cameraShell}>
         <CameraWorkoutShell {...shellProps} />
       </View>

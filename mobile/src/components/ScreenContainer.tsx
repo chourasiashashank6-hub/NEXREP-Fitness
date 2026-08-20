@@ -2,6 +2,7 @@ import type { PropsWithChildren, ReactElement } from "react";
 import type { RefreshControlProps, StyleProp, ViewStyle } from "react-native";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SCREEN_SAFE_AREA_EDGES } from "../utils/safeAreaEdges";
 
 const SCREEN_BG = "#FFFFFF";
 
@@ -56,7 +57,7 @@ export const ScreenContainer = ({
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: bg }, style]} edges={["top", "left", "right"]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: bg }, style]} edges={SCREEN_SAFE_AREA_EDGES}>
       {body}
     </SafeAreaView>
   );
