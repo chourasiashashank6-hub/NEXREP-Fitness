@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -11,10 +11,14 @@ import { ActionPlanCard } from "../../components/Coach/ActionPlanCard";
 import { CalorieCoachSummaryViews } from "../../components/Coach/calorie/CalorieCoachSummaryViews";
 import { CoachCadenceLockedPanel } from "../../components/Coach/CoachCadenceLockedPanel";
 import { CoachCadenceSelector } from "../../components/Coach/CoachCadenceSelector";
+import { RefreshCountPill } from "../../components/Coach/shared/RefreshCountPill";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { useCoachCadence } from "../../hooks/useCoachCadence";
 import { useCoachRedesignEnabled } from "../../hooks/useCoachRedesign";
+import { useRefreshUsageCount } from "../../hooks/useRefreshUsageCount";
 import type { AICoachResponse, NutritionData } from "../../types/coach";
+import { coachRefreshUsageKey } from "../../utils/refreshUsageCounter";
+import { refreshScopeLabel } from "../../utils/refreshScopeLabel";
 import type { CoachStackParamList } from "./CoachHomeScreen";
 
 const GREEN = "#0F6E56";
@@ -46,8 +50,13 @@ export default function AICalorieCoachScreen() {
   const [loading, setLoading] = useState(false);
   const [coachRefreshing, setCoachRefreshing] = useState(false);
   const [summaryRefresh, setSummaryRefresh] = useState(0);
-
   const logDate = todayLocal();
+  const effectiveCadence = redesignEnabled ? cadence : "daily";
+  const refreshUsageKey = useMemo(
+    () => coachRefreshUsageKey("nutrition", effectiveCadence, logDate),
+    [effectiveCadence, logDate],
+  );
+  const { count: refreshUsageCount, increment: incrementRefreshUsage } = useRefreshUsageCount(refreshUsageKey);
 
   const load = useCallback(async () => {
     try {
@@ -91,6 +100,7 @@ export default function AICalorieCoachScreen() {
   const showRedesignPeriod = redesignEnabled && (cadence === "weekly" || cadence === "monthly");
 
   const handleRefresh = () => {
+    void incrementRefreshUsage();
     if (redesignEnabled) {
       setSummaryRefresh((n) => n + 1);
       void load();
@@ -117,14 +127,16 @@ export default function AICalorieCoachScreen() {
           <Ionicons name="chevron-back" size={18} color={TEXT} />
         </Pressable>
         <Text style={styles.title}>{t("coach.calorie.title")}</Text>
-        <Pressable
-          style={[styles.refreshPill, coachRefreshing && styles.refreshPillDisabled]}
-          onPress={handleRefresh}
+        <RefreshCountPill
+          scopeLabel={refreshScopeLabel(effectiveCadence, t)}
+          count={refreshUsageCount}
+          accentColor={GREEN}
+          accentLightBg={GREEN_LIGHT}
+          loading={coachRefreshing}
           disabled={coachRefreshing}
-        >
-          {coachRefreshing ? <ActivityIndicator size="small" color={GREEN} /> : <Ionicons name="refresh" size={13} color={GREEN} />}
-          <Text style={styles.refreshPillText}>{t("coach.common.refresh")}</Text>
-        </Pressable>
+          onPress={handleRefresh}
+          accessibilityLabel={t("coach.common.refresh")}
+        />
         <View style={styles.onlineDot} />
       </View>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -180,9 +192,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: { flex: 1, color: TEXT, fontSize: 16, fontWeight: "900" },
-  refreshPill: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: GREEN_LIGHT, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 7 },
-  refreshPillDisabled: { opacity: 0.75 },
-  refreshPillText: { color: GREEN, fontSize: 11, fontWeight: "900" },
   onlineDot: { width: 8, height: 8, borderRadius: 99, backgroundColor: GREEN },
   emptyBox: { borderWidth: 1, borderColor: BORDER, backgroundColor: BG, borderRadius: 16, padding: 16, marginBottom: 12 },
   emptyTitle: { color: TEXT, fontSize: 14, fontWeight: "900" },

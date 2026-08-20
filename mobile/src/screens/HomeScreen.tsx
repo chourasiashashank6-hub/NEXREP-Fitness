@@ -45,6 +45,7 @@ import {
 import { isHomeRestDayActive, isWorkoutRestDay } from "../utils/workoutRestDay";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { setGamePlanCache } from "../store/gamePlanCache";
+import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
 import type { WorkoutPlanCurrent } from "../types/planner";
 
 interface LatestWeightData {
@@ -311,7 +312,8 @@ export const HomeScreen = () => {
       setCalorieDay(dayRes);
       setBurnProfile(toBurnProfile(onboardingRes?.onboarding));
       setMealsPerDay(Number(onboardingRes?.onboarding?.dietary?.meals_per_day ?? 3) || 3);
-      setTodayWorkoutPlan(workoutPlanRes);
+      const sanitizedWorkoutPlan = sanitizeWorkoutPlanCurrent(workoutPlanRes);
+      setTodayWorkoutPlan(sanitizedWorkoutPlan);
       setTotalWorkoutBurn(Math.max(0, Math.round(todayWorkoutBurn)));
       setTimelineTargets((onboardingRes?.targets as Record<string, unknown>) ?? null);
       setLatestWeight(weightLatestRes);
@@ -366,7 +368,7 @@ export const HomeScreen = () => {
             : 70;
       setGamePlanCache({
         calorieDay: dayRes,
-        todayWorkoutPlan: workoutPlanRes,
+        todayWorkoutPlan: sanitizedWorkoutPlan,
         workoutHistory: (historyRes.items ?? []).map((item) => ({
           date: item.date,
           exerciseName: item.exerciseName,

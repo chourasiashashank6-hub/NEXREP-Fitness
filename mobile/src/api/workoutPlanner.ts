@@ -99,6 +99,19 @@ export async function applySmartReflow(payload: {
   return data;
 }
 
+export async function repairSmartReflow(planId: number): Promise<{
+  repaired_days: number[];
+  plan_id: number;
+  days?: WorkoutDayPlan[];
+}> {
+  const { data } = await apiClient.post<{ repaired_days: number[]; plan_id: number; days?: WorkoutDayPlan[] }>(
+    "/api/workout-planner/repair-reflow",
+    { plan_id: planId },
+    { params: params() },
+  );
+  return data;
+}
+
 export async function fetchWeeklyWorkoutReview(): Promise<{
   week_start: string;
   week_end: string;

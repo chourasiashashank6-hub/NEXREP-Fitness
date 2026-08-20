@@ -12,10 +12,17 @@ from src.models.meal_plan import DailyWorkoutPlanEntry, MonthlyWorkoutPlan
 from src.models.models import GlobalExercise, User, UserOnboarding, Workout
 from src.services.planner_common import parse_local_date, safe_json_dumps, safe_json_loads
 from src.services.planner_test_users import is_planner_days_unlocked_user
-from src.services.workout_planner_service import get_existing_workout_plan, _workout_entry_dict
+from src.services.workout_planner_service import _focus_muscles_for_split, get_existing_workout_plan, _workout_entry_dict
 from src.utils.plan_check import require_feature
 
 PLANNER_SOURCE_MARKER = "source=workout_planner"
+REFLOW_MAX_EXERCISES_PER_DAY = 8
+PLANNER_BASE_EXERCISES_PER_DAY = 6
+
+LEG_MUSCLES = {"legs", "quads", "hamstrings", "glutes", "calves"}
+PUSH_MUSCLES = {"chest", "shoulders", "triceps"}
+PULL_MUSCLES = {"back", "biceps", "rear delts", "lats"}
+UPPER_MUSCLES = PUSH_MUSCLES | PULL_MUSCLES | {"arms"}
 
 
 def is_planner_logged_workout(notes: str | None) -> bool:
@@ -109,6 +116,78 @@ def _exercise_names(exercises: list[dict[str, Any]]) -> set[str]:
     return {(str(ex.get("name") or "")).strip().lower() for ex in exercises if ex.get("name")}
 
 
+def _split_family(split_name: str) -> str:
+    name = (split_name or "").lower()
+    if "push" in name:
+        return "push"
+    if "pull" in name:
+        return "pull"
+    if "leg" in name or "lower" in name:
+        return "legs"
+    if "upper" in name:
+        return "upper"
+    if "full body" in name or "full-body" in name:
+        return "full_body"
+    return "unknown"
+
+
+def _resolve_day_focus_muscles(entry: DailyWorkoutPlanEntry) -> list[str]:
+    stored = safe_json_loads(entry.focus_muscles_json)
+    if isinstance(stored, list) and stored:
+        return [str(m) for m in stored if m]
+    return _focus_muscles_for_split(entry.split_name)
+
+
+def _muscle_matches_any(exercise_muscle: str, focus_muscles: list[str]) -> bool:
+    ex = (exercise_muscle or "").strip().lower()
+    if not ex:
+        return False
+    for raw in focus_muscles:
+        focus = str(raw or "").strip().lower()
+        if not focus:
+            continue
+        if ex == focus or focus in ex or ex in focus:
+            return True
+        if focus == "legs" and any(leg in ex or ex in leg for leg in LEG_MUSCLES):
+            return True
+        if focus == "arms" and ("bicep" in ex or "tricep" in ex or ex == "arms"):
+            return True
+    return False
+
+
+def _exercise_matches_split_family(exercise_muscle: str, family: str) -> bool:
+    ex = (exercise_muscle or "").strip().lower()
+    if not ex:
+        return False
+    if family == "full_body":
+        return True
+    if family == "legs":
+        return any(leg in ex or ex in leg for leg in LEG_MUSCLES)
+    if family == "push":
+        return any(muscle in ex or ex in muscle for muscle in PUSH_MUSCLES)
+    if family == "pull":
+        return any(muscle in ex or ex in muscle for muscle in PULL_MUSCLES)
+    if family == "upper":
+        return any(muscle in ex or ex in muscle for muscle in UPPER_MUSCLES) and not any(
+            leg in ex or ex in leg for leg in LEG_MUSCLES
+        )
+    return False
+
+
+def _is_exercise_compatible_with_day(exercise: dict[str, Any], entry: DailyWorkoutPlanEntry) -> bool:
+    focus = _resolve_day_focus_muscles(entry)
+    if any(str(m).strip().lower() == "full body" for m in focus):
+        return True
+    muscle = str(exercise.get("muscle") or "")
+    if _muscle_matches_any(muscle, focus):
+        return True
+    return _exercise_matches_split_family(muscle, _split_family(entry.split_name))
+
+
+def _remaining_reflow_slots(exercise_count: int) -> int:
+    return max(0, REFLOW_MAX_EXERCISES_PER_DAY - exercise_count)
+
+
 def apply_reflow_patches(
     db: Session,
     user: User,
@@ -161,14 +240,23 @@ def apply_reflow_patches(
         existing = _normalize_exercises(safe_json_loads(entry.exercises_json))
         if existing:
             existing_names = _exercise_names(existing)
+            changed = False
             for exercise in incoming:
                 name = (str(exercise.get("name") or "")).strip().lower()
                 if name and name not in existing_names:
                     existing.append(exercise)
                     existing_names.add(name)
+                    changed = True
+            if not changed:
+                continue
             final_exercises = existing
         else:
             final_exercises = incoming
+
+        if len(final_exercises) > REFLOW_MAX_EXERCISES_PER_DAY:
+            raise ValueError(
+                f"Day {day} would exceed the reflow exercise cap ({REFLOW_MAX_EXERCISES_PER_DAY})"
+            )
 
         duration = int(patch.get("estimated_duration_min") or 0)
         if duration <= 0:
@@ -189,6 +277,66 @@ def apply_reflow_patches(
         updated_days.append(_workout_entry_dict(entry))
 
     return {"applied_days": applied, "plan_id": plan.id, "days": updated_days}
+
+
+def _sanitize_reflowed_exercises(exercises: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Remove reflow-tagged additions and trim legacy untagged overload back to base size."""
+    kept = [exercise for exercise in exercises if not exercise.get("reflow_source_day")]
+    target = min(PLANNER_BASE_EXERCISES_PER_DAY, REFLOW_MAX_EXERCISES_PER_DAY)
+    if len(kept) > target:
+        kept = kept[:target]
+    return kept
+
+
+def repair_smart_reflow_plan(
+    db: Session,
+    user: User,
+    *,
+    plan_id: int,
+    local_date: str | None,
+) -> dict[str, Any]:
+    """Remove Smart Reflow additions and enforce the per-day exercise cap."""
+    require_feature(user, "smart_reflow", db)
+
+    plan = (
+        db.query(MonthlyWorkoutPlan)
+        .filter(MonthlyWorkoutPlan.id == plan_id, MonthlyWorkoutPlan.user_id == user.id)
+        .first()
+    )
+    if not plan:
+        raise LookupError("Plan not found")
+
+    repaired_days: list[int] = []
+    updated_days: list[dict[str, Any]] = []
+
+    for entry in plan.entries:
+        if entry.is_rest_day:
+            continue
+        exercises = _normalize_exercises(safe_json_loads(entry.exercises_json))
+        if not exercises:
+            continue
+
+        target = min(PLANNER_BASE_EXERCISES_PER_DAY, REFLOW_MAX_EXERCISES_PER_DAY)
+        needs_repair = any(exercise.get("reflow_source_day") for exercise in exercises) or len(exercises) > target
+        if not needs_repair:
+            continue
+
+        kept = _sanitize_reflowed_exercises(exercises)
+
+        entry.exercises_json = safe_json_dumps(kept)
+        entry.estimated_duration_min = estimate_duration_min(kept)
+        db.add(entry)
+        repaired_days.append(entry.day)
+
+    if repaired_days:
+        db.commit()
+        entry_by_day = {entry.day: entry for entry in plan.entries}
+        for day in repaired_days:
+            entry = entry_by_day[day]
+            db.refresh(entry)
+            updated_days.append(_workout_entry_dict(entry))
+
+    return {"repaired_days": repaired_days, "plan_id": plan.id, "days": updated_days}
 
 
 def weekly_summary_enabled(db: Session, user_id: int) -> bool:
@@ -397,32 +545,47 @@ def apply_weekly_compensation(
             continue
         if day_has_any_planner_log(db, user.id, plan.year, plan.month, entry.day):
             continue
+        if _remaining_reflow_slots(len(_normalize_exercises(safe_json_loads(entry.exercises_json)))) <= 0:
+            continue
         target_days.append(entry)
-        if len(target_days) >= 2:
-            break
 
     patches: list[dict[str, Any]] = []
     queue = list(exercises_to_move)
-    for target in target_days:
-        existing = _normalize_exercises(safe_json_loads(target.exercises_json))
-        names = _exercise_names(existing)
-        added = 0
-        while queue and added < 2:
-            candidate = queue.pop(0)
-            name = (str(candidate.get("name") or "")).strip().lower()
-            if not name or name in names:
+    working_by_day: dict[int, list[dict[str, Any]]] = {
+        entry.day: _normalize_exercises(safe_json_loads(entry.exercises_json)) for entry in target_days
+    }
+
+    for item in queue:
+        exercise_name = (str(item.get("name") or "")).strip().lower()
+        if not exercise_name:
+            continue
+        for target in target_days:
+            existing = working_by_day.get(target.day, [])
+            if _remaining_reflow_slots(len(existing)) <= 0:
                 continue
-            existing.append(candidate)
-            names.add(name)
-            added += 1
-        if added:
-            patches.append(
-                {
-                    "day": target.day,
-                    "exercises": existing,
-                    "estimated_duration_min": estimate_duration_min(existing),
-                }
-            )
+            if exercise_name in _exercise_names(existing):
+                continue
+            if not _is_exercise_compatible_with_day(item, target):
+                continue
+            tagged = dict(item)
+            existing.append(tagged)
+            working_by_day[target.day] = existing
+            break
+
+    for target in target_days:
+        original = _normalize_exercises(safe_json_loads(target.exercises_json))
+        updated = working_by_day.get(target.day, original)
+        if len(updated) <= len(original):
+            continue
+        if len(updated) > REFLOW_MAX_EXERCISES_PER_DAY:
+            continue
+        patches.append(
+            {
+                "day": target.day,
+                "exercises": updated,
+                "estimated_duration_min": estimate_duration_min(updated),
+            }
+        )
 
     if not patches:
         return {"applied_days": [], "plan_id": plan_id, "summary": summary}

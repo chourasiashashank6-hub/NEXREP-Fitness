@@ -1724,7 +1724,8 @@
       "yesterday": "Yesterday",
       "daysAgo": "{{count}} days ago",
       "notTrainedRecently": "Not trained recently",
-      "noWorkoutYet": "No workout yet"
+      "noWorkoutYet": "No workout yet",
+      "year": "Year"
     },
     "journey": {
       "sectionTitle": "COACH NOTICED",
@@ -2210,7 +2211,12 @@
       "appliedSameRoute_plural": "{{count}} exercises moved from Day {{source}} to Day {{target}}: {{names}}.",
       "appliedMultiIntro": "Smart Reflow updated your plan:",
       "appliedLine": "• {{name}}: Day {{source}} → Day {{target}}",
-      "movedFromDay": "→ Moved from Day {{day}}"
+      "movedFromDay": "→ Moved from Day {{day}}",
+      "tier3Title": "Time for a fresh start?",
+      "tier3Message": "It's been a while since you logged your planned workouts. Want to generate a fresh plan for the rest of the month?",
+      "tier3Decline": "Not now",
+      "tier3Regenerate": "Generate fresh plan",
+      "tier3Regenerated": "Your remaining workouts this month have been regenerated."
     },
     "workoutPlannerScreen": {
       "balancedHint": "Balanced — all muscle groups will be trained equally",

@@ -21,16 +21,21 @@ import WeeklyVolumeLoad from "../../components/Coach/WeeklyVolumeLoad";
 import { WeeklyProgressBar } from "../../components/Coach/WeeklyProgressBar";
 import { fetchOnboardingMe } from "../../api/onboarding";
 import { getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
+import { todayLocal } from "../../api/caloriesLog";
+import { RefreshCountPill } from "../../components/Coach/shared/RefreshCountPill";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { WC_COLORS } from "../../constants/workoutCoach";
 import { useCoachCadence } from "../../hooks/useCoachCadence";
 import { useCoachRedesignEnabled } from "../../hooks/useCoachRedesign";
+import { useRefreshUsageCount } from "../../hooks/useRefreshUsageCount";
 import { buildFallbackCoachingTips, normalizeWorkoutCoachResponse } from "../../services/coachNormalize";
 import { getFallbackInsight, getWorkoutCoachInsight } from "../../services/workoutCoachService";
 import type { OnboardingData } from "../../types/onboarding";
 import type { DynamicCoachingTip, MuscleStatus, WorkoutCoachInsight, WorkoutData } from "../../types/workoutCoach";
 import type { CoachStackParamList } from "./CoachHomeScreen";
 import { getGoalFocusMuscles } from "../../utils/onboardingFocusMuscles";
+import { coachRefreshUsageKey } from "../../utils/refreshUsageCounter";
+import { refreshScopeLabel } from "../../utils/refreshScopeLabel";
 import { getMuscleWeeklyTargets, getTargetWeeklySets } from "../../utils/weeklyMuscleTargets";
 import { inferMusclesFromWorkout, parseWorkoutTimestamp } from "../../utils/workoutMuscleInfer";
 
@@ -129,6 +134,13 @@ export default function AIWorkoutCoachScreen() {
   const [error, setError] = useState<string | null>(null);
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
   const [summaryRefresh, setSummaryRefresh] = useState(0);
+  const logDate = todayLocal();
+  const effectiveCadence = redesignEnabled ? cadence : "daily";
+  const refreshUsageKey = useMemo(
+    () => coachRefreshUsageKey("workout", effectiveCadence, logDate),
+    [effectiveCadence, logDate],
+  );
+  const { count: refreshUsageCount, increment: incrementRefreshUsage } = useRefreshUsageCount(refreshUsageKey);
   const loadingDataRef = useRef(false);
   const cacheHydratedRef = useRef(false);
   const defaultWorkoutData = useMemo(() => buildWorkoutDataFromHistory([], onboardingData), [onboardingData]);
@@ -225,6 +237,7 @@ export default function AIWorkoutCoachScreen() {
   const showLegacyContent = !redesignEnabled;
 
   const handleRefresh = () => {
+    void incrementRefreshUsage();
     if (redesignEnabled) {
       setSummaryRefresh((n) => n + 1);
       void loadWorkoutData();
@@ -251,14 +264,16 @@ export default function AIWorkoutCoachScreen() {
           <Ionicons name="chevron-back" size={18} color={WC_COLORS.TEXT} />
         </Pressable>
         <Text style={styles.headerTitle}>{t("coach.workout.title")}</Text>
-        <Pressable style={[styles.headerRefresh, (loading || dataLoading) && styles.disabled]} onPress={handleRefresh} disabled={loading || dataLoading}>
-          {loading || dataLoading ? (
-            <ActivityIndicator size="small" color={WC_COLORS.PURPLE_MID} />
-          ) : (
-            <Ionicons name="refresh" size={13} color={WC_COLORS.PURPLE_MID} />
-          )}
-          <Text style={styles.headerRefreshText}>{t("coach.common.refresh")}</Text>
-        </Pressable>
+        <RefreshCountPill
+          scopeLabel={refreshScopeLabel(effectiveCadence, t)}
+          count={refreshUsageCount}
+          accentColor={WC_COLORS.PURPLE_MID}
+          accentLightBg={WC_COLORS.PURPLE_LIGHT}
+          loading={loading || dataLoading}
+          disabled={loading || dataLoading}
+          onPress={handleRefresh}
+          accessibilityLabel={t("coach.common.refresh")}
+        />
         <View style={styles.onlineDot} />
       </View>
       {redesignEnabled ? (
@@ -388,8 +403,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerTitle: { flex: 1, color: WC_COLORS.TEXT, fontSize: 16, fontWeight: "800" },
-  headerRefresh: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: WC_COLORS.PURPLE_LIGHT, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 7 },
-  headerRefreshText: { color: WC_COLORS.PURPLE_MID, fontSize: 11, fontWeight: "800" },
   onlineDot: { width: 8, height: 8, borderRadius: 99, backgroundColor: WC_COLORS.GREEN },
   heroCard: {
     position: "relative",

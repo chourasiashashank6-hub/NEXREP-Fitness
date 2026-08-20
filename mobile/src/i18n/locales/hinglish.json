@@ -1697,7 +1697,8 @@
       "yesterday": "Kal",
       "daysAgo": "{{count}} days ago",
       "notTrainedRecently": "Not trained recently",
-      "noWorkoutYet": "Abhi koi workout nahi hai."
+      "noWorkoutYet": "Abhi koi workout nahi hai.",
+      "year": "Year"
     },
     "journey": {
       "sectionTitle": "COACH NE NOTICE KIYA",
@@ -2031,7 +2032,12 @@
       "appliedSameRoute_plural": "Day {{source}} se Day {{target}} par {{count}} exercises move hue: {{names}}.",
       "appliedMultiIntro": "Smart Reflow ne aapka plan update kiya:",
       "appliedLine": "• {{name}}: Day {{source}} → Day {{target}}",
-      "movedFromDay": "→ Day {{day}} se move kiya"
+      "movedFromDay": "→ Day {{day}} se move kiya",
+      "tier3Title": "Fresh start ka time?",
+      "tier3Message": "Planned workouts log kiye hue kaafi time ho gaya hai. Kya aap is mahine ke baaki dinon ke liye naya plan generate karna chahte hain?",
+      "tier3Decline": "Abhi nahi",
+      "tier3Regenerate": "Fresh plan generate karein",
+      "tier3Regenerated": "Is mahine ke baaki workouts regenerate ho gaye hain."
     },
     "workoutPlannerScreen": {
       "balancedHint": "Balanced — all muscle groups will be trained equally",

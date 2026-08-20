@@ -26,3 +26,11 @@ export function pickPriorityExercises(exercises: WorkoutExercise[], max = 2): Wo
     })
     .slice(0, max);
 }
+
+/** Compound-only candidates for Smart Reflow (isolation stays unrecovered). */
+export function pickCompoundReflowCandidates(exercises: WorkoutExercise[], max = 3): WorkoutExercise[] {
+  return pickPriorityExercises(
+    exercises.filter((exercise) => isCompoundExercise(exercise.name)),
+    max,
+  );
+}

@@ -23,12 +23,14 @@ import {
   generateWorkoutPlan,
   regenerateWorkoutMonthPlan,
   regenerateWorkoutPlanDay,
+  repairSmartReflow,
   swapWorkoutExercise,
 } from "../../api/workoutPlanner";
 import { addWorkout, deleteWorkout, getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
 import { fetchOnboardingMe } from "../../api/onboarding";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
 import { PreworkoutCard } from "../../components/Coach/PreworkoutCard";
+import { RefreshCountPill } from "../../components/Coach/shared/RefreshCountPill";
 import { PlannerLockedUpsell } from "../../components/PlannerLockedUpsell";
 import { StalePlanBanner } from "../../components/StalePlanBanner";
 import { EXERCISE_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
@@ -36,7 +38,7 @@ import { ScreenContainer } from "../../components/ScreenContainer";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import { getFirebaseAuth } from "../../config/firebase";
 import { useAuthStore } from "../../store/authStore";
-import { confirmUser, formatApiDetail, notifyUser } from "../../utils/notify";
+import { confirmUser, formatApiDetail, notifyReflowApplied, notifyUser } from "../../utils/notify";
 import {
   getNotificationPermissionState,
   requestNotificationPermissions,
@@ -45,9 +47,16 @@ import {
 import type { CoachStackParamList } from "../../navigation/coachTypes";
 import type { FocusMuscle, WorkoutDayPlan, WorkoutExercise, WorkoutPlanCurrent } from "../../types/planner";
 import { isWorkoutRestDay } from "../../utils/workoutRestDay";
-import { runSmartReflowDetection } from "../../services/smartReflowRunner";
+import { runSmartReflowDetection, markTier3ReflowAccepted, markTier3ReflowDeclined } from "../../services/smartReflowRunner";
+import { isTier3PromptAcknowledged } from "../../utils/reflowTierState";
 import { type ReflowTaggedExercise } from "../../utils/reflowExerciseMeta";
 import { formatReflowAppliedBody } from "../../utils/reflowNotifyMessage";
+import {
+  acknowledgeReflowAdaptation,
+  buildReflowAdaptationId,
+  isReflowAdaptationAcknowledged,
+} from "../../utils/reflowAcknowledgment";
+import { plannerDayNeedsSanitization, sanitizePlannerDayDetail } from "../../utils/sanitizePlannerDay";
 import {
   buildLoggedExerciseIdMap,
   estimatePlannerTimeTaken,
@@ -255,21 +264,6 @@ function syncMonthPlanRegenStats(
   if (source?.month_plan_regens_remaining !== undefined) setRemaining(source.month_plan_regens_remaining);
 }
 
-function dayDetailFromPlanToday(plan: WorkoutPlanCurrent): WorkoutDayPlan | null {
-  if (!plan.today) return null;
-  return {
-    ...plan.today,
-    day_regens_used: plan.day_regens_used,
-    day_regens_limit: plan.day_regens_limit,
-    day_regens_remaining: plan.day_regens_remaining,
-    month_plan_regens_used: plan.month_plan_regens_used,
-    month_plan_regens_limit: plan.month_plan_regens_limit,
-    month_plan_regens_remaining: plan.month_plan_regens_remaining,
-    planner_limits_exempt: plan.planner_limits_exempt,
-    planner_days_unlocked: plan.planner_days_unlocked,
-  };
-}
-
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -426,24 +420,17 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
           current.month_overview[0]?.day;
         if (todayDay) setSelectedDay(todayDay);
       }
+    } else {
+      setDayDetail(null);
+      setSelectedDay(new Date().getDate());
     }
   }, []);
 
-  const syncDayDetailForPlan = useCallback(async (current: WorkoutPlanCurrent, day: number) => {
+  const syncDayDetailForPlan = useCallback(async (current: WorkoutPlanCurrent, day: number): Promise<boolean> => {
     const seq = ++loadDaySeqRef.current;
-    if (current.today && day === current.today.day) {
-      const todayDetail = dayDetailFromPlanToday(current);
-      if (seq !== loadDaySeqRef.current) return;
-      if (todayDetail) {
-        setDayDetail(todayDetail);
-        syncWorkoutRegenStats(todayDetail, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-        setExerciseListVersion((v) => v + 1);
-      }
-      return;
-    }
     const overview = current.month_overview.find((entry) => entry.day === day);
     if (overview?.is_future && !canViewFutureDays) {
-      if (seq !== loadDaySeqRef.current) return;
+      if (seq !== loadDaySeqRef.current) return false;
       setDayDetail({
         day,
         is_rest_day: false,
@@ -454,17 +441,21 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
         locked: true,
         message: t("coach.workoutPlannerScreen.unlocksOn", { date: fullDayLabel(current.month, current.year, day) }),
       });
-      return;
+      return false;
     }
     try {
-      const detail = await fetchWorkoutPlanDay(day);
-      if (seq !== loadDaySeqRef.current) return;
+      const raw = await fetchWorkoutPlanDay(day);
+      const hadReflowCorruption = plannerDayNeedsSanitization(raw);
+      const detail = sanitizePlannerDayDetail(raw);
+      if (seq !== loadDaySeqRef.current) return false;
       setDayDetail(detail);
       if (typeof detail.swaps_used_today === "number") setExerciseSwapsUsed(detail.swaps_used_today);
       syncWorkoutRegenStats(detail, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
       setExerciseListVersion((v) => v + 1);
+      return hadReflowCorruption;
     } catch {
       // Keep the previous day detail — a stale or failed fetch must not blank the planner.
+      return false;
     }
   }, [canViewFutureDays, t]);
 
@@ -474,28 +465,101 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       setLoading(true);
     }
     try {
-      const current = await fetchWorkoutPlanCurrent();
+      let current = await fetchWorkoutPlanCurrent();
       if (seq !== loadSeqRef.current) return;
       applyPlan(current);
-      if (current?.today) {
-        const todayDetail = dayDetailFromPlanToday(current);
-        if (todayDetail) {
-          setDayDetail(todayDetail);
-          syncWorkoutRegenStats(todayDetail, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+      let skipReflowDetection = false;
+      if (current && canSmartReflow) {
+        try {
+          const repair = await repairSmartReflow(current.plan_id);
+          if (repair.repaired_days.length > 0) {
+            skipReflowDetection = true;
+            loadDaySeqRef.current += 1;
+            const refreshed = await fetchWorkoutPlanCurrent();
+            if (seq !== loadSeqRef.current) return;
+            if (refreshed) {
+              current = refreshed;
+              applyPlan(refreshed, { preserveSelectedDay: true });
+            }
+          }
+        } catch {
+          // Repair is best-effort — reflow detection still runs below unless we repaired.
         }
       }
-      if (current && canSmartReflow) {
+      if (current) {
+        loadDaySeqRef.current += 1;
+        const hadReflowCorruption = await syncDayDetailForPlan(current, selectedDayRef.current);
+        if (hadReflowCorruption) skipReflowDetection = true;
+      }
+      if (current && canSmartReflow && !skipReflowDetection) {
         void runSmartReflowDetection(current).then(async (result) => {
           if (seq !== loadSeqRef.current) return;
-          if (result.status === "applied") {
+          if (result.status === "full_month_reset") {
+            applyPlan(null);
+            setDayDetail(null);
+            return;
+          }
+          if (result.status === "tier3_prompt") {
+            const alreadyAcknowledged = await isTier3PromptAcknowledged(result.stateId);
+            if (alreadyAcknowledged) return;
+            Alert.alert(
+              t("coach.reflow.tier3Title"),
+              t("coach.reflow.tier3Message"),
+              [
+                {
+                  text: t("coach.reflow.tier3Decline"),
+                  style: "cancel",
+                  onPress: () => {
+                    void markTier3ReflowDeclined(result.stateId, result.assessment.missedDayCount);
+                  },
+                },
+                {
+                  text: t("coach.reflow.tier3Regenerate"),
+                  onPress: () => {
+                    void (async () => {
+                      await markTier3ReflowAccepted(result.stateId, result.assessment.missedDayCount);
+                      if (!current || regeneratingMonthPlanRef.current) return;
+                      regeneratingMonthPlanRef.current = true;
+                      setIsRegeneratingMonthPlan(true);
+                      try {
+                        const updated = await regenerateWorkoutMonthPlan(current.plan_id);
+                        if (seq !== loadSeqRef.current) return;
+                        applyPlan(updated, { preserveSelectedDay: true });
+                        await syncDayDetailForPlan(updated, selectedDayRef.current);
+                        await rescheduleWorkoutPlanNotifications(updated).catch(() => undefined);
+                        notifyUser(
+                          t("coach.workoutPlannerScreen.alerts.monthPlanRegenerated"),
+                          t("coach.reflow.tier3Regenerated"),
+                        );
+                      } catch {
+                        notifyUser(t("common.error"), t("coach.workoutPlannerScreen.alerts.monthPlanRegenerateFailed"));
+                      } finally {
+                        regeneratingMonthPlanRef.current = false;
+                        setIsRegeneratingMonthPlan(false);
+                      }
+                    })();
+                  },
+                },
+              ],
+            );
+            return;
+          }
+          if (result.status === "applied" && result.moves.length > 0) {
             const dayToShow = selectedDayRef.current;
             loadDaySeqRef.current += 1;
             applyPlan(result.plan, { preserveSelectedDay: true });
             await syncDayDetailForPlan(result.plan, dayToShow);
-            notifyUser(
-              t("coach.reflow.appliedTitle"),
-              formatReflowAppliedBody(result.moves, t),
-            );
+            const adaptationId = buildReflowAdaptationId(result.plan.plan_id, result.moves);
+            const alreadyAcknowledged = await isReflowAdaptationAcknowledged(adaptationId);
+            if (!alreadyAcknowledged) {
+              notifyReflowApplied(
+                t("coach.reflow.appliedTitle"),
+                formatReflowAppliedBody(result.moves, t),
+                () => {
+                  void acknowledgeReflowAdaptation(adaptationId);
+                },
+              );
+            }
           }
         });
       }
@@ -532,7 +596,8 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
         return;
       }
       try {
-        const d = await fetchWorkoutPlanDay(day);
+        const raw = await fetchWorkoutPlanDay(day);
+        const d = sanitizePlannerDayDetail(raw);
         if (seq !== loadDaySeqRef.current) return;
         setDayDetail(d);
         if (typeof d.swaps_used_today === "number") setExerciseSwapsUsed(d.swaps_used_today);
@@ -592,14 +657,6 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
 
   useEffect(() => {
     if (!plan) return;
-    if (plan.today && selectedDay === plan.today.day) {
-      const todayDetail = dayDetailFromPlanToday(plan);
-      if (todayDetail) {
-        setDayDetail(todayDetail);
-        syncWorkoutRegenStats(todayDetail, setDayRegensUsed, setDayRegensLimit, setDayRegensRemaining, setPlannerLimitsExempt, setPlannerDaysUnlocked);
-      }
-      return;
-    }
     void loadDay(selectedDay);
   }, [plan, selectedDay, loadDay]);
 
@@ -925,7 +982,9 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
     [plan],
   );
 
-  const headerTitle = monthYearLabel(now.getMonth() + 1, now.getFullYear());
+  const headerTitle = plan
+    ? monthYearLabel(plan.month, plan.year)
+    : monthYearLabel(now.getMonth() + 1, now.getFullYear());
   const activeFocusMuscles = plan ? planFocusMuscles(plan) : selectedMuscles;
   const showFocusBadge = activeFocusMuscles.length > 0;
 
@@ -969,41 +1028,29 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
         {plan && !generating ? (
           <View style={styles.headerActionRow}>
             {showRegenerateWorkout ? (
-              <Pressable
+              <RefreshCountPill
+                scopeLabel={t("coach.workoutPlannerScreen.day")}
+                count={dayRegensRemaining}
+                muted={!canPressRegenerateWorkout && !plannerLimitsExempt}
+                accentColor={ORANGE}
+                accentLightBg={ORANGE_LIGHT}
+                loading={isRegeneratingWorkout}
+                disabled={isRegeneratingWorkout || !canPressRegenerateWorkout}
                 onPress={() => void handleRegenerateWorkout()}
-                disabled={isRegeneratingWorkout}
-                style={[styles.headerWorkoutPill, isRegeneratingWorkout && styles.headerMonthPillDisabled]}
-              >
-                {isRegeneratingWorkout ? (
-                  <ActivityIndicator size="small" color={ORANGE} />
-                ) : (
-                  <Ionicons name="refresh" size={13} color={ORANGE} />
-                )}
-                <Text style={styles.headerMonthPillText}>{t("coach.workoutPlannerScreen.day")}</Text>
-              </Pressable>
+                accessibilityLabel={t("coach.workoutPlannerScreen.day")}
+              />
             ) : null}
-            <Pressable
+            <RefreshCountPill
+              scopeLabel={t("coach.workoutPlannerScreen.month")}
+              count={monthPlanRegensRemaining}
+              muted={!canPressRegenerateMonthPlan && !plannerLimitsExempt}
+              accentColor={ORANGE}
+              accentLightBg={ORANGE_LIGHT}
+              loading={isRegeneratingMonthPlan}
+              disabled={isRegeneratingMonthPlan || !canPressRegenerateMonthPlan}
               onPress={() => void handleRegenerateMonthPlan()}
-              disabled={isRegeneratingMonthPlan}
-              hitSlop={8}
-              accessibilityRole="button"
               accessibilityLabel={t("coach.workoutPlannerScreen.regenerateMonthPlan")}
-              accessibilityState={{ disabled: isRegeneratingMonthPlan }}
-              style={[
-                styles.headerMonthPill,
-                (isRegeneratingMonthPlan || !canPressRegenerateMonthPlan) && styles.headerMonthPillDisabled,
-              ]}
-            >
-              {isRegeneratingMonthPlan ? (
-                <ActivityIndicator size="small" color={ORANGE} />
-              ) : (
-                <Ionicons name="refresh" size={13} color={canPressRegenerateMonthPlan ? ORANGE : MUTED} />
-              )}
-              <Text style={[styles.headerMonthPillText, !canPressRegenerateMonthPlan && styles.headerMonthPillTextDisabled]}>
-                {t("coach.workoutPlannerScreen.month")}
-                {!plannerLimitsExempt ? ` · ${monthPlanRegensRemaining}` : ""}
-              </Text>
-            </Pressable>
+            />
           </View>
         ) : null}
       </View>

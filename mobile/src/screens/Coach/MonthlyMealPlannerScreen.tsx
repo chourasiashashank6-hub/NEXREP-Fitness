@@ -41,10 +41,12 @@ import { fetchOnboardingMe } from "../../api/onboarding";
 import { getFastingPreferences, type FastingPreference } from "../../api/fasting";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
 import { PlannerLockedUpsell } from "../../components/PlannerLockedUpsell";
+import { RefreshCountPill } from "../../components/Coach/shared/RefreshCountPill";
 import { StalePlanBanner } from "../../components/StalePlanBanner";
 import { MEAL_SWAP_REASONS, SwapBottomSheet } from "../../components/SwapBottomSheet";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
+import { useRefreshUsageCount } from "../../hooks/useRefreshUsageCount";
 import { getFirebaseAuth } from "../../config/firebase";
 import { useAuthStore } from "../../store/authStore";
 import { notifyUser } from "../../utils/notify";
@@ -67,6 +69,7 @@ import type {
 } from "../../types/planner";
 import { isWeeklyPlannerCurrent } from "../../types/planner";
 import { fullDayLabel, monthYearLabel } from "../../utils/localDate";
+import { mealWeekRefreshUsageKey } from "../../utils/refreshUsageCounter";
 
 const GREEN = '#0F6E56';
 const GREEN_LIGHT = '#E8F5EE';
@@ -325,6 +328,13 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
   const canViewFutureDays = plannerDaysUnlocked || plannerDaysUnlockedByIdentity;
   const mealSwapsLimit = 5;
   const dayRegensRemaining = Math.max(0, dayRegensLimit - dayRegensUsed);
+  const mealWeekUsageKey = useMemo(() => {
+    if (selectedWeekStart == null) return null;
+    const y = plan?.year ?? year;
+    const m = plan?.month ?? month;
+    return mealWeekRefreshUsageKey(`${y}-${String(m).padStart(2, "0")}-${selectedWeekStart}`);
+  }, [selectedWeekStart, plan?.year, plan?.month, year, month]);
+  const { count: mealWeekRefreshCount, increment: incrementMealWeekRefresh } = useRefreshUsageCount(mealWeekUsageKey);
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialLoadDoneRef = useRef(false);
   const loadSeqRef = useRef(0);
@@ -670,6 +680,7 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
       const overview = await fetchWeeksOverview();
       setWeeks(overview.weeks);
       syncRegenStats(created, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+      await incrementMealWeekRefresh();
       notifyUser(t("coach.mealPlannerScreen.alerts.done"), t("coach.mealPlannerScreen.alerts.weekGenerated"));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t("coach.mealPlannerScreen.alerts.couldNotGenerateWeek");
@@ -995,32 +1006,29 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
         </View>
         <View style={styles.headerActions}>
           {dayDetail && !dayDetail.locked && isCurrentOrFuture ? (
-            <Pressable
-              onPress={() => handleRegenerateDay(dayDetail.day)}
-              style={[
-                styles.regenerateDayButton,
-                (isRegeneratingDay || (!effectiveLimitsExempt && dayRegensRemaining <= 0)) && styles.regenerateDayButtonDisabled,
-              ]}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            <RefreshCountPill
+              scopeLabel={t("coach.mealPlannerScreen.day")}
+              count={dayRegensRemaining}
+              muted={!effectiveLimitsExempt && dayRegensRemaining <= 0}
+              accentColor={BLUE}
+              accentLightBg={BLUE_LIGHT}
+              loading={isRegeneratingDay}
               disabled={isRegeneratingDay || (!effectiveLimitsExempt && dayRegensRemaining <= 0)}
-            >
-              {isRegeneratingDay ? (
-                <ActivityIndicator size="small" color={BLUE} />
-              ) : (
-                <>
-                  <Ionicons name="refresh" size={14} color={effectiveLimitsExempt || dayRegensRemaining > 0 ? BLUE : MUTED} />
-                  <Text style={[styles.regenerateDayButtonText, !effectiveLimitsExempt && dayRegensRemaining <= 0 && styles.regenerateDayButtonTextDisabled]}>
-                    {t("coach.mealPlannerScreen.day")}
-                  </Text>
-                </>
-              )}
-            </Pressable>
+              onPress={() => handleRegenerateDay(dayDetail.day)}
+              accessibilityLabel={t("coach.mealPlannerScreen.day")}
+            />
           ) : null}
           {shouldShowWeekGenerate ? (
-            <Pressable disabled={generating} onPress={() => void startGenerateWeek()} style={[styles.regenerateWeekButton, generating && styles.regenBtnDisabled]}>
-              <Ionicons name="refresh-circle-outline" size={14} color={WHITE} />
-              <Text style={styles.regenerateWeekButtonText}>{t("coach.mealPlannerScreen.week")}</Text>
-            </Pressable>
+            <RefreshCountPill
+              scopeLabel={t("coach.mealPlannerScreen.week")}
+              count={mealWeekRefreshCount}
+              accentColor={BLUE}
+              accentLightBg={BLUE_LIGHT}
+              loading={generating}
+              disabled={generating}
+              onPress={() => void startGenerateWeek()}
+              accessibilityLabel={t("coach.mealPlannerScreen.week")}
+            />
           ) : null}
         </View>
       </View>

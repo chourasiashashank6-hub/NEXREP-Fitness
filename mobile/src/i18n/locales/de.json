@@ -1693,7 +1693,8 @@
       "yesterday": "Gestern",
       "daysAgo": "{{count}} vor Tagen",
       "notTrainedRecently": "Kürzlich nicht trainiert",
-      "noWorkoutYet": "Noch kein Training"
+      "noWorkoutYet": "Noch kein Training",
+      "year": "Jahr"
     },
     "journey": {
       "sectionTitle": "COACH HAT BEMERKT",
@@ -2027,7 +2028,12 @@
       "appliedSameRoute_plural": "{{count}} Übungen von Tag {{source}} auf Tag {{target}} verschoben: {{names}}.",
       "appliedMultiIntro": "Smart Reflow hat deinen Plan aktualisiert:",
       "appliedLine": "• {{name}}: Tag {{source}} → Tag {{target}}",
-      "movedFromDay": "→ Von Tag {{day}} verschoben"
+      "movedFromDay": "→ Von Tag {{day}} verschoben",
+      "tier3Title": "Zeit für einen Neustart?",
+      "tier3Message": "Es ist schon eine Weile her, seit du deine geplanten Workouts geloggt hast. Möchtest du einen frischen Plan für den Rest des Monats erstellen?",
+      "tier3Decline": "Nicht jetzt",
+      "tier3Regenerate": "Frischen Plan erstellen",
+      "tier3Regenerated": "Deine verbleibenden Workouts in diesem Monat wurden neu generiert."
     },
     "workoutPlannerScreen": {
       "balancedHint": "Ausgewogen – alle Muskelgruppen werden gleichermaßen trainiert",

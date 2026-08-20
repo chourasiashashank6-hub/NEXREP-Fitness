@@ -10,6 +10,7 @@ import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { useAppTheme } from "../theme";
 import type { WorkoutDayPlan, WorkoutExercise } from "../types/planner";
 import { isWorkoutRestDay } from "../utils/workoutRestDay";
+import { sanitizePlannerDayDetail } from "../utils/sanitizePlannerDay";
 
 const ACCENT = "#22d3ee";
 const ACCENT_PLANNER = ["#3b82f6", "#22d3ee", "transparent"] as const;
@@ -77,7 +78,7 @@ export function TodaysFocusCard() {
       }
 
       if (seq !== loadSeqRef.current) return;
-      setDayPlan(detail);
+      setDayPlan(detail ? sanitizePlannerDayDetail(detail) : null);
     } catch {
       if (seq !== loadSeqRef.current) return;
       setHasPlan(false);

@@ -1,5 +1,6 @@
 import type { CalorieDayPayload } from "../api/caloriesLog";
 import type { WorkoutPlanCurrent } from "../types/planner";
+import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
 
 export type GamePlanHistoryRow = {
   date: string;
@@ -41,5 +42,5 @@ export function clearGamePlanCache(): void {
 /** Keep Home/Game Plan cache in sync after Smart Reflow patches the plan elsewhere. */
 export function updateGamePlanCacheWorkoutPlan(todayWorkoutPlan: WorkoutPlanCurrent | null): void {
   if (!snapshot) return;
-  snapshot = { ...snapshot, todayWorkoutPlan, fetchedAt: Date.now() };
+  snapshot = { ...snapshot, todayWorkoutPlan: sanitizeWorkoutPlanCurrent(todayWorkoutPlan), fetchedAt: Date.now() };
 }

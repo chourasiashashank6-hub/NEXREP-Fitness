@@ -22,6 +22,7 @@ import { DailyGamePlanCard } from "../components/DailyGamePlanCard";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { runSmartReflowDetection } from "../services/smartReflowRunner";
 import { getGamePlanCache, setGamePlanCache, type GamePlanHistoryRow } from "../store/gamePlanCache";
+import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
 import { useAuthStore } from "../store/authStore";
 import type { MealDayPlan, WorkoutPlanCurrent } from "../types/planner";
 import { isWeeklyPlannerCurrent } from "../types/planner";
@@ -136,21 +137,22 @@ export default function GamePlanModalScreen() {
   const load = useCallback(async () => {
     const cached = getGamePlanCache();
     if (cached) {
+      const sanitizedCachedPlan = sanitizeWorkoutPlanCurrent(cached.todayWorkoutPlan);
       applyCorePayload({
         calorieDay: cached.calorieDay,
-        todayWorkoutPlan: cached.todayWorkoutPlan,
+        todayWorkoutPlan: sanitizedCachedPlan,
         todayMealPlan: null,
         workoutHistory: cached.workoutHistory,
         weightKg: cached.weightKg,
       });
       setLoading(false);
       const cachedExercises =
-        cached.todayWorkoutPlan?.today && !isHomeRestDayActive({ hasWorkoutPlannerAccess, plan: cached.todayWorkoutPlan })
-          ? cached.todayWorkoutPlan.today.exercises ?? []
+        sanitizedCachedPlan?.today && !isHomeRestDayActive({ hasWorkoutPlannerAccess, plan: sanitizedCachedPlan })
+          ? sanitizedCachedPlan.today.exercises ?? []
           : [];
       void loadDeferred(
         cachedExercises.map((ex) => ex.name),
-        cached.todayWorkoutPlan,
+        sanitizedCachedPlan,
       );
     }
 
@@ -188,9 +190,11 @@ export default function GamePlanModalScreen() {
       const onboardingWeight = Number(onboardingRes?.onboarding?.personal?.weight_kg);
       const resolvedWeightKg = resolveWeightKg(weightLatestRes, onboardingWeight);
 
+      const sanitizedWorkoutPlan = sanitizeWorkoutPlanCurrent(workoutPlanRes);
+
       applyCorePayload({
         calorieDay: dayRes,
-        todayWorkoutPlan: workoutPlanRes,
+        todayWorkoutPlan: sanitizedWorkoutPlan,
         todayMealPlan: mealToday,
         workoutHistory: historyRows,
         weightKg: resolvedWeightKg,
@@ -198,16 +202,16 @@ export default function GamePlanModalScreen() {
 
       setGamePlanCache({
         calorieDay: dayRes,
-        todayWorkoutPlan: workoutPlanRes,
+        todayWorkoutPlan: sanitizedWorkoutPlan,
         workoutHistory: historyRows,
         weightKg: resolvedWeightKg,
       });
 
       const todayExercises =
-        workoutPlanRes?.today && !isHomeRestDayActive({ hasWorkoutPlannerAccess, plan: workoutPlanRes })
-          ? workoutPlanRes.today.exercises ?? []
+        sanitizedWorkoutPlan?.today && !isHomeRestDayActive({ hasWorkoutPlannerAccess, plan: sanitizedWorkoutPlan })
+          ? sanitizedWorkoutPlan.today.exercises ?? []
           : [];
-      void loadDeferred(todayExercises.map((ex) => ex.name), workoutPlanRes);
+      void loadDeferred(todayExercises.map((ex) => ex.name), sanitizedWorkoutPlan);
     } catch {
       if (!cached) {
         setCalorieDay(null);

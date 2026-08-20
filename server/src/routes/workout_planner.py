@@ -22,6 +22,7 @@ from src.services.plan_reflow_service import (
     apply_reflow_patches,
     apply_weekly_compensation,
     build_weekly_review,
+    repair_smart_reflow_plan,
 )
 from src.services.planner_test_users import is_planner_days_unlocked_user, is_planner_test_user
 from src.utils.auth import get_current_user
@@ -77,6 +78,10 @@ class ReflowApplyRequest(BaseModel):
 
 
 class WeeklyCompensationRequest(BaseModel):
+    plan_id: int
+
+
+class ReflowRepairRequest(BaseModel):
     plan_id: int
 
 
@@ -271,6 +276,26 @@ def post_reflow(
 
         logging.getLogger(__name__).exception("reflow failed user_id=%s plan_id=%s", current_user.id, body.plan_id)
         raise HTTPException(status_code=500, detail="Reflow failed") from e
+
+
+@router.post("/repair-reflow")
+def post_repair_reflow(
+    body: ReflowRepairRequest,
+    local_date: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return repair_smart_reflow_plan(
+            db,
+            current_user,
+            plan_id=body.plan_id,
+            local_date=local_date,
+        )
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/weekly-review")

@@ -1693,7 +1693,8 @@
       "yesterday": "Ayer",
       "daysAgo": "{{count}}hace días",
       "notTrainedRecently": "No entrenado recientemente",
-      "noWorkoutYet": "Aún no hay entrenamiento"
+      "noWorkoutYet": "Aún no hay entrenamiento",
+      "year": "Año"
     },
     "journey": {
       "sectionTitle": "EL ENTRENADOR NOTÓ",
@@ -2027,7 +2028,12 @@
       "appliedSameRoute_plural": "{{count}} ejercicios movidos del Día {{source}} al Día {{target}}: {{names}}.",
       "appliedMultiIntro": "Smart Reflow actualizó tu plan:",
       "appliedLine": "• {{name}}: Día {{source}} → Día {{target}}",
-      "movedFromDay": "→ Movido del día {{day}}"
+      "movedFromDay": "→ Movido del día {{day}}",
+      "tier3Title": "¿Hora de empezar de nuevo?",
+      "tier3Message": "Ha pasado un tiempo desde que registraste tus entrenamientos planificados. ¿Quieres generar un plan nuevo para el resto del mes?",
+      "tier3Decline": "Ahora no",
+      "tier3Regenerate": "Generar plan nuevo",
+      "tier3Regenerated": "Tus entrenamientos restantes de este mes se han regenerado."
     },
     "workoutPlannerScreen": {
       "balancedHint": "Equilibrado: todos los grupos de músculos se entrenarán por igual",

@@ -5,21 +5,32 @@ import {
   fetchWorkoutPlanCurrent,
   fetchWorkoutPlanDay,
   fetchWorkoutPlanMonth,
+  repairSmartReflow,
 } from "../api/workoutPlanner";
 import { updateGamePlanCacheWorkoutPlan } from "../store/gamePlanCache";
 import type { WorkoutPlanCurrent } from "../types/planner";
 import {
   buildSmartReflowPatches,
+  daySnapshotFromMonthDay,
   daySnapshotFromPlanDay,
   type ReflowDaySnapshot,
   type SmartReflowPatch,
 } from "../utils/smartReflow";
-import { extractReflowMoves, type ReflowMove } from "../utils/reflowNotifyMessage";
+import type { ReflowMove } from "../utils/reflowNotifyMessage";
+import {
+  acknowledgeTier3Prompt,
+  buildReflowTierStateId,
+  isTier3PromptAcknowledged,
+  shouldSkipTier3ReflowScan,
+} from "../utils/reflowTierState";
+import type { ReflowTierAssessment } from "../utils/smartReflowTiers";
 
 export type SmartReflowRunResult =
   | { status: "skipped"; reason: string }
   | { status: "noop" }
-  | { status: "applied"; patchCount: number; appliedDays: number[]; plan: WorkoutPlanCurrent; moves: ReflowMove[]; patches: SmartReflowPatch[] };
+  | { status: "applied"; patchCount: number; appliedDays: number[]; plan: WorkoutPlanCurrent; moves: ReflowMove[]; patches: SmartReflowPatch[] }
+  | { status: "tier3_prompt"; assessment: ReflowTierAssessment; stateId: string }
+  | { status: "full_month_reset"; assessment: ReflowTierAssessment };
 
 function logReflowFailure(context: string, error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -33,34 +44,29 @@ function logReflowFailure(context: string, error: unknown) {
   console.warn(`[smart-reflow] ${context} failed:`, error);
 }
 
-/** Fetch only the day snapshots reflow may need — not every future day in the month. */
+/** Load past source days from month data and fetch full detail for all future target days. */
 async function loadReflowSnapshots(currentPlan: WorkoutPlanCurrent): Promise<ReflowDaySnapshot[]> {
-  const { days } = await fetchWorkoutPlanMonth();
-  const snapshots: ReflowDaySnapshot[] = days
-    .filter((day) => (day.exercises?.length ?? 0) > 0)
-    .map((day) => ({
-      day: day.day,
-      is_rest_day: day.is_rest_day,
-      is_past: day.is_past,
-      is_today: day.is_today,
-      is_future: day.is_future,
-      locked: day.locked,
-      exercises: day.exercises ?? [],
-      estimated_duration_min: day.estimated_duration_min,
-    }));
+  const { days: monthDays } = await fetchWorkoutPlanMonth();
+  const overviewByDay = new Map(currentPlan.month_overview.map((overview) => [overview.day, overview]));
+  const snapshots: ReflowDaySnapshot[] = [];
+  const loadedDays = new Set<number>();
 
-  const snapshotDays = new Set(snapshots.map((snapshot) => snapshot.day));
-  const candidateDays = currentPlan.month_overview
+  for (const day of monthDays) {
+    if (day.is_rest_day || day.is_future) continue;
+    const overview = overviewByDay.get(day.day);
+    if (!overview) continue;
+    snapshots.push(daySnapshotFromMonthDay(day, overview));
+    loadedDays.add(day.day);
+  }
+
+  const futureTargetDays = currentPlan.month_overview
     .filter((overview) => !overview.is_past && !overview.is_rest_day)
-    .slice(0, 2)
-    .map((overview) => overview.day)
-    .filter((day) => !snapshotDays.has(day));
-
-  if (!candidateDays.length) return snapshots;
+    .map((overview) => overview.day);
 
   const fetched = await Promise.all(
-    candidateDays.map(async (day) => {
-      const overview = currentPlan.month_overview.find((entry) => entry.day === day);
+    futureTargetDays.map(async (day) => {
+      if (loadedDays.has(day)) return null;
+      const overview = overviewByDay.get(day);
       if (!overview) return null;
       try {
         const detail = await fetchWorkoutPlanDay(day);
@@ -76,15 +82,39 @@ async function loadReflowSnapshots(currentPlan: WorkoutPlanCurrent): Promise<Ref
   return [...snapshots, ...fetched.filter((snapshot): snapshot is ReflowDaySnapshot => snapshot != null)];
 }
 
-export async function runSmartReflowDetection(currentPlan: WorkoutPlanCurrent): Promise<SmartReflowRunResult> {
+export async function runSmartReflowDetection(
+  currentPlan: WorkoutPlanCurrent,
+  opts?: { skipRepair?: boolean },
+): Promise<SmartReflowRunResult> {
   try {
+    const stateId = buildReflowTierStateId(currentPlan.plan_id, currentPlan.month, currentPlan.year);
+    if (await shouldSkipTier3ReflowScan(stateId)) {
+      return { status: "skipped", reason: "tier3_acknowledged" };
+    }
+
+    if (!opts?.skipRepair) {
+      await repairSmartReflow(currentPlan.plan_id).catch(() => undefined);
+    }
+
     const [snapshots, { items }] = await Promise.all([
       loadReflowSnapshots(currentPlan),
       getWorkoutHistory(24 * 14),
     ]);
 
-    const patches = buildSmartReflowPatches(currentPlan, snapshots, items);
-    if (!patches.length) {
+    const { patches, moves, assessment } = buildSmartReflowPatches(currentPlan, snapshots, items);
+
+    if (assessment.entirePlanPeriodMissed) {
+      return { status: "full_month_reset", assessment };
+    }
+
+    if (assessment.tier === 3) {
+      if (await isTier3PromptAcknowledged(stateId)) {
+        return { status: "skipped", reason: "tier3_acknowledged" };
+      }
+      return { status: "tier3_prompt", assessment, stateId };
+    }
+
+    if (!patches.length || !moves.length) {
       return { status: "noop" };
     }
 
@@ -92,10 +122,12 @@ export async function runSmartReflowDetection(currentPlan: WorkoutPlanCurrent): 
       plan_id: currentPlan.plan_id,
       patches,
     });
+    if (!appliedDays.length) {
+      return { status: "noop" };
+    }
     const refreshed = await fetchWorkoutPlanCurrent();
     const plan = refreshed ?? currentPlan;
     updateGamePlanCacheWorkoutPlan(plan);
-    const moves = extractReflowMoves(patches);
     return {
       status: "applied",
       patchCount: patches.length,
@@ -108,4 +140,12 @@ export async function runSmartReflowDetection(currentPlan: WorkoutPlanCurrent): 
     logReflowFailure("detection", error);
     return { status: "skipped", reason: "error" };
   }
+}
+
+export async function markTier3ReflowDeclined(stateId: string, missedDayCount: number): Promise<void> {
+  await acknowledgeTier3Prompt(stateId, "declined", missedDayCount);
+}
+
+export async function markTier3ReflowAccepted(stateId: string, missedDayCount: number): Promise<void> {
+  await acknowledgeTier3Prompt(stateId, "accepted", missedDayCount);
 }

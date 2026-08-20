@@ -11,6 +11,7 @@ import {
 } from "../utils/muscleRecoveryFromHistory";
 import { isWorkoutRestDay } from "../utils/workoutRestDay";
 import { countReflowedExercises } from "../utils/reflowExerciseMeta";
+import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -81,8 +82,12 @@ export function DailyGamePlanCard({
 }: Props) {
   const { t } = useTranslation();
 
-  const hasGeneratedWorkoutPlan = Boolean(todayWorkoutPlan?.plan_id);
-  const todayPlanDay = todayWorkoutPlan?.today ?? null;
+  const sanitizedWorkoutPlan = useMemo(
+    () => sanitizeWorkoutPlanCurrent(todayWorkoutPlan),
+    [todayWorkoutPlan],
+  );
+  const hasGeneratedWorkoutPlan = Boolean(sanitizedWorkoutPlan?.plan_id);
+  const todayPlanDay = sanitizedWorkoutPlan?.today ?? null;
   const focusMuscles = todayPlanDay?.focus_muscles ?? [];
   const exercises = !todayPlanDay || isWorkoutRestDay(todayPlanDay) ? [] : todayPlanDay.exercises ?? [];
 

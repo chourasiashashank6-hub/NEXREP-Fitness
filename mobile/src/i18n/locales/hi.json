@@ -1693,7 +1693,8 @@
       "yesterday": "कल",
       "daysAgo": "{{count}} दिन पहले",
       "notTrainedRecently": "हाल ही में प्रशिक्षित नहीं किया गया",
-      "noWorkoutYet": "अभी तक कोई workout नहीं"
+      "noWorkoutYet": "अभी तक कोई workout नहीं",
+      "year": "वर्ष"
     },
     "journey": {
       "sectionTitle": "कोच ने नोटिस किया",
@@ -2178,7 +2179,12 @@
       "appliedSameRoute_plural": "दिन {{source}} से दिन {{target}} पर {{count}} व्यायाम स्थानांतरित: {{names}}।",
       "appliedMultiIntro": "Smart Reflow ने आपकी योजना अपडेट की:",
       "appliedLine": "• {{name}}: दिन {{source}} → दिन {{target}}",
-      "movedFromDay": "→ दिन {{day}} से स्थानांतरित"
+      "movedFromDay": "→ दिन {{day}} से स्थानांतरित",
+      "tier3Title": "नई शुरुआत का समय?",
+      "tier3Message": "आपके planned workouts log किए हुए काफी समय हो गया है। क्या आप इस महीने के बाकी दिनों के लिए नया plan बनाना चाहते हैं?",
+      "tier3Decline": "अभी नहीं",
+      "tier3Regenerate": "नया plan बनाएं",
+      "tier3Regenerated": "इस महीने के बाकी workouts regenerate हो गए हैं।"
     },
     "workoutPlannerScreen": {
       "balancedHint": "संतुलित - सभी मांसपेशी समूहों को समान रूप से प्रशिक्षित किया जाएगा",

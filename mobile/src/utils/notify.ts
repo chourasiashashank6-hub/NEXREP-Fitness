@@ -10,6 +10,16 @@ export function notifyUser(title: string, message: string) {
   Alert.alert(title, message);
 }
 
+/** Smart Reflow adaptation popup — persists acknowledgment when the user taps OK. */
+export function notifyReflowApplied(title: string, message: string, onAcknowledge: () => void) {
+  if (Platform.OS === "web" && typeof window !== "undefined" && typeof window.alert === "function") {
+    window.alert(`${title}\n\n${message}`);
+    onAcknowledge();
+    return;
+  }
+  Alert.alert(title, message, [{ text: "OK", onPress: onAcknowledge }]);
+}
+
 /** Confirmation dialogs — Alert.alert with buttons is a no-op on Expo web. */
 export function confirmUser(title: string, message: string, confirmLabel = "OK"): Promise<boolean> {
   if (Platform.OS === "web" && typeof window !== "undefined" && typeof window.confirm === "function") {
