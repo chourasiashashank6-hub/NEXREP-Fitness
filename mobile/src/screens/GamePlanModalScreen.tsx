@@ -6,7 +6,6 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +18,7 @@ import { fetchOnboardingMeShared } from "../api/onboarding";
 import { getWorkoutHistory } from "../api/workout";
 import { fetchWorkoutPlanCurrent, fetchWeeklyWorkoutReview } from "../api/workoutPlanner";
 import { DailyGamePlanCard } from "../components/DailyGamePlanCard";
+import { BlurredModalBackdrop } from "../components/BlurredModalBackdrop";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { runSmartReflowDetection } from "../services/smartReflowRunner";
 import { getGamePlanCache, setGamePlanCache, type GamePlanHistoryRow } from "../store/gamePlanCache";
@@ -257,21 +257,7 @@ export default function GamePlanModalScreen() {
 
   return (
     <View style={styles.root}>
-      <Pressable
-        style={StyleSheet.absoluteFill}
-        onPress={dismiss}
-        accessibilityRole="button"
-        accessibilityLabel={t("common.close")}
-      >
-        <View style={[StyleSheet.absoluteFill, styles.scrimFallback]} />
-        <BlurView
-          intensity={40}
-          tint="dark"
-          experimentalBlurMethod="dimezisBlurView"
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-      </Pressable>
+      <BlurredModalBackdrop onPress={dismiss} accessibilityLabel={t("common.close")} />
 
       <View pointerEvents="box-none" style={[styles.sheetWrap, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }]}>
         <View style={styles.sheet}>
@@ -320,7 +306,6 @@ export default function GamePlanModalScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "transparent" },
-  scrimFallback: { backgroundColor: "rgba(20, 20, 18, 0.28)" },
   sheetWrap: {
     flex: 1,
     justifyContent: "center",

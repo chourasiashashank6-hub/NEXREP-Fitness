@@ -8,9 +8,9 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 import CoachingTips from "../../components/Coach/CoachingTips";
-import { CoachCadenceLockedPanel } from "../../components/Coach/CoachCadenceLockedPanel";
 import { CoachCadenceSelector } from "../../components/Coach/CoachCadenceSelector";
 import { WorkoutCoachSummaryViews } from "../../components/Coach/workout/WorkoutCoachSummaryViews";
+import { CoachCadencePager } from "../../components/Coach/CoachCadencePager";
 import { CoachJourneySection } from "../../components/Coach/CoachJourneySection";
 import { CircularScore } from "../../components/Coach/CircularScore";
 import { InsightBubble } from "../../components/Coach/InsightBubble";
@@ -36,6 +36,8 @@ import type { CoachStackParamList } from "./CoachHomeScreen";
 import { getGoalFocusMuscles } from "../../utils/onboardingFocusMuscles";
 import { coachRefreshUsageKey } from "../../utils/refreshUsageCounter";
 import { refreshScopeLabel } from "../../utils/refreshScopeLabel";
+import { SESSION_DATA_STALE_MS } from "../../utils/sessionDataCache";
+import { useActivityDataRefreshStore } from "../../store/activityDataRefreshStore";
 import { getMuscleWeeklyTargets, getTargetWeeklySets } from "../../utils/weeklyMuscleTargets";
 import { inferMusclesFromWorkout, parseWorkoutTimestamp } from "../../utils/workoutMuscleInfer";
 
@@ -142,14 +144,20 @@ export default function AIWorkoutCoachScreen() {
   );
   const { count: refreshUsageCount, increment: incrementRefreshUsage } = useRefreshUsageCount(refreshUsageKey);
   const loadingDataRef = useRef(false);
+  const lastWorkoutDataLoadAt = useRef(0);
+  const activityRefreshVersion = useActivityDataRefreshStore((s) => s.version);
   const cacheHydratedRef = useRef(false);
   const defaultWorkoutData = useMemo(() => buildWorkoutDataFromHistory([], onboardingData), [onboardingData]);
 
-  const loadWorkoutData = useCallback(async () => {
+  const loadWorkoutData = useCallback(async (opts?: { force?: boolean }) => {
     if (loadingDataRef.current) return;
+    const now = Date.now();
+    if (!opts?.force && lastWorkoutDataLoadAt.current > 0 && now - lastWorkoutDataLoadAt.current < SESSION_DATA_STALE_MS) {
+      return;
+    }
     loadingDataRef.current = true;
     try {
-      setDataLoading(true);
+      if (!data) setDataLoading(true);
       setDataError(null);
       const [historyRes, onboardingRes] = await Promise.all([
         getWorkoutHistory(24 * 14),
@@ -158,6 +166,7 @@ export default function AIWorkoutCoachScreen() {
       const nextOnboarding = onboardingRes?.onboarding ?? null;
       setOnboardingData(nextOnboarding);
       setData(buildWorkoutDataFromHistory(Array.isArray(historyRes?.items) ? historyRes.items : [], nextOnboarding));
+      lastWorkoutDataLoadAt.current = Date.now();
     } catch (e1) {
       try {
         const [historyRes, onboardingRes] = await Promise.all([
@@ -167,6 +176,7 @@ export default function AIWorkoutCoachScreen() {
         const nextOnboarding = onboardingRes?.onboarding ?? null;
         setOnboardingData(nextOnboarding);
         setData(buildWorkoutDataFromHistory(Array.isArray(historyRes?.items) ? historyRes.items : [], nextOnboarding));
+        lastWorkoutDataLoadAt.current = Date.now();
       } catch (e2) {
         setData(buildWorkoutDataFromHistory([], null));
         const m1 = e1 instanceof Error ? e1.message : t("coach.workout.couldNotLoadData");
@@ -177,13 +187,19 @@ export default function AIWorkoutCoachScreen() {
       setDataLoading(false);
       loadingDataRef.current = false;
     }
-  }, [t]);
+  }, [data, t]);
 
   useFocusEffect(
     useCallback(() => {
       void loadWorkoutData();
     }, [loadWorkoutData]),
   );
+
+  useEffect(() => {
+    if (activityRefreshVersion === 0) return;
+    lastWorkoutDataLoadAt.current = 0;
+    void loadWorkoutData({ force: true });
+  }, [activityRefreshVersion, loadWorkoutData]);
 
   const fetchInsight = useCallback(async () => {
     if (!data) {
@@ -240,7 +256,7 @@ export default function AIWorkoutCoachScreen() {
     void incrementRefreshUsage();
     if (redesignEnabled) {
       setSummaryRefresh((n) => n + 1);
-      void loadWorkoutData();
+      void loadWorkoutData({ force: true });
       return;
     }
     void fetchInsight();
@@ -248,13 +264,18 @@ export default function AIWorkoutCoachScreen() {
 
   const renderCadenceBody = () => {
     if (!redesignEnabled) return null;
-    if (cadence === "yearly" || (cadence === "monthly" && isCadenceLocked("monthly"))) {
-      return <CoachCadenceLockedPanel cadence={cadence === "yearly" ? "yearly" : "monthly"} accentColor={WC_COLORS.PURPLE_MID} />;
-    }
-    if (cadence === "daily" || cadence === "weekly" || cadence === "monthly") {
-      return <WorkoutCoachSummaryViews cadence={cadence} refreshToken={summaryRefresh} />;
-    }
-    return null;
+    return (
+      <CoachCadencePager
+        cadence={cadence}
+        accentColor={WC_COLORS.PURPLE_MID}
+        isCadenceLocked={isCadenceLocked}
+        onCadenceChange={setCadence}
+        onYearlyPress={handleYearlyPress}
+        renderSummary={(value) => (
+          <WorkoutCoachSummaryViews cadence={value} activeCadence={cadence} refreshToken={summaryRefresh} />
+        )}
+      />
+    );
   };
 
   return (
@@ -277,15 +298,17 @@ export default function AIWorkoutCoachScreen() {
         <View style={styles.onlineDot} />
       </View>
       {redesignEnabled ? (
-        <CoachCadenceSelector
-          value={cadence}
-          accentColor={WC_COLORS.PURPLE_MID}
-          onChange={setCadence}
-          onYearlyPress={handleYearlyPress}
-          isCadenceLocked={isCadenceLocked}
-        />
+        <>
+          <CoachCadenceSelector
+            value={cadence}
+            accentColor={WC_COLORS.PURPLE_MID}
+            onChange={setCadence}
+            onYearlyPress={handleYearlyPress}
+            isCadenceLocked={isCadenceLocked}
+          />
+          {renderCadenceBody()}
+        </>
       ) : null}
-      {renderCadenceBody()}
       {showLegacyContent ? (
       <View>
         <View style={styles.heroCard}>

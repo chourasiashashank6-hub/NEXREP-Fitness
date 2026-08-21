@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { bumpActivityDataRefresh } from "./activityDataRefreshStore";
 
 type XpRefreshState = {
   version: number;
@@ -13,4 +14,5 @@ export const useXpRefreshStore = create<XpRefreshState>((set) => ({
 /** Call after any server action that may award XP (workout log, meal log, etc.). */
 export function bumpXpRefresh() {
   useXpRefreshStore.getState().bump();
+  bumpActivityDataRefresh();
 }

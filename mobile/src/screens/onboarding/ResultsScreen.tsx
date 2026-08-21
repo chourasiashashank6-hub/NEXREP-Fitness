@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { loadOnboardingWithFallback } from "../../api/onboarding";
 import { useAuthStore } from "../../store/authStore";
+import { useIsEditOnboardingModal } from "../../hooks/useEditOnboardingModal";
 
 export default function ResultsScreen({ navigation }: any) {
   const { t } = useTranslation();
+  const rootNavigation = useNavigation<any>();
+  const isEditModal = useIsEditOnboardingModal();
   const token = useAuthStore((s) => s.token);
   const { width } = useWindowDimensions();
   const twoCol = width >= 900;
@@ -79,7 +83,22 @@ export default function ResultsScreen({ navigation }: any) {
           </View>
         </View>
       </ScrollView>
-      <View style={styles.footer}><Pressable style={styles.startBtn} onPress={() => navigation.navigate("Main")}><Text style={styles.startText}>{t("onboarding.results.startTracking")}</Text></Pressable></View>
+      <View style={styles.footer}>
+        <Pressable
+          style={styles.startBtn}
+          onPress={() => {
+            if (isEditModal) {
+              rootNavigation.goBack();
+              return;
+            }
+            navigation.navigate("Main");
+          }}
+        >
+          <Text style={styles.startText}>
+            {isEditModal ? t("common.done", { defaultValue: "Done" }) : t("onboarding.results.startTracking")}
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

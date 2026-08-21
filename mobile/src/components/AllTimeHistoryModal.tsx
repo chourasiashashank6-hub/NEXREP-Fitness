@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   SectionList,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { BlurredModal } from "./BlurredModal";
 import { getWorkoutHistory, getWorkoutTotalBurn, type WorkoutHistoryItem } from "../api/workout";
 import { useTranslation } from "react-i18next";
 import { resolveWorkoutLogSource, WORKOUT_LOG_SOURCE_I18N_KEY } from "../utils/workoutLogSource";
@@ -147,9 +147,8 @@ export default function AllTimeHistoryModal({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
+    <BlurredModal visible={visible} onClose={onClose} variant="bottom">
+      <View style={styles.sheetInner}>
           <View style={styles.handle} />
           <View style={styles.headerRow}>
             <Pressable style={styles.iconButton} onPress={onClose} hitSlop={10}>
@@ -224,20 +223,15 @@ export default function AllTimeHistoryModal({ visible, onClose }: Props) {
               }}
             />
           )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </BlurredModal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
-  sheet: {
-    maxHeight: "88%",
-    minHeight: "62%",
-    backgroundColor: WHITE,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+  sheetInner: {
+    flex: 1,
+    minHeight: 420,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 24,

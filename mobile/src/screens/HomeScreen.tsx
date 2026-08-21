@@ -34,8 +34,7 @@ import { navigationRef } from "../navigation/navigationRef";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
 import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
 import { fillMealSlots, buildLoggedMealMilestones } from "../utils/mealSlotSchedule";
-import { buildManualSessionMilestones, fillSessionSlots } from "../utils/sessionMilestoneSlots";
-import { isPlannerLoggedWorkout } from "../utils/workoutPlannerLog";
+import { buildTodaySessionMilestoneItems } from "../utils/sessionMilestoneSlots";
 import {
   computeCombinedStreak,
   getLast7DaysMeta,
@@ -45,6 +44,7 @@ import {
 import { isHomeRestDayActive, isWorkoutRestDay } from "../utils/workoutRestDay";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { setGamePlanCache } from "../store/gamePlanCache";
+import { useActivityDataRefreshStore } from "../store/activityDataRefreshStore";
 import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
 import type { WorkoutPlanCurrent } from "../types/planner";
 
@@ -243,6 +243,7 @@ export const HomeScreen = () => {
   const [streakCalorieLogs, setStreakCalorieLogs] = useState<{ date: string; total_calories: number }[]>([]);
   const [personalBestStreak, setPersonalBestStreak] = useState(0);
   const lastLoadAt = useRef(0);
+  const activityRefreshVersion = useActivityDataRefreshStore((s) => s.version);
 
   const sectionAnim = useRef([0, 1, 2, 3, 4].map(() => new Animated.Value(0))).current;
 
@@ -455,6 +456,12 @@ export const HomeScreen = () => {
     }, [load]),
   );
 
+  useEffect(() => {
+    if (activityRefreshVersion === 0) return;
+    lastLoadAt.current = 0;
+    void load();
+  }, [activityRefreshVersion, load]);
+
   const log = calorieDay?.log;
   const intake = Number(log?.total_calories || 0);
   const targetKcal = Number(log?.target_calories || 0);
@@ -637,28 +644,24 @@ export const HomeScreen = () => {
 
   const sessionMilestoneItems = useMemo(() => {
     const today = new Date();
-    const todayLogs = workoutHistory.filter(
-      (item) => item?.date && item.exerciseName && isSameLocalDay(item.date, today),
-    );
-
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const items = buildTodaySessionMilestoneItems({
+      hasWorkoutPlannerAccess,
+      todayWorkoutPlan,
+      workoutHistory,
+      todayKey,
+    });
     if (!hasWorkoutPlannerAccess) {
-      const manualLogs = todayLogs
-        .filter((item) => !isPlannerLoggedWorkout(item))
-        .map((item, index) => ({
-          id: item.id ?? index,
-          exerciseName: String(item.exerciseName),
-        }));
-      return buildManualSessionMilestones(manualLogs).map((item) => ({
+      return items.map((item) => ({
         ...item,
         sourceLabel: t("home.mealSource.manual"),
       }));
     }
-
-    const todayPlanDay = todayWorkoutPlan?.today ?? null;
-    const planned =
-      todayPlanDay && !isWorkoutRestDay(todayPlanDay) ? todayPlanDay.exercises ?? [] : [];
-    const loggedNames = todayLogs.map((item) => String(item.exerciseName));
-    return fillSessionSlots(planned, loggedNames);
+    return items.map((item) =>
+      item.isExtra
+        ? { ...item, sourceLabel: t("workoutLog.extraExerciseBadge") }
+        : item,
+    );
   }, [hasWorkoutPlannerAccess, todayWorkoutPlan, workoutHistory, t]);
 
   // Only show rest-day empty state when Elite + generated plan + today rest —

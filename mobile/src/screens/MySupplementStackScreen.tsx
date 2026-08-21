@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import DraggableFlatList, { ScaleDecorator, type RenderItemParams } from "react-native-draggable-flatlist";
@@ -14,7 +15,8 @@ import {
   type SupplementCategory,
   type SupplementStackItem,
 } from "../api/supplementStacks";
-import { ScreenContainer } from "../components/ScreenContainer";
+import { BlurredModal } from "../components/BlurredModal";
+import { BlurredModalScreenShell } from "../components/BlurredModalScreenShell";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -38,6 +40,15 @@ const categoryColor: Record<SupplementCategory, string> = {
   bcaa: "#7B68CC",
   multivitamin: "#D85A30",
   other: MUTED,
+};
+
+const categoryIcon: Record<SupplementCategory, keyof typeof Ionicons.glyphMap> = {
+  protein: "barbell-outline",
+  creatine: "flash-outline",
+  preworkout: "rocket-outline",
+  bcaa: "water-outline",
+  multivitamin: "leaf-outline",
+  other: "medkit-outline",
 };
 
 type Draft = {
@@ -114,25 +125,30 @@ export function MySupplementStackScreen() {
     }
   };
 
-  const renderStackItem = ({ item, drag, isActive }: RenderItemParams<SupplementStackItem>) => (
-    <ScaleDecorator>
-      <Pressable
-        style={[styles.itemCard, isActive ? styles.itemCardActive : null]}
-        onPress={() => setDraft(toDraft(item))}
-      >
-        <View style={[styles.categoryDot, { backgroundColor: categoryColor[item.category] }]} />
-        <View style={styles.itemText}>
-          <Text style={styles.itemTitle}>{item.product_name}</Text>
-          <Text style={styles.itemMeta}>
-            {[item.quantity_note, item.timing_value].filter(Boolean).join(" · ") || t(`social.stacks.categories.${item.category}`)}
-          </Text>
-        </View>
-        <Pressable style={styles.dragHandle} onLongPress={drag} delayLongPress={120}>
-          <Text style={styles.dragHandleText}>|||</Text>
+  const renderStackItem = ({ item, drag, isActive }: RenderItemParams<SupplementStackItem>) => {
+    const accent = categoryColor[item.category];
+    const timingLabel = [item.quantity_note, item.timing_value].filter(Boolean).join(" · ");
+    return (
+      <ScaleDecorator>
+        <Pressable
+          style={[styles.itemCard, isActive ? styles.itemCardActive : null, { borderLeftColor: accent }]}
+          onPress={() => setDraft(toDraft(item))}
+        >
+          <View style={[styles.categoryIconTile, { backgroundColor: `${accent}18` }]}>
+            <Ionicons name={categoryIcon[item.category]} size={18} color={accent} />
+          </View>
+          <View style={styles.itemText}>
+            <Text style={styles.itemTitle}>{item.product_name}</Text>
+            <Text style={styles.itemCategory}>{t(`social.stacks.categories.${item.category}`)}</Text>
+            {timingLabel ? <Text style={styles.itemMeta}>{timingLabel}</Text> : null}
+          </View>
+          <Pressable style={styles.dragHandle} onLongPress={drag} delayLongPress={120}>
+            <Ionicons name="reorder-three-outline" size={22} color={GREEN} />
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </ScaleDecorator>
-  );
+      </ScaleDecorator>
+    );
+  };
 
   const saveDraft = async () => {
     if (!draft) return;
@@ -174,47 +190,54 @@ export function MySupplementStackScreen() {
   };
 
   return (
-    <ScreenContainer bg={BG}>
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{t("common.back")}</Text>
-        </Pressable>
-        <Pressable style={styles.addButton} onPress={() => setDraft(emptyDraft())}>
-          <Text style={styles.addText}>{t("social.stacks.add")}</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.hero}>
-        <Text style={styles.title}>{t("social.stacks.title")}</Text>
-        <Text style={styles.subtitle}>{t("social.stacks.subtitle")}</Text>
-        <Pressable style={[styles.visibility, visible ? styles.visibilityOn : styles.visibilityOff]} onPress={toggleVisibility}>
-          <Text style={[styles.visibilityText, visible ? styles.visibilityTextOn : styles.visibilityTextOff]}>
-            {visible ? t("social.stacks.visible") : t("social.stacks.hidden")}
-          </Text>
-        </Pressable>
-      </View>
-
-      {loading ? (
-        <ActivityIndicator color={GREEN} style={styles.loader} />
-      ) : items.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>{t("social.stacks.empty")}</Text>
+    <BlurredModalScreenShell onClose={() => navigation.goBack()} variant="center">
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.topBar}>
+          <Text style={styles.title}>{t("social.stacks.title")}</Text>
+          <Pressable style={styles.addButton} onPress={() => setDraft(emptyDraft())}>
+            <Text style={styles.addText}>{t("social.stacks.add")}</Text>
+          </Pressable>
         </View>
-      ) : (
-        <DraggableFlatList
-          data={items}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderStackItem}
-          onDragEnd={({ data }) => void persistOrder(data)}
-          scrollEnabled={false}
-        />
-      )}
 
-      <Modal visible={Boolean(draft)} transparent animationType="slide" onRequestClose={() => setDraft(null)}>
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            <ScrollView>
-              <Text style={styles.sheetTitle}>{draft?.id ? t("social.stacks.editTitle") : t("social.stacks.addTitle")}</Text>
+        <View style={styles.introCard}>
+          <Text style={styles.subtitle}>{t("social.stacks.subtitle")}</Text>
+          <Pressable style={styles.visibilityRow} onPress={toggleVisibility}>
+            <View style={styles.visibilityCopy}>
+              <Text style={styles.visibilityLabel}>{t("social.stacks.visibleToFriends", { defaultValue: "Visible to friends" })}</Text>
+              <Text style={styles.visibilityHint}>
+                {visible ? t("social.stacks.visible") : t("social.stacks.hidden")}
+              </Text>
+            </View>
+            <View style={[styles.visibilityToggle, visible ? styles.visibilityToggleOn : styles.visibilityToggleOff]}>
+              <View style={[styles.visibilityKnob, visible ? styles.visibilityKnobOn : null]} />
+            </View>
+          </Pressable>
+        </View>
+
+        {loading ? (
+          <ActivityIndicator color={GREEN} style={styles.loader} />
+        ) : items.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Ionicons name="medkit-outline" size={28} color={GREEN} />
+            <Text style={styles.emptyText}>{t("social.stacks.empty")}</Text>
+          </View>
+        ) : (
+          <View style={styles.listCard}>
+            <DraggableFlatList
+              data={items}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={renderStackItem}
+              onDragEnd={({ data }) => void persistOrder(data)}
+              scrollEnabled={false}
+            />
+          </View>
+        )}
+      </ScrollView>
+
+      <BlurredModal visible={Boolean(draft)} onClose={() => setDraft(null)} variant="bottom">
+        <ScrollView contentContainerStyle={styles.sheetScroll} keyboardShouldPersistTaps="handled">
+          <View style={styles.handle} />
+          <Text style={styles.sheetTitle}>{draft?.id ? t("social.stacks.editTitle") : t("social.stacks.addTitle")}</Text>
               <Text style={styles.label}>{t("social.stacks.category")}</Text>
               <View style={styles.chipRow}>
                 {categories.map((category) => (
@@ -280,41 +303,111 @@ export function MySupplementStackScreen() {
                 </Pressable>
               </View>
             </ScrollView>
-          </View>
-        </View>
-      </Modal>
-    </ScreenContainer>
+      </BlurredModal>
+    </BlurredModalScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },
-  backButton: { backgroundColor: GREEN_LIGHT, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
-  backText: { color: GREEN, fontSize: 13, fontWeight: "900" },
+  scrollContent: { padding: 18, paddingBottom: 28 },
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
+  title: { color: TEXT, fontSize: 24, fontWeight: "900", flex: 1, paddingRight: 12 },
   addButton: { backgroundColor: GREEN, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
   addText: { color: WHITE, fontSize: 13, fontWeight: "900" },
-  hero: { backgroundColor: WHITE, borderColor: BORDER, borderRadius: 22, borderWidth: 1, marginBottom: 12, padding: 18 },
-  title: { color: TEXT, fontSize: 26, fontWeight: "900", marginBottom: 6 },
-  subtitle: { color: MUTED, fontSize: 13, fontWeight: "700", lineHeight: 19, marginBottom: 14 },
-  visibility: { alignSelf: "flex-start", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
-  visibilityOn: { backgroundColor: GREEN_LIGHT },
-  visibilityOff: { backgroundColor: "#F4EEE8" },
-  visibilityText: { fontSize: 12, fontWeight: "900" },
-  visibilityTextOn: { color: GREEN },
-  visibilityTextOff: { color: DANGER },
+  introCard: {
+    backgroundColor: BG,
+    borderColor: BORDER,
+    borderRadius: 18,
+    borderWidth: 1,
+    marginBottom: 14,
+    padding: 16,
+    gap: 12,
+  },
+  subtitle: { color: MUTED, fontSize: 13, fontWeight: "700", lineHeight: 19 },
+  visibilityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: WHITE,
+    borderColor: BORDER,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  visibilityCopy: { flex: 1, minWidth: 0 },
+  visibilityLabel: { color: TEXT, fontSize: 13, fontWeight: "800", marginBottom: 2 },
+  visibilityHint: { color: MUTED, fontSize: 12, fontWeight: "700" },
+  visibilityToggle: {
+    width: 48,
+    height: 28,
+    borderRadius: 999,
+    padding: 3,
+    justifyContent: "center",
+  },
+  visibilityToggleOn: { backgroundColor: GREEN },
+  visibilityToggleOff: { backgroundColor: "#D9D9D4" },
+  visibilityKnob: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: WHITE,
+    alignSelf: "flex-start",
+  },
+  visibilityKnobOn: { alignSelf: "flex-end" },
   loader: { marginTop: 40 },
-  emptyCard: { backgroundColor: WHITE, borderColor: BORDER, borderRadius: 20, borderWidth: 1, padding: 18 },
+  emptyCard: {
+    alignItems: "center",
+    backgroundColor: BG,
+    borderColor: BORDER,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 10,
+    padding: 24,
+  },
   emptyText: { color: MUTED, fontSize: 14, fontWeight: "700", lineHeight: 20, textAlign: "center" },
-  itemCard: { alignItems: "center", backgroundColor: WHITE, borderColor: BORDER, borderRadius: 18, borderWidth: 1, flexDirection: "row", gap: 10, marginBottom: 10, padding: 12 },
+  listCard: {
+    backgroundColor: BG,
+    borderColor: BORDER,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 10,
+  },
+  itemCard: {
+    alignItems: "center",
+    backgroundColor: WHITE,
+    borderColor: BORDER,
+    borderLeftWidth: 4,
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 10,
+    padding: 12,
+  },
   itemCardActive: { borderColor: GREEN, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 8 },
-  categoryDot: { borderRadius: 8, height: 16, width: 16 },
+  categoryIconTile: {
+    alignItems: "center",
+    borderRadius: 12,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
   itemText: { flex: 1, minWidth: 0 },
-  itemTitle: { color: TEXT, fontSize: 15, fontWeight: "900", marginBottom: 3 },
-  itemMeta: { color: MUTED, fontSize: 12, fontWeight: "700" },
-  dragHandle: { paddingHorizontal: 8, paddingVertical: 6 },
-  dragHandleText: { color: GREEN, fontSize: 20, fontWeight: "900" },
-  backdrop: { backgroundColor: "rgba(0,0,0,0.32)", flex: 1, justifyContent: "flex-end" },
-  sheet: { backgroundColor: WHITE, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "88%", padding: 18 },
+  itemTitle: { color: TEXT, fontSize: 15, fontWeight: "900", marginBottom: 2 },
+  itemCategory: { color: GREEN, fontSize: 11, fontWeight: "800", marginBottom: 3, textTransform: "uppercase" },
+  itemMeta: { color: MUTED, fontSize: 12, fontWeight: "700", lineHeight: 17 },
+  dragHandle: { paddingHorizontal: 4, paddingVertical: 6 },
+  sheetScroll: { padding: 18, paddingBottom: 24 },
+  handle: {
+    alignSelf: "center",
+    backgroundColor: BORDER,
+    borderRadius: 2,
+    height: 4,
+    marginBottom: 12,
+    width: 38,
+  },
   sheetTitle: { color: TEXT, fontSize: 22, fontWeight: "900", marginBottom: 14 },
   label: { color: MUTED, fontSize: 12, fontWeight: "900", marginBottom: 7, marginTop: 10 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },

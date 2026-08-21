@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from "react";
 import Constants from "expo-constants";
 import {
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,9 +15,10 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { submitFeedback } from "../api/feedback";
 import { getProfile } from "../api/user";
+import { BlurredModal } from "../components/BlurredModal";
 import { BottomSheetPicker } from "../components/BottomSheetPicker";
 import DevSubscriptionToggle from "../components/DevSubscriptionToggle";
-import { ScreenContainer } from "../components/ScreenContainer";
+import { RightDrawerShell } from "../components/RightDrawerShell";
 import { TIER_COLORS } from "../constants/tierColors";
 import { useLanguageStore } from "../i18n/languageStore";
 import { signOutSession } from "../services/authService";
@@ -138,226 +138,232 @@ export function SettingsScreen() {
     }
   };
 
-  return (
-    <ScreenContainer bg={SCREEN_BG} contentStyle={styles.screenContent}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityRole="button">
-          <Text style={styles.backBtnText}>←</Text>
-        </Pressable>
-        <View style={styles.headerTextBlock}>
-          <Text style={styles.title}>{t("settings.screenTitle")}</Text>
-        </View>
-      </View>
+  const openSupplementStack = () => {
+    if (navigationRef.isReady()) {
+      navigationRef.navigate("MySupplementStackModal" as never);
+    }
+  };
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {userId ? (
-          <Pressable
-            style={[
-              styles.subscriptionsButton,
-              {
-                backgroundColor: subscriptionColors.cardBg,
-                borderColor: subscriptionColors.cardBorder,
-              },
-            ]}
-            onPress={() => navigation.navigate("PlanPicker")}
-          >
-            <View style={[styles.subscriptionsIconTile, { backgroundColor: subscriptionColors.badgeBg }]}>
-              <Text style={{ fontSize: 18 }}>⭐</Text>
-            </View>
-            <View style={styles.subscriptionsCopy}>
-              <View style={styles.subscriptionsTitleRow}>
-                <Text
-                  style={[styles.subscriptionsTitle, { color: subscriptionColors.titleColor }]}
-                  numberOfLines={2}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.78}
-                >
-                  {t("profile.subscriptions")}
-                </Text>
-                <View style={[styles.subscriptionsPlanBadge, { backgroundColor: subscriptionColors.badgeBg }]}>
+  return (
+    <RightDrawerShell onClose={() => navigation.goBack()}>
+      <View style={styles.screenContent}>
+        <View style={styles.header}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityRole="button">
+            <Text style={styles.backBtnText}>←</Text>
+          </Pressable>
+          <View style={styles.headerTextBlock}>
+            <Text style={styles.title}>{t("settings.screenTitle")}</Text>
+          </View>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {userId ? (
+            <Pressable
+              style={[
+                styles.subscriptionsButton,
+                {
+                  backgroundColor: subscriptionColors.cardBg,
+                  borderColor: subscriptionColors.cardBorder,
+                },
+              ]}
+              onPress={() => navigation.navigate("PlanPicker")}
+            >
+              <View style={[styles.subscriptionsIconTile, { backgroundColor: subscriptionColors.badgeBg }]}>
+                <Text style={{ fontSize: 18 }}>⭐</Text>
+              </View>
+              <View style={styles.subscriptionsCopy}>
+                <View style={styles.subscriptionsTitleRow}>
                   <Text
-                    style={[styles.subscriptionsPlanBadgeText, { color: subscriptionColors.badgeText }]}
+                    style={[styles.subscriptionsTitle, { color: subscriptionColors.titleColor }]}
                     numberOfLines={2}
                     adjustsFontSizeToFit
-                    minimumFontScale={0.75}
+                    minimumFontScale={0.78}
                   >
-                    {subscriptionTier}
+                    {t("profile.subscriptions")}
                   </Text>
+                  <View style={[styles.subscriptionsPlanBadge, { backgroundColor: subscriptionColors.badgeBg }]}>
+                    <Text
+                      style={[styles.subscriptionsPlanBadgeText, { color: subscriptionColors.badgeText }]}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.75}
+                    >
+                      {subscriptionTier}
+                    </Text>
+                  </View>
                 </View>
+                <Text style={[styles.subscriptionsSubtitle, { color: subscriptionColors.mutedText }]} numberOfLines={3}>
+                  {t("profile.subscriptionsSubtitle")}
+                </Text>
               </View>
-              <Text style={[styles.subscriptionsSubtitle, { color: subscriptionColors.mutedText }]} numberOfLines={3}>
-                {t("profile.subscriptionsSubtitle")}
+              <Ionicons name="chevron-forward" size={16} color={subscriptionColors.cardBorder} />
+            </Pressable>
+          ) : null}
+
+          <View style={styles.footerCard}>
+            {__DEV__ ? (
+              <Pressable style={styles.footerRow} onPress={() => navigation.navigate("AdminStack")}>
+                <View style={styles.footerIconTile}>
+                  <Text style={styles.footerEmoji}>🔧</Text>
+                </View>
+                <Text style={styles.footerLabel}>{t("profile.goToAdmin")}</Text>
+                <Text style={styles.footerChevron}>›</Text>
+              </Pressable>
+            ) : null}
+            <Pressable style={styles.footerRow} onPress={openSupplementStack}>
+              <View style={styles.footerIconTile}>
+                <Text style={styles.footerEmoji}>💊</Text>
+              </View>
+              <Text style={styles.footerLabel}>{t("social.stacks.open")}</Text>
+              <Text style={styles.footerChevron}>›</Text>
+            </Pressable>
+            <Pressable style={styles.footerRow} onPress={() => navigationRef.navigate("AITrainerCalibration" as never)}>
+              <View style={styles.footerIconTile}>
+                <Text style={styles.footerEmoji}>🧍</Text>
+              </View>
+              <Text style={styles.footerLabel}>
+                {t("aiTrainer.calibrate_profile", { defaultValue: "AI trainer calibration" })}
               </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={subscriptionColors.cardBorder} />
-          </Pressable>
-        ) : null}
-
-        <View style={styles.footerCard}>
-          {__DEV__ ? (
-            <Pressable style={styles.footerRow} onPress={() => navigation.navigate("AdminStack")}>
-              <View style={styles.footerIconTile}>
-                <Text style={styles.footerEmoji}>🔧</Text>
-              </View>
-              <Text style={styles.footerLabel}>{t("profile.goToAdmin")}</Text>
               <Text style={styles.footerChevron}>›</Text>
             </Pressable>
-          ) : null}
-          <Pressable style={styles.footerRow} onPress={() => navigation.navigate("MySupplementStack")}>
-            <View style={styles.footerIconTile}>
-              <Text style={styles.footerEmoji}>💊</Text>
-            </View>
-            <Text style={styles.footerLabel}>{t("social.stacks.open")}</Text>
-            <Text style={styles.footerChevron}>›</Text>
-          </Pressable>
-          <Pressable style={styles.footerRow} onPress={() => navigationRef.navigate("AITrainerCalibration" as never)}>
-            <View style={styles.footerIconTile}>
-              <Text style={styles.footerEmoji}>🧍</Text>
-            </View>
-            <Text style={styles.footerLabel}>
-              {t("aiTrainer.calibrate_profile", { defaultValue: "AI trainer calibration" })}
-            </Text>
-            <Text style={styles.footerChevron}>›</Text>
-          </Pressable>
-          <Pressable
-            style={styles.footerRow}
-            onPress={() => {
-              setFeedbackSent(false);
-              setFeedbackOpen(true);
-            }}
-          >
-            <View style={styles.footerIconTile}>
-              <Text style={styles.footerEmoji}>💬</Text>
-            </View>
-            <Text style={styles.footerLabel}>{t("profile.feedback")}</Text>
-            <Text style={styles.footerChevron}>›</Text>
-          </Pressable>
-          <Pressable style={styles.footerRow} onPress={() => navigation.navigate("NotificationPreferences")}>
-            <View style={styles.footerIconTile}>
-              <Text style={styles.footerEmoji}>🔔</Text>
-            </View>
-            <Text style={styles.footerLabel}>{t("profile.notificationPreferences")}</Text>
-            <Text style={styles.footerChevron}>›</Text>
-          </Pressable>
-          {canManageFasting ? (
-            <Pressable style={styles.footerRow} onPress={() => navigation.navigate("FastingPreferences")}>
+            <Pressable
+              style={styles.footerRow}
+              onPress={() => {
+                setFeedbackSent(false);
+                setFeedbackOpen(true);
+              }}
+            >
               <View style={styles.footerIconTile}>
-                <Text style={styles.footerEmoji}>🪔</Text>
+                <Text style={styles.footerEmoji}>💬</Text>
               </View>
-              <Text style={styles.footerLabel}>{t("profile.fastingPreferences")}</Text>
+              <Text style={styles.footerLabel}>{t("profile.feedback")}</Text>
               <Text style={styles.footerChevron}>›</Text>
             </Pressable>
-          ) : null}
-          <View style={styles.footerPickerRow}>
-            <View style={styles.footerIconTile}>
-              <Text style={styles.footerEmoji}>🌐</Text>
-            </View>
-            <View style={styles.footerPickerContent}>
-              <Text style={styles.footerLabel}>{t("profile.language")}</Text>
-              <BottomSheetPicker
-                label={t("profile.language")}
-                value={language}
-                options={LANGUAGE_OPTIONS}
-                onChange={(value) => {
-                  if (typeof value === "string") void setLanguage(value);
-                }}
-                placeholder={t("profile.languagePlaceholder")}
-              />
-            </View>
-          </View>
-          <TouchableOpacity
-            onPress={handleVersionTap}
-            activeOpacity={1}
-            hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
-            style={styles.versionWrap}
-          >
-            <Text style={styles.versionText}>{t("profile.version", { version: APP_VERSION })}</Text>
-          </TouchableOpacity>
-          <Pressable style={[styles.footerRow, styles.footerRowLast]} onPress={() => void signOutSession()}>
-            <View style={styles.logoutIconTile}>
-              <Text style={styles.footerEmoji}>🚪</Text>
-            </View>
-            <Text style={styles.logoutText}>{t("profile.logout")}</Text>
-            <Text style={styles.logoutChevron}>›</Text>
-          </Pressable>
-        </View>
-
-        <DevSubscriptionToggle email={userEmail} userId={userId} />
-      </ScrollView>
-
-      <Modal visible={feedbackOpen} transparent animationType="slide" onRequestClose={() => setFeedbackOpen(false)}>
-        <View style={styles.modalBackdropBottom}>
-          <View style={styles.feedbackSheet}>
-            {feedbackSent ? (
-              <View style={styles.feedbackSentWrap}>
-                <View style={[styles.feedbackTickCircle, { backgroundColor: "rgba(85,181,106,0.16)" }]}>
-                  <Text style={styles.feedbackTick}>✓</Text>
-                </View>
-                <Text style={[styles.feedbackTitle, { textAlign: "center", marginBottom: 6 }]}>{t("profile.feedbackSent")}</Text>
-                <Text style={[styles.feedbackSub, { textAlign: "center" }]}>{t("profile.feedbackSentBody")}</Text>
-                <View style={styles.feedbackActions}>
-                  <Pressable
-                    style={styles.feedbackActionBtn}
-                    onPress={() => {
-                      setFeedbackOpen(false);
-                      setFeedbackSent(false);
-                      setFeedbackSubject("");
-                      setFeedbackBody("");
-                    }}
-                  >
-                    <Text style={styles.feedbackCancelText}>{t("profile.close")}</Text>
-                  </Pressable>
-                </View>
+            <Pressable style={styles.footerRow} onPress={() => navigation.navigate("NotificationPreferences")}>
+              <View style={styles.footerIconTile}>
+                <Text style={styles.footerEmoji}>🔔</Text>
               </View>
-            ) : (
-              <>
-                <Text style={styles.feedbackTitle}>{t("profile.sendFeedback")}</Text>
-                <Text style={styles.feedbackSub}>{t("profile.feedbackSub")}</Text>
-                <View style={styles.feedbackField}>
-                  <Text style={styles.editLabel}>{t("profile.subject")}</Text>
-                  <TextInput
-                    value={feedbackSubject}
-                    onChangeText={setFeedbackSubject}
-                    placeholder={t("profile.subjectPlaceholder")}
-                    placeholderTextColor={MUTED}
-                    style={styles.feedbackInput}
-                  />
+              <Text style={styles.footerLabel}>{t("profile.notificationPreferences")}</Text>
+              <Text style={styles.footerChevron}>›</Text>
+            </Pressable>
+            {canManageFasting ? (
+              <Pressable style={styles.footerRow} onPress={() => navigation.navigate("FastingPreferences")}>
+                <View style={styles.footerIconTile}>
+                  <Text style={styles.footerEmoji}>🪔</Text>
                 </View>
-                <View style={styles.feedbackField}>
-                  <Text style={styles.editLabel}>{t("profile.body")}</Text>
-                  <TextInput
-                    value={feedbackBody}
-                    onChangeText={setFeedbackBody}
-                    placeholder={t("profile.bodyPlaceholder")}
-                    placeholderTextColor={MUTED}
-                    multiline
-                    textAlignVertical="top"
-                    style={styles.feedbackBodyInput}
-                  />
-                </View>
-                <View style={styles.feedbackActions}>
-                  <Pressable style={styles.feedbackActionBtn} onPress={() => setFeedbackOpen(false)} disabled={sendingFeedback}>
-                    <Text style={styles.feedbackCancelText}>{t("common.cancel")}</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.feedbackActionBtn, styles.feedbackSendBtn]}
-                    onPress={() => void onSubmitFeedback()}
-                    disabled={sendingFeedback}
-                  >
-                    <Text style={styles.feedbackSendText}>{sendingFeedback ? t("profile.sending") : t("profile.send")}</Text>
-                  </Pressable>
-                </View>
-              </>
-            )}
+                <Text style={styles.footerLabel}>{t("profile.fastingPreferences")}</Text>
+                <Text style={styles.footerChevron}>›</Text>
+              </Pressable>
+            ) : null}
+            <View style={styles.footerPickerRow}>
+              <View style={styles.footerIconTile}>
+                <Text style={styles.footerEmoji}>🌐</Text>
+              </View>
+              <View style={styles.footerPickerContent}>
+                <Text style={styles.footerLabel}>{t("profile.language")}</Text>
+                <BottomSheetPicker
+                  label={t("profile.language")}
+                  value={language}
+                  options={LANGUAGE_OPTIONS}
+                  onChange={(value) => {
+                    if (typeof value === "string") void setLanguage(value);
+                  }}
+                  placeholder={t("profile.languagePlaceholder")}
+                />
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={handleVersionTap}
+              activeOpacity={1}
+              hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
+              style={styles.versionWrap}
+            >
+              <Text style={styles.versionText}>{t("profile.version", { version: APP_VERSION })}</Text>
+            </TouchableOpacity>
+            <Pressable style={[styles.footerRow, styles.footerRowLast]} onPress={() => void signOutSession()}>
+              <View style={styles.logoutIconTile}>
+                <Text style={styles.footerEmoji}>🚪</Text>
+              </View>
+              <Text style={styles.logoutText}>{t("profile.logout")}</Text>
+              <Text style={styles.logoutChevron}>›</Text>
+            </Pressable>
           </View>
+
+          <DevSubscriptionToggle email={userEmail} userId={userId} />
+        </ScrollView>
+      </View>
+
+      <BlurredModal visible={feedbackOpen} onClose={() => setFeedbackOpen(false)} variant="bottom">
+        <View style={styles.feedbackSheet}>
+          {feedbackSent ? (
+            <View style={styles.feedbackSentWrap}>
+              <View style={[styles.feedbackTickCircle, { backgroundColor: "rgba(85,181,106,0.16)" }]}>
+                <Text style={styles.feedbackTick}>✓</Text>
+              </View>
+              <Text style={[styles.feedbackTitle, { textAlign: "center", marginBottom: 6 }]}>{t("profile.feedbackSent")}</Text>
+              <Text style={[styles.feedbackSub, { textAlign: "center" }]}>{t("profile.feedbackSentBody")}</Text>
+              <View style={styles.feedbackActions}>
+                <Pressable
+                  style={styles.feedbackActionBtn}
+                  onPress={() => {
+                    setFeedbackOpen(false);
+                    setFeedbackSent(false);
+                    setFeedbackSubject("");
+                    setFeedbackBody("");
+                  }}
+                >
+                  <Text style={styles.feedbackCancelText}>{t("profile.close")}</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.feedbackTitle}>{t("profile.sendFeedback")}</Text>
+              <Text style={styles.feedbackSub}>{t("profile.feedbackSub")}</Text>
+              <View style={styles.feedbackField}>
+                <Text style={styles.editLabel}>{t("profile.subject")}</Text>
+                <TextInput
+                  value={feedbackSubject}
+                  onChangeText={setFeedbackSubject}
+                  placeholder={t("profile.subjectPlaceholder")}
+                  placeholderTextColor={MUTED}
+                  style={styles.feedbackInput}
+                />
+              </View>
+              <View style={styles.feedbackField}>
+                <Text style={styles.editLabel}>{t("profile.body")}</Text>
+                <TextInput
+                  value={feedbackBody}
+                  onChangeText={setFeedbackBody}
+                  placeholder={t("profile.bodyPlaceholder")}
+                  placeholderTextColor={MUTED}
+                  multiline
+                  textAlignVertical="top"
+                  style={styles.feedbackBodyInput}
+                />
+              </View>
+              <View style={styles.feedbackActions}>
+                <Pressable style={styles.feedbackActionBtn} onPress={() => setFeedbackOpen(false)} disabled={sendingFeedback}>
+                  <Text style={styles.feedbackCancelText}>{t("common.cancel")}</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.feedbackActionBtn, styles.feedbackSendBtn]}
+                  onPress={() => void onSubmitFeedback()}
+                  disabled={sendingFeedback}
+                >
+                  <Text style={styles.feedbackSendText}>{sendingFeedback ? t("profile.sending") : t("profile.send")}</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
         </View>
-      </Modal>
-    </ScreenContainer>
+      </BlurredModal>
+    </RightDrawerShell>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContent: { paddingHorizontal: 16, paddingBottom: 24 },
+  screenContent: { flex: 1, paddingHorizontal: 16, paddingBottom: 24, backgroundColor: SCREEN_BG },
   header: { flexDirection: "row", alignItems: "center", paddingTop: 8, paddingBottom: 12, gap: 12 },
   backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: BG, alignItems: "center", justifyContent: "center" },
   backBtnText: { color: TEXT, fontSize: 18, fontWeight: "900" },
@@ -409,8 +415,7 @@ const styles = StyleSheet.create({
   logoutChevron: { color: ORANGE, fontSize: 20 },
   versionWrap: { alignItems: "center", paddingVertical: 8 },
   versionText: { color: MUTED, fontSize: 12, fontWeight: "700" },
-  modalBackdropBottom: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", justifyContent: "flex-end" },
-  feedbackSheet: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18 },
+  feedbackSheet: { padding: 18 },
   feedbackTitle: { color: TEXT, fontSize: 16, fontWeight: "900", marginBottom: 4 },
   feedbackSub: { color: MUTED, fontSize: 11, marginBottom: 10 },
   feedbackField: { marginBottom: 10 },

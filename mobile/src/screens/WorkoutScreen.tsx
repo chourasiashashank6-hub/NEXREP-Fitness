@@ -43,6 +43,7 @@ import { AppInput } from "../components/AppInput";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
 import { CameraGuidedSessionFrame } from "../components/aiTrainer/CameraGuidedSessionFrame";
 import { LogPlannerSegment, type LogPlannerMode } from "../components/LogPlannerSegment";
+import { SwipeTabPager } from "../components/SwipeTabPager";
 import { PlannerLockedUpsell } from "../components/PlannerLockedUpsell";
 import { SessionTypePickerModal } from "../components/SessionTypePickerModal";
 import { unlockWebSpeech } from "../services/aiTrainer/audioCoach";
@@ -69,6 +70,12 @@ import {
   type WorkoutLogSource,
 } from "../utils/workoutLogSource";
 import { allPlannerExercisesLogged } from "../utils/workoutPlannerLog";
+import {
+  buildTodaySessionMilestoneItems,
+  sessionMilestonePlannedFilled,
+  sessionMilestonePlannedTarget,
+} from "../utils/sessionMilestoneSlots";
+import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
 import { calcExerciseEstimateKcal } from "../utils/sessionCalories";
 import { navigationRef } from "../navigation/navigationRef";
 import MonthlyWorkoutPlannerScreen from "./Coach/MonthlyWorkoutPlannerScreen";
@@ -383,7 +390,6 @@ export const WorkoutScreen = () => {
   const { hasFeatureAccess } = useFeatureAccess();
   const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
   const [viewMode, setViewMode] = useState<LogPlannerMode>("log");
-  const [plannerMounted, setPlannerMounted] = useState(false);
   const [todayKey, setTodayKey] = useState(() => toDateKey(new Date()));
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
   const [todayPlan, setTodayPlan] = useState<WorkoutPlanCurrent | null>(null);
@@ -661,7 +667,7 @@ export const WorkoutScreen = () => {
 
   useEffect(() => {
     fetchWorkoutPlanCurrent()
-      .then((plan) => setTodayPlan(plan))
+      .then((plan) => setTodayPlan(sanitizeWorkoutPlanCurrent(plan)))
       .catch(() => setTodayPlan(null));
   }, [language]);
 
@@ -675,7 +681,7 @@ export const WorkoutScreen = () => {
           lastFocusLoadAt.current = Date.now();
         });
         fetchWorkoutPlanCurrent()
-          .then((plan) => setTodayPlan(plan))
+          .then((plan) => setTodayPlan(sanitizeWorkoutPlanCurrent(plan)))
           .catch(() => setTodayPlan(null));
       }
     }, [needsGoalTagInput, needsDifficultyInput, language]),
@@ -686,14 +692,12 @@ export const WorkoutScreen = () => {
       const view = route.params?.view;
       if (view === "planner" || view === "log") {
         setViewMode(view);
-        if (view === "planner") setPlannerMounted(true);
       }
     }, [route.params?.view]),
   );
 
   const selectViewMode = useCallback((mode: LogPlannerMode) => {
     setViewMode(mode);
-    if (mode === "planner") setPlannerMounted(true);
   }, []);
 
   const parsedTimeTaken = useMemo(() => {
@@ -1295,6 +1299,24 @@ export const WorkoutScreen = () => {
     [todayHistory],
   );
   const todaySessionCount = todayHistory.length;
+  const sessionMilestoneItems = useMemo(
+    () =>
+      buildTodaySessionMilestoneItems({
+        hasWorkoutPlannerAccess,
+        todayWorkoutPlan: todayPlan,
+        workoutHistory: history,
+        todayKey,
+      }),
+    [hasWorkoutPlannerAccess, history, todayKey, todayPlan],
+  );
+  const sessionMilestonePlannedCount = sessionMilestonePlannedTarget(sessionMilestoneItems);
+  const sessionMilestonePlannedDone = sessionMilestonePlannedFilled(sessionMilestoneItems);
+  const sessionMilestoneExtraCount = sessionMilestoneItems.filter((item) => item.isExtra).length;
+  const sessionMilestoneFilled = sessionMilestoneItems.filter((item) => item.filled).length;
+  const sessionMilestoneProgress =
+    sessionMilestonePlannedCount > 0 ? sessionMilestonePlannedDone / sessionMilestonePlannedCount : 0;
+  const sessionMilestoneComplete =
+    sessionMilestonePlannedCount > 0 && sessionMilestonePlannedDone >= sessionMilestonePlannedCount;
   const burnTargetReached = todayCaloriesBurned >= burnTargetKcal;
   const burnProgressPct = burnTargetKcal > 0 ? Math.min(todayCaloriesBurned / burnTargetKcal, 1) : 1;
   const guidanceExerciseName = selectedEntry?.defaultExerciseName ?? selectedEntry?.exerciseName ?? exerciseName;
@@ -1341,9 +1363,10 @@ export const WorkoutScreen = () => {
         <LogPlannerSegment mode={viewMode} onChange={selectViewMode} />
       </View>
 
-      <View
-        style={[styles.modePanel, viewMode !== "log" && styles.modePanelHidden]}
-        pointerEvents={viewMode === "log" ? "auto" : "none"}
+      <SwipeTabPager
+        pageIndex={viewMode === "log" ? 0 : 1}
+        onPageIndexChange={(index) => selectViewMode(index === 0 ? "log" : "planner")}
+        lazyFromIndex={1}
       >
       <ScrollView
         style={styles.scroll}
@@ -1499,66 +1522,79 @@ export const WorkoutScreen = () => {
               ) : (
                 <>
                   <Text style={styles.milestoneExerciseName}>{t("workoutLog.emptyHistoryTitle")}</Text>
-                  <Text style={styles.milestoneLastMeta}>{t("workoutLog.goalSessions")}</Text>
+                  <Text style={styles.milestoneLastMeta}>
+                    {sessionMilestonePlannedCount > 0
+                      ? t("workoutLog.goalSessions", { count: sessionMilestonePlannedCount })
+                      : t("workoutLog.goalSessionsEmpty")}
+                  </Text>
                 </>
               )}
             </View>
             <View style={styles.milestoneCountCol}>
-              <Text style={[styles.milestoneCount, todaySessionCount >= 6 ? styles.milestoneCountMet : null]}>
-                {todaySessionCount}
+              <Text style={[styles.milestoneCount, sessionMilestoneComplete ? styles.milestoneCountMet : null]}>
+                {sessionMilestoneFilled}
               </Text>
-              <Text style={styles.milestoneCountDenom}>{t("workoutLog.sessionsDenom")}</Text>
+              <Text style={styles.milestoneCountDenom}>
+                {sessionMilestonePlannedCount > 0
+                  ? sessionMilestoneExtraCount > 0
+                    ? t("workoutLog.sessionsDenomWithExtras", {
+                        planned: sessionMilestonePlannedCount,
+                        extras: sessionMilestoneExtraCount,
+                      })
+                    : t("workoutLog.sessionsDenom", { count: sessionMilestonePlannedCount })
+                  : t("workoutLog.sessionsDenomEmpty")}
+              </Text>
             </View>
           </View>
 
           <View style={styles.milestoneTileRow}>
-            {Array.from({ length: Math.max(todaySessionCount, 6) }, (_, index) => {
-              const tileNum = index + 1;
-              const filled = tileNum <= Math.min(todaySessionCount, 6);
-              const bonus = tileNum > 6;
-              const empty = !filled && !bonus;
-              return (
-                <View
-                  key={`milestone-tile-${tileNum}`}
-                  style={[
-                    styles.milestoneTile,
-                    filled ? styles.milestoneTileFilled : null,
-                    bonus ? styles.milestoneTileBonus : null,
-                    empty ? styles.milestoneTileEmpty : null,
-                  ]}
-                >
-                  {filled ? (
-                    <Text style={styles.milestoneTileCheck}>✓</Text>
-                  ) : bonus ? (
-                    <Text style={styles.milestoneTileBonusText}>+{tileNum - 6}</Text>
-                  ) : (
-                    <Text style={styles.milestoneTileEmptyText}>{tileNum}</Text>
-                  )}
-                </View>
-              );
-            })}
+            {sessionMilestoneItems.map((item, index) => (
+              <View
+                key={item.key}
+                style={[
+                  styles.milestoneTile,
+                  item.isExtra
+                    ? styles.milestoneTileExtra
+                    : item.filled
+                      ? styles.milestoneTileFilled
+                      : styles.milestoneTileEmpty,
+                ]}
+              >
+                {item.filled ? (
+                  <Text style={styles.milestoneTileCheck}>✓</Text>
+                ) : (
+                  <Text style={styles.milestoneTileEmptyText}>{index + 1}</Text>
+                )}
+              </View>
+            ))}
           </View>
 
           <View style={styles.milestoneProgressTrack}>
             <View
               style={[
                 styles.milestoneProgressFill,
-                { width: `${Math.min(todaySessionCount / 6, 1) * 100}%` },
+                { width: `${Math.min(sessionMilestoneProgress, 1) * 100}%` },
               ]}
             />
           </View>
 
           <View style={styles.milestoneFooterRow}>
-            <Text style={styles.milestoneFooterGoal}>{t("workoutLog.goalSessions")}</Text>
-            {todaySessionCount > 6 ? (
+            <Text style={styles.milestoneFooterGoal}>
+              {sessionMilestonePlannedCount > 0
+                ? t("workoutLog.goalSessions", { count: sessionMilestonePlannedCount })
+                : t("workoutLog.goalSessionsEmpty")}
+            </Text>
+            {sessionMilestoneComplete && sessionMilestoneExtraCount > 0 ? (
               <Text style={styles.milestoneFooterSuccess}>
-                {t("workoutLog.goalCrushed", { count: todaySessionCount - 6 })}
+                {t("workoutLog.goalReached")} · {t("workoutLog.goalSessionsBonus", { count: sessionMilestoneExtraCount })}
               </Text>
-            ) : todaySessionCount === 6 ? (
+            ) : sessionMilestoneComplete ? (
               <Text style={styles.milestoneFooterSuccess}>{t("workoutLog.goalReached")}</Text>
-            ) : (
-              <Text style={styles.milestoneFooterRemaining}>{t("workoutLog.moreToGo", { count: 6 - todaySessionCount })}</Text>
-            )}
+            ) : sessionMilestonePlannedCount > 0 ? (
+              <Text style={styles.milestoneFooterRemaining}>
+                {t("workoutLog.moreToGo", { count: sessionMilestonePlannedCount - sessionMilestonePlannedDone })}
+              </Text>
+            ) : null}
           </View>
         </View>
 
@@ -1995,26 +2031,18 @@ export const WorkoutScreen = () => {
           ) : null}
         </View>
       </ScrollView>
-      </View>
-
-      <View
-        style={[styles.modePanel, viewMode !== "planner" && styles.modePanelHidden]}
-        pointerEvents={viewMode === "planner" ? "auto" : "none"}
-      >
-        {plannerMounted ? (
-          hasWorkoutPlannerAccess ? (
-            <MonthlyWorkoutPlannerScreen embedded />
-          ) : (
-            <PlannerLockedUpsell
-              feature="workout_plan_generation"
-              featureName={t("coach.home.workoutPlanner.name")}
-              featureDescription={t("coach.home.workoutPlanner.gateDescription")}
-              featureEmoji="🏆"
-              accentColor="#7f77dd"
-            />
-          )
-        ) : null}
-      </View>
+        {hasWorkoutPlannerAccess ? (
+          <MonthlyWorkoutPlannerScreen embedded />
+        ) : (
+          <PlannerLockedUpsell
+            feature="workout_plan_generation"
+            featureName={t("coach.home.workoutPlanner.name")}
+            featureDescription={t("coach.home.workoutPlanner.gateDescription")}
+            featureEmoji="🏆"
+            accentColor="#7f77dd"
+          />
+        )}
+      </SwipeTabPager>
 
       <Modal visible={durationPickerOpen} transparent animationType="fade" onRequestClose={() => setDurationPickerOpen(false)}>
         <View style={styles.durationModalBackdrop}>
@@ -2409,6 +2437,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   milestoneTileFilled: { backgroundColor: GREEN },
+  milestoneTileExtra: { backgroundColor: PURPLE },
   milestoneTileBonus: { backgroundColor: ORANGE },
   milestoneTileEmpty: { backgroundColor: TRACK },
   milestoneTileCheck: { fontSize: 14, fontWeight: "800", color: WHITE },

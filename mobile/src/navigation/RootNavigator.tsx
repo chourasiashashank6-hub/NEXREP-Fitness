@@ -19,6 +19,8 @@ import AICameraWorkoutScreen from "../screens/AICameraWorkoutScreen";
 import AITrainerCalibrationScreen from "../screens/aiTrainer/AITrainerCalibrationScreen";
 import WorkoutCompletionScreen from "../screens/WorkoutCompletionScreen";
 import GamePlanModalScreen from "../screens/GamePlanModalScreen";
+import EditOnboardingModalScreen from "../screens/EditOnboardingModalScreen";
+import { MySupplementStackScreen } from "../screens/MySupplementStackScreen";
 import ProgressPhotoCaptureScreen from "../screens/ProgressPhotoCaptureScreen";
 import CoachNavigator from "../screens/Coach/CoachNavigator";
 import { ProfileStackNavigator } from "./ProfileStackNavigator";
@@ -329,6 +331,28 @@ export const RootNavigator = () => {
           <Stack.Screen
             name="DailyGamePlan"
             component={GamePlanModalScreen}
+            options={{
+              headerShown: false,
+              presentation: "transparentModal",
+              animation: "fade",
+              contentStyle: { backgroundColor: "transparent" },
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen
+            name="EditOnboardingModal"
+            component={EditOnboardingModalScreen}
+            options={{
+              headerShown: false,
+              presentation: "transparentModal",
+              animation: "fade",
+              contentStyle: { backgroundColor: "transparent" },
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen
+            name="MySupplementStackModal"
+            component={MySupplementStackScreen}
             options={{
               headerShown: false,
               presentation: "transparentModal",

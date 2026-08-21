@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ import { HomeSquadCard, loadHomeSquads } from "../../components/social/HomeSquad
 import { WeeklyLeaderboardSection, loadWeeklyLeaderboard } from "../../components/social/WeeklyLeaderboardSection";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { UserAvatar } from "../../components/UserAvatar";
+import { useActivityDataRefreshStore } from "../../store/activityDataRefreshStore";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -25,9 +26,10 @@ const MUTED = "#6F766F";
 const TERTIARY = "#9BA39D";
 const BORDER = "#ECEAE5";
 const WHITE = "#FFFFFF";
+const FOCUS_STALE_MS = 45_000;
 
 type SocialHomeScreenProps = {
-  tabs?: ReactNode;
+  embedded?: boolean;
 };
 
 const formatTimestamp = (value: string | null | undefined, nowLabel: string) => {
@@ -49,7 +51,7 @@ const formatKg = (value?: number) => {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 };
 
-export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
+export default function SocialHomeScreen({ embedded = false }: SocialHomeScreenProps) {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -62,15 +64,16 @@ export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyReaction, setBusyReaction] = useState<string | null>(null);
+  const lastLoadAt = useRef(0);
+  const activityRefreshVersion = useActivityDataRefreshStore((s) => s.version);
 
   const load = useCallback(
-    async (mode: "initial" | "refresh" = "initial") => {
+    async (mode: "initial" | "refresh" | "silent" = "initial") => {
       if (mode === "initial") {
         setLoading(true);
         setSquadsLoading(true);
         setLeaderboardLoading(true);
-      }
-      if (mode === "refresh") {
+      } else if (mode === "refresh") {
         setRefreshing(true);
       }
       try {
@@ -86,6 +89,7 @@ export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
         setFeed(feedPage.items);
         setSquads(squadItems);
         setLeaderboard(leaderboardData);
+        lastLoadAt.current = Date.now();
       } catch {
         Alert.alert(t("common.error"), t("social.home.alerts.loadFailed"));
       } finally {
@@ -100,9 +104,19 @@ export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
 
   useFocusEffect(
     useCallback(() => {
-      void load("initial");
+      const now = Date.now();
+      if (lastLoadAt.current > 0 && now - lastLoadAt.current < FOCUS_STALE_MS) {
+        return;
+      }
+      void load(lastLoadAt.current === 0 ? "initial" : "silent");
     }, [load]),
   );
+
+  useEffect(() => {
+    if (activityRefreshVersion === 0) return;
+    lastLoadAt.current = 0;
+    void load("silent");
+  }, [activityRefreshVersion, load]);
 
   const refreshControl = useMemo(
     () => <RefreshControl tintColor={GREEN} refreshing={refreshing} onRefresh={() => void load("refresh")} />,
@@ -157,8 +171,7 @@ export default function SocialHomeScreen({ tabs }: SocialHomeScreenProps) {
   const hasFriends = friends.length > 0;
 
   return (
-    <ScreenContainer bg={BG} refreshControl={refreshControl}>
-      {tabs}
+    <ScreenContainer bg={BG} refreshControl={refreshControl} embedded={embedded}>
       <View style={styles.hero}>
         <Text style={styles.heroEyebrow}>{t("social.home.eyebrow")}</Text>
         <Text style={styles.heroTitle}>{t("social.home.heroTitle", { name: userFirstName })}</Text>

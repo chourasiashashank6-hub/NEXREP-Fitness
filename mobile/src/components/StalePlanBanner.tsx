@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 type Props = {
@@ -50,18 +50,21 @@ export function StalePlanBanner({ staleFields, onRegenerate, regenerating = fals
         <Text style={styles.title}>{t("stalePlan.bannerTitle")}</Text>
         <Text style={styles.body}>{t("stalePlan.bannerBody", { fields: fieldList })}</Text>
       </View>
-      <TouchableOpacity
-        style={styles.button}
+      <Pressable
+        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
         onPress={onRegenerate}
         disabled={regenerating}
-        activeOpacity={0.75}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={t("stalePlan.regenerate")}
+        accessibilityState={{ disabled: regenerating }}
       >
         {regenerating ? (
           <ActivityIndicator size="small" color={AMBER} />
         ) : (
           <Text style={styles.buttonText}>{t("stalePlan.regenerate")}</Text>
         )}
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
@@ -89,7 +92,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     minWidth: 44,
+    minHeight: 36,
     alignItems: "center",
+    justifyContent: "center",
   },
+  buttonPressed: { opacity: 0.75 },
   buttonText: { fontSize: 12, fontWeight: "700", color: AMBER },
 });

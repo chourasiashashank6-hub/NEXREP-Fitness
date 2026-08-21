@@ -294,7 +294,28 @@ def season_xp_for_user(db: Session, user_id: int, season: XpSeason) -> int:
         )
         .scalar()
     )
-    return int(total or 0)
+    return max(0, int(total or 0))
+
+
+def lifetime_xp_from_events(db: Session, user_id: int) -> int:
+    """Authoritative lifetime XP — sum of all award and reversal events."""
+    total = (
+        db.query(func.coalesce(func.sum(XpEvent.xp_amount), 0))
+        .filter(XpEvent.user_id == user_id)
+        .scalar()
+    )
+    return max(0, int(total or 0))
+
+
+def reconcile_user_xp_totals(db: Session, user_id: int) -> UserXpTotal:
+    """Keep the denormalized totals row aligned with xp_events (handles reversal drift)."""
+    totals = _get_or_create_totals(db, user_id)
+    event_total = lifetime_xp_from_events(db, user_id)
+    if int(totals.total_xp or 0) != event_total:
+        totals.total_xp = event_total
+        _update_totals_after_xp_change(totals)
+        db.flush()
+    return totals
 
 
 def award_xp_for_workout_log(db: Session, *, user_id: int, workout_id: int, log_date: date | None = None) -> None:
@@ -479,17 +500,19 @@ def award_xp_for_meal_log(db: Session, *, user_id: int, log_date: date) -> None:
 
 
 def serialize_xp_summary(db: Session, user_id: int) -> dict[str, Any]:
-    totals = _get_or_create_totals(db, user_id)
-    computed_level = level_for_total_xp(int(totals.total_xp or 0))
-    if int(totals.level or 1) != computed_level:
+    totals = reconcile_user_xp_totals(db, user_id)
+    total_xp = lifetime_xp_from_events(db, user_id)
+    computed_level = level_for_total_xp(total_xp)
+    if int(totals.level or 1) != computed_level or int(totals.total_xp or 0) != total_xp:
+        totals.total_xp = total_xp
         totals.level = computed_level
         totals.updated_at = datetime.utcnow()
         db.commit()
-    into_level, to_next = xp_to_next_level(int(totals.total_xp or 0))
+    into_level, to_next = xp_to_next_level(total_xp)
     season = ensure_default_season(db)
     season_xp = season_xp_for_user(db, user_id, season) if season else 0
     return {
-        "total_xp": int(totals.total_xp or 0),
+        "total_xp": total_xp,
         "level": computed_level,
         "xp_into_level": into_level,
         "xp_to_next_level": to_next,

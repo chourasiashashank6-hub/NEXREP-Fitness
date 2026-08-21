@@ -41,6 +41,7 @@ import { resolveApiBaseUrl } from "../api/client";
 import AllTimeMealHistoryModal from "../components/AllTimeMealHistoryModal";
 import { FoodCameraButton } from "../components/FoodCameraButton";
 import { LogPlannerSegment, type LogPlannerMode } from "../components/LogPlannerSegment";
+import { SwipeTabPager } from "../components/SwipeTabPager";
 import { PlannerLockedUpsell } from "../components/PlannerLockedUpsell";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
@@ -363,7 +364,6 @@ export const CalorieLog = () => {
   const { hasFeatureAccess } = useFeatureAccess();
   const hasMealPlannerAccess = hasFeatureAccess("meal_plan_generation");
   const [viewMode, setViewMode] = useState<LogPlannerMode>("log");
-  const [plannerMounted, setPlannerMounted] = useState(false);
   const { data: onboardingData } = useOnboardingContext();
   const dietType = (onboardingData?.dietary?.diet_type ?? "none").toLowerCase().trim();
   const visibleQuickFoods = QUICK_FOODS.filter((q) => {
@@ -482,14 +482,12 @@ export const CalorieLog = () => {
       const view = route.params?.view;
       if (view === "planner" || view === "log") {
         setViewMode(view);
-        if (view === "planner") setPlannerMounted(true);
       }
     }, [route.params?.view]),
   );
 
   const selectViewMode = useCallback((mode: LogPlannerMode) => {
     setViewMode(mode);
-    if (mode === "planner") setPlannerMounted(true);
   }, []);
 
   useEffect(() => {
@@ -876,7 +874,12 @@ export const CalorieLog = () => {
         <LogPlannerSegment mode={viewMode} onChange={selectViewMode} />
       </View>
 
-      <View style={[styles.modePanel, viewMode !== "log" && styles.modePanelHidden]} pointerEvents={viewMode === "log" ? "auto" : "none"}>
+      <SwipeTabPager
+        pageIndex={viewMode === "log" ? 0 : 1}
+        onPageIndexChange={(index) => selectViewMode(index === 0 ? "log" : "planner")}
+        lazyFromIndex={1}
+      >
+      <View style={styles.modePanel}>
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={GREEN} size="large" />
@@ -1254,25 +1257,18 @@ export const CalorieLog = () => {
       </ScrollView>
         )}
       </View>
-
-      <View
-        style={[styles.modePanel, viewMode !== "planner" && styles.modePanelHidden]}
-        pointerEvents={viewMode === "planner" ? "auto" : "none"}
-      >
-        {plannerMounted ? (
-          hasMealPlannerAccess ? (
-            <MonthlyMealPlannerScreen embedded onCalorieDayChanged={applyCalorieDay} />
-          ) : (
-            <PlannerLockedUpsell
-              feature="meal_plan_generation"
-              featureName={t("coach.home.mealPlanner.name")}
-              featureDescription={t("coach.home.mealPlanner.gateDescription")}
-              featureEmoji="📅"
-              accentColor="#378add"
-            />
-          )
-        ) : null}
-      </View>
+        {hasMealPlannerAccess ? (
+          <MonthlyMealPlannerScreen embedded onCalorieDayChanged={applyCalorieDay} />
+        ) : (
+          <PlannerLockedUpsell
+            feature="meal_plan_generation"
+            featureName={t("coach.home.mealPlanner.name")}
+            featureDescription={t("coach.home.mealPlanner.gateDescription")}
+            featureEmoji="📅"
+            accentColor="#378add"
+          />
+        )}
+      </SwipeTabPager>
 
       <Modal visible={mealPickerOpen} transparent animationType="fade">
         <Pressable style={styles.modalBackdrop} onPress={() => setMealPickerOpen(false)}>

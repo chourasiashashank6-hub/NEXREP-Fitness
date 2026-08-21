@@ -15,6 +15,8 @@ const GREEN = "#0F6E56";
 const GREEN_SOFT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const ORANGE_SOFT = "#FEF1EE";
+const EXTRA = "#534AB7";
+const EXTRA_SOFT = "#F0EEF9";
 const WHITE = "#FFFFFF";
 const TEXT = "#1A1A18";
 const MUTED = "#8A8A84";
@@ -25,6 +27,8 @@ export type MilestoneItem = {
   key: string;
   label: string;
   filled: boolean;
+  /** Manual log beyond today's plan — distinct purple styling. */
+  isExtra?: boolean;
   /** e.g. "Meal Planner", "Manual", "Scan" — shown under the meal label when filled */
   sourceLabel?: string;
 };
@@ -170,6 +174,9 @@ function MilestoneBox({
   soft: string;
   fixedWidth?: number;
 }) {
+  const fillColor = item.isExtra ? EXTRA : solid;
+  const emptySoft = item.isExtra ? EXTRA_SOFT : soft;
+
   return (
     <View style={fixedWidth ? [styles.boxColFixed, { width: fixedWidth }] : styles.boxCol}>
       <View
@@ -181,8 +188,8 @@ function MilestoneBox({
             borderRadius: Math.max(10, Math.round(size * 0.28)),
           },
           item.filled
-            ? { backgroundColor: solid, borderColor: solid }
-            : { backgroundColor: soft, borderColor: "transparent" },
+            ? { backgroundColor: fillColor, borderColor: fillColor }
+            : { backgroundColor: emptySoft, borderColor: "transparent" },
         ]}
       >
         {item.filled ? (
@@ -194,7 +201,7 @@ function MilestoneBox({
               {
                 width: size * 0.28,
                 height: size * 0.28,
-                borderColor: solid,
+                borderColor: fillColor,
                 opacity: 0.45,
               },
             ]}
@@ -204,8 +211,8 @@ function MilestoneBox({
       <Text style={styles.boxLabel} numberOfLines={2}>
         {item.label}
       </Text>
-      {item.filled && item.sourceLabel ? (
-        <Text style={styles.sourceLabel} numberOfLines={1}>
+      {item.filled && (item.sourceLabel || item.isExtra) ? (
+        <Text style={[styles.sourceLabel, item.isExtra && styles.extraSourceLabel]} numberOfLines={1}>
           {item.sourceLabel}
         </Text>
       ) : null}
@@ -325,6 +332,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
     marginTop: 1,
   },
+  extraSourceLabel: { color: EXTRA, fontWeight: "800", opacity: 1 },
   /** Overlays the row — no extra card height. */
   moreHint: {
     position: "absolute",

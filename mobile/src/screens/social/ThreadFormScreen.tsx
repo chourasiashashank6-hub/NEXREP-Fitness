@@ -200,7 +200,7 @@ export default function ThreadFormScreen({ mode }: { mode: Mode }) {
         CommonActions.reset({
           index: 1,
           routes: [
-            { name: "SocialThreads" },
+            { name: "SocialHome", params: { tab: "threads" } },
             { name: "SocialThreadDetail", params: { threadId: thread.id } },
           ],
         }),

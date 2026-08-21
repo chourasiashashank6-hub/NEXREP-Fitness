@@ -18,6 +18,8 @@ export type RootStackParamList = {
     streakIncremented: boolean;
   };
   DailyGamePlan: undefined;
+  EditOnboardingModal: undefined;
+  MySupplementStackModal: undefined;
   ProgressPhotoCapture: { angle?: "front" | "side" } | undefined;
 };
 
@@ -43,7 +45,6 @@ export type MainTabParamList = {
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   Settings: undefined;
-  MySupplementStack: undefined;
   NotificationPreferences: undefined;
   Subscription: undefined;
   ManageSubscription: { userId: string };
@@ -54,14 +55,14 @@ export type ProfileStackParamList = {
   TransformationTimeline: undefined;
 };
 
+export type SocialHubTab = "home" | "threads" | "chats";
+
 export type SocialStackParamList = {
-  SocialHome: undefined;
+  SocialHome: { tab?: SocialHubTab } | undefined;
   SocialLeaderboard: undefined;
   SocialFriends: { initialView?: "friends" | "pending" } | undefined;
   SocialPendingRequests: undefined;
   SocialUserSearch: undefined;
-  SocialThreads: undefined;
-  SocialChats: undefined;
   SocialThreadDetail: { threadId: number };
   SocialThreadCreate: undefined;
   SocialThreadEdit: { threadId: number };

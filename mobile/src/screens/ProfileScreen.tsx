@@ -36,6 +36,7 @@ import { logicalRow, textAlignStart } from "../utils/rtl";
 import { prepareFoodImagePayload } from "../utils/foodImagePayload";
 import { confirmUser, notifyUser } from "../utils/notify";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
+import { navigationRef } from "../navigation/navigationRef";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { buildTransformationSummary, type TransformationSummary } from "../utils/buildTransformationSummary";
 
@@ -167,8 +168,6 @@ export const ProfileScreen = () => {
   const token = useAuthStore((s) => s.token);
   const plan_id = useAuthStore((s) => s.plan_id) ?? "free";
   const setPlanId = useAuthStore((s) => s.setPlanId);
-  const setNeedsOnboarding = useAuthStore((s) => s.setNeedsOnboarding);
-  const setReturnToProfileAfterOnboarding = useAuthStore((s) => s.setReturnToProfileAfterOnboarding);
 
   const [showExerciseHistory, setShowExerciseHistory] = useState(false);
   const [showCalorieHistory, setShowCalorieHistory] = useState(false);
@@ -212,6 +211,8 @@ export const ProfileScreen = () => {
     avgSessionsPerWeek: 0,
   });
   const lastCoreLoadAt = useRef(0);
+  const lastWeightLoadAt = useRef(0);
+  const hasWeightSnapshot = useRef(false);
   const historyLoadedRef = useRef(false);
 
   const loadHistoryData = useCallback(async () => {
@@ -464,8 +465,13 @@ export const ProfileScreen = () => {
         return;
       }
 
+      const now = Date.now();
+      if (lastWeightLoadAt.current > 0 && now - lastWeightLoadAt.current < FOCUS_STALE_MS) {
+        return;
+      }
+
       const fetchLatestWeight = async () => {
-        setLoadingWeight(true);
+        if (!hasWeightSnapshot.current) setLoadingWeight(true);
         try {
           const res = await fetch(`${resolveApiBaseUrl()}/api/weight/latest`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -473,11 +479,13 @@ export const ProfileScreen = () => {
           if (res.ok) {
             const data = (await res.json()) as LatestWeightLog;
             setLatestWeightLog(data);
+            hasWeightSnapshot.current = true;
           }
         } catch {
           // Fall back to profile weight
         } finally {
           setLoadingWeight(false);
+          lastWeightLoadAt.current = Date.now();
         }
       };
 
@@ -1003,8 +1011,9 @@ export const ProfileScreen = () => {
             <Pressable
               style={styles.heroEditBtn}
               onPress={() => {
-                setReturnToProfileAfterOnboarding(true);
-                setNeedsOnboarding(true);
+                if (navigationRef.isReady()) {
+                  navigationRef.navigate("EditOnboardingModal");
+                }
               }}
             >
               <Text style={styles.heroEditText}>{t("profile.edit")}</Text>

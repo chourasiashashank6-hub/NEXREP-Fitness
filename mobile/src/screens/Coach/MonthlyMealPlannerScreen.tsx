@@ -27,6 +27,7 @@ import {
   generateMealPlan,
   generateWeekPlan,
   regenerateMealPlanDay,
+  regenerateRemainingMeals,
   regenerateWeek,
   swapMealPlanMeal,
 } from "../../api/mealPlanner";
@@ -843,20 +844,45 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
   };
 
   const handleRegenerateStale = async () => {
-    if (!plan || selectedWeekStart == null) return;
+    if (!plan) {
+      notifyUser(t("common.error"), t("stalePlan.regenerateFailed"));
+      return;
+    }
+    const weekStart =
+      plan.week_start_day ??
+      selectedWeekStart ??
+      weeks.find((w) => selectedDay >= w.start_day && selectedDay <= w.end_day)?.start_day ??
+      null;
+    if (weekStart == null) {
+      notifyUser(t("common.error"), t("stalePlan.regenerateFailed"));
+      return;
+    }
+    if (isRegeneratingStale) return;
+
+    const monthWideStale = staleFields.some(
+      (field) => field === "daily_activity_level" || field === "meals_per_day",
+    );
+    const fromDay = Math.max(now.getDate(), weekStart);
+
     setIsRegeneratingStale(true);
     try {
-      // Soft generate-week skips rebuild when the week already exists; use force regen
-      // so meals refresh AND onboarding_snapshot_json is rewritten (clears banner).
-      const fromDay = Math.max(selectedWeekStart, now.getDate());
-      const created = await regenerateWeek(selectedWeekStart, fromDay);
-      lastDayFetchRef.current = null;
-      setPlan(created);
-      setStaleFields(created.stale_fields ?? []);
-      syncRegenStats(created, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+      if (monthWideStale) {
+        await regenerateRemainingMeals(fromDay);
+        const refreshedWeek = await fetchWeekPlan(weekStart);
+        lastDayFetchRef.current = null;
+        setPlan(refreshedWeek);
+        setStaleFields(refreshedWeek.stale_fields ?? []);
+        syncRegenStats(refreshedWeek, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+      } else {
+        const created = await regenerateWeek(weekStart, fromDay);
+        lastDayFetchRef.current = null;
+        setPlan(created);
+        setStaleFields(created.stale_fields ?? []);
+        syncRegenStats(created, setDayRegensUsed, setDayRegensLimit, setPlannerLimitsExempt, setPlannerDaysUnlocked);
+      }
       notifyUser(t("stalePlan.regenerated"), t("stalePlan.regenerated"));
-    } catch {
-      Alert.alert(t("common.error"), t("stalePlan.regenerateFailed"));
+    } catch (e: unknown) {
+      Alert.alert(t("common.error"), apiErrorMessage(e, t("stalePlan.regenerateFailed")));
     } finally {
       setIsRegeneratingStale(false);
     }

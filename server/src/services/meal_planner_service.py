@@ -428,6 +428,22 @@ def _meal_plan_staleness(plan: MonthlyMealPlan, db: Session, user: User) -> dict
     return {"stale_fields": stale, "is_stale": len(stale) > 0}
 
 
+def user_has_stale_meal_plan(db: Session, user: User, local_date: str | None) -> bool:
+    """True when any meal plan row for the current month is out of date vs onboarding."""
+    today = parse_local_date(local_date)
+    onboarding_raw, _ = _onboarding_context(db, user.id)
+    weekly_plans = list_weekly_plans_for_month(db, user.id, today.month, today.year)
+    if weekly_plans:
+        return any(
+            len(stale_meal_fields(plan.onboarding_snapshot_json, onboarding_raw)) > 0
+            for plan in weekly_plans
+        )
+    legacy = get_existing_monthly_meal_plan(db, user.id, today.month, today.year)
+    if not legacy:
+        return False
+    return len(stale_meal_fields(legacy.onboarding_snapshot_json, onboarding_raw)) > 0
+
+
 def meal_plan_current_weekly_response(
     db: Session,
     user: User,
@@ -487,10 +503,15 @@ def regenerate_week_plan(
 ) -> dict[str, Any]:
     from src.services.meal_engine_v3_bridge import generate_or_refresh_week_v3
 
+    today = parse_local_date(local_date)
+    existing = get_weekly_plan_by_start_day(db, user.id, today.month, today.year, week_start_day)
+    budget_level = str(existing.budget_level or "budget") if existing else _month_budget_level(
+        db, user, today.month, today.year
+    )
     plan = generate_or_refresh_week_v3(
         db,
         user,
-        budget_level="budget",
+        budget_level=budget_level,
         week_start_day=week_start_day,
         local_date=local_date,
         force=True,
@@ -645,6 +666,7 @@ def meal_plan_current_response(
         "month_overview": month_overview,
         **(_monthly_day_regen_stats(db, user.id, plan.month, plan.year, user=user) if db and user else {}),
         **(planner_days_unlocked_flag(user) if user else {}),
+        **(_meal_plan_staleness(plan, db, user) if db and user else {}),
     }
 
 

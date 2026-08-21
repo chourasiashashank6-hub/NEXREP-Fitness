@@ -25,6 +25,7 @@ from src.services.meal_planner_service import (
     regenerate_single_day,
     regenerate_week_plan,
     swap_meal,
+    user_has_stale_meal_plan,
     weeks_overview_response,
 )
 from src.services.planner_nutrition_extras import (
@@ -221,7 +222,8 @@ def post_regenerate_week(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not is_meal_planner_test_user(current_user):
+    stale_allowed = user_has_stale_meal_plan(db, current_user, local_date)
+    if not is_meal_planner_test_user(current_user) and not stale_allowed:
         raise HTTPException(
             status_code=403,
             detail="Full plan regeneration is not available. You can regenerate individual days (3 times per month) or swap individual meals.",
@@ -257,7 +259,8 @@ def post_regenerate_remaining(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not is_meal_planner_test_user(current_user):
+    stale_allowed = user_has_stale_meal_plan(db, current_user, local_date)
+    if not is_meal_planner_test_user(current_user) and not stale_allowed:
         raise HTTPException(
             status_code=403,
             detail="Full plan regeneration is not available. You can regenerate individual days (3 times per month) or swap individual meals.",

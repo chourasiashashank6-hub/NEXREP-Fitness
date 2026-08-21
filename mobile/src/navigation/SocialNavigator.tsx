@@ -1,13 +1,14 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getUnreadCounts } from "../api/messages";
 import { getFriendRequests } from "../api/social";
 import { listThreads } from "../api/threads";
 import { ScreenContainer } from "../components/ScreenContainer";
+import { SwipeTabPager } from "../components/SwipeTabPager";
 import FriendsScreen from "../screens/social/FriendsScreen";
 import SocialHomeScreen from "../screens/social/SocialHomeScreen";
 import LeaderboardScreen from "../screens/social/LeaderboardScreen";
@@ -22,7 +23,7 @@ import ChallengeDetailScreen from "../screens/social/ChallengeDetailScreen";
 import GymSquadScreen from "../screens/social/GymSquadScreen";
 import GymSquadCreateScreen from "../screens/social/GymSquadCreateScreen";
 import GymSquadDetailScreen from "../screens/social/GymSquadDetailScreen";
-import type { SocialStackParamList } from "./types";
+import type { SocialHubTab, SocialStackParamList } from "./types";
 import { subscribeToSocialUnreadChanges } from "../utils/socialUnreadEvents";
 
 const Stack = createNativeStackNavigator<SocialStackParamList>();
@@ -35,7 +36,11 @@ const BORDER = "#ECEAE5";
 const WHITE = "#FFFFFF";
 const TEXT = "#1A1A18";
 
-type SocialRouteName = keyof Pick<SocialStackParamList, "SocialHome" | "SocialThreads" | "SocialChats">;
+function tabToIndex(tab?: SocialHubTab): number {
+  if (tab === "threads") return 1;
+  if (tab === "chats") return 2;
+  return 0;
+}
 
 function SocialBrandHeader() {
   const { t } = useTranslation();
@@ -90,9 +95,14 @@ function SocialBrandHeader() {
   );
 }
 
-function SocialSectionTabs({ active }: { active: SocialRouteName }) {
+function SocialSectionTabs({
+  activeTabIndex,
+  onTabPress,
+}: {
+  activeTabIndex: number;
+  onTabPress: (index: number) => void;
+}) {
   const { t } = useTranslation();
-  const navigation = useNavigation<any>();
   const [chatUnreadTotal, setChatUnreadTotal] = useState(0);
   const [pendingJoinRequests, setPendingJoinRequests] = useState(0);
   const [threadInvites, setThreadInvites] = useState(0);
@@ -135,32 +145,38 @@ function SocialSectionTabs({ active }: { active: SocialRouteName }) {
     };
   }, [loadBadges]);
 
-  const tabs: Array<{ route: SocialRouteName; label: string }> = [
-    { route: "SocialHome", label: t("social.nav.home") },
-    { route: "SocialThreads", label: t("social.nav.threads") },
-    { route: "SocialChats", label: t("social.nav.chats") },
+  const tabs: Array<{ index: number; tab: SocialHubTab; label: string }> = [
+    { index: 0, tab: "home", label: t("social.nav.home") },
+    { index: 1, tab: "threads", label: t("social.nav.threads") },
+    { index: 2, tab: "chats", label: t("social.nav.chats") },
   ];
 
   return (
-    <>
+    <View style={styles.hubChrome}>
       <SocialBrandHeader />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabsScroll}
+        contentContainerStyle={styles.tabs}
+      >
         {tabs.map((tab) => {
-          const selected = tab.route === active;
+          const selected = tab.index === activeTabIndex;
           return (
             <Pressable
-              key={tab.route}
+              key={tab.tab}
               accessibilityRole="button"
+              accessibilityState={{ selected }}
               style={[styles.tab, selected ? styles.tabActive : null]}
-              onPress={() => navigation.navigate(tab.route)}
+              onPress={() => onTabPress(tab.index)}
             >
               <Text style={[styles.tabText, selected ? styles.tabTextActive : null]}>{tab.label}</Text>
-              {tab.route === "SocialChats" && chatUnreadTotal > 0 ? (
+              {tab.tab === "chats" && chatUnreadTotal > 0 ? (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{chatUnreadTotal}</Text>
                 </View>
               ) : null}
-              {tab.route === "SocialThreads" && (pendingJoinRequests > 0 || threadInvites > 0) ? (
+              {tab.tab === "threads" && (pendingJoinRequests > 0 || threadInvites > 0) ? (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{pendingJoinRequests + threadInvites}</Text>
                 </View>
@@ -169,30 +185,58 @@ function SocialSectionTabs({ active }: { active: SocialRouteName }) {
           );
         })}
       </ScrollView>
-    </>
+    </View>
+  );
+}
+
+function SocialHubScreen({ forcedTab }: { forcedTab?: SocialHubTab }) {
+  const route = useRoute<RouteProp<SocialStackParamList, "SocialHome" | "SocialMessages">>();
+  const paramTab = forcedTab ?? (route.name === "SocialMessages" ? "chats" : route.params?.tab);
+  const [tabIndex, setTabIndex] = useState(() => tabToIndex(paramTab));
+
+  useEffect(() => {
+    if (paramTab) {
+      setTabIndex(tabToIndex(paramTab));
+    }
+  }, [paramTab]);
+
+  return (
+    <ScreenContainer bg={BG} scroll={false} contentStyle={styles.hubContent}>
+      <SocialSectionTabs activeTabIndex={tabIndex} onTabPress={setTabIndex} />
+      <SwipeTabPager
+        pageIndex={tabIndex}
+        onPageIndexChange={setTabIndex}
+        lazyFromIndex={1}
+        style={styles.hubPager}
+      >
+        <SocialHomeScreen embedded />
+        <ScrollView
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.hubPageContent}
+        >
+          <ThreadsScreen />
+        </ScrollView>
+        <ScrollView
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.hubPageContent}
+        >
+          <ChatsScreen />
+        </ScrollView>
+      </SwipeTabPager>
+    </ScreenContainer>
   );
 }
 
 function SocialHomeRouteScreen() {
-  return <SocialHomeScreen tabs={<SocialSectionTabs active="SocialHome" />} />;
+  return <SocialHubScreen />;
 }
 
-function ThreadsRouteScreen() {
-  return (
-    <ScreenContainer bg={BG}>
-      <SocialSectionTabs active="SocialThreads" />
-      <ThreadsScreen />
-    </ScreenContainer>
-  );
-}
-
-function ChatsRouteScreen() {
-  return (
-    <ScreenContainer bg={BG}>
-      <SocialSectionTabs active="SocialChats" />
-      <ChatsScreen />
-    </ScreenContainer>
-  );
+function SocialMessagesRouteScreen() {
+  return <SocialHubScreen forcedTab="chats" />;
 }
 
 function SocialStackBackHeader() {
@@ -239,8 +283,6 @@ export default function SocialNavigator() {
   return (
     <Stack.Navigator initialRouteName="SocialHome" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="SocialHome" component={SocialHomeRouteScreen} />
-      <Stack.Screen name="SocialThreads" component={ThreadsRouteScreen} />
-      <Stack.Screen name="SocialChats" component={ChatsRouteScreen} />
       <Stack.Screen name="SocialLeaderboard" component={LeaderboardRouteScreen} />
       <Stack.Screen name="SocialFriends" component={FriendsRouteScreen} />
       <Stack.Screen name="SocialPendingRequests" component={PendingRequestsRouteScreen} />
@@ -248,7 +290,7 @@ export default function SocialNavigator() {
       <Stack.Screen name="SocialThreadDetail" component={ThreadDetailScreen} />
       <Stack.Screen name="SocialThreadCreate">{() => <ThreadFormScreen mode="create" />}</Stack.Screen>
       <Stack.Screen name="SocialThreadEdit">{() => <ThreadFormScreen mode="edit" />}</Stack.Screen>
-      <Stack.Screen name="SocialMessages" component={ChatsRouteScreen} />
+      <Stack.Screen name="SocialMessages" component={SocialMessagesRouteScreen} />
       <Stack.Screen name="SocialChat" component={ChatScreen} />
       <Stack.Screen name="SocialChallengeCreate" component={ChallengeCreateScreen} />
       <Stack.Screen name="SocialChallengeDetail" component={ChallengeDetailScreen} />
@@ -325,10 +367,19 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   tabs: {
+    alignItems: "center",
     flexDirection: "row",
     gap: 8,
-    marginBottom: 16,
     paddingRight: 4,
+  },
+  tabsScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
+    marginBottom: 16,
+  },
+  hubChrome: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
   tab: {
     alignItems: "center",
@@ -366,5 +417,17 @@ const styles = StyleSheet.create({
     color: WHITE,
     fontSize: 10,
     fontWeight: "900",
+  },
+  hubContent: {
+    flex: 1,
+    minHeight: 0,
+    paddingBottom: 16,
+  },
+  hubPager: {
+    flex: 1,
+    minHeight: 0,
+  },
+  hubPageContent: {
+    paddingBottom: 24,
   },
 });

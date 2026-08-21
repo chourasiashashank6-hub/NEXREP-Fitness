@@ -22,6 +22,7 @@ from src.services.xp_service import (
     level_for_total_xp,
     reevaluate_xp_after_meal_change,
     reverse_xp_for_workout_delete,
+    serialize_xp_summary,
     xp_to_next_level,
 )
 
@@ -393,3 +394,28 @@ def test_streak_bonus_reversal_only_when_no_meals_left(db: Session):
         .count()
     )
     assert streak_reversed == 1
+
+
+def test_serialize_xp_summary_reconciles_drifted_totals(db: Session):
+    user_id = _ensure_user(db, "xp_summary_reconcile@test.local")
+    _reset_user_xp(db, user_id)
+
+    _seed_xp_award(
+        db,
+        user_id=user_id,
+        event_type="exercise_logged",
+        xp_amount=395,
+        idempotency_key="workout:reconcile-test",
+    )
+    totals = db.query(UserXpTotal).filter(UserXpTotal.user_id == user_id).one()
+    totals.total_xp = 385
+    totals.level = level_for_total_xp(385)
+    db.commit()
+
+    summary = serialize_xp_summary(db, user_id)
+    assert summary["total_xp"] == 395
+    assert summary["season"]["season_xp"] == 395
+    assert summary["season"]["season_xp"] <= summary["total_xp"]
+
+    db.refresh(totals)
+    assert int(totals.total_xp) == 395

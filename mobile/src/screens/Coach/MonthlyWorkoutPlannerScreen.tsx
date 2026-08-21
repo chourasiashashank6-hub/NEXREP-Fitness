@@ -950,15 +950,41 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   };
 
   const handleRegenerateStale = async () => {
-    if (!plan) return;
+    if (!plan) {
+      notifyUser(t("coach.workoutPlannerScreen.alerts.error"), t("stalePlan.regenerateFailed"));
+      return;
+    }
+    if (!plannerLimitsExempt && monthPlanRegensRemaining <= 0) {
+      notifyUser(
+        t("coach.workoutPlannerScreen.alerts.monthPlanLimitReached"),
+        t("coach.workoutPlannerScreen.alerts.allMonthRegensUsed", { resetDate: resetMonthLabel }),
+      );
+      return;
+    }
+    if (isRegeneratingStale || regeneratingMonthPlanRef.current) return;
+
     setIsRegeneratingStale(true);
     try {
       const updated = await regenerateWorkoutMonthPlan(plan.plan_id);
       applyPlan(updated);
+      setStaleFields(updated.stale_fields ?? []);
+      if (selectedDay) {
+        await syncDayDetailForPlan(updated, selectedDay);
+      }
       await rescheduleWorkoutPlanNotifications(updated).catch(() => undefined);
       notifyUser(t("stalePlan.regenerated"), t("stalePlan.regenerated"));
-    } catch {
-      notifyUser(t("common.error"), t("stalePlan.regenerateFailed"));
+    } catch (e: unknown) {
+      const status = axios.isAxiosError(e) ? e.response?.status : undefined;
+      if (status === 429) {
+        setMonthPlanRegensRemaining(0);
+        setMonthPlanRegensUsed(monthPlanRegensLimit);
+        notifyUser(
+          t("coach.workoutPlannerScreen.alerts.monthPlanLimitReached"),
+          apiErrorMessage(e, t("coach.workoutPlannerScreen.alerts.monthPlanLimitReset", { resetDate: resetMonthLabel })),
+        );
+      } else {
+        notifyUser(t("common.error"), apiErrorMessage(e, t("stalePlan.regenerateFailed")));
+      }
     } finally {
       setIsRegeneratingStale(false);
     }

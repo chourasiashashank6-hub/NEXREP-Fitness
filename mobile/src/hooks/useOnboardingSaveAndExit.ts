@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Keyboard } from "react-native";
 import { upsertOnboardingMe } from "../api/onboarding";
 import { updateProfile } from "../api/user";
@@ -11,10 +11,14 @@ import { formatApiDetail, notifyUser } from "../utils/notify";
 import { normalizeGoalFocusFields } from "../utils/onboardingFocusMuscles";
 import { validateOnboardingForSave } from "../utils/onboardingValidation";
 import i18n from "../i18n";
+import { useNavigation } from "@react-navigation/native";
 import { useLanguageStore } from "../i18n/languageStore";
+import { EditOnboardingModalContext } from "./useEditOnboardingModal";
 
 export function useOnboardingSaveAndExit() {
   const { data } = useOnboardingContext();
+  const navigation = useNavigation<any>();
+  const isEditModal = useContext(EditOnboardingModalContext);
   const token = useAuthStore((s) => s.token);
   const setNeedsOnboarding = useAuthStore((s) => s.setNeedsOnboarding);
   const language = useLanguageStore((s) => s.explicitLanguage || s.language || s.deviceLanguage);
@@ -94,7 +98,11 @@ export function useOnboardingSaveAndExit() {
       await saveOnboardingData(token, onboardingPayload);
       await saveTargets(token, targets);
       void syncExplicitLanguage();
-      setNeedsOnboarding(false);
+      if (isEditModal) {
+        navigation.goBack();
+      } else {
+        setNeedsOnboarding(false);
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "";
       notifyUser(i18n.t("onboardingSave.saveFailed"), msg || i18n.t("onboardingSave.genericFailed"));

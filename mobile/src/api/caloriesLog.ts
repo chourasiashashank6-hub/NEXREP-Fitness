@@ -335,6 +335,7 @@ export const postAIFoodMeal = async (payload: {
 }) => {
   return withCaloriesRoute("/foods/ai-meals", async (path) => {
     const { data } = await apiClient.post<AIFoodMealEntryPayload>(path, payload);
+    bumpXpRefresh();
     return data;
   });
 };
