@@ -28,6 +28,12 @@ class FirebaseLoginRequest(BaseModel):
     name: str | None = None
 
 
+class FirebaseRenewRequest(BaseModel):
+    """Silent JWT renewal — Firebase ID token only (user must already exist locally)."""
+
+    id_token: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

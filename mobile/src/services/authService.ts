@@ -8,6 +8,7 @@ import {
   type User,
 } from "firebase/auth";
 import type { ActionCodeSettings } from "firebase/auth";
+import { firebaseRenew } from "../api/auth";
 import { getFirebaseAuth } from "../config/firebase";
 import { useAuthStore } from "../store/authStore";
 import i18n from "../i18n";
@@ -47,6 +48,51 @@ export const signOutFirebaseOnly = async (): Promise<{ error: string | null }> =
 
 export const subscribeToAuthChanges = (callback: (user: User | null) => void) =>
   onAuthStateChanged(getFirebaseAuth(), callback);
+
+/** Resolves once Firebase has restored persisted auth state (or confirmed signed-out). */
+export function waitForFirebaseAuthReady(): Promise<void> {
+  const auth = getFirebaseAuth();
+  if (typeof auth.authStateReady === "function") {
+    return auth.authStateReady();
+  }
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, () => {
+      unsub();
+      resolve();
+    });
+  });
+}
+
+let renewalPromise: Promise<string | null> | null = null;
+
+/**
+ * Mint a fresh app JWT from the current Firebase session (silent renewal).
+ * Returns null when Firebase is signed out or renewal fails — never throws.
+ */
+export async function renewJwtFromFirebase(): Promise<string | null> {
+  if (renewalPromise) return renewalPromise;
+
+  renewalPromise = (async () => {
+    try {
+      const user = getFirebaseAuth().currentUser;
+      if (!user) return null;
+
+      const idToken = await user.getIdToken(true);
+      const data = await firebaseRenew({ id_token: idToken });
+      const accessToken = data?.access_token;
+      if (!accessToken || typeof accessToken !== "string") return null;
+
+      await useAuthStore.getState().setToken(accessToken);
+      return accessToken;
+    } catch {
+      return null;
+    } finally {
+      renewalPromise = null;
+    }
+  })();
+
+  return renewalPromise;
+}
 
 /**
  * Continue URL inside the reset email — must appear under Authorized domains.

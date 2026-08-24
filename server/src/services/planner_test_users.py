@@ -6,6 +6,14 @@ from src.models.models import User
 
 PLANNER_TEST_EMAILS = frozenset({"prashant@gmail.com", "shashank1@gmail.com"})
 
+# Per-email workout regen limits (used counts still tracked on monthly_workout_plans).
+PLANNER_WORKOUT_REGEN_LIMITS: dict[str, dict[str, int]] = {
+    "nexrep.prod.test@gmail.com": {
+        "day_regens": 5,
+        "month_plan_regens": 5,
+    },
+}
+
 # Unlock all calendar days in meal + workout planners (view/regenerate future days).
 PLANNER_UNLOCK_ALL_DAYS_EMAILS = frozenset({"shashank1@gmail.com"})
 
@@ -14,6 +22,20 @@ def is_planner_test_user(user: User | None) -> bool:
     if not user or not getattr(user, "email", None):
         return False
     return user.email.strip().lower() in PLANNER_TEST_EMAILS
+
+
+def workout_day_regen_limit_for_user(user: User | None) -> int | None:
+    if not user or not getattr(user, "email", None):
+        return None
+    limits = PLANNER_WORKOUT_REGEN_LIMITS.get(user.email.strip().lower())
+    return limits.get("day_regens") if limits else None
+
+
+def workout_month_plan_regen_limit_for_user(user: User | None) -> int | None:
+    if not user or not getattr(user, "email", None):
+        return None
+    limits = PLANNER_WORKOUT_REGEN_LIMITS.get(user.email.strip().lower())
+    return limits.get("month_plan_regens") if limits else None
 
 
 def is_meal_planner_test_user(user: User | None) -> bool:

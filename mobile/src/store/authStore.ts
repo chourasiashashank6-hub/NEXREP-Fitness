@@ -136,18 +136,47 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (token) {
       set({ token, sessionUserId: sessionIdFromToken(token) });
+      const { waitForFirebaseAuthReady } = await import("../services/authService");
+      await waitForFirebaseAuthReady();
+
       const { validateStoredSessionEmail } = await import("../utils/sessionValidation");
-      const { status, profile } = await validateStoredSessionEmail();
-      if (status === "mismatch" || status === "invalid") {
+      const applyValidation = async () => {
+        const { status, profile } = await validateStoredSessionEmail();
+        if (status === "mismatch") {
+          return { signedOut: true as const };
+        }
+        if (status === "unauthorized" || status === "no_firebase") {
+          const { renewJwtFromFirebase } = await import("../services/authService");
+          const renewed = await renewJwtFromFirebase();
+          if (!renewed) {
+            return { signedOut: true as const };
+          }
+          token = renewed;
+          const retry = await validateStoredSessionEmail();
+          if (retry.status === "mismatch") {
+            return { signedOut: true as const };
+          }
+          if (retry.status === "ok" && retry.profile) {
+            set({ cachedProfile: retry.profile, plan_id: String(retry.profile.plan_id || "free") });
+          }
+          return { signedOut: false as const };
+        }
+        if (status === "invalid") {
+          // Offline or transient error — keep stored session.
+          return { signedOut: false as const };
+        }
+        if (profile) {
+          set({ cachedProfile: profile, plan_id: String(profile.plan_id || "free") });
+        }
+        return { signedOut: false as const };
+      };
+
+      const result = await applyValidation();
+      if (result.signedOut) {
         const { signOutSession } = await import("../services/authService");
         await signOutSession();
         token = null;
         set({ cachedProfile: null });
-      } else if (profile) {
-        // Reused by OnboardingContext's initial fetch so it doesn't re-request /profile.
-        // Also syncs plan_id immediately so planner/feature gates reflect the real tier
-        // from app launch, instead of sitting on the "free" default until ProfileScreen mounts.
-        set({ cachedProfile: profile, plan_id: String(profile.plan_id || "free") });
       }
     }
 

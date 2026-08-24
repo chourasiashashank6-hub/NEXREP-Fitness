@@ -41,6 +41,7 @@ from src.schemas.schemas import (
     ChatRequest,
     FeedbackRequest,
     FirebaseLoginRequest,
+    FirebaseRenewRequest,
     LoginRequest,
     LanguagePreferenceRequest,
     MealRequest,
@@ -191,6 +192,7 @@ _ACTIVITY_SKIP_PATHS = {
     "/signup",
     "/login",
     "/auth/firebase-login",
+    "/auth/firebase-renew",
     "/auth/sync-password",
     "/api/admin/auth/login",
     "/api/payments/razorpay/webhook",
@@ -1684,6 +1686,16 @@ def firebase_login(payload: FirebaseLoginRequest, db: Session = Depends(get_db))
         user.needs_password_reset = False
         db.commit()
         db.refresh(user)
+    return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
+
+
+@app.post("/auth/firebase-renew")
+def firebase_renew(payload: FirebaseRenewRequest, db: Session = Depends(get_db)):
+    """Issue a fresh app JWT from a valid Firebase session (no password — existing users only)."""
+    email = email_from_firebase_id_token(payload.id_token.strip())
+    user = db.query(User).filter(func.lower(User.email) == email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"access_token": create_access_token(str(user.id)), "token_type": "bearer"}
 
 

@@ -8,6 +8,7 @@ import { getProfile } from "../api/user";
 import { postSessionComplete } from "../api/workoutSessions";
 import { useLanguageStore } from "../i18n/languageStore";
 import { useAuthStore } from "../store/authStore";
+import { subscribeToAuthChanges, signOutSession } from "../services/authService";
 import { useWorkoutSessionStore } from "../store/workoutSessionStore";
 import { AuthScreen } from "../screens/AuthScreen";
 import { HomeScreen } from "../screens/HomeScreen";
@@ -185,6 +186,17 @@ export const RootNavigator = () => {
   useEffect(() => {
     bootstrap();
   }, [bootstrap]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthChanges((user) => {
+      if (user) return;
+      if (!useAuthStore.getState().hydrated) return;
+      if (useAuthStore.getState().token) {
+        void signOutSession();
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   // Resume / auto-abandon stale active workout sessions
   useEffect(() => {

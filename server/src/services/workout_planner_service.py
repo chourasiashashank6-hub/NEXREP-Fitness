@@ -48,6 +48,8 @@ from src.services.planner_test_users import (
     planner_days_unlocked_flag,
     planner_limits_exempt_flag,
     planner_unlimited_regen_stats,
+    workout_day_regen_limit_for_user,
+    workout_month_plan_regen_limit_for_user,
 )
 
 MONTHLY_WORKOUT_DAY_REGEN_LIMIT = 2
@@ -933,6 +935,9 @@ def generate_workout_plan(
         year=year,
         generated_at=datetime.utcnow(),
         source=source,
+        day_regens_limit=workout_day_regen_limit_for_user(user) or MONTHLY_WORKOUT_DAY_REGEN_LIMIT,
+        month_plan_regens_limit=workout_month_plan_regen_limit_for_user(user)
+        or MONTHLY_WORKOUT_MONTH_PLAN_REGEN_LIMIT,
     )
     plan_set_focus_muscles(plan, ctx["focus_muscles"])
     db.add(plan)
@@ -975,12 +980,16 @@ def _monthly_workout_day_regen_stats(
     *,
     user: User | None = None,
 ) -> dict[str, int | bool]:
-    if user and is_planner_test_user(user):
+    custom_limit = workout_day_regen_limit_for_user(user)
+    if user and is_planner_test_user(user) and custom_limit is None:
         return planner_unlimited_regen_stats()
 
     plan = get_existing_workout_plan(db, user_id, month, year)
     used = int(plan.day_regens_used or 0) if plan else 0
-    limit = int(plan.day_regens_limit or MONTHLY_WORKOUT_DAY_REGEN_LIMIT) if plan else MONTHLY_WORKOUT_DAY_REGEN_LIMIT
+    if custom_limit is not None:
+        limit = custom_limit
+    else:
+        limit = int(plan.day_regens_limit or MONTHLY_WORKOUT_DAY_REGEN_LIMIT) if plan else MONTHLY_WORKOUT_DAY_REGEN_LIMIT
     remaining = max(0, limit - used)
     return {
         "day_regens_used": used,
@@ -998,7 +1007,8 @@ def _monthly_workout_month_plan_regen_stats(
     *,
     user: User | None = None,
 ) -> dict[str, int | bool]:
-    if user and is_planner_test_user(user):
+    custom_limit = workout_month_plan_regen_limit_for_user(user)
+    if user and is_planner_test_user(user) and custom_limit is None:
         return {
             "month_plan_regens_used": 0,
             "month_plan_regens_limit": 999,
@@ -1007,7 +1017,14 @@ def _monthly_workout_month_plan_regen_stats(
 
     plan = get_existing_workout_plan(db, user_id, month, year)
     used = int(plan.month_plan_regens_used or 0) if plan else 0
-    limit = int(plan.month_plan_regens_limit or MONTHLY_WORKOUT_MONTH_PLAN_REGEN_LIMIT) if plan else MONTHLY_WORKOUT_MONTH_PLAN_REGEN_LIMIT
+    if custom_limit is not None:
+        limit = custom_limit
+    else:
+        limit = (
+            int(plan.month_plan_regens_limit or MONTHLY_WORKOUT_MONTH_PLAN_REGEN_LIMIT)
+            if plan
+            else MONTHLY_WORKOUT_MONTH_PLAN_REGEN_LIMIT
+        )
     remaining = max(0, limit - used)
     return {
         "month_plan_regens_used": used,

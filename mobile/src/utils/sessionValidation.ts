@@ -1,7 +1,8 @@
+import axios from "axios";
 import { getProfile, type UserProfile } from "../api/user";
 import { getFirebaseAuth } from "../config/firebase";
 
-export type SessionValidationResult = "ok" | "mismatch" | "invalid" | "no_firebase";
+export type SessionValidationResult = "ok" | "mismatch" | "invalid" | "unauthorized" | "no_firebase";
 
 export type SessionValidationOutcome = {
   status: SessionValidationResult;
@@ -24,7 +25,10 @@ export async function validateStoredSessionEmail(): Promise<SessionValidationOut
       .toLowerCase();
     if (!apiEmail) return { status: "invalid", profile: null };
     return { status: fbEmail === apiEmail ? "ok" : "mismatch", profile };
-  } catch {
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response?.status === 401) {
+      return { status: "unauthorized", profile: null };
+    }
     return { status: "invalid", profile: null };
   }
 }

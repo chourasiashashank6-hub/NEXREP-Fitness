@@ -24,6 +24,12 @@ export const firebaseLogin = async (payload: {
   return data;
 };
 
+/** Silent JWT renewal from an existing Firebase session (no password). */
+export const firebaseRenew = async (payload: { id_token: string }) => {
+  const { data } = await apiClient.post("/auth/firebase-renew", payload);
+  return data;
+};
+
 /** Sync fitness API password with Firebase after reset (requires valid Firebase ID token). */
 export const syncPasswordFromFirebase = async (payload: {
   id_token: string;

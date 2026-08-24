@@ -1,9 +1,11 @@
-import axios from "axios";
+import axios, { type InternalAxiosRequestConfig } from "axios";
 import { Platform } from "react-native";
-import { signOutSession } from "../services/authService";
+import { renewJwtFromFirebase, signOutSession } from "../services/authService";
 import { useAuthStore } from "../store/authStore";
 
 const envApiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "").trim();
+
+type RetryableConfig = InternalAxiosRequestConfig & { _retryAfterRenew?: boolean };
 
 function isLoopbackHostname(hostname: string): boolean {
   const h = hostname.toLowerCase();
@@ -77,6 +79,16 @@ function getRequestAuthorization(config: unknown): string | undefined {
   return h.Authorization ?? h.authorization;
 }
 
+function isAuthRoute(url: string): boolean {
+  return (
+    url.includes("/login") ||
+    url.includes("/signup") ||
+    url.includes("/auth/firebase-login") ||
+    url.includes("/auth/firebase-renew") ||
+    url.includes("/auth/sync-password")
+  );
+}
+
 apiClient.interceptors.request.use((config) => {
   config.baseURL = resolveApiBaseUrl();
   const token = useAuthStore.getState().token;
@@ -92,19 +104,35 @@ apiClient.interceptors.response.use(
     const status = error?.response?.status;
     const detail = error?.response?.data?.detail;
     const staleSession = status === 404 && detail === "User not found";
-    if (status !== 401 && !staleSession) {
+    const config = error?.config as RetryableConfig | undefined;
+    const url = String(config?.url ?? "");
+    const hadBearer = Boolean(getRequestAuthorization(config));
+
+    if (staleSession && !isAuthRoute(url) && hadBearer) {
+      await signOutSession();
       return Promise.reject(error);
     }
-    const url = String(error?.config?.url ?? "");
-    const isAuthRoute =
-      url.includes("/login") ||
-      url.includes("/signup") ||
-      url.includes("/auth/firebase-login") ||
-      url.includes("/auth/sync-password");
-    const hadBearer = Boolean(getRequestAuthorization(error?.config));
-    if (!isAuthRoute && hadBearer) {
-      await signOutSession();
+
+    if (status !== 401) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
-  }
+
+    if (isAuthRoute(url) || !hadBearer || !config || config._retryAfterRenew) {
+      if (!isAuthRoute(url) && hadBearer) {
+        await signOutSession();
+      }
+      return Promise.reject(error);
+    }
+
+    const newToken = await renewJwtFromFirebase();
+    if (!newToken) {
+      await signOutSession();
+      return Promise.reject(error);
+    }
+
+    config._retryAfterRenew = true;
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${newToken}`;
+    return apiClient.request(config);
+  },
 );
