@@ -79,6 +79,10 @@
     "lastLogged": "Último registro:{{weight}}kg",
     "todaysGoal": "META DE HOY",
     "goalComplete": "¡Meta cumplida!",
+    "goalPendingPrefix": "Pending: ",
+    "goalPendingWarmup": "warm-up",
+    "goalPendingWorkout": "workout",
+    "goalPendingIntake": "intake",
     "mealsLoggedToday": "🍽️ Comidas registradas hoy",
     "mealSource": {
       "planner": "Planificador de comidas",

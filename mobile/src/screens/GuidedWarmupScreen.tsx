@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Alert,
   BackHandler,
   Platform,
   Pressable,
@@ -13,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { postSessionComplete } from "../api/workoutSessions";
+import { ConfirmModal } from "../components/ConfirmModal";
 import { speakPlainCue, unlockWebSpeech } from "../services/aiTrainer/audioCoach";
 import {
   getPhaseRemainingSec,
@@ -22,10 +22,17 @@ import {
 } from "../store/guidedWarmupStore";
 import {
   buildGuidedWarmupCompletePayload,
+  estimateCurrentPhaseKcalSoFar,
   estimateGuidedWarmupKcal,
+  estimateWarmupKcalSoFar,
   finalizePhaseDurations,
 } from "../utils/guidedWarmupComplete";
 import type { WarmupPhase } from "../utils/generatePreworkoutPlan";
+
+type PendingWarmupConfirm = {
+  kind: "end" | "skip";
+  kcal: number;
+};
 
 const PURPLE = "#7B68CC";
 const PURPLE_LIGHT = "#F0EEF9";
@@ -74,6 +81,7 @@ export default function GuidedWarmupScreen() {
   const persistedRef = useRef(false);
   const [showTransitionBanner, setShowTransitionBanner] = useState(false);
   const [displayKcal, setDisplayKcal] = useState<number | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<PendingWarmupConfirm | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => tick((n) => n + 1), 1000);
@@ -166,53 +174,64 @@ export default function GuidedWarmupScreen() {
     navigation.goBack();
   }, [abandonSession, clearSession, navigation]);
 
-  const confirmEndSession = useCallback(
-    (onConfirm: () => void) => {
-      Alert.alert(
-        t("coach.workoutPlannerScreen.preworkout.endConfirmTitle"),
-        t("coach.workoutPlannerScreen.preworkout.endConfirmBody"),
-        [
-          { text: t("coach.workoutPlannerScreen.preworkout.endConfirmCancel"), style: "cancel" },
-          {
-            text: t("coach.workoutPlannerScreen.preworkout.endConfirmAction"),
-            style: "destructive",
-            onPress: onConfirm,
-          },
-        ],
-      );
-    },
-    [t],
-  );
+  const dismissConfirm = useCallback(() => {
+    setPendingConfirm(null);
+  }, []);
 
   const handleEndConfirmed = useCallback(async () => {
     if (!session) return;
-    if (getSessionElapsedSec(session) <= 0) {
-      exitWithoutProgress();
-      return;
+    const durations = finalizePhaseDurations(session);
+    if (durations.some((durationSec) => durationSec > 0)) {
+      await persistSession("abandoned");
+    } else {
+      abandonSession();
     }
-    await persistSession("abandoned");
     clearSession();
     navigation.goBack();
-  }, [clearSession, exitWithoutProgress, navigation, persistSession, session]);
+  }, [abandonSession, clearSession, navigation, persistSession, session]);
+
+  const handleConfirmPending = useCallback(() => {
+    if (!pendingConfirm) return;
+    const { kind } = pendingConfirm;
+    setPendingConfirm(null);
+    if (kind === "end") {
+      void handleEndConfirmed();
+      return;
+    }
+    if (Platform.OS === "web") unlockWebSpeech();
+    skipPhase();
+  }, [handleEndConfirmed, pendingConfirm, skipPhase]);
 
   const handleEnd = useCallback(() => {
     if (!session) return;
-    if (getSessionElapsedSec(session) <= 0) {
+    if (pendingConfirm) {
+      dismissConfirm();
+      return;
+    }
+    if (session.status === "preparing" || getSessionElapsedSec(session) <= 0) {
       exitWithoutProgress();
       return;
     }
-    confirmEndSession(() => {
-      void handleEndConfirmed();
-    });
-  }, [confirmEndSession, exitWithoutProgress, handleEndConfirmed, session]);
+    setPendingConfirm({ kind: "end", kcal: estimateWarmupKcalSoFar(session) });
+  }, [dismissConfirm, exitWithoutProgress, pendingConfirm, session]);
+
+  const handleSkipPhase = useCallback(() => {
+    if (!session || pendingConfirm) return;
+    if (session.status !== "active" && session.status !== "paused") return;
+    setPendingConfirm({ kind: "skip", kcal: estimateCurrentPhaseKcalSoFar(session) });
+  }, [pendingConfirm, session]);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (pendingConfirm) {
+        dismissConfirm();
+        return true;
+      }
       handleEnd();
       return true;
     });
     return () => sub.remove();
-  }, [handleEnd]);
+  }, [dismissConfirm, handleEnd, pendingConfirm]);
 
   const handleComplete = () => {
     clearSession();
@@ -226,6 +245,22 @@ export default function GuidedWarmupScreen() {
   const isPaused = session.status === "paused";
   const isCompleted = session.status === "completed";
   const kcalShown = displayKcal ?? session.actual_kcal ?? session.estimated_kcal;
+  const confirmCopy =
+    pendingConfirm?.kind === "end"
+      ? {
+          title: t("coach.workoutPlannerScreen.preworkout.endConfirmTitle"),
+          message: t("coach.workoutPlannerScreen.preworkout.endConfirmBody", { kcal: pendingConfirm.kcal }),
+          confirmLabel: t("coach.workoutPlannerScreen.preworkout.endConfirmAction"),
+          destructive: true,
+        }
+      : pendingConfirm?.kind === "skip"
+        ? {
+            title: t("coach.workoutPlannerScreen.preworkout.skipPhaseConfirmTitle"),
+            message: t("coach.workoutPlannerScreen.preworkout.skipPhaseConfirmBody", { kcal: pendingConfirm.kcal }),
+            confirmLabel: t("coach.workoutPlannerScreen.preworkout.skipPhaseConfirmAction"),
+            destructive: false,
+          }
+        : null;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -338,13 +373,7 @@ export default function GuidedWarmupScreen() {
                   : t("coach.workoutPlannerScreen.preworkout.pause")}
               </Text>
             </Pressable>
-            <Pressable
-              style={styles.secondaryBtn}
-              onPress={() => {
-                if (Platform.OS === "web") unlockWebSpeech();
-                skipPhase();
-              }}
-            >
+            <Pressable style={styles.secondaryBtn} onPress={handleSkipPhase}>
               <Text style={styles.secondaryBtnText}>{t("coach.workoutPlannerScreen.preworkout.skipPhase")}</Text>
             </Pressable>
             <Pressable style={styles.primaryBtn} onPress={handleEnd}>
@@ -357,6 +386,17 @@ export default function GuidedWarmupScreen() {
           </Pressable>
         )}
       </View>
+
+      <ConfirmModal
+        visible={pendingConfirm != null}
+        title={confirmCopy?.title ?? ""}
+        message={confirmCopy?.message ?? ""}
+        cancelLabel={t("coach.workoutPlannerScreen.preworkout.endConfirmCancel")}
+        confirmLabel={confirmCopy?.confirmLabel ?? ""}
+        destructive={confirmCopy?.destructive}
+        onCancel={dismissConfirm}
+        onConfirm={handleConfirmPending}
+      />
     </SafeAreaView>
   );
 }

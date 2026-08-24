@@ -79,6 +79,10 @@
     "lastLogged": "Dernière connexion : {{weight}}kg",
     "todaysGoal": "OBJECTIF DU JOUR",
     "goalComplete": "Objectif atteint !",
+    "goalPendingPrefix": "Pending: ",
+    "goalPendingWarmup": "warm-up",
+    "goalPendingWorkout": "workout",
+    "goalPendingIntake": "intake",
     "mealsLoggedToday": "🍽️ Repas enregistrés aujourd'hui",
     "mealSource": {
       "planner": "Planificateur de repas",

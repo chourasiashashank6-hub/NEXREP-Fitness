@@ -16,6 +16,7 @@ import { resolveApiBaseUrl } from "../api/client";
 import { fetchMealPlanCurrent } from "../api/mealPlanner";
 import { fetchOnboardingMeShared } from "../api/onboarding";
 import { getWorkoutHistory } from "../api/workout";
+import { getProfile } from "../api/user";
 import { fetchWorkoutPlanCurrent, fetchWeeklyWorkoutReview } from "../api/workoutPlanner";
 import { DailyGamePlanCard } from "../components/DailyGamePlanCard";
 import { BlurredModalBackdrop } from "../components/BlurredModalBackdrop";
@@ -33,6 +34,7 @@ import {
   resolveEquipmentForExercises,
   type CatalogEquipmentRow,
 } from "../utils/gamePlanPrepLists";
+import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 
 const TEXT = "#1A1A18";
 const MUTED = "#8A8A84";
@@ -48,13 +50,6 @@ function mapHistoryItems(items: { date: string; exerciseName?: string; type?: st
     notes: item.notes,
     bodyPart: item.bodyPart,
   }));
-}
-
-function resolveWeightKg(weightLatestRes: { weight_kg?: number } | null, onboardingWeight: number): number {
-  const latestWeight = Number(weightLatestRes?.weight_kg);
-  if (Number.isFinite(latestWeight) && latestWeight > 0) return latestWeight;
-  if (Number.isFinite(onboardingWeight) && onboardingWeight > 0) return onboardingWeight;
-  return 70;
 }
 
 export default function GamePlanModalScreen() {
@@ -170,7 +165,7 @@ export default function GamePlanModalScreen() {
 
     const apiBase = resolveApiBaseUrl();
     try {
-      const [dayRes, onboardingRes, historyRes, workoutPlanRes, mealPlanRes, weightLatestRes] = await Promise.all([
+      const [dayRes, onboardingRes, historyRes, workoutPlanRes, mealPlanRes, weightLatestRes, profileRes] = await Promise.all([
         getDailyCalorieLog(todayLocal()).catch(() => null),
         fetchOnboardingMeShared().catch(() => null),
         getWorkoutHistory(24 * 7).catch(() => ({ items: [] })),
@@ -179,6 +174,7 @@ export default function GamePlanModalScreen() {
         fetch(`${apiBase}/api/weight/latest`, { headers: { Authorization: `Bearer ${token}` } })
           .then((r) => (r.ok ? r.json() : null))
           .catch(() => null),
+        getProfile().catch(() => null),
       ]);
 
       const mealToday = mealPlanRes
@@ -187,8 +183,11 @@ export default function GamePlanModalScreen() {
           : mealPlanRes.today ?? null
         : null;
       const historyRows = mapHistoryItems(historyRes.items ?? []);
-      const onboardingWeight = Number(onboardingRes?.onboarding?.personal?.weight_kg);
-      const resolvedWeightKg = resolveWeightKg(weightLatestRes, onboardingWeight);
+      const resolvedWeightKg = resolveBurnTargetWeightKg({
+        weightLatest: weightLatestRes,
+        profileWeightKg: profileRes?.weight,
+        onboardingWeightKg: onboardingRes?.onboarding?.personal?.weight_kg,
+      });
 
       const sanitizedWorkoutPlan = sanitizeWorkoutPlanCurrent(workoutPlanRes);
 

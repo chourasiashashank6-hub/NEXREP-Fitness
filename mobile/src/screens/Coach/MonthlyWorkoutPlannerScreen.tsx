@@ -367,14 +367,17 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
 
   const resetMonthLabel = getNextMonthResetLabel();
   const selectedWorkoutOverview = plan?.month_overview.find((d) => d.day === selectedDay);
-  const canSwapExercises = Boolean(
-    selectedWorkoutOverview && (canViewFutureDays || !selectedWorkoutOverview.is_future) && plan,
-  );
-  const exerciseSwapsRemaining = exerciseSwapsLimit - exerciseSwapsUsed;
   const selectedDayIsPast = plan
     ? (selectedWorkoutOverview?.is_past ??
       isPastPlanDay(plan.month, plan.year, selectedDay))
     : false;
+  const canSwapExercises = Boolean(
+    plan &&
+      selectedWorkoutOverview &&
+      !selectedDayIsPast &&
+      (canViewFutureDays || !selectedWorkoutOverview.is_future),
+  );
+  const exerciseSwapsRemaining = exerciseSwapsLimit - exerciseSwapsUsed;
   const showRegenerateWorkout = Boolean(
     plan &&
     dayDetail &&

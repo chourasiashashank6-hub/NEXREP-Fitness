@@ -36,6 +36,7 @@ import { fetchOnboardingMe } from "../api/onboarding";
 import { isPreWorkoutEnabled } from "../utils/preWorkoutPreference";
 import { deleteStrengthLift, logStrengthLift, updateStrengthLift } from "../api/strength";
 import { getProfile } from "../api/user";
+import { fetchWeightLatest } from "../api/weight";
 import { apiClient } from "../api/client";
 import { localDateIso } from "../utils/localDate";
 import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
@@ -84,7 +85,7 @@ import {
   sessionMilestonePlannedTarget,
 } from "../utils/sessionMilestoneSlots";
 import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
-import { calcExerciseEstimateKcal } from "../utils/sessionCalories";
+import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 import { navigationRef } from "../navigation/navigationRef";
 import MonthlyWorkoutPlannerScreen from "./Coach/MonthlyWorkoutPlannerScreen";
 
@@ -605,7 +606,7 @@ export const WorkoutScreen = () => {
 
   const loadInitial = async (options?: { preservePlannerState?: boolean }) => {
     try {
-      const [historyData, profileData, onboardingData, goalProgressRes] = await Promise.all([
+      const [historyData, profileData, onboardingData, goalProgressRes, weightLatestRes] = await Promise.all([
         getWorkoutHistory(24 * 7),
         getProfile(),
         fetchOnboardingMe().catch(() => null),
@@ -613,6 +614,7 @@ export const WorkoutScreen = () => {
           .get(`/api/goal-progress`, { params: { local_date: localDateIso() } })
           .then((r) => r.data)
           .catch(() => null),
+        fetchWeightLatest().catch(() => null),
       ]);
       setHistory(historyData.items ?? []);
       setOnboardingForBurn(onboardingData?.onboarding ?? null);
@@ -636,8 +638,13 @@ export const WorkoutScreen = () => {
       setProfileGoalTag(resolvedGoalTag);
       setProfileDifficulty(resolvedDifficulty);
       setIsStrengthGoal(nextIsStrengthGoal);
-      const w = Number((profileData as any).weight ?? (profileData as any).weight_kg ?? 70);
-      if (Number.isFinite(w) && w > 0) setUserWeightKg(w);
+      const profileWeightKg = Number((profileData as { weight?: number; weight_kg?: number }).weight ?? (profileData as { weight_kg?: number }).weight_kg);
+      const burnWeightKg = resolveBurnTargetWeightKg({
+        weightLatest: weightLatestRes,
+        profileWeightKg,
+        onboardingWeightKg: onboardingData?.onboarding?.personal?.weight_kg,
+      });
+      setUserWeightKg(burnWeightKg);
       if (!nextIsStrengthGoal) {
         setTopSetWeightKg("");
         setTopSetReps("");
@@ -1355,6 +1362,10 @@ export const WorkoutScreen = () => {
     },
     [t],
   );
+  const plannedSessionKcal = useMemo(
+    () => plannedBurnActivities.find((activity) => activity.kind === "workoutSession")?.kcal ?? 0,
+    [plannedBurnActivities],
+  );
   const todaySessionCount = todayHistory.length;
   const sessionMilestoneItems = useMemo(
     () =>
@@ -1442,12 +1453,7 @@ export const WorkoutScreen = () => {
           const isElite = tier === "ELITE";
           const today = todayPlan?.today ?? null;
           const hasActivePlan = Boolean(todayPlan && today && !today.is_rest_day);
-          const totalEstKcal = hasActivePlan
-            ? today!.exercises.reduce(
-                (sum, ex) => sum + calcExerciseEstimateKcal(ex.name, ex.sets, userWeightKg),
-                0,
-              )
-            : 0;
+          const totalEstKcal = hasActivePlan ? plannedSessionKcal : 0;
 
           if (!isElite) {
             return (

@@ -79,6 +79,10 @@
     "lastLogged": "अंतिम बार लॉग किया गया: {{weight}}kg",
     "todaysGoal": "आज का लक्ष्य",
     "goalComplete": "लक्ष्य पूरा!",
+    "goalPendingPrefix": "Pending: ",
+    "goalPendingWarmup": "warm-up",
+    "goalPendingWorkout": "workout",
+    "goalPendingIntake": "intake",
     "mealsLoggedToday": "🍽️ आज लॉग किए गए भोजन",
     "mealSource": {
       "planner": "भोजन योजनाकार",

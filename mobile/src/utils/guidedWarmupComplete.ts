@@ -38,6 +38,22 @@ export function estimateGuidedWarmupKcal(
   return roundToNearest5(raw);
 }
 
+/** Cumulative warm-up kcal through completed phases plus the in-progress phase. */
+export function estimateWarmupKcalSoFar(session: GuidedWarmupSession): number {
+  const durations = finalizePhaseDurations(session);
+  if (durations.every((durationSec) => durationSec <= 0)) return 0;
+  return estimateGuidedWarmupKcal(session.phases, durations, session.weight_kg);
+}
+
+/** Kcal for the current phase only, up to elapsed time in that phase. */
+export function estimateCurrentPhaseKcalSoFar(session: GuidedWarmupSession): number {
+  const phase = session.phases[session.current_phase_index];
+  if (!phase) return 0;
+  const durationSec = currentPhaseActualSec(session);
+  if (durationSec <= 0) return 0;
+  return estimateGuidedWarmupKcal([phase], [durationSec], session.weight_kg);
+}
+
 export function buildGuidedWarmupCompletePayload(
   session: GuidedWarmupSession,
   status: "completed" | "abandoned",

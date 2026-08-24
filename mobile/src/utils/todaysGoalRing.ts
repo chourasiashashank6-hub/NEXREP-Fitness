@@ -11,9 +11,122 @@ export type TodaysGoalProgress = {
   complete: boolean;
 };
 
+export type TodaysGoalPendingItem = "warm-up" | "workout" | "intake";
+
+export type PlannedBurnBreakdown = {
+  warmupTargetKcal: number;
+  sessionTargetKcal: number;
+};
+
+export type TodayBurnActuals = {
+  warmupKcal: number;
+  sessionKcal: number;
+};
+
+export type TodaysGoalPendingLabels = Record<TodaysGoalPendingItem, string>;
+
 export function clamp01(n: number): number {
   if (!Number.isFinite(n)) return 0;
   return Math.min(1, Math.max(0, n));
+}
+
+export function plannedBurnBreakdownFromActivities(
+  activities: ReadonlyArray<{ kind: string; kcal: number }>,
+): PlannedBurnBreakdown {
+  const warmupTargetKcal = Math.max(
+    0,
+    Math.round(activities.find((activity) => activity.kind === "cardioWarmup")?.kcal ?? 0),
+  );
+  const sessionTargetKcal = Math.max(
+    0,
+    Math.round(activities.find((activity) => activity.kind === "workoutSession")?.kcal ?? 0),
+  );
+  return { warmupTargetKcal, sessionTargetKcal };
+}
+
+function deriveBurnPendingItems(
+  caloriesBurnedToday: number,
+  dailyBurnTarget: number,
+  planned: PlannedBurnBreakdown | null | undefined,
+  actuals: TodayBurnActuals | null | undefined,
+): TodaysGoalPendingItem[] {
+  if (dailyBurnTarget <= 0 || caloriesBurnedToday >= dailyBurnTarget) return [];
+
+  const warmupTarget = planned?.warmupTargetKcal ?? 0;
+  const sessionTarget = planned?.sessionTargetKcal ?? 0;
+  const hasBreakdown = warmupTarget > 0 || sessionTarget > 0;
+
+  if (!hasBreakdown) return ["workout"];
+
+  const warmupActual = Math.max(0, Number(actuals?.warmupKcal) || 0);
+  const sessionActual = Math.max(
+    0,
+    Number(actuals?.sessionKcal) || Math.max(0, caloriesBurnedToday - warmupActual),
+  );
+
+  const items: TodaysGoalPendingItem[] = [];
+
+  if (warmupTarget > 0 && warmupActual < warmupTarget) {
+    items.push("warm-up");
+  }
+  if (sessionTarget > 0 && sessionActual < sessionTarget) {
+    items.push("workout");
+  }
+
+  if (items.length === 0 && caloriesBurnedToday < dailyBurnTarget) {
+    items.push("workout");
+  }
+
+  return items;
+}
+
+/** Category names only — no numbers. Empty when the ring is already complete. */
+export function deriveTodaysGoalPendingItems(opts: {
+  caloriesEatenToday: number;
+  dailyCalorieTarget: number;
+  caloriesBurnedToday: number;
+  dailyBurnTarget: number;
+  restDayActive?: boolean;
+  plannedBurn?: PlannedBurnBreakdown | null;
+  todayBurnActuals?: TodayBurnActuals | null;
+}): TodaysGoalPendingItem[] {
+  const progress = computeTodaysGoalProgress(
+    opts.caloriesEatenToday,
+    opts.dailyCalorieTarget,
+    opts.caloriesBurnedToday,
+    opts.dailyBurnTarget,
+    { restDayActive: opts.restDayActive },
+  );
+
+  if (progress.complete) return [];
+
+  const items: TodaysGoalPendingItem[] = [];
+
+  if (!opts.restDayActive && progress.burnFrac < 1) {
+    items.push(
+      ...deriveBurnPendingItems(
+        opts.caloriesBurnedToday,
+        opts.dailyBurnTarget,
+        opts.plannedBurn,
+        opts.todayBurnActuals,
+      ),
+    );
+  }
+
+  if (progress.eatFrac < 1) {
+    items.push("intake");
+  }
+
+  return items;
+}
+
+export function formatTodaysGoalPendingLabel(
+  items: TodaysGoalPendingItem[],
+  labels: TodaysGoalPendingLabels,
+  prefix: string,
+): string | null {
+  if (!items.length) return null;
+  return `${prefix}${items.map((item) => labels[item]).join(", ")}`;
 }
 
 export function computeTodaysGoalProgress(

@@ -4,7 +4,9 @@
 import type { GuidedWarmupSession } from "../store/guidedWarmupStore";
 import {
   buildGuidedWarmupCompletePayload,
+  estimateCurrentPhaseKcalSoFar,
   estimateGuidedWarmupKcal,
+  estimateWarmupKcalSoFar,
   finalizePhaseDurations,
   GUIDED_WARMUP_EXERCISE_NAME,
 } from "./guidedWarmupComplete";
@@ -77,5 +79,17 @@ const partialSession: GuidedWarmupSession = {
 };
 const partialDurations = finalizePhaseDurations(partialSession);
 assert(partialDurations.length >= 1, "partial session keeps completed phase durations");
+
+const activeSession: GuidedWarmupSession = {
+  ...baseSession,
+  status: "active",
+  phase_actual_durations_sec: [180],
+  current_phase_index: 1,
+  phase_ends_at: new Date(Date.now() + 400_000).toISOString(),
+};
+const cumulativeKcal = estimateWarmupKcalSoFar(activeSession);
+const phaseOnlyKcal = estimateCurrentPhaseKcalSoFar(activeSession);
+assert(cumulativeKcal > phaseOnlyKcal, "cumulative warm-up kcal exceeds current phase only");
+assert(phaseOnlyKcal >= 0, "current phase kcal is non-negative");
 
 console.log("guidedWarmupComplete.test.ts: all assertions passed");

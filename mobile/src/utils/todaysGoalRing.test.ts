@@ -2,7 +2,12 @@
  * Run: npx --yes tsx src/utils/todaysGoalRing.test.ts
  * (from mobile/)
  */
-import { computeTodaysGoalProgress } from "./todaysGoalRing";
+import {
+  computeTodaysGoalProgress,
+  deriveTodaysGoalPendingItems,
+  formatTodaysGoalPendingLabel,
+  plannedBurnBreakdownFromActivities,
+} from "./todaysGoalRing";
 
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(msg);
@@ -92,6 +97,86 @@ function almostEqual(a: number, b: number, eps = 1e-9) {
   const p = computeTodaysGoalProgress(2000, 2000, 467, 467);
   assert(p.complete === true, "full eat + full best-results burn completes");
   assert(almostEqual(p.burnFrac, 1), "burnFrac at 100%");
+}
+
+const labels = {
+  "warm-up": "warm-up",
+  workout: "workout",
+  intake: "intake",
+} as const;
+
+const planned = plannedBurnBreakdownFromActivities([
+  { kind: "cardioWarmup", kcal: 175 },
+  { kind: "workoutSession", kcal: 216 },
+]);
+
+// 1) Sessions logged, warm-up missing, intake short → warm-up + intake
+{
+  const items = deriveTodaysGoalPendingItems({
+    caloriesEatenToday: 1800,
+    dailyCalorieTarget: 2000,
+    caloriesBurnedToday: 216,
+    dailyBurnTarget: 391,
+    plannedBurn: planned,
+    todayBurnActuals: { warmupKcal: 0, sessionKcal: 216 },
+  });
+  assert(items.join(",") === "warm-up,intake", `expected warm-up,intake, got ${items.join(",")}`);
+  assert(
+    formatTodaysGoalPendingLabel(items, labels, "Pending: ") === "Pending: warm-up, intake",
+    "formatted label mismatch",
+  );
+}
+
+// 2) Only intake short
+{
+  const items = deriveTodaysGoalPendingItems({
+    caloriesEatenToday: 1800,
+    dailyCalorieTarget: 2000,
+    caloriesBurnedToday: 391,
+    dailyBurnTarget: 391,
+    plannedBurn: planned,
+    todayBurnActuals: { warmupKcal: 175, sessionKcal: 216 },
+  });
+  assert(items.join(",") === "intake", `expected intake only, got ${items.join(",")}`);
+}
+
+// 3) Only burn short — warm-up done, session short
+{
+  const items = deriveTodaysGoalPendingItems({
+    caloriesEatenToday: 2000,
+    dailyCalorieTarget: 2000,
+    caloriesBurnedToday: 200,
+    dailyBurnTarget: 391,
+    plannedBurn: planned,
+    todayBurnActuals: { warmupKcal: 175, sessionKcal: 25 },
+  });
+  assert(items.join(",") === "workout", `expected workout only, got ${items.join(",")}`);
+}
+
+// 4) Ring complete → no pending label
+{
+  const items = deriveTodaysGoalPendingItems({
+    caloriesEatenToday: 2000,
+    dailyCalorieTarget: 2000,
+    caloriesBurnedToday: 391,
+    dailyBurnTarget: 391,
+    plannedBurn: planned,
+    todayBurnActuals: { warmupKcal: 175, sessionKcal: 216 },
+  });
+  assert(items.length === 0, "complete ring should have no pending items");
+  assert(formatTodaysGoalPendingLabel(items, labels, "Pending: ") === null, "no formatted label");
+}
+
+// 5) No planned breakdown — generic workout pending
+{
+  const items = deriveTodaysGoalPendingItems({
+    caloriesEatenToday: 2000,
+    dailyCalorieTarget: 2000,
+    caloriesBurnedToday: 100,
+    dailyBurnTarget: 400,
+    plannedBurn: { warmupTargetKcal: 0, sessionTargetKcal: 0 },
+  });
+  assert(items.join(",") === "workout", `expected workout fallback, got ${items.join(",")}`);
 }
 
 console.log("todaysGoalRing.test.ts: all assertions passed");

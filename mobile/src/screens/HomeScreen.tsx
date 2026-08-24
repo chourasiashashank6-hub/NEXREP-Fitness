@@ -53,6 +53,13 @@ import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { setGamePlanCache } from "../store/gamePlanCache";
 import { useActivityDataRefreshStore } from "../store/activityDataRefreshStore";
 import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
+import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
+import {
+  deriveTodaysGoalPendingItems,
+  formatTodaysGoalPendingLabel,
+  plannedBurnBreakdownFromActivities,
+} from "../utils/todaysGoalRing";
+import { summarizeTodayBurnActuals } from "../utils/todayBurnActuals";
 import type { WorkoutPlanCurrent } from "../types/planner";
 
 interface LatestWeightData {
@@ -367,14 +374,11 @@ export const HomeScreen = () => {
 
       setPersonalBestStreak(Math.max(0, Number(streakRes?.personal_best_streak ?? 0)));
 
-      const onboardingWeight = Number(onboardingRes?.onboarding?.personal?.weight_kg);
-      const latestWeightKg = Number(weightLatestRes?.weight_kg);
-      const cachedWeightKg =
-        Number.isFinite(latestWeightKg) && latestWeightKg > 0
-          ? latestWeightKg
-          : Number.isFinite(onboardingWeight) && onboardingWeight > 0
-            ? onboardingWeight
-            : 70;
+      const cachedWeightKg = resolveBurnTargetWeightKg({
+        weightLatest: weightLatestRes,
+        profileWeightKg: weightLatestRes?.has_logs ? undefined : weightLatestRes?.weight_kg,
+        onboardingWeightKg: onboardingRes?.onboarding?.personal?.weight_kg,
+      });
       setGamePlanCache({
         calorieDay: dayRes,
         todayWorkoutPlan: sanitizedWorkoutPlan,
@@ -474,9 +478,13 @@ export const HomeScreen = () => {
   const intake = Number(log?.total_calories || 0);
   const targetKcal = Number(log?.target_calories || 0);
   const caloriesBurnedSoFar = Math.max(0, Math.round(totalWorkoutBurn));
-  const effectiveWeightKg = latestWeight?.weight_kg ?? burnProfile?.current_weight_kg;
+  const burnTargetWeightKg = resolveBurnTargetWeightKg({
+    weightLatest: latestWeight,
+    profileWeightKg: latestWeight?.has_logs ? undefined : latestWeight?.weight_kg,
+    onboardingWeightKg: burnProfile?.current_weight_kg,
+  });
   const burnPlan = burnProfile
-    ? computeUserCaloriePlan({ ...burnProfile, current_weight_kg: effectiveWeightKg ?? burnProfile.current_weight_kg })
+    ? computeUserCaloriePlan({ ...burnProfile, current_weight_kg: burnTargetWeightKg })
     : null;
   const eatenToday = Number.isFinite(intake) ? Math.round(intake) : 0;
   // Authoritative kcal from calorie_log_targets via daily log API (same as Meal Planner).
@@ -541,8 +549,8 @@ export const HomeScreen = () => {
   const minBurnTarget = exerciseDeltaDisplay;
   const preWorkoutEnabled = isPreWorkoutEnabled(onboardingData);
   const preworkoutProfile = useMemo(
-    () => (preWorkoutEnabled ? toPreworkoutProfile(onboardingData, effectiveWeightKg ?? undefined) : null),
-    [onboardingData, effectiveWeightKg, preWorkoutEnabled],
+    () => (preWorkoutEnabled ? toPreworkoutProfile(onboardingData, burnTargetWeightKg) : null),
+    [onboardingData, burnTargetWeightKg, preWorkoutEnabled],
   );
   const plannedBurnTargets = useMemo(() => {
     const activities = computePlannedBurnActivities({
@@ -551,7 +559,7 @@ export const HomeScreen = () => {
       todayWorkoutPlan,
       preworkoutProfile,
       preWorkoutEnabled,
-      weightKg: effectiveWeightKg ?? burnProfile?.current_weight_kg ?? 70,
+      weightKg: burnTargetWeightKg,
     });
     return computePlannedBurnTargets({
       minBurnTarget,
@@ -563,8 +571,7 @@ export const HomeScreen = () => {
     todayWorkoutPlan,
     preworkoutProfile,
     preWorkoutEnabled,
-    effectiveWeightKg,
-    burnProfile?.current_weight_kg,
+    burnTargetWeightKg,
     minBurnTarget,
   ]);
   const bestResultsBurnTarget = plannedBurnTargets.bestResultsBurnTarget;
@@ -576,6 +583,31 @@ export const HomeScreen = () => {
     },
     [t],
   );
+  const goalPendingLabel = useMemo(() => {
+    const items = deriveTodaysGoalPendingItems({
+      caloriesEatenToday: eatenToday,
+      dailyCalorieTarget: dailyGoal,
+      caloriesBurnedToday: caloriesBurnedSoFar,
+      dailyBurnTarget: bestResultsBurnTarget,
+      restDayActive,
+      plannedBurn: plannedBurnBreakdownFromActivities(plannedBurnActivities),
+      todayBurnActuals: summarizeTodayBurnActuals(workoutHistory, isSameLocalDay),
+    });
+    return formatTodaysGoalPendingLabel(items, {
+      "warm-up": t("home.goalPendingWarmup"),
+      workout: t("home.goalPendingWorkout"),
+      intake: t("home.goalPendingIntake"),
+    }, t("home.goalPendingPrefix"));
+  }, [
+    eatenToday,
+    dailyGoal,
+    caloriesBurnedSoFar,
+    bestResultsBurnTarget,
+    restDayActive,
+    plannedBurnActivities,
+    workoutHistory,
+    t,
+  ]);
   const dietDeltaDisplay = Math.max(0, deltaDisplay - exerciseDeltaDisplay);
   const exerciseSharePct = Number.isFinite(exerciseShare) ? clamp01(exerciseShare) : 0.2;
   const dietSharePct = Number.isFinite(dietShare) ? clamp01(dietShare) : 0.8;
@@ -807,95 +839,103 @@ export const HomeScreen = () => {
         ) : null}
 
         <Animated.View style={[styles.section, animatedStyle(2)]}>
-            <View style={styles.heroRow}>
-              <TodaysGoalRing
-                caloriesEatenToday={eatenToday}
-                dailyCalorieTarget={dailyGoal}
-                caloriesBurnedToday={caloriesBurnedSoFar}
-                dailyBurnTarget={bestResultsBurnTarget}
-                restDayActive={restDayActive}
-                size={168}
-              />
-              <View style={styles.kpiColumn}>
-                <View style={styles.metricsCard}>
-                  <View style={styles.metricsRow}>
-                    <View style={styles.metricsRowLeft}>
-                      <Ionicons name="restaurant-outline" size={15} color={TEXT_MUTED} />
-                      <Text style={styles.metricsRowLabel}>{t("home.toEat")}</Text>
-                    </View>
-                    <Text style={styles.metricsRowValue}>{formatNum(dailyGoal)}</Text>
-                  </View>
-
-                  <View style={styles.metricsRow}>
-                    <View style={styles.metricsRowLeft}>
-                      <Ionicons name={deficitTrendIcon} size={15} color={TEXT_MUTED} />
-                      <Text style={styles.metricsRowLabel}>{deltaKpiLabel}</Text>
-                    </View>
-                    <Text style={styles.metricsRowValue}>{formatNum(deltaDisplay)}</Text>
-                  </View>
-
-                  <View style={styles.metricsDivider} />
-
-                  {restDayActive ? (
-                    <View style={styles.metricsRowBurn}>
+            <View style={styles.goalCard}>
+              <View style={styles.heroRow}>
+                <TodaysGoalRing
+                  caloriesEatenToday={eatenToday}
+                  dailyCalorieTarget={dailyGoal}
+                  caloriesBurnedToday={caloriesBurnedSoFar}
+                  dailyBurnTarget={bestResultsBurnTarget}
+                  restDayActive={restDayActive}
+                  size={168}
+                />
+                <View style={styles.kpiColumn}>
+                  <View style={styles.metricsCard}>
+                    <View style={styles.metricsRow}>
                       <View style={styles.metricsRowLeft}>
-                        <Ionicons name="moon-outline" size={15} color={TEXT_MUTED} />
-                        <Text style={styles.metricsRowLabel}>{t("home.restDayNoBurn")}</Text>
+                        <Ionicons name="restaurant-outline" size={15} color={TEXT_MUTED} />
+                        <Text style={styles.metricsRowLabel}>{t("home.toEat")}</Text>
                       </View>
+                      <Text style={styles.metricsRowValue}>{formatNum(dailyGoal)}</Text>
                     </View>
-                  ) : (
-                    <>
-                      <Pressable
-                        style={styles.metricsRowBurn}
-                        onPress={
-                          plannedBurnActivities.length > 0
-                            ? () => setBurnChipsExpanded((prev) => !prev)
-                            : undefined
-                        }
-                        accessibilityRole="button"
-                        accessibilityState={{ expanded: burnChipsExpanded }}
-                      >
+
+                    <View style={styles.metricsRow}>
+                      <View style={styles.metricsRowLeft}>
+                        <Ionicons name={deficitTrendIcon} size={15} color={TEXT_MUTED} />
+                        <Text style={styles.metricsRowLabel}>{deltaKpiLabel}</Text>
+                      </View>
+                      <Text style={styles.metricsRowValue}>{formatNum(deltaDisplay)}</Text>
+                    </View>
+
+                    <View style={styles.metricsDivider} />
+
+                    {restDayActive ? (
+                      <View style={styles.metricsRowBurn}>
                         <View style={styles.metricsRowLeft}>
-                          <Ionicons name="flame" size={16} color={ORANGE} />
-                          <Text style={styles.metricsBurnLabel}>{t("home.toBurn")}</Text>
+                          <Ionicons name="moon-outline" size={15} color={TEXT_MUTED} />
+                          <Text style={styles.metricsRowLabel}>{t("home.restDayNoBurn")}</Text>
                         </View>
-                        <View style={styles.metricsBurnRight}>
-                          <Text style={styles.metricsBurnValue}>{formatNum(bestResultsBurnTarget)}</Text>
-                          <Text style={styles.metricsBurnMin}>
-                            {t("home.burnMinSuffix", { min: formatNum(minBurnTarget) })}
-                          </Text>
-                          {plannedBurnActivities.length > 0 ? (
-                            <Ionicons
-                              name="chevron-down"
-                              size={14}
-                              color={TEXT_MUTED}
-                              style={{
-                                transform: [{ rotate: burnChipsExpanded ? "0deg" : "-90deg" }],
-                              }}
-                            />
-                          ) : null}
-                        </View>
-                      </Pressable>
-                      {burnChipsExpanded && plannedBurnActivities.length > 0 ? (
-                        <View style={styles.burnChipRow}>
-                          {plannedBurnActivities.map((activity) => (
-                            <View key={activity.id} style={styles.burnChip}>
+                      </View>
+                    ) : (
+                      <>
+                        <Pressable
+                          style={styles.metricsRowBurn}
+                          onPress={
+                            plannedBurnActivities.length > 0
+                              ? () => setBurnChipsExpanded((prev) => !prev)
+                              : undefined
+                          }
+                          accessibilityRole="button"
+                          accessibilityState={{ expanded: burnChipsExpanded }}
+                        >
+                          <View style={styles.metricsRowLeft}>
+                            <Ionicons name="flame" size={16} color={ORANGE} />
+                            <Text style={styles.metricsBurnLabel}>{t("home.toBurn")}</Text>
+                          </View>
+                          <View style={styles.metricsBurnRight}>
+                            <Text style={styles.metricsBurnValue}>{formatNum(bestResultsBurnTarget)}</Text>
+                            <Text style={styles.metricsBurnMin}>
+                              {t("home.burnMinSuffix", { min: formatNum(minBurnTarget) })}
+                            </Text>
+                            {plannedBurnActivities.length > 0 ? (
                               <Ionicons
-                                name={activity.kind === "cardioWarmup" ? "walk" : "barbell"}
-                                size={12}
+                                name="chevron-down"
+                                size={14}
                                 color={TEXT_MUTED}
+                                style={{
+                                  transform: [{ rotate: burnChipsExpanded ? "0deg" : "-90deg" }],
+                                }}
                               />
-                              <Text style={styles.burnChipText} numberOfLines={1}>
-                                {`${plannedBurnChipLabel(activity)} +${activity.kcal}`}
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
-                      ) : null}
-                    </>
-                  )}
+                            ) : null}
+                          </View>
+                        </Pressable>
+                        {burnChipsExpanded && plannedBurnActivities.length > 0 ? (
+                          <View style={styles.burnChipRow}>
+                            {plannedBurnActivities.map((activity) => (
+                              <View key={activity.id} style={styles.burnChip}>
+                                <Ionicons
+                                  name={activity.kind === "cardioWarmup" ? "walk" : "barbell"}
+                                  size={12}
+                                  color={TEXT_MUTED}
+                                />
+                                <Text style={styles.burnChipText} numberOfLines={1}>
+                                  {`${plannedBurnChipLabel(activity)} +${activity.kcal}`}
+                                </Text>
+                              </View>
+                            ))}
+                          </View>
+                        ) : null}
+                      </>
+                    )}
+                  </View>
                 </View>
               </View>
+              {goalPendingLabel ? (
+                <>
+                  <View style={styles.goalPendingDivider} />
+                  <Text style={styles.goalPendingText}>{goalPendingLabel}</Text>
+                </>
+              ) : null}
             </View>
           </Animated.View>
 
@@ -1152,16 +1192,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+  },
+  goalCard: {
+    backgroundColor: CARD,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingTop: 11.2,
+    paddingBottom: 11.2,
+    borderWidth: 0.5,
+    borderColor: TRACK,
     marginBottom: 16,
+  },
+  goalPendingDivider: {
+    height: 0.5,
+    backgroundColor: TRACK,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  goalPendingText: {
+    fontSize: 13,
+    color: TEXT_MUTED,
+    lineHeight: 18,
   },
   kpiColumn: { flex: 1 },
   metricsCard: {
-    backgroundColor: CARD,
-    borderRadius: 12,
-    paddingVertical: 11.2,
-    paddingHorizontal: 16,
-    borderWidth: 0.5,
-    borderColor: TRACK,
+    flex: 1,
   },
   metricsRow: {
     flexDirection: "row",

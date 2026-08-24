@@ -1,4 +1,12 @@
 import { apiClient } from "./client";
+import type { WeightLatestSnapshot } from "../utils/resolveBurnTargetWeightKg";
+
+export type WeightLatestResponse = WeightLatestSnapshot & {
+  weight_lb?: number | null;
+  log_date?: string | null;
+  days_since_log?: number | null;
+  note?: string | null;
+};
 
 export type WeightHistoryEntry = {
   id: number;
@@ -21,5 +29,10 @@ export type WeightHistoryResponse = {
 
 export async function fetchWeightHistory(days = 365): Promise<WeightHistoryResponse> {
   const { data } = await apiClient.get<WeightHistoryResponse>("/api/weight/history", { params: { days } });
+  return data;
+}
+
+export async function fetchWeightLatest(): Promise<WeightLatestResponse> {
+  const { data } = await apiClient.get<WeightLatestResponse>("/api/weight/latest");
   return data;
 }
