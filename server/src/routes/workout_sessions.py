@@ -8,36 +8,21 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.db.session import get_db
 from src.models.models import (
     Activity,
-    GlobalExercise,
     User,
     Workout,
     WorkoutSession,
     WorkoutSessionSetLog,
 )
 from src.services.activity_feed_service import emit_streak_milestone_if_needed
+from src.services.exercise_met_service import resolve_met_for_exercise
 from src.utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/sessions", tags=["workout-sessions"])
-
-DEFAULT_MET = 5.0
-COMPOUND_HINTS = (
-    "squat",
-    "deadlift",
-    "bench press",
-    "overhead press",
-    "barbell row",
-    "pull-up",
-    "pull up",
-    "chin-up",
-    "chin up",
-)
-ISOLATION_HINTS = ("curl", "fly", "extension", "lateral raise")
 
 
 class SetLogIn(BaseModel):
@@ -68,37 +53,8 @@ class CompleteSessionResponse(BaseModel):
     streak_incremented: bool
 
 
-def _met_fallback_from_name(name: str) -> float:
-    key = (name or "").lower()
-    if any(h in key for h in COMPOUND_HINTS):
-        return 6.0
-    if any(h in key for h in ISOLATION_HINTS):
-        return 3.5
-    return DEFAULT_MET
-
-
 def _lookup_met(db: Session, exercise_name: str) -> float:
-    name = (exercise_name or "").strip()
-    if not name:
-        return DEFAULT_MET
-    row = (
-        db.query(GlobalExercise.met_value)
-        .filter(func.lower(GlobalExercise.name) == name.lower())
-        .first()
-    )
-    if row and row[0] is not None and float(row[0]) > 0:
-        return float(row[0])
-    # partial match
-    rows = (
-        db.query(GlobalExercise.name, GlobalExercise.met_value)
-        .filter(func.lower(GlobalExercise.name).contains(name.lower()))
-        .limit(5)
-        .all()
-    )
-    for _n, met in rows:
-        if met is not None and float(met) > 0:
-            return float(met)
-    return _met_fallback_from_name(name)
+    return resolve_met_for_exercise(db, exercise_name=exercise_name)
 
 
 def _set_kcal(met: float, user_weight_kg: float, started_at: datetime, completed_at: datetime) -> float:

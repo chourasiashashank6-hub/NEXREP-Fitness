@@ -32,8 +32,8 @@ import type { RootStackParamList } from "../navigation/types";
 import {
   calcExerciseEstimateKcal,
   calcSetKcal,
-  metForExercise,
 } from "../utils/sessionCalories";
+import { resolveMetForExercise } from "../utils/exerciseMetLookup";
 import { notifyUser } from "../utils/notify";
 
 const GREEN = "#0F6E56";
@@ -143,7 +143,7 @@ export default function ActiveWorkoutScreen() {
           sets: ex.sets,
           reps: parseReps(ex.reps),
           rest_seconds: ex.rest_seconds || 90,
-          met_value: metForExercise(ex.name),
+          met_value: resolveMetForExercise(ex.name),
         }));
 
         const dayName = planDay.split_name;

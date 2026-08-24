@@ -554,16 +554,27 @@ def estimate_workout_calories(payload: WorkoutRequest) -> int:
     return 15
 
 
-def estimate_workout_calories_via_met(payload: WorkoutRequest, body_weight_kg: float) -> int:
-    """Session-model calories — aligned with mobile sessionCalories.ts burn targets."""
+def estimate_workout_calories_via_met(
+    payload: WorkoutRequest,
+    body_weight_kg: float,
+    db: Session | None = None,
+) -> int:
+    """Session-model calories using per-exercise MET from the exercise catalog."""
+    from src.services.exercise_met_service import resolve_met_for_exercise
     from src.services.session_calories import estimate_workout_calories_session_model
 
+    met = resolve_met_for_exercise(
+        db,
+        exercise_id=payload.exercise_id,
+        exercise_name=payload.exerciseName,
+    )
     return estimate_workout_calories_session_model(
         exercise_name=payload.exerciseName,
         sets=payload.sets,
         duration_minutes=payload.duration,
         time_taken=payload.timeTaken,
         user_weight_kg=body_weight_kg,
+        met=met,
     )
 
 
@@ -659,6 +670,7 @@ def _estimate_saved_workout_calories(
             timeTaken=effective_time_taken,
         ),
         user_weight_kg or 70,
+        db,
     )
 
 
@@ -2183,12 +2195,14 @@ def add_activity(
 def estimate_workout_calories_endpoint(
     payload: WorkoutRequest,
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Same MET-based model as POST /workout, without persisting — for UI previews."""
     return {
         "estimatedCalories": estimate_workout_calories_via_met(
             payload,
             float(current_user.weight or 70),
+            db,
         ),
     }
 
@@ -2212,7 +2226,19 @@ def add_workout(
     db.commit()
     db.refresh(workout)
 
-    estimated_calories = estimate_workout_calories_via_met(payload, current_user.weight or 70)
+    estimated_calories = estimate_workout_calories_via_met(
+        WorkoutRequest(
+            exercise_id=workout.exercise_id,
+            type=payload.type,
+            exerciseName=payload.exerciseName,
+            sets=payload.sets,
+            reps=payload.reps,
+            duration=payload.duration,
+            timeTaken=payload.timeTaken,
+        ),
+        current_user.weight or 70,
+        db,
+    )
     dashboard_activity = Activity(
         user_id=current_user.id,
         kind="exercise",
