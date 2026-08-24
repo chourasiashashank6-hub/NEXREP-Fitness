@@ -23,7 +23,10 @@ router = APIRouter(prefix="/api/fasting", tags=["fasting-meals"])
 
 
 class FastingPreferencePayload(BaseModel):
-    period_type: str = Field(..., description="navratri | ramadan | ekadashi | custom")
+    period_type: str = Field(
+        ...,
+        description="navratri | ramadan | ekadashi | custom | karva_chauth | sawan_somwar | maha_shivratri | janmashtami | vat_savitri | chhath_puja",
+    )
     start_date: date
     end_date: date
     active: bool = True

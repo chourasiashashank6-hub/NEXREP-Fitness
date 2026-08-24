@@ -60,6 +60,16 @@
     "logAction": "Log →",
     "toEat": "to eat",
     "toBurn": "to burn",
+    "toBurnToday": "to burn today",
+    "burnMinimum": "minimum",
+    "burnBestResults": "for best results",
+    "burnChipCardio": "warm-up",
+    "burnChipWorkout": "workout",
+    "burnMinSuffix": "/ min {{min}}",
+    "burnActivityCardio": "today's warm-up",
+    "burnActivityWorkout": "today's workout session",
+    "burnCaptionOne": "{{total}} = {{activity}}",
+    "burnCaptionTwo": "{{total}} = {{first}} + {{second}} combined",
     "eatingOnly": "eating only",
     "restDayNoBurn": "Rest day — no burn target",
     "todaysGoal": "TODAY'S GOAL",
@@ -196,6 +206,8 @@
     "goToAdmin": "Go to Admin",
     "feedback": "Feedback",
     "notificationPreferences": "Notification preferences",
+    "preWorkoutSessions": "Pre-workout warm-up sessions",
+    "preWorkoutSessionsSub": "AI-recommended warm-up before each workout",
     "fastingPreferences": "Fasting meal calendar",
     "transformationTimeline": "Transformation timeline",
     "language": "Language",
@@ -257,6 +269,9 @@
     "sessions": "exercises",
     "target": "target",
     "burnProgress": "🔥 Burn progress",
+    "burnMinMarker": "Line marks the {{kcal}} kcal minimum",
+    "plannedCardioWarmup": "Cardio warm-up",
+    "plannedWorkoutSession": "{{name}} session",
     "done": "Done ✓",
     "logNewWorkout": "Log new workout",
     "goalTag": "Goal tag",
@@ -449,7 +464,7 @@
     "startDate": "Start date",
     "endDate": "End date",
     "save": "Save period",
-    "manualDatesNote": "Navratri, Ramadan, and Ekadashi dates shift every year — enter the dates that apply to you.",
+    "manualDatesNote": "Fasting dates shift every year — enter the start and end dates that apply to you for each occasion.",
     "savedPeriods": "Saved periods",
     "dateRange": "{{start}} → {{end}}",
     "statusActive": "Active",
@@ -464,7 +479,13 @@
       "navratri": "Navratri",
       "ramadan": "Ramadan",
       "ekadashi": "Ekadashi",
-      "custom": "Custom fast"
+      "custom": "Custom fast",
+      "karva_chauth": "Karva Chauth",
+      "sawan_somwar": "Sawan Somwar",
+      "maha_shivratri": "Maha Shivratri",
+      "janmashtami": "Janmashtami",
+      "vat_savitri": "Vat Savitri",
+      "chhath_puja": "Chhath Puja"
     },
     "alerts": {
       "loadFailed": "Could not load fasting preferences.",
@@ -1490,6 +1511,7 @@
   },
   "settings": {
     "screenTitle": "Settings",
+    "preWorkoutSaveFailed": "Could not save pre-workout preference. Please try again.",
     "notifications": {
       "title": "Notification Preferences",
       "subtitle": "Control reminders, quiet hours, and workout timing offsets.",
@@ -2453,9 +2475,9 @@
   "onboarding": {
     "layout": {
       "screenCounter": "SCREEN {{step}} OF 6",
-      "stepCounter": "{{step}} / 6",
+      "stepCounter": "Step {{step}} of {{total}}",
       "nextArrow": "{{label}} →",
-      "saveAndExit": "Save & exit ✓",
+      "saveAndExit": "Save & exit",
       "loading": "Loading your info…"
     },
     "unsaved": {
@@ -2664,6 +2686,8 @@
       "dailyActivityLevel": "Daily activity level",
       "workoutsPerWeek": "Workouts per week",
       "workoutTypesOptional": "Workout types (optional)",
+      "preWorkoutEnabled": "Pre-workout warm-up sessions",
+      "preWorkoutEnabledSub": "Get an AI-recommended warm-up before each workout.",
       "muscleFocusOptional": "Muscle Focus (Optional)",
       "muscleFocusHelper": "Select one or more muscle groups — we'll add extra volume in your monthly workout plan",
       "errors": {

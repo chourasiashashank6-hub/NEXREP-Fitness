@@ -16,6 +16,7 @@ import {
   type ReflowDaySnapshot,
   type SmartReflowPatch,
 } from "../utils/smartReflow";
+import { extractReflowMovesFromDays } from "../utils/reflowExerciseMeta";
 import type { ReflowMove } from "../utils/reflowNotifyMessage";
 import {
   acknowledgeTier3Prompt,
@@ -101,7 +102,7 @@ export async function runSmartReflowDetection(
       getWorkoutHistory(24 * 14),
     ]);
 
-    const { patches, moves, assessment } = buildSmartReflowPatches(currentPlan, snapshots, items);
+    const { patches, assessment } = buildSmartReflowPatches(currentPlan, snapshots, items);
 
     if (assessment.entirePlanPeriodMissed) {
       return { status: "full_month_reset", assessment };
@@ -114,17 +115,28 @@ export async function runSmartReflowDetection(
       return { status: "tier3_prompt", assessment, stateId };
     }
 
-    if (!patches.length || !moves.length) {
+    if (!patches.length) {
       return { status: "noop" };
     }
 
-    const { applied_days: appliedDays = [] } = await applySmartReflow({
+    const applyResult = await applySmartReflow({
       plan_id: currentPlan.plan_id,
       patches,
     });
+    const appliedDays = applyResult.applied_days ?? [];
     if (!appliedDays.length) {
       return { status: "noop" };
     }
+
+    let persistedDays = applyResult.days ?? [];
+    if (!persistedDays.length) {
+      persistedDays = await Promise.all(appliedDays.map((day) => fetchWorkoutPlanDay(day)));
+    }
+    const moves = extractReflowMovesFromDays(persistedDays);
+    if (!moves.length) {
+      return { status: "noop" };
+    }
+
     const refreshed = await fetchWorkoutPlanCurrent();
     const plan = refreshed ?? currentPlan;
     updateGamePlanCacheWorkoutPlan(plan);

@@ -202,27 +202,60 @@ const overviewDay22 = {
   assert(id.includes("bench press"), "adaptation id normalizes exercise names");
 }
 
-// Sanitize strips reflow-tagged additions and trims overload.
+// Valid reflow additions within cap are preserved.
+{
+  const validReflow = {
+    day: 21,
+    is_rest_day: false,
+    split_name: "Push",
+    focus_muscles: ["Chest", "Shoulders", "Triceps"],
+    estimated_duration_min: 90,
+    exercises: [
+      ...Array.from({ length: 6 }, (_, i) => ({ ...bench, name: `Base ${i + 1}` })),
+      { ...bench, name: "Incline Dumbbell Press", muscle: "Chest", reflow_source_day: 1 },
+    ],
+  };
+  assert(!plannerDayNeedsSanitization(validReflow), "valid reflow within cap is kept");
+  const kept = sanitizePlannerDayDetail(validReflow);
+  assert(kept.exercises.length === 7, "keeps valid reflow exercise");
+  assert(kept.exercises.some((ex) => (ex as { reflow_source_day?: number }).reflow_source_day === 1), "keeps reflow tag");
+}
+
+// Sanitize still repairs over-cap days and legacy untagged overload.
 {
   const overloaded = {
     day: 21,
     is_rest_day: false,
-    split_name: "Lower A",
-    focus_muscles: ["Quads"],
+    split_name: "Leg Day",
+    focus_muscles: ["Quads", "Hamstrings", "Glutes"],
     estimated_duration_min: 120,
     exercises: [
-      ...Array.from({ length: 6 }, (_, i) => ({ ...bench, name: `Base ${i + 1}` })),
-      { ...bench, name: "Incline Dumbbell Press", reflow_source_day: 1 },
-      { ...bench, name: "Pull-ups", reflow_source_day: 1 },
+      ...Array.from({ length: 6 }, (_, i) => ({ ...bench, name: `Base ${i + 1}`, muscle: "Quads" })),
+      { ...bench, name: "Glute Bridge", muscle: "Glutes", reflow_source_day: 1 },
+      { ...bench, name: "Romanian Deadlift", muscle: "Hamstrings", reflow_source_day: 1 },
+      { ...bench, name: "Calf Raises", muscle: "Calves", reflow_source_day: 2 },
     ],
   };
-  assert(plannerDayNeedsSanitization(overloaded), "detects reflow corruption");
+  assert(plannerDayNeedsSanitization(overloaded), "detects over-cap reflow day");
   const cleaned = sanitizePlannerDayDetail(overloaded);
-  assert(cleaned.exercises.length === 6, "restores base exercise count");
-  assert(!cleaned.exercises.some((ex) => (ex as { reflow_source_day?: number }).reflow_source_day), "removes reflow tags");
+  assert(cleaned.exercises.length === REFLOW_MAX_EXERCISES_PER_DAY, "trims to reflow cap");
 }
 
-// Current-plan payload sanitizes embedded today day.
+{
+  const legacyUntagged = {
+    day: 21,
+    is_rest_day: false,
+    split_name: "Push",
+    focus_muscles: ["Chest"],
+    estimated_duration_min: 120,
+    exercises: Array.from({ length: 11 }, (_, i) => ({ ...bench, name: `Base ${i + 1}` })),
+  };
+  assert(plannerDayNeedsSanitization(legacyUntagged), "detects legacy untagged overload");
+  const cleaned = sanitizePlannerDayDetail(legacyUntagged);
+  assert(cleaned.exercises.length === 6, "restores base exercise count for legacy overload");
+}
+
+// Current-plan payload sanitizes embedded today day when invalid.
 {
   const plan = {
     plan_id: 1,
@@ -233,17 +266,14 @@ const overviewDay22 = {
     today: {
       day: 21,
       is_rest_day: false,
-      split_name: "Lower A",
-      focus_muscles: ["Quads"],
+      split_name: "Push",
+      focus_muscles: ["Chest"],
       estimated_duration_min: 120,
-      exercises: [
-        ...Array.from({ length: 6 }, (_, i) => ({ ...bench, name: `Base ${i + 1}` })),
-        { ...bench, name: "Incline Dumbbell Press", reflow_source_day: 1 },
-      ],
+      exercises: Array.from({ length: 11 }, (_, i) => ({ ...bench, name: `Base ${i + 1}` })),
     },
   } as WorkoutPlanCurrent;
   const cleaned = sanitizeWorkoutPlanCurrent(plan);
-  assert(cleaned?.today?.exercises.length === 6, "sanitizes plan.today for Home/Game Plan");
+  assert(cleaned?.today?.exercises.length === 6, "sanitizes overloaded plan.today for Home/Game Plan");
 }
 
 // Tier 1 — only compound exercises move; isolation stays on missed day.

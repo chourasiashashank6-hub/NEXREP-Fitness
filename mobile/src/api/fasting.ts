@@ -1,6 +1,16 @@
 import { apiClient } from "./client";
 
-export type FastingPeriodType = "navratri" | "ramadan" | "ekadashi" | "custom";
+export type FastingPeriodType =
+  | "navratri"
+  | "ramadan"
+  | "ekadashi"
+  | "custom"
+  | "karva_chauth"
+  | "sawan_somwar"
+  | "maha_shivratri"
+  | "janmashtami"
+  | "vat_savitri"
+  | "chhath_puja";
 
 export type FastingPreference = {
   id: number;

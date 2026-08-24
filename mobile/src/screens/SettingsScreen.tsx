@@ -13,13 +13,16 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
+import { fetchOnboardingMe, upsertOnboardingMe } from "../api/onboarding";
 import { submitFeedback } from "../api/feedback";
 import { getProfile } from "../api/user";
 import { BlurredModal } from "../components/BlurredModal";
 import { BottomSheetPicker } from "../components/BottomSheetPicker";
 import DevSubscriptionToggle from "../components/DevSubscriptionToggle";
 import { RightDrawerShell } from "../components/RightDrawerShell";
+import { ToggleRow } from "../components/ToggleRow";
 import { TIER_COLORS } from "../constants/tierColors";
+import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { useLanguageStore } from "../i18n/languageStore";
 import { signOutSession } from "../services/authService";
 import { useAuthStore } from "../store/authStore";
@@ -28,6 +31,8 @@ import type { PlanTier } from "../types/subscription";
 import { logicalRow, textAlignStart } from "../utils/rtl";
 import { navigationRef } from "../navigation/navigationRef";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
+import { saveOnboardingData } from "../storage/onboarding";
+import { isPreWorkoutEnabled } from "../utils/preWorkoutPreference";
 
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 const LANGUAGE_OPTIONS = [
@@ -54,6 +59,7 @@ export function SettingsScreen() {
   const navigation = useNavigation<any>();
   const { hasFeatureAccess } = useFeatureAccess();
   const canManageFasting = hasFeatureAccess("fasting_aware_meals");
+  const { refresh: refreshOnboarding } = useOnboardingContext();
   const language = useLanguageStore((s) => s.explicitLanguage || s.language);
   const setLanguage = useLanguageStore((s) => s.setLanguage);
   const token = useAuthStore((s) => s.token);
@@ -67,6 +73,8 @@ export function SettingsScreen() {
   const [feedbackBody, setFeedbackBody] = useState("");
   const [sendingFeedback, setSendingFeedback] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const [preWorkoutEnabled, setPreWorkoutEnabled] = useState(true);
+  const [savingPreWorkout, setSavingPreWorkout] = useState(false);
 
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
   const fetchPayments = useSubscriptionStore((s) => s.fetchPayments);
@@ -95,6 +103,12 @@ export function SettingsScreen() {
     } catch {
       // keep prior values
     }
+    try {
+      const onboarding = await fetchOnboardingMe();
+      setPreWorkoutEnabled(isPreWorkoutEnabled(onboarding?.onboarding));
+    } catch {
+      // keep prior value
+    }
   }, [token]);
 
   useFocusEffect(
@@ -111,6 +125,36 @@ export function SettingsScreen() {
       }
     }, [userId, fetchSubscription, fetchPayments]),
   );
+
+  const onPreWorkoutToggle = async (enabled: boolean) => {
+    if (!token || savingPreWorkout) return;
+    const previous = preWorkoutEnabled;
+    setPreWorkoutEnabled(enabled);
+    setSavingPreWorkout(true);
+    try {
+      const remote = await fetchOnboardingMe();
+      if (!remote?.onboarding || !remote.targets) {
+        setPreWorkoutEnabled(previous);
+        return;
+      }
+      const nextOnboarding = {
+        ...remote.onboarding,
+        app_setup: {
+          ...remote.onboarding.app_setup,
+          pre_workout_enabled: enabled,
+        },
+      };
+      const saved = await upsertOnboardingMe({ onboarding: nextOnboarding, targets: remote.targets });
+      await saveOnboardingData(token, saved.onboarding);
+      await refreshOnboarding();
+      setPreWorkoutEnabled(isPreWorkoutEnabled(saved.onboarding));
+    } catch {
+      setPreWorkoutEnabled(previous);
+      Alert.alert(t("common.error"), t("settings.preWorkoutSaveFailed"));
+    } finally {
+      setSavingPreWorkout(false);
+    }
+  };
 
   const onSubmitFeedback = async () => {
     const subject = feedbackSubject.trim();
@@ -246,6 +290,14 @@ export function SettingsScreen() {
               <Text style={styles.footerLabel}>{t("profile.notificationPreferences")}</Text>
               <Text style={styles.footerChevron}>›</Text>
             </Pressable>
+            <View style={styles.preWorkoutToggleWrap}>
+              <ToggleRow
+                label={t("profile.preWorkoutSessions")}
+                subLabel={t("profile.preWorkoutSessionsSub")}
+                value={preWorkoutEnabled}
+                onChange={(enabled) => void onPreWorkoutToggle(enabled)}
+              />
+            </View>
             {canManageFasting ? (
               <Pressable style={styles.footerRow} onPress={() => navigation.navigate("FastingPreferences")}>
                 <View style={styles.footerIconTile}>
@@ -393,6 +445,7 @@ const styles = StyleSheet.create({
   subscriptionsPlanBadgeText: { fontSize: 9, lineHeight: 11, fontWeight: "800", textAlign: "center" },
   subscriptionsSubtitle: { fontSize: 10, lineHeight: 14, marginTop: 2, textAlign: textAlignStart },
   footerCard: { backgroundColor: BG, borderRadius: 16, padding: 8, gap: 2, marginBottom: 14 },
+  preWorkoutToggleWrap: { paddingHorizontal: 4, paddingVertical: 4 },
   footerRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderBottomWidth: 1, borderBottomColor: BORDER },
   footerPickerRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 10, borderBottomWidth: 1, borderBottomColor: BORDER },
   footerPickerContent: { flex: 1, gap: 8 },

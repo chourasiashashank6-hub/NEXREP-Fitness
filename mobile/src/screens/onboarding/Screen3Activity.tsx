@@ -1,9 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MultiChips } from "../../components/MultiChips";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { RequiredBadge, RequiredLabelRow } from "../../components/RequiredBadge";
+import { ToggleRow } from "../../components/ToggleRow";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { StalePlanModal } from "../../components/StalePlanModal";
 import { useOnboardingStalePlanCheck } from "../../hooks/useOnboardingStalePlanCheck";
@@ -20,7 +20,6 @@ import {
   isGoalFocusMuscleSelected,
   toggleGoalFocusMuscle,
 } from "../../utils/onboardingFocusMuscles";
-import { WORKOUT_TYPE_OPTIONS } from "../../utils/onboardingOptions";
 import type { ActivityLevel } from "../../types/onboarding";
 
 const GREEN = "#0F6E56";
@@ -47,7 +46,7 @@ function workoutsLabel(count: number, t: (key: string, opts?: object) => string)
 
 export default function Screen3Activity({ navigation }: any) {
   const { t } = useTranslation();
-  const { data, updateActivity, updateGoal, isHydrating } = useOnboardingContext();
+  const { data, updateActivity, updateGoal, updateAppSetup, isHydrating } = useOnboardingContext();
   const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -141,8 +140,12 @@ export default function Screen3Activity({ navigation }: any) {
         </View>
 
         <View style={styles.block}>
-          <Text style={styles.label}>{t("onboarding.screen3.workoutTypesOptional")}</Text>
-          <MultiChips options={WORKOUT_TYPE_OPTIONS} values={data.activity.workout_types} onChange={(v) => updateActivity({ workout_types: v })} />
+          <ToggleRow
+            label={t("onboarding.screen3.preWorkoutEnabled")}
+            subLabel={t("onboarding.screen3.preWorkoutEnabledSub")}
+            value={data.app_setup.pre_workout_enabled !== false}
+            onChange={(enabled) => updateAppSetup({ pre_workout_enabled: enabled })}
+          />
         </View>
 
         <View style={styles.block}>

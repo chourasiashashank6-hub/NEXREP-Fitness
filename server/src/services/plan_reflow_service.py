@@ -188,6 +188,77 @@ def _remaining_reflow_slots(exercise_count: int) -> int:
     return max(0, REFLOW_MAX_EXERCISES_PER_DAY - exercise_count)
 
 
+def _is_missed_plan_day(entry_date: date, today: date, has_workout_log: bool) -> bool:
+    """A plan day is missed only after the local calendar day has fully passed."""
+    if entry_date >= today:
+        return False
+    return not has_workout_log
+
+
+def _dedupe_exercises_by_name(exercises: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[str] = set()
+    kept: list[dict[str, Any]] = []
+    for exercise in exercises:
+        name = (str(exercise.get("name") or "")).strip().lower()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        kept.append(exercise)
+    return kept
+
+
+def _trim_exercises_to_cap(exercises: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    trimmed = list(exercises)
+    while len(trimmed) > REFLOW_MAX_EXERCISES_PER_DAY:
+        reflow_index = next(
+            (index for index, exercise in enumerate(trimmed) if exercise.get("reflow_source_day")),
+            -1,
+        )
+        if reflow_index >= 0:
+            trimmed.pop(reflow_index)
+        else:
+            trimmed.pop()
+    return trimmed
+
+
+def _repair_day_exercises(exercises: list[dict[str, Any]], entry: DailyWorkoutPlanEntry) -> list[dict[str, Any]]:
+    """Keep valid Smart Reflow writes; fix duplicates, over-cap, and incompatible reflow only."""
+    normalized = _normalize_exercises(exercises)
+    repaired = _dedupe_exercises_by_name(normalized)
+    repaired = [
+        exercise
+        for exercise in repaired
+        if not exercise.get("reflow_source_day") or _is_exercise_compatible_with_day(exercise, entry)
+    ]
+    repaired = _trim_exercises_to_cap(repaired)
+
+    has_reflow = any(exercise.get("reflow_source_day") for exercise in repaired)
+    target = min(PLANNER_BASE_EXERCISES_PER_DAY, REFLOW_MAX_EXERCISES_PER_DAY)
+    if not has_reflow and len(repaired) > target:
+        repaired = repaired[:target]
+    return repaired
+
+
+def _day_needs_repair(exercises: list[dict[str, Any]], entry: DailyWorkoutPlanEntry) -> bool:
+    normalized = _normalize_exercises(exercises)
+    if not normalized:
+        return False
+    if len(normalized) > REFLOW_MAX_EXERCISES_PER_DAY:
+        return True
+    if len(_exercise_names(normalized)) < len(normalized):
+        return True
+    if any(
+        exercise.get("reflow_source_day") and not _is_exercise_compatible_with_day(exercise, entry)
+        for exercise in normalized
+    ):
+        return True
+    has_reflow = any(exercise.get("reflow_source_day") for exercise in normalized)
+    target = min(PLANNER_BASE_EXERCISES_PER_DAY, REFLOW_MAX_EXERCISES_PER_DAY)
+    if not has_reflow and len(normalized) > target:
+        return True
+    return False
+
+
 def apply_reflow_patches(
     db: Session,
     user: User,
@@ -279,15 +350,6 @@ def apply_reflow_patches(
     return {"applied_days": applied, "plan_id": plan.id, "days": updated_days}
 
 
-def _sanitize_reflowed_exercises(exercises: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Remove reflow-tagged additions and trim legacy untagged overload back to base size."""
-    kept = [exercise for exercise in exercises if not exercise.get("reflow_source_day")]
-    target = min(PLANNER_BASE_EXERCISES_PER_DAY, REFLOW_MAX_EXERCISES_PER_DAY)
-    if len(kept) > target:
-        kept = kept[:target]
-    return kept
-
-
 def repair_smart_reflow_plan(
     db: Session,
     user: User,
@@ -295,7 +357,7 @@ def repair_smart_reflow_plan(
     plan_id: int,
     local_date: str | None,
 ) -> dict[str, Any]:
-    """Remove Smart Reflow additions and enforce the per-day exercise cap."""
+    """Repair invalid planner day states (cap, duplicates, incompatible reflow)."""
     require_feature(user, "smart_reflow", db)
 
     plan = (
@@ -315,13 +377,15 @@ def repair_smart_reflow_plan(
         exercises = _normalize_exercises(safe_json_loads(entry.exercises_json))
         if not exercises:
             continue
-
-        target = min(PLANNER_BASE_EXERCISES_PER_DAY, REFLOW_MAX_EXERCISES_PER_DAY)
-        needs_repair = any(exercise.get("reflow_source_day") for exercise in exercises) or len(exercises) > target
-        if not needs_repair:
+        if not _day_needs_repair(exercises, entry):
             continue
 
-        kept = _sanitize_reflowed_exercises(exercises)
+        kept = _repair_day_exercises(exercises, entry)
+
+        entry.exercises_json = safe_json_dumps(kept)
+        entry.estimated_duration_min = estimate_duration_min(kept)
+        db.add(entry)
+        repaired_days.append(entry.day)
 
         entry.exercises_json = safe_json_dumps(kept)
         entry.estimated_duration_min = estimate_duration_min(kept)
@@ -388,9 +452,10 @@ def build_weekly_review(db: Session, user: User, local_date: str | None) -> dict
             for exercise in _normalize_exercises(safe_json_loads(entry.exercises_json)):
                 muscle = str(exercise.get("muscle") or "Other").strip() or "Other"
                 planned_muscle_sets[muscle] = planned_muscle_sets.get(muscle, 0) + max(1, int(exercise.get("sets") or 1))
-            if day_has_any_workout_log(db, user.id, plan.year, plan.month, entry.day):
+            has_log = day_has_any_workout_log(db, user.id, plan.year, plan.month, entry.day)
+            if has_log:
                 completed_days += 1
-            else:
+            elif _is_missed_plan_day(entry_date, today, has_log):
                 missed_days.append(entry.day)
 
     start_dt, _ = _day_datetime_bounds(week_start)

@@ -52,6 +52,7 @@ export type OnboardingData = {
   };
   body_type?: BodyTypeData;
   app_setup: {
+    pre_workout_enabled: boolean;
     weigh_in_reminder_enabled: boolean;
     reminder_time: string;
     water_intake_goal_liters: number | null;

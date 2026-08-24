@@ -554,74 +554,17 @@ def estimate_workout_calories(payload: WorkoutRequest) -> int:
     return 15
 
 
-def parse_time_taken_to_hours(time_taken: str | None) -> float | None:
-    if not time_taken:
-        return None
-    try:
-        minute_part, second_part = time_taken.split(":")
-        minutes = int(minute_part)
-        seconds = int(second_part)
-    except (ValueError, AttributeError):
-        return None
-    if minutes < 0 or seconds < 0 or seconds > 59:
-        return None
-    return (minutes * 60 + seconds) / 3600
-
-
-def met_from_difficulty_and_volume(difficulty: str | None, sets: int | None, reps: int | None) -> float:
-    difficulty_key = (difficulty or "").strip().lower()
-    base_met_map = {"beginner": 3.5, "intermediate": 5.5, "advanced": 7.5}
-    base_met = base_met_map.get(difficulty_key, 4.5)
-    volume = max(0, (sets or 0) * (reps or 0))
-    volume_bonus = min(2.0, volume / 120)
-    return base_met + volume_bonus
-
-
 def estimate_workout_calories_via_met(payload: WorkoutRequest, body_weight_kg: float) -> int:
-    parsed_time_in_hours = parse_time_taken_to_hours(payload.timeTaken)
-    met_value = payload.metValue if payload.metValue and payload.metValue > 0 else met_from_difficulty_and_volume(payload.difficulty, payload.sets, payload.reps)
+    """Session-model calories — aligned with mobile sessionCalories.ts burn targets."""
+    from src.services.session_calories import estimate_workout_calories_session_model
 
-    # Explicit influence from both sets and reps independently so changes are
-    # visible even when total volume is similar.
-    sets = max(1, int(payload.sets or 1))
-    reps = max(1, int(payload.reps or 1))
-    volume = sets * reps
-
-    # Approximate training time from volume:
-    # ~2.2 sec per rep + ~45 sec rest between sets.
-    active_seconds = sets * reps * 2.2
-    rest_seconds = max(0, sets - 1) * 45
-    expected_seconds = max(60, int(round(active_seconds + rest_seconds)))
-    expected_time_hours = expected_seconds / 3600.0
-
-    # Keep MET baseline tied to expected workload time so longer logged time
-    # does not artificially increase calories for identical volume.
-    base_calories = met_value * body_weight_kg * expected_time_hours
-
-    # Baseline around common template 3 sets x 12 reps.
-    baseline_sets = 3
-    baseline_reps = 12
-
-    # Independent multipliers:
-    # - more sets => more total work/rest overhead and session strain
-    # - higher reps => longer time-under-tension per set
-    set_multiplier = 1.0 + ((sets - baseline_sets) * 0.09)
-    rep_multiplier = 1.0 + ((reps - baseline_reps) * 0.025)
-    set_multiplier = max(0.65, min(2.0, set_multiplier))
-    rep_multiplier = max(0.70, min(1.8, rep_multiplier))
-
-    # Additional explicit volume calories so integer rounding does not hide
-    # differences in nearby inputs.
-    volume_bonus_kcal = max(0, volume - (baseline_sets * baseline_reps)) * 0.8
-
-    pace_multiplier = 1.0
-    if parsed_time_in_hours is not None and parsed_time_in_hours > 0:
-        actual_seconds = max(1, int(round(parsed_time_in_hours * 3600)))
-        pace_ratio = expected_seconds / actual_seconds
-        pace_multiplier = max(0.75, min(1.40, pace_ratio ** 0.6))
-
-    calories = (base_calories * set_multiplier * rep_multiplier * pace_multiplier) + volume_bonus_kcal
-    return max(1, int(round(calories)))
+    return estimate_workout_calories_session_model(
+        exercise_name=payload.exerciseName,
+        sets=payload.sets,
+        duration_minutes=payload.duration,
+        time_taken=payload.timeTaken,
+        user_weight_kg=body_weight_kg,
+    )
 
 
 def normalize_optional_filter(value: str | None) -> str | None:
@@ -704,17 +647,6 @@ def _estimate_saved_workout_calories(
     db: Session,
     override_time_taken: str | None = None,
 ) -> int:
-    catalog_row = _catalog_row_for_workout(db, workout)
-    derived_difficulty = (
-        catalog_row.difficulty
-        if catalog_row and catalog_row.difficulty
-        else _parse_value_from_notes(workout.notes, "difficulty")
-    )
-    derived_met = (
-        float(catalog_row.met_value)
-        if catalog_row and catalog_row.met_value is not None and catalog_row.met_value > 0
-        else None
-    )
     effective_time_taken = override_time_taken or (f"{int(workout.duration)}:00" if workout.duration else None)
     return estimate_workout_calories_via_met(
         WorkoutRequest(
@@ -724,8 +656,6 @@ def _estimate_saved_workout_calories(
             sets=workout.sets,
             reps=workout.reps,
             duration=workout.duration,
-            difficulty=derived_difficulty,
-            metValue=derived_met,
             timeTaken=effective_time_taken,
         ),
         user_weight_kg or 70,
@@ -1450,6 +1380,17 @@ def _normalize_onboarding_canonical_choices(onboarding: dict) -> None:
         onboarding["dietary"] = dietary
 
 
+def _normalize_app_setup(onboarding: dict) -> None:
+    app_setup = onboarding.get("app_setup") if isinstance(onboarding.get("app_setup"), dict) else {}
+    if not isinstance(app_setup, dict):
+        app_setup = {}
+    if "pre_workout_enabled" not in app_setup:
+        app_setup["pre_workout_enabled"] = True
+    else:
+        app_setup["pre_workout_enabled"] = bool(app_setup.get("pre_workout_enabled"))
+    onboarding["app_setup"] = app_setup
+
+
 def _derive_activity_from_workouts(onboarding: dict) -> None:
     """Recompute activity.level and tdee_multiplier from workouts_per_week (server source of truth)."""
     activity = onboarding.get("activity") if isinstance(onboarding.get("activity"), dict) else {}
@@ -1720,7 +1661,9 @@ def get_my_onboarding(current_user: User = Depends(get_current_user), db: Sessio
     row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
     if not row:
         raise HTTPException(status_code=404, detail="Onboarding not found")
-    return {"onboarding": row.onboarding_json, "targets": row.targets_json}
+    onboarding = row.onboarding_json if isinstance(row.onboarding_json, dict) else {}
+    _normalize_app_setup(onboarding)
+    return {"onboarding": onboarding, "targets": row.targets_json}
 
 
 @app.get("/api/quotes/random")
@@ -1945,6 +1888,7 @@ def put_my_onboarding(
     if not isinstance(payload.onboarding, dict) or not isinstance(payload.targets, dict):
         raise HTTPException(status_code=422, detail="Invalid payload")
     _normalize_onboarding_canonical_choices(payload.onboarding)
+    _normalize_app_setup(payload.onboarding)
     _normalize_target_lifts(payload.onboarding, db)
     _derive_activity_from_workouts(payload.onboarding)
     apply_onboarding_personal_to_user(current_user, payload.onboarding)
@@ -2195,15 +2139,11 @@ def summary(current_user: User = Depends(get_current_user), db: Session = Depend
     # Fallback safety: derive burn from workouts so Home always reflects saved workouts.
     calories_from_workouts = 0
     for workout in workouts:
-        synthetic_payload = WorkoutRequest(
-            exercise_id=workout.exercise_id,
-            type=workout.type,
-            exerciseName=workout.exercise_name,
-            sets=workout.sets,
-            reps=workout.reps,
-            duration=workout.duration,
+        calories_from_workouts += _estimate_saved_workout_calories(
+            workout,
+            current_user.weight or 70,
+            db,
         )
-        calories_from_workouts += estimate_workout_calories(synthetic_payload)
 
     return {
         "caloriesConsumed": sum(m.calories for m in meals),

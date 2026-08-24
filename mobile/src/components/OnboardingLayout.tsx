@@ -11,22 +11,20 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { UnsavedOnboardingModal } from "./UnsavedOnboardingModal";
-import { useOnboardingCancel } from "../hooks/useOnboardingCancel";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { logicalRow, textAlignStart } from "../utils/rtl";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
-const ORANGE = "#D85A30";
-const BG = "#F7F6F3";
 const WHITE = "#FFFFFF";
 const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
 const BORDER = "#ECEAE5";
 const SCREEN_BG = "#FFFFFF";
+const ONBOARDING_STEPS = 6;
 
 export const OnboardingLayout = ({
   step,
@@ -60,7 +58,6 @@ export const OnboardingLayout = ({
 }>) => {
   const { t } = useTranslation();
   const { isHydrating } = useOnboardingContext();
-  const { requestCancel, discardAndExit, keepEditing, modalVisible, changes } = useOnboardingCancel();
 
   const handleNext = () => {
     Keyboard.dismiss();
@@ -83,12 +80,16 @@ export const OnboardingLayout = ({
     }
   };
 
+  const nextText = t("onboarding.layout.nextArrow", {
+    label: nextLabel ?? t("common.next"),
+  });
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={styles.topPad}>
           <View style={styles.progressRow}>
-            {Array.from({ length: 6 }, (_, idx) => {
+            {Array.from({ length: ONBOARDING_STEPS }, (_, idx) => {
               const i = idx + 1;
               const bg = i <= step ? GREEN : TRACK;
               return <View key={i} style={[styles.segment, { backgroundColor: bg }]} />;
@@ -118,33 +119,34 @@ export const OnboardingLayout = ({
         <View style={styles.footer}>
           {extraFooter}
           <View style={styles.navRow}>
-            <View style={styles.leftCol}>
-              <Pressable style={styles.cancelBtn} onPress={requestCancel} hitSlop={8}>
-                <Text style={styles.cancelText}>{t("common.cancel")}</Text>
-              </Pressable>
+            <View style={styles.navSide}>
               {!hideBack && onBack ? (
-                <Pressable style={styles.backBtn} onPress={onBack} hitSlop={8}>
-                  <Text style={styles.backText}>{t("common.back")}</Text>
+                <Pressable style={styles.outlineBtn} onPress={onBack} hitSlop={8} accessibilityRole="button">
+                  <Ionicons name="chevron-back" size={16} color={GREEN} />
+                  <Text style={styles.outlineBtnText}>{t("common.back")}</Text>
                 </Pressable>
-              ) : null}
+              ) : (
+                <View style={styles.navSidePlaceholder} />
+              )}
             </View>
 
             <Text style={styles.counter} pointerEvents="none">
-              {t("onboarding.layout.stepCounter", { step })}
+              {t("onboarding.layout.stepCounter", { step, total: ONBOARDING_STEPS })}
             </Text>
 
-            <View style={styles.rightCol}>
+            <View style={[styles.navSide, styles.navSideRight]}>
               {onSaveExit ? (
                 <Pressable
-                  style={[styles.saveBtn, (saveDisabled || saveLoading) && styles.actionBtnDisabled]}
+                  style={[styles.outlineBtn, styles.saveExitBtn, (saveDisabled || saveLoading) && styles.actionBtnDisabled]}
                   onPress={handleSaveExit}
                   disabled={saveDisabled || saveLoading}
+                  accessibilityRole="button"
                 >
                   {saveLoading ? (
                     <ActivityIndicator size="small" color={GREEN} />
                   ) : (
-                    <Text style={styles.saveText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-                      {t("common.save")}
+                    <Text style={styles.outlineBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                      {t("onboarding.layout.saveAndExit")}
                     </Text>
                   )}
                 </Pressable>
@@ -153,17 +155,15 @@ export const OnboardingLayout = ({
                 style={[styles.nextBtn, (nextDisabled || nextLoading) && styles.nextBtnDisabled]}
                 onPress={handleNext}
                 disabled={nextDisabled || nextLoading}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: Boolean(nextDisabled || nextLoading) }}
               >
                 {nextLoading ? (
                   <ActivityIndicator color={WHITE} />
                 ) : (
-                  <Text style={styles.nextText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.72}>
-                    {step === 6
-                      ? t("onboarding.layout.saveAndExit")
-                      : t("onboarding.layout.nextArrow", { label: nextLabel ?? t("common.next") })}
+                  <Text style={styles.nextText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
+                    {nextText}
                   </Text>
                 )}
               </Pressable>
@@ -171,13 +171,6 @@ export const OnboardingLayout = ({
           </View>
         </View>
       </KeyboardAvoidingView>
-
-      <UnsavedOnboardingModal
-        visible={modalVisible}
-        changes={changes}
-        onDiscard={discardAndExit}
-        onKeepEditing={keepEditing}
-      />
     </SafeAreaView>
   );
 };
@@ -210,37 +203,71 @@ const styles = StyleSheet.create({
     zIndex: 20,
     elevation: 12,
   },
-  navRow: { flexDirection: logicalRow, alignItems: "flex-end", justifyContent: "space-between", gap: 8, zIndex: 21 },
-  leftCol: { flex: 1, minWidth: 0, gap: 4, alignItems: "flex-start" },
-  rightCol: { flex: 1.35, minWidth: 0, flexDirection: logicalRow, gap: 8, justifyContent: "flex-end" },
-  cancelBtn: { minHeight: 40, justifyContent: "center", paddingHorizontal: 2 },
-  cancelText: { color: ORANGE, fontSize: 15, fontWeight: "800" },
-  backBtn: { minHeight: 32, justifyContent: "center", paddingHorizontal: 2 },
-  backText: { color: MUTED, fontSize: 13, fontWeight: "700" },
-  saveBtn: {
-    minWidth: 68,
-    minHeight: 48,
-    maxWidth: "46%",
-    borderRadius: 12,
-    paddingHorizontal: 10,
+  navRow: {
+    flexDirection: logicalRow,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    zIndex: 21,
+  },
+  navSide: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: logicalRow,
+    alignItems: "center",
+  },
+  navSideRight: {
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  navSidePlaceholder: {
+    minWidth: 72,
+    minHeight: 44,
+  },
+  outlineBtn: {
+    flexDirection: logicalRow,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: GREEN_LIGHT,
-    flex: 1,
+    gap: 2,
+    minHeight: 44,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: TRACK,
+    backgroundColor: WHITE,
   },
-  saveText: { color: GREEN, fontWeight: "800", fontSize: 14, textAlign: "center" },
+  saveExitBtn: {
+    maxWidth: "48%",
+    flexShrink: 1,
+    backgroundColor: GREEN_LIGHT,
+    borderColor: GREEN_LIGHT,
+  },
+  outlineBtnText: {
+    color: GREEN,
+    fontWeight: "700",
+    fontSize: 13,
+    textAlign: "center",
+  },
   actionBtnDisabled: { opacity: 0.7 },
   nextBtn: {
-    minHeight: 48,
+    minHeight: 44,
+    minWidth: 72,
+    maxWidth: "52%",
+    flexShrink: 1,
     borderRadius: 12,
     backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
-    flex: 1.2,
-    minWidth: 0,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
   },
   nextBtnDisabled: { opacity: 0.65 },
-  nextText: { color: WHITE, fontSize: 15, fontWeight: "800", textAlign: "center" },
-  counter: { color: MUTED, fontSize: 14, minWidth: 34, flexShrink: 0, textAlign: "center", fontWeight: "700", paddingBottom: 14 },
+  nextText: { color: WHITE, fontSize: 14, fontWeight: "800", textAlign: "center" },
+  counter: {
+    color: MUTED,
+    fontSize: 12,
+    flexShrink: 0,
+    textAlign: "center",
+    fontWeight: "600",
+    paddingHorizontal: 4,
+  },
 });

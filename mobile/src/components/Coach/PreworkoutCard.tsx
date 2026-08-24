@@ -42,11 +42,6 @@ export function PreworkoutCard({ profile, dayMuscleFocus, guidedWarmupCompleted 
 
   return (
     <View style={styles.card}>
-      <View style={styles.tagRow}>
-        <Ionicons name="sparkles" size={12} color={PURPLE} />
-        <Text style={styles.tagText}>{t("coach.workoutPlannerScreen.preworkout.aiTag")}</Text>
-      </View>
-
       {plan.kind === "cardio" ? (
         <>
           <Text style={styles.summaryTitle}>{t("coach.workoutPlannerScreen.preworkout.cardioTitle")}</Text>
@@ -115,19 +110,6 @@ const styles = StyleSheet.create({
     backgroundColor: PURPLE_LIGHT,
     padding: 14,
     marginBottom: 12,
-  },
-  tagRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 8,
-  },
-  tagText: {
-    color: PURPLE,
-    fontSize: 11,
-    fontWeight: "900",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
   summaryTitle: {
     color: TEXT,

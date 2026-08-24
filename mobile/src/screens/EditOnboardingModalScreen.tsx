@@ -1,8 +1,7 @@
-import { useNavigation } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { BlurredModalScreenShell } from "../components/BlurredModalScreenShell";
 import { EditOnboardingModalContext } from "../hooks/useEditOnboardingModal";
 import { OnboardingProvider } from "../hooks/OnboardingContext";
+import { dismissEditOnboardingModal } from "../utils/exitOnboardingFlow";
 import Screen1Personal from "./onboarding/Screen1Personal";
 import Screen2Goal from "./onboarding/Screen2Goal";
 import Screen3Activity from "./onboarding/Screen3Activity";
@@ -11,15 +10,14 @@ import Screen5BodyComp from "./onboarding/Screen5BodyComp";
 import Screen6Setup from "./onboarding/Screen6Setup";
 import ResultsScreen from "./onboarding/ResultsScreen";
 import type { OnboardingStackParamList } from "../navigation/types";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
 export default function EditOnboardingModalScreen() {
-  const navigation = useNavigation();
-
   return (
-    <EditOnboardingModalContext.Provider value>
-      <BlurredModalScreenShell onClose={() => navigation.goBack()} variant="center">
+    <EditOnboardingModalContext.Provider value={true}>
+      <BlurredModalScreenShell onClose={dismissEditOnboardingModal} variant="center" showCloseButton={false}>
         <OnboardingProvider>
           <Stack.Navigator screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
             <Stack.Screen name="Screen1Personal" component={Screen1Personal} />

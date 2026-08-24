@@ -8,11 +8,20 @@ from sqlalchemy.orm import Session
 from src.models.recipes import UserFastingPreference
 from src.services.planner_common import parse_local_date
 
+# Period types users can pick map to Meal Engine v3 `fasting_tag` recipe pools.
+# New Hindu occasions reuse existing pools where permitted foods are similar
+# (fruit/dairy/sabudana/kuttu — no new recipe seed required).
 PERIOD_TYPE_TAGS: dict[str, str] = {
     "navratri": "fasting_navratri",
     "ramadan": "fasting_ramadan",
     "ekadashi": "fasting_ekadashi",
     "custom": "fasting_custom",
+    "karva_chauth": "fasting_ekadashi",
+    "sawan_somwar": "fasting_ekadashi",
+    "maha_shivratri": "fasting_ekadashi",
+    "janmashtami": "fasting_navratri",
+    "vat_savitri": "fasting_ekadashi",
+    "chhath_puja": "fasting_custom",
 }
 
 

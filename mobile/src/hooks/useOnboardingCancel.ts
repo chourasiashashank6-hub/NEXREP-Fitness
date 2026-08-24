@@ -1,18 +1,15 @@
 import { useCallback, useContext, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigation } from "@react-navigation/native";
 import { useOnboardingContext } from "./OnboardingContext";
 import { useAuthStore } from "../store/authStore";
 import { EditOnboardingModalContext } from "./useEditOnboardingModal";
 import { listOnboardingFormChanges } from "../utils/onboardingFormDiff";
+import { exitOnboardingFlow } from "../utils/exitOnboardingFlow";
 
 export function useOnboardingCancel() {
   const { t } = useTranslation();
-  const navigation = useNavigation<any>();
   const isEditModal = useContext(EditOnboardingModalContext);
   const { data, getBaseline, revertToBaseline } = useOnboardingContext();
-  const setNeedsOnboarding = useAuthStore((s) => s.setNeedsOnboarding);
-  const setReturnToProfileAfterOnboarding = useAuthStore((s) => s.setReturnToProfileAfterOnboarding);
   const [visible, setVisible] = useState(false);
 
   const changes = useMemo(
@@ -21,13 +18,8 @@ export function useOnboardingCancel() {
   );
 
   const exitOnboarding = useCallback(() => {
-    if (isEditModal) {
-      navigation.goBack();
-      return;
-    }
-    setNeedsOnboarding(false);
-    setReturnToProfileAfterOnboarding(false);
-  }, [isEditModal, navigation, setNeedsOnboarding, setReturnToProfileAfterOnboarding]);
+    exitOnboardingFlow(isEditModal);
+  }, [isEditModal]);
 
   const requestCancel = useCallback(() => {
     const pending = listOnboardingFormChanges(getBaseline(), data, t);

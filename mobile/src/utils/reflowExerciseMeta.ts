@@ -1,4 +1,5 @@
-import type { WorkoutExercise } from "../types/planner";
+import type { WorkoutDayPlan, WorkoutExercise } from "../types/planner";
+import type { ReflowMove } from "./reflowNotifyMessage";
 
 export type ReflowTaggedExercise = WorkoutExercise & {
   reflow_source_day?: number;
@@ -22,4 +23,21 @@ export function countReflowedExercises(exercises: WorkoutExercise[]): {
     }
   }
   return { count, sourceDays: [...sourceDays].sort((a, b) => a - b) };
+}
+
+/** Build move metadata from persisted day payloads after a reflow write. */
+export function extractReflowMovesFromDays(days: WorkoutDayPlan[]): ReflowMove[] {
+  const moves: ReflowMove[] = [];
+  for (const day of days) {
+    for (const exercise of day.exercises ?? []) {
+      const sourceDay = (exercise as ReflowTaggedExercise).reflow_source_day;
+      if (typeof sourceDay !== "number" || sourceDay <= 0) continue;
+      moves.push({
+        name: exercise.name,
+        sourceDay,
+        targetDay: day.day,
+      });
+    }
+  }
+  return moves;
 }

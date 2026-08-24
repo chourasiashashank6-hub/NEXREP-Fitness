@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from "@react-native-community/datetimepicker";
@@ -28,6 +30,7 @@ const TEXT = "#1A1A18";
 const MUTED = "#6F766F";
 const BORDER = "#ECEAE5";
 const WHITE = "#FFFFFF";
+const ERROR = "#D85A30";
 
 const pad2 = (value: number) => String(value).padStart(2, "0");
 const toIsoDate = (date: Date) => `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
@@ -36,7 +39,18 @@ const parseIsoDate = (value: string) => {
   return new Date(y, (m || 1) - 1, d || 1);
 };
 
-const PERIOD_TYPES: FastingPeriodType[] = ["navratri", "ramadan", "ekadashi", "custom"];
+const PERIOD_TYPES: FastingPeriodType[] = [
+  "navratri",
+  "ramadan",
+  "ekadashi",
+  "karva_chauth",
+  "sawan_somwar",
+  "maha_shivratri",
+  "janmashtami",
+  "vat_savitri",
+  "chhath_puja",
+  "custom",
+];
 
 export function FastingPreferencesScreen({ navigation }: { navigation: { goBack: () => void } }) {
   const { t } = useTranslation();
@@ -52,11 +66,14 @@ export function FastingPreferencesScreen({ navigation }: { navigation: { goBack:
     return toIsoDate(next);
   });
   const [datePicker, setDatePicker] = useState<"start" | "end" | null>(null);
+  const [rangeError, setRangeError] = useState<string | null>(null);
 
   const periodOptions = useMemo(
     () => PERIOD_TYPES.map((value) => ({ value, label: t(`fasting.periods.${value}`) })),
     [t],
   );
+
+  const pickerValue = datePicker === "start" ? startDate : endDate;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,22 +95,33 @@ export function FastingPreferencesScreen({ navigation }: { navigation: { goBack:
     void load();
   }, [load]);
 
+  const applyPickedDate = (field: "start" | "end", selected: Date) => {
+    const iso = toIsoDate(selected);
+    if (field === "start") {
+      if (parseIsoDate(iso) > parseIsoDate(endDate)) {
+        setRangeError(t("fasting.alerts.invalidRange"));
+        return;
+      }
+      setStartDate(iso);
+      setRangeError(null);
+      return;
+    }
+    if (parseIsoDate(iso) < parseIsoDate(startDate)) {
+      setRangeError(t("fasting.alerts.invalidRange"));
+      return;
+    }
+    setEndDate(iso);
+    setRangeError(null);
+  };
+
   const openDatePicker = (field: "start" | "end") => {
-    const value = field === "start" ? startDate : endDate;
     if (Platform.OS === "android") {
       DateTimePickerAndroid.open({
         mode: "date",
-        value: parseIsoDate(value),
+        value: parseIsoDate(field === "start" ? startDate : endDate),
         onChange: (event: DateTimePickerEvent, selected?: Date) => {
-          if (event.type === "dismissed" || !selected) return;
-          const iso = toIsoDate(selected);
-          if (field === "start") {
-            setStartDate(iso);
-            if (parseIsoDate(iso) > parseIsoDate(endDate)) setEndDate(iso);
-          } else {
-            setEndDate(iso);
-            if (parseIsoDate(iso) < parseIsoDate(startDate)) setStartDate(iso);
-          }
+          if (event.type !== "set" || !selected) return;
+          applyPickedDate(field, selected);
         },
       });
       return;
@@ -101,21 +129,18 @@ export function FastingPreferencesScreen({ navigation }: { navigation: { goBack:
     setDatePicker(field);
   };
 
-  const onIosDateChange = (_event: DateTimePickerEvent, selected?: Date) => {
-    if (!selected || !datePicker) return;
-    const iso = toIsoDate(selected);
-    if (datePicker === "start") {
-      setStartDate(iso);
-      if (parseIsoDate(iso) > parseIsoDate(endDate)) setEndDate(iso);
-    } else {
-      setEndDate(iso);
-      if (parseIsoDate(iso) < parseIsoDate(startDate)) setStartDate(iso);
+  const onModalDateChange = (event: DateTimePickerEvent, selected?: Date) => {
+    if (event.type === "dismissed") {
+      setDatePicker(null);
+      return;
     }
+    if (!selected || !datePicker) return;
+    applyPickedDate(datePicker, selected);
   };
 
   const submit = async () => {
     if (parseIsoDate(endDate) < parseIsoDate(startDate)) {
-      notifyUser(t("common.error"), t("fasting.alerts.invalidRange"));
+      setRangeError(t("fasting.alerts.invalidRange"));
       return;
     }
     setSaving(true);
@@ -127,6 +152,7 @@ export function FastingPreferencesScreen({ navigation }: { navigation: { goBack:
         active: true,
       });
       notifyUser(t("fasting.alerts.savedTitle"), t("fasting.alerts.savedBody"));
+      setRangeError(null);
       await load();
     } catch (error) {
       notifyUser(t("common.error"), apiErrorMessage(error, t("fasting.alerts.saveFailed")));
@@ -199,9 +225,7 @@ export function FastingPreferencesScreen({ navigation }: { navigation: { goBack:
               <Text style={styles.dateLabel}>{t("fasting.endDate")}</Text>
               <Text style={styles.dateValue}>{endDate}</Text>
             </Pressable>
-            {datePicker && Platform.OS === "ios" ? (
-              <DateTimePicker mode="date" value={parseIsoDate(datePicker === "start" ? startDate : endDate)} onChange={onIosDateChange} />
-            ) : null}
+            {rangeError ? <Text style={styles.rangeError}>{rangeError}</Text> : null}
             <Pressable style={[styles.saveBtn, saving && styles.saveBtnDisabled]} disabled={saving} onPress={() => void submit()}>
               {saving ? <ActivityIndicator color={WHITE} /> : <Text style={styles.saveBtnText}>{t("fasting.save")}</Text>}
             </Pressable>
@@ -231,6 +255,44 @@ export function FastingPreferencesScreen({ navigation }: { navigation: { goBack:
           ) : null}
         </ScrollView>
       )}
+
+      <Modal
+        visible={datePicker !== null && Platform.OS !== "android"}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDatePicker(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.datePickerSheet}>
+            <Text style={styles.datePickerTitle}>
+              {datePicker === "start" ? t("fasting.startDate") : t("fasting.endDate")}
+            </Text>
+            {Platform.OS === "web" ? (
+              <TextInput
+                value={pickerValue}
+                onChangeText={(text) => {
+                  if (!datePicker || !/^\d{4}-\d{2}-\d{2}$/.test(text)) return;
+                  applyPickedDate(datePicker, parseIsoDate(text));
+                }}
+                style={styles.webDateInput}
+                // @ts-expect-error web-only input type
+                type="date"
+              />
+            ) : (
+              <DateTimePicker
+                mode="date"
+                display="spinner"
+                value={parseIsoDate(pickerValue)}
+                onChange={onModalDateChange}
+                textColor={TEXT}
+              />
+            )}
+            <Pressable style={styles.datePickerDoneBtn} onPress={() => setDatePicker(null)}>
+              <Text style={styles.datePickerDoneText}>{t("profile.done")}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -256,6 +318,7 @@ const styles = StyleSheet.create({
   dateRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: BORDER },
   dateLabel: { fontSize: 14, color: MUTED },
   dateValue: { fontSize: 15, fontWeight: "600", color: TEXT },
+  rangeError: { fontSize: 13, color: ERROR, lineHeight: 18 },
   saveBtn: { marginTop: 4, backgroundColor: GREEN, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
   saveBtnDisabled: { opacity: 0.7 },
   saveBtnText: { color: WHITE, fontWeight: "700", fontSize: 15 },
@@ -269,5 +332,11 @@ const styles = StyleSheet.create({
   listStatusActive: { color: GREEN },
   listStatusInactive: { color: MUTED },
   deactivateBtn: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, backgroundColor: "#FFF1EE" },
-  deactivateText: { color: "#D85A30", fontWeight: "600", fontSize: 12 },
+  deactivateText: { color: ERROR, fontWeight: "600", fontSize: 12 },
+  modalBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.35)" },
+  datePickerSheet: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, paddingBottom: 28 },
+  datePickerTitle: { fontSize: 15, fontWeight: "700", color: TEXT, marginBottom: 8, textAlign: "center" },
+  webDateInput: { borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: TEXT, marginBottom: 8 },
+  datePickerDoneBtn: { backgroundColor: GREEN, borderRadius: 12, alignItems: "center", justifyContent: "center", paddingVertical: 12, marginTop: 8 },
+  datePickerDoneText: { color: WHITE, fontSize: 13, fontWeight: "700" },
 });

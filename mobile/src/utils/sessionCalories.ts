@@ -1,5 +1,4 @@
-// Client-side MET defaults for live display.
-// Server recomputes from its own met_value column — these are estimates only.
+// Authoritative per-exercise burn model — mirrored by server session_calories.py.
 const MET_DEFAULTS: Record<string, number> = {
   // compound lifts
   squat: 6.0,

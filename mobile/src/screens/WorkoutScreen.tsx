@@ -33,11 +33,19 @@ import {
 } from "../api/workout";
 import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { fetchOnboardingMe } from "../api/onboarding";
+import { isPreWorkoutEnabled } from "../utils/preWorkoutPreference";
 import { deleteStrengthLift, logStrengthLift, updateStrengthLift } from "../api/strength";
 import { getProfile } from "../api/user";
 import { apiClient } from "../api/client";
 import { localDateIso } from "../utils/localDate";
 import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
+import {
+  computePlannedBurnActivities,
+  computePlannedBurnTargets,
+  toPreworkoutProfile,
+  type PlannedBurnActivity,
+} from "../utils/plannedBurnTargets";
+import { isHomeRestDayActive } from "../utils/workoutRestDay";
 import AllTimeHistoryModal from "../components/AllTimeHistoryModal";
 import { AppInput } from "../components/AppInput";
 import ExerciseSearchInput from "../components/ExerciseSearchInput";
@@ -395,6 +403,11 @@ export const WorkoutScreen = () => {
   const [todayPlan, setTodayPlan] = useState<WorkoutPlanCurrent | null>(null);
   const [userWeightKg, setUserWeightKg] = useState(70);
   const [burnTargetKcal, setBurnTargetKcal] = useState(BURN_TARGET_FALLBACK);
+  const [onboardingForBurn, setOnboardingForBurn] = useState<{
+    goal?: { type?: string; pace?: string; difficulty?: string };
+    personal?: { weight_kg?: number; weight_lb?: number; unit_system?: string };
+    app_setup?: { pre_workout_enabled?: boolean };
+  } | null>(null);
   const [catalog, setCatalog] = useState<WorkoutCatalogItem[]>([]);
   const [bodyPartOptions, setBodyPartOptions] = useState<string[]>([]);
   const [typeOptions, setTypeOptions] = useState<string[]>([]);
@@ -602,6 +615,7 @@ export const WorkoutScreen = () => {
           .catch(() => null),
       ]);
       setHistory(historyData.items ?? []);
+      setOnboardingForBurn(onboardingData?.onboarding ?? null);
       setBurnTargetKcal(
         resolveDailyBurnTarget({
           exercise_delta_kcal: goalProgressRes?.exercise_delta_kcal,
@@ -1298,6 +1312,49 @@ export const WorkoutScreen = () => {
     () => todayHistory.reduce((sum, item) => sum + (Number(item?.caloriesBurned) || 0), 0),
     [todayHistory],
   );
+  const restDayActive = useMemo(
+    () =>
+      isHomeRestDayActive({
+        hasWorkoutPlannerAccess,
+        plan: todayPlan,
+      }),
+    [hasWorkoutPlannerAccess, todayPlan],
+  );
+  const plannedBurnTargets = useMemo(() => {
+    const preWorkoutEnabled = isPreWorkoutEnabled(onboardingForBurn);
+    const preworkoutProfile = preWorkoutEnabled
+      ? toPreworkoutProfile(onboardingForBurn, userWeightKg)
+      : null;
+    const activities = computePlannedBurnActivities({
+      restDayActive,
+      hasWorkoutPlannerAccess,
+      todayWorkoutPlan: todayPlan,
+      preworkoutProfile,
+      preWorkoutEnabled,
+      weightKg: userWeightKg,
+    });
+    return computePlannedBurnTargets({
+      minBurnTarget: burnTargetKcal,
+      activities,
+    });
+  }, [
+    onboardingForBurn,
+    userWeightKg,
+    restDayActive,
+    hasWorkoutPlannerAccess,
+    todayPlan,
+    burnTargetKcal,
+  ]);
+  const minBurnTarget = plannedBurnTargets.minBurnTarget;
+  const bestResultsBurnTarget = plannedBurnTargets.bestResultsBurnTarget;
+  const plannedBurnActivities = plannedBurnTargets.activities;
+  const plannedActivityLabel = useCallback(
+    (activity: PlannedBurnActivity) => {
+      if (activity.kind === "cardioWarmup") return t("workoutLog.plannedCardioWarmup");
+      return t("workoutLog.plannedWorkoutSession", { name: activity.sessionLabel });
+    },
+    [t],
+  );
   const todaySessionCount = todayHistory.length;
   const sessionMilestoneItems = useMemo(
     () =>
@@ -1317,8 +1374,13 @@ export const WorkoutScreen = () => {
     sessionMilestonePlannedCount > 0 ? sessionMilestonePlannedDone / sessionMilestonePlannedCount : 0;
   const sessionMilestoneComplete =
     sessionMilestonePlannedCount > 0 && sessionMilestonePlannedDone >= sessionMilestonePlannedCount;
-  const burnTargetReached = todayCaloriesBurned >= burnTargetKcal;
-  const burnProgressPct = burnTargetKcal > 0 ? Math.min(todayCaloriesBurned / burnTargetKcal, 1) : 1;
+  const burnTargetReached = todayCaloriesBurned >= bestResultsBurnTarget;
+  const burnProgressPct =
+    bestResultsBurnTarget > 0 ? Math.min(todayCaloriesBurned / bestResultsBurnTarget, 1) : 1;
+  const burnMinMarkerPct =
+    bestResultsBurnTarget > minBurnTarget && bestResultsBurnTarget > 0
+      ? Math.min(1, minBurnTarget / bestResultsBurnTarget)
+      : null;
   const guidanceExerciseName = selectedEntry?.defaultExerciseName ?? selectedEntry?.exerciseName ?? exerciseName;
   const exerciseGuidance = useMemo(() => findExerciseGuidance(guidanceExerciseName), [guidanceExerciseName]);
   const showGuideCard = exerciseName !== SELECT_CHOICE && !isNoChoice(exerciseName);
@@ -1611,7 +1673,7 @@ export const WorkoutScreen = () => {
           </View>
           <View style={styles.kpiPill}>
             <Text style={styles.kpiEmoji}>🎯</Text>
-            <Text style={styles.kpiValueGreen}>{burnTargetKcal}</Text>
+            <Text style={styles.kpiValueGreen}>{bestResultsBurnTarget}</Text>
             <Text style={styles.kpiLabel}>{t("workoutLog.target")}</Text>
           </View>
         </View>
@@ -1636,13 +1698,33 @@ export const WorkoutScreen = () => {
               <Text style={styles.burnTargetReached}>{t("workoutLog.goalReached")}</Text>
             ) : (
               <Text style={styles.burnMeta}>
-                {todayCaloriesBurned} / {burnTargetKcal} kcal
+                {todayCaloriesBurned} / {bestResultsBurnTarget} kcal
               </Text>
             )}
           </View>
-          <View style={styles.burnTrack}>
-            <View style={[styles.burnFill, { width: `${burnProgressPct * 100}%` }]} />
+          <View style={styles.burnTrackWrap}>
+            <View style={styles.burnTrack}>
+              <View style={[styles.burnFill, { width: `${burnProgressPct * 100}%` }]} />
+            </View>
+            {burnMinMarkerPct != null ? (
+              <View style={[styles.burnMinMarker, { left: `${burnMinMarkerPct * 100}%` }]} />
+            ) : null}
           </View>
+          {burnMinMarkerPct != null ? (
+            <Text style={styles.burnMinCaption}>
+              {t("workoutLog.burnMinMarker", { kcal: minBurnTarget })}
+            </Text>
+          ) : null}
+          {plannedBurnActivities.length > 0 ? (
+            <View style={styles.plannedBurnList}>
+              {plannedBurnActivities.map((activity) => (
+                <View key={activity.id} style={styles.plannedBurnRow}>
+                  <Text style={styles.plannedBurnLabel}>{plannedActivityLabel(activity)}</Text>
+                  <Text style={styles.plannedBurnKcal}>~{activity.kcal} kcal</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
         </View>
 
         {todaySessionCount > 0 && latestTodayWorkout ? (
@@ -2330,6 +2412,11 @@ const styles = StyleSheet.create({
   burnTitle: { fontSize: 14, fontWeight: "600", color: TEXT },
   burnTargetReached: { fontSize: 12, fontWeight: "700", color: GREEN },
   burnMeta: { fontSize: 12, color: MUTED },
+  burnTrackWrap: {
+    position: "relative",
+    height: 11,
+    justifyContent: "center",
+  },
   burnTrack: {
     height: 7,
     borderRadius: 100,
@@ -2337,6 +2424,40 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   burnFill: { height: 7, borderRadius: 100, backgroundColor: ORANGE },
+  burnMinMarker: {
+    position: "absolute",
+    top: 0,
+    width: 2,
+    height: 11,
+    marginLeft: -1,
+    backgroundColor: GREEN,
+    borderRadius: 1,
+  },
+  burnMinCaption: {
+    marginTop: 8,
+    fontSize: 11,
+    color: MUTED,
+  },
+  plannedBurnList: {
+    marginTop: 10,
+    gap: 6,
+  },
+  plannedBurnRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  plannedBurnLabel: {
+    flex: 1,
+    fontSize: 12,
+    color: TEXT,
+    paddingRight: 8,
+  },
+  plannedBurnKcal: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: ORANGE,
+  },
   sessionBanner: {
     backgroundColor: GREEN,
     borderRadius: 16,

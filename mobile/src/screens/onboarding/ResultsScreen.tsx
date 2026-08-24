@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { loadOnboardingWithFallback } from "../../api/onboarding";
 import { useAuthStore } from "../../store/authStore";
 import { useIsEditOnboardingModal } from "../../hooks/useEditOnboardingModal";
+import { exitOnboardingFlow } from "../../utils/exitOnboardingFlow";
 
 export default function ResultsScreen({ navigation }: any) {
   const { t } = useTranslation();
-  const rootNavigation = useNavigation<any>();
   const isEditModal = useIsEditOnboardingModal();
   const token = useAuthStore((s) => s.token);
   const { width } = useWindowDimensions();
@@ -88,7 +87,7 @@ export default function ResultsScreen({ navigation }: any) {
           style={styles.startBtn}
           onPress={() => {
             if (isEditModal) {
-              rootNavigation.goBack();
+              exitOnboardingFlow(true);
               return;
             }
             navigation.navigate("Main");

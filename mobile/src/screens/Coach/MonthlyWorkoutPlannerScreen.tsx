@@ -28,6 +28,7 @@ import {
 } from "../../api/workoutPlanner";
 import { addWorkout, deleteWorkout, getWorkoutHistory, type WorkoutHistoryItem } from "../../api/workout";
 import { fetchOnboardingMe } from "../../api/onboarding";
+import { isPreWorkoutEnabled } from "../../utils/preWorkoutPreference";
 import { PlannerMonthCalendar } from "../../components/Coach/PlannerMonthCalendar";
 import { PreworkoutCard } from "../../components/Coach/PreworkoutCard";
 import { RefreshCountPill } from "../../components/Coach/shared/RefreshCountPill";
@@ -334,6 +335,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const regeneratingMonthPlanRef = useRef(false);
   const [exerciseListVersion, setExerciseListVersion] = useState(0);
   const [onboardingProfile, setOnboardingProfile] = useState<PreworkoutProfile | null>(null);
+  const [preWorkoutEnabled, setPreWorkoutEnabled] = useState(true);
   const [logExerciseRefreshError, setLogExerciseRefreshError] = useState<string | null>(null);
   const [guidedWarmupLogged, setGuidedWarmupLogged] = useState(false);
   const [hasAnyPlannerLog, setHasAnyPlannerLog] = useState(false);
@@ -488,8 +490,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       }
       if (current) {
         loadDaySeqRef.current += 1;
-        const hadReflowCorruption = await syncDayDetailForPlan(current, selectedDayRef.current);
-        if (hadReflowCorruption) skipReflowDetection = true;
+        await syncDayDetailForPlan(current, selectedDayRef.current);
       }
       if (current && canSmartReflow && !skipReflowDetection) {
         void runSmartReflowDetection(current).then(async (result) => {
@@ -617,39 +618,42 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
     }, [loadPlan]),
   );
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        const ob = await fetchOnboardingMe();
-        const goal = ob?.onboarding?.goal;
-        const personal = ob?.onboarding?.personal;
-        const activity = ob?.onboarding?.activity;
-        const weightKg =
-          personal?.unit_system === "metric"
-            ? Number(personal?.weight_kg ?? 70)
-            : lbToKg(Number(personal?.weight_lb ?? 154));
-        setOnboardingProfile({
-          primaryGoal: String(goal?.type ?? "muscle_gain"),
-          goalPace: String(goal?.pace ?? "moderate"),
-          difficulty: String(goal?.difficulty ?? "intermediate"),
-          weightKg: Number.isFinite(weightKg) && weightKg > 0 ? weightKg : 70,
-        });
-        setPreview({
-          goal: String(goal?.type ?? "muscle_gain"),
-          difficulty: String(goal?.difficulty ?? "intermediate"),
-          wpw: Number(activity?.workouts_per_week ?? 4),
-        });
-        const fromOnboarding = goal?.focus_muscles;
-        if (Array.isArray(fromOnboarding) && fromOnboarding.length > 0) {
-          setSelectedMuscles(fromOnboarding as FocusMuscle[]);
-        } else if (goal?.focus_muscle) {
-          setSelectedMuscles([goal.focus_muscle as FocusMuscle]);
+  useFocusEffect(
+    useCallback(() => {
+      void (async () => {
+        try {
+          const ob = await fetchOnboardingMe();
+          setPreWorkoutEnabled(isPreWorkoutEnabled(ob?.onboarding));
+          const goal = ob?.onboarding?.goal;
+          const personal = ob?.onboarding?.personal;
+          const activity = ob?.onboarding?.activity;
+          const weightKg =
+            personal?.unit_system === "metric"
+              ? Number(personal?.weight_kg ?? 70)
+              : lbToKg(Number(personal?.weight_lb ?? 154));
+          setOnboardingProfile({
+            primaryGoal: String(goal?.type ?? "muscle_gain"),
+            goalPace: String(goal?.pace ?? "moderate"),
+            difficulty: String(goal?.difficulty ?? "intermediate"),
+            weightKg: Number.isFinite(weightKg) && weightKg > 0 ? weightKg : 70,
+          });
+          setPreview({
+            goal: String(goal?.type ?? "muscle_gain"),
+            difficulty: String(goal?.difficulty ?? "intermediate"),
+            wpw: Number(activity?.workouts_per_week ?? 4),
+          });
+          const fromOnboarding = goal?.focus_muscles;
+          if (Array.isArray(fromOnboarding) && fromOnboarding.length > 0) {
+            setSelectedMuscles(fromOnboarding as FocusMuscle[]);
+          } else if (goal?.focus_muscle) {
+            setSelectedMuscles([goal.focus_muscle as FocusMuscle]);
+          }
+        } catch {
+          /* defaults */
         }
-      } catch {
-        /* defaults */
-      }
-    })();
-  }, []);
+      })();
+    }, []),
+  );
 
   useEffect(() => {
     setStaleFields(plan?.stale_fields ?? []);
@@ -1222,7 +1226,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                     </View>
                   ) : (
                     <>
-                      {onboardingProfile ? (
+                      {onboardingProfile && preWorkoutEnabled ? (
                         <PreworkoutCard
                           profile={onboardingProfile}
                           dayMuscleFocus={dayDetail.focus_muscles}

@@ -63,6 +63,7 @@ export const DEFAULT_ONBOARDING_DATA: OnboardingData = {
     problem_areas: [],
   },
   app_setup: {
+    pre_workout_enabled: true,
     weigh_in_reminder_enabled: true,
     reminder_time: "7:00 AM",
     water_intake_goal_liters: null,

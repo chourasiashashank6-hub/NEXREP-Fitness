@@ -33,6 +33,13 @@ import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { navigationRef } from "../navigation/navigationRef";
 import { computeUserCaloriePlan } from "../utils/calorieEngine";
 import { resolveDailyBurnTarget } from "../utils/dailyBurnTarget";
+import {
+  computePlannedBurnActivities,
+  computePlannedBurnTargets,
+  toPreworkoutProfile,
+  type PlannedBurnActivity,
+} from "../utils/plannedBurnTargets";
+import { isPreWorkoutEnabled } from "../utils/preWorkoutPreference";
 import { fillMealSlots, buildLoggedMealMilestones } from "../utils/mealSlotSchedule";
 import { buildTodaySessionMilestoneItems } from "../utils/sessionMilestoneSlots";
 import {
@@ -220,7 +227,7 @@ function ProgressBar({ percent, color }: { percent: number; color: string }) {
 export const HomeScreen = () => {
   const { t } = useTranslation();
   const token = useAuthStore((s) => s.token);
-  const { refresh: refreshOnboarding } = useOnboardingContext();
+  const { refresh: refreshOnboarding, data: onboardingData } = useOnboardingContext();
   const { hasFeatureAccess } = useFeatureAccess();
   const hasMealPlannerAccess = hasFeatureAccess("meal_plan_generation");
   const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
@@ -242,6 +249,7 @@ export const HomeScreen = () => {
   >([]);
   const [streakCalorieLogs, setStreakCalorieLogs] = useState<{ date: string; total_calories: number }[]>([]);
   const [personalBestStreak, setPersonalBestStreak] = useState(0);
+  const [burnChipsExpanded, setBurnChipsExpanded] = useState(true);
   const lastLoadAt = useRef(0);
   const activityRefreshVersion = useActivityDataRefreshStore((s) => s.version);
 
@@ -517,11 +525,57 @@ export const HomeScreen = () => {
   const deltaDisplay = Number.isFinite(dailyDelta) ? Math.round(Math.abs(dailyDelta)) : 200;
   const exerciseShare = Number(goalProgress?.exercise_share ?? timeline.exercise_share);
   const dietShare = Number(goalProgress?.diet_share ?? timeline.diet_share);
+  const restDayActive = useMemo(
+    () =>
+      isHomeRestDayActive({
+        hasWorkoutPlannerAccess,
+        plan: todayWorkoutPlan,
+      }),
+    [hasWorkoutPlannerAccess, todayWorkoutPlan],
+  );
   const exerciseDeltaDisplay = resolveDailyBurnTarget({
     exercise_delta_kcal: goalProgress?.exercise_delta_kcal,
     daily_delta_kcal: goalProgress?.daily_delta_kcal,
     timeline: timeline as Record<string, unknown>,
   });
+  const minBurnTarget = exerciseDeltaDisplay;
+  const preWorkoutEnabled = isPreWorkoutEnabled(onboardingData);
+  const preworkoutProfile = useMemo(
+    () => (preWorkoutEnabled ? toPreworkoutProfile(onboardingData, effectiveWeightKg ?? undefined) : null),
+    [onboardingData, effectiveWeightKg, preWorkoutEnabled],
+  );
+  const plannedBurnTargets = useMemo(() => {
+    const activities = computePlannedBurnActivities({
+      restDayActive,
+      hasWorkoutPlannerAccess,
+      todayWorkoutPlan,
+      preworkoutProfile,
+      preWorkoutEnabled,
+      weightKg: effectiveWeightKg ?? burnProfile?.current_weight_kg ?? 70,
+    });
+    return computePlannedBurnTargets({
+      minBurnTarget,
+      activities,
+    });
+  }, [
+    restDayActive,
+    hasWorkoutPlannerAccess,
+    todayWorkoutPlan,
+    preworkoutProfile,
+    preWorkoutEnabled,
+    effectiveWeightKg,
+    burnProfile?.current_weight_kg,
+    minBurnTarget,
+  ]);
+  const bestResultsBurnTarget = plannedBurnTargets.bestResultsBurnTarget;
+  const plannedBurnActivities = plannedBurnTargets.activities;
+  const plannedBurnChipLabel = useCallback(
+    (activity: PlannedBurnActivity) => {
+      if (activity.kind === "cardioWarmup") return t("home.burnChipCardio");
+      return activity.sessionLabel.trim() || t("home.burnChipWorkout");
+    },
+    [t],
+  );
   const dietDeltaDisplay = Math.max(0, deltaDisplay - exerciseDeltaDisplay);
   const exerciseSharePct = Number.isFinite(exerciseShare) ? clamp01(exerciseShare) : 0.2;
   const dietSharePct = Number.isFinite(dietShare) ? clamp01(dietShare) : 0.8;
@@ -538,25 +592,19 @@ export const HomeScreen = () => {
       : dailyDelta > 0
         ? t("home.surplus")
         : t("home.maintenance");
-  const deltaKpiEmoji = !Number.isFinite(dailyDelta)
-    ? burnProfile?.goal_tag === "Muscle Gain"
-      ? "📈"
-      : burnProfile?.goal_tag === "Strength"
-        ? "⚖️"
-        : "📉"
-    : dailyDelta < 0
-      ? "📉"
-      : dailyDelta > 0
-        ? "📈"
-        : "⚖️";
   const deltaKpiLabel = dailyDeltaLabel.toLowerCase();
+  const deficitTrendIcon =
+    Number.isFinite(dailyDelta) && dailyDelta > 0
+      ? "trending-up"
+      : Number.isFinite(dailyDelta) && dailyDelta < 0
+        ? "trending-down"
+        : "remove-outline";
   const goalWeeksProgress =
     totalGoalWeeks > 0 ? clamp01((totalGoalWeeks - weeksRemaining) / totalGoalWeeks) : 0;
   const workoutShareAchieved = Math.min(caloriesBurnedSoFar, exerciseDeltaDisplay);
   const exerciseTargetRemaining = Math.max(0, exerciseDeltaDisplay - workoutShareAchieved);
   const workoutShareProgress = exerciseDeltaDisplay > 0 ? clamp01(workoutShareAchieved / exerciseDeltaDisplay) : 1;
   const mode: EnergyMode = dailyGoal < (burnPlan?.tdee ?? 0) ? "deficit" : dailyGoal > (burnPlan?.tdee ?? 0) ? "surplus" : "maintenance";
-  const remainingCalories = Math.round(dailyGoal - eatenToday);
   const remainingExercise = Math.max(0, exerciseDeltaDisplay - caloriesBurnedSoFar);
   const exerciseProgressPct = Math.round(clamp01(exerciseDeltaDisplay > 0 ? caloriesBurnedSoFar / exerciseDeltaDisplay : 1) * 100);
   const interpreter = (() => {
@@ -590,12 +638,6 @@ export const HomeScreen = () => {
     goalProgress?.needs_weigh_in === true ||
     (latestWeight != null && (latestWeight.days_since_log === null || latestWeight.days_since_log >= 7));
 
-  const caloriesRemainingDisplay =
-    log?.calories_remaining != null && Number.isFinite(Number(log.calories_remaining))
-      ? Math.round(Number(log.calories_remaining))
-      : Math.max(0, remainingCalories);
-
-  // Calories left to eat today, using the same dailyGoal as the "to eat" pill.
   const tdeeValue = burnPlan?.tdee ?? 1690;
   const milestonePct = Math.round(goalWeeksProgress * 100);
 
@@ -632,15 +674,6 @@ export const HomeScreen = () => {
     }
     return mapSlots(fillMealSlots(mealsPerDay, meals));
   }, [hasMealPlannerAccess, mealsPerDay, calorieDay?.meals, t]);
-
-  const restDayActive = useMemo(
-    () =>
-      isHomeRestDayActive({
-        hasWorkoutPlannerAccess,
-        plan: todayWorkoutPlan,
-      }),
-    [hasWorkoutPlannerAccess, todayWorkoutPlan],
-  );
 
   const sessionMilestoneItems = useMemo(() => {
     const today = new Date();
@@ -779,40 +812,88 @@ export const HomeScreen = () => {
                 caloriesEatenToday={eatenToday}
                 dailyCalorieTarget={dailyGoal}
                 caloriesBurnedToday={caloriesBurnedSoFar}
-                dailyBurnTarget={exerciseDeltaDisplay}
+                dailyBurnTarget={bestResultsBurnTarget}
                 restDayActive={restDayActive}
                 size={168}
               />
               <View style={styles.kpiColumn}>
-                <View style={styles.kpiPill}>
-                  <View style={styles.kpiPillLeft}>
-                    <Text style={styles.kpiEmoji}>🍽️</Text>
-                    <Text style={styles.kpiLabel}>{t("home.toEat")}</Text>
-                  </View>
-                  <Text style={styles.kpiValue}>{formatNum(dailyGoal)}</Text>
-                </View>
-                {restDayActive ? (
-                  <View style={[styles.kpiPill, styles.kpiPillRestDay]}>
-                    <View style={styles.kpiPillLeft}>
-                      <Text style={styles.kpiEmoji}>🌙</Text>
-                      <Text style={styles.kpiLabelRestDay}>{t("home.restDayNoBurn")}</Text>
+                <View style={styles.metricsCard}>
+                  <View style={styles.metricsRow}>
+                    <View style={styles.metricsRowLeft}>
+                      <Ionicons name="restaurant-outline" size={15} color={TEXT_MUTED} />
+                      <Text style={styles.metricsRowLabel}>{t("home.toEat")}</Text>
                     </View>
+                    <Text style={styles.metricsRowValue}>{formatNum(dailyGoal)}</Text>
                   </View>
-                ) : (
-                  <View style={styles.kpiPill}>
-                    <View style={styles.kpiPillLeft}>
-                      <Text style={styles.kpiEmoji}>🔥</Text>
-                      <Text style={styles.kpiLabel}>{t("home.toBurn")}</Text>
+
+                  <View style={styles.metricsRow}>
+                    <View style={styles.metricsRowLeft}>
+                      <Ionicons name={deficitTrendIcon} size={15} color={TEXT_MUTED} />
+                      <Text style={styles.metricsRowLabel}>{deltaKpiLabel}</Text>
                     </View>
-                    <Text style={[styles.kpiValue, styles.kpiValueOrange]}>{formatNum(exerciseDeltaDisplay)}</Text>
+                    <Text style={styles.metricsRowValue}>{formatNum(deltaDisplay)}</Text>
                   </View>
-                )}
-                <View style={styles.kpiPill}>
-                  <View style={styles.kpiPillLeft}>
-                    <Text style={styles.kpiEmoji}>{deltaKpiEmoji}</Text>
-                    <Text style={styles.kpiLabel}>{deltaKpiLabel}</Text>
-                  </View>
-                  <Text style={styles.kpiValue}>{formatNum(deltaDisplay)}</Text>
+
+                  <View style={styles.metricsDivider} />
+
+                  {restDayActive ? (
+                    <View style={styles.metricsRowBurn}>
+                      <View style={styles.metricsRowLeft}>
+                        <Ionicons name="moon-outline" size={15} color={TEXT_MUTED} />
+                        <Text style={styles.metricsRowLabel}>{t("home.restDayNoBurn")}</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <>
+                      <Pressable
+                        style={styles.metricsRowBurn}
+                        onPress={
+                          plannedBurnActivities.length > 0
+                            ? () => setBurnChipsExpanded((prev) => !prev)
+                            : undefined
+                        }
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: burnChipsExpanded }}
+                      >
+                        <View style={styles.metricsRowLeft}>
+                          <Ionicons name="flame" size={16} color={ORANGE} />
+                          <Text style={styles.metricsBurnLabel}>{t("home.toBurn")}</Text>
+                        </View>
+                        <View style={styles.metricsBurnRight}>
+                          <Text style={styles.metricsBurnValue}>{formatNum(bestResultsBurnTarget)}</Text>
+                          <Text style={styles.metricsBurnMin}>
+                            {t("home.burnMinSuffix", { min: formatNum(minBurnTarget) })}
+                          </Text>
+                          {plannedBurnActivities.length > 0 ? (
+                            <Ionicons
+                              name="chevron-down"
+                              size={14}
+                              color={TEXT_MUTED}
+                              style={{
+                                transform: [{ rotate: burnChipsExpanded ? "0deg" : "-90deg" }],
+                              }}
+                            />
+                          ) : null}
+                        </View>
+                      </Pressable>
+                      {burnChipsExpanded && plannedBurnActivities.length > 0 ? (
+                        <View style={styles.burnChipRow}>
+                          {plannedBurnActivities.map((activity) => (
+                            <View key={activity.id} style={styles.burnChip}>
+                              <Ionicons
+                                name={activity.kind === "cardioWarmup" ? "walk" : "barbell"}
+                                size={12}
+                                color={TEXT_MUTED}
+                              />
+                              <Text style={styles.burnChipText} numberOfLines={1}>
+                                {`${plannedBurnChipLabel(activity)} +${activity.kcal}`}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      ) : null}
+                    </>
+                  )}
                 </View>
               </View>
             </View>
@@ -1073,34 +1154,91 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
-  kpiColumn: { flex: 1, gap: 8 },
-  kpiPill: {
+  kpiColumn: { flex: 1 },
+  metricsCard: {
+    backgroundColor: CARD,
+    borderRadius: 12,
+    paddingVertical: 11.2,
+    paddingHorizontal: 16,
+    borderWidth: 0.5,
+    borderColor: TRACK,
+  },
+  metricsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: CARD,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: TRACK,
+    paddingVertical: 5,
   },
-  kpiPillRestDay: {
-    borderStyle: "dashed",
-    borderColor: "#C9C4B8",
-    backgroundColor: "#FAFAF7",
+  metricsRowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+    paddingRight: 8,
   },
-  kpiPillLeft: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1, flex: 1 },
-  kpiEmoji: { fontSize: 16 },
-  kpiValue: { fontSize: 17, fontWeight: "700", color: TEXT_PRIMARY, flexShrink: 0 },
-  kpiValueOrange: { color: ORANGE },
-  kpiLabel: { fontSize: 11, color: TEXT_MUTED, textTransform: "lowercase", flexShrink: 1 },
-  kpiLabelRestDay: {
+  metricsRowLabel: {
+    fontSize: 13,
+    color: TEXT_MUTED,
+    textTransform: "lowercase",
+  },
+  metricsRowValue: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: TEXT_PRIMARY,
+  },
+  metricsDivider: {
+    height: 0.5,
+    backgroundColor: TRACK,
+    marginVertical: 6,
+  },
+  metricsRowBurn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
+  metricsBurnLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: TEXT_PRIMARY,
+    textTransform: "lowercase",
+  },
+  metricsBurnRight: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 6,
+  },
+  metricsBurnValue: {
+    fontSize: 20,
+    fontWeight: "500",
+    color: TEXT_PRIMARY,
+  },
+  metricsBurnMin: {
     fontSize: 11,
     color: TEXT_MUTED,
-    fontWeight: "600",
-    flexShrink: 1,
-    lineHeight: 14,
+  },
+  burnChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 6,
+  },
+  burnChip: {
+    flexGrow: 1,
+    flexBasis: "45%",
+    minWidth: "45%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: BG,
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+  },
+  burnChipText: {
+    flex: 1,
+    fontSize: 11,
+    color: TEXT_PRIMARY,
   },
   tdeeCard: {
     backgroundColor: GREEN,
