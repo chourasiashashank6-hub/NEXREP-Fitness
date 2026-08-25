@@ -658,19 +658,13 @@ def _estimate_saved_workout_calories(
     db: Session,
     override_time_taken: str | None = None,
 ) -> int:
-    effective_time_taken = override_time_taken or (f"{int(workout.duration)}:00" if workout.duration else None)
-    return estimate_workout_calories_via_met(
-        WorkoutRequest(
-            exercise_id=workout.exercise_id,
-            type=workout.type,
-            exerciseName=workout.exercise_name,
-            sets=workout.sets,
-            reps=workout.reps,
-            duration=workout.duration,
-            timeTaken=effective_time_taken,
-        ),
+    from src.services.session_calories import estimate_saved_workout_calories
+
+    return estimate_saved_workout_calories(
+        workout,
         user_weight_kg or 70,
         db,
+        override_time_taken=override_time_taken,
     )
 
 

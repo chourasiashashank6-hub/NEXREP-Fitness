@@ -18,7 +18,9 @@ import type { RouteProp } from "@react-navigation/native";
 import Svg, { Circle } from "react-native-svg";
 import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { postSessionComplete } from "../api/workoutSessions";
+import { fetchOnboardingMeShared } from "../api/onboarding";
 import { getProfile } from "../api/user";
+import { fetchWeightLatest } from "../api/weight";
 import { EndEarlySheet } from "../components/EndEarlySheet";
 import type { MediaPipeTrackingUpdate } from "../components/MediaPipeGuidanceView";
 import { useCameraFlipLock } from "../hooks/useCameraFlipLock";
@@ -51,10 +53,11 @@ import {
 import type { RootStackParamList } from "../navigation/types";
 import { navigationRef } from "../navigation/navigationRef";
 import {
+  calcActiveSetKcal,
   calcExerciseEstimateKcal,
-  calcSetKcal,
 } from "../utils/sessionCalories";
 import { resolveMetForExercise } from "../utils/exerciseMetLookup";
+import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 import { notifyUser } from "../utils/notify";
 
 const GREEN = "#0F6E56";
@@ -258,10 +261,15 @@ export default function AICameraWorkoutScreen() {
   }, []);
 
   useEffect(() => {
-    getProfile()
-      .then((p: any) => {
-        const w = Number(p?.weight ?? p?.weight_kg ?? 70);
-        if (Number.isFinite(w) && w > 0) setUserWeightKg(w);
+    Promise.all([getProfile(), fetchWeightLatest(), fetchOnboardingMeShared()])
+      .then(([profile, weightLatest, onboardingRes]) => {
+        const profileWeightKg = Number(profile?.weight ?? profile?.weight_kg);
+        const kg = resolveBurnTargetWeightKg({
+          weightLatest,
+          profileWeightKg: Number.isFinite(profileWeightKg) && profileWeightKg > 0 ? profileWeightKg : undefined,
+          onboardingWeightKg: onboardingRes?.onboarding?.personal?.weight_kg,
+        });
+        setUserWeightKg(kg);
       })
       .catch(() => undefined);
   }, []);
@@ -521,7 +529,17 @@ export default function AICameraWorkoutScreen() {
       ended_at: new Date().toISOString(),
       status,
       set_logs: s.set_logs.map(
-        ({ exercise_name, set_number, reps, weight_kg, started_at, completed_at, tracking_method }) => ({
+        ({
+          exercise_name,
+          set_number,
+          reps,
+          weight_kg,
+          started_at,
+          completed_at,
+          tracking_method,
+          prescribed_reps,
+          rest_seconds,
+        }) => ({
           exercise_name,
           set_number,
           reps,
@@ -529,6 +547,8 @@ export default function AICameraWorkoutScreen() {
           started_at,
           completed_at,
           tracking_method: tracking_method ?? "manual",
+          prescribed_reps,
+          rest_seconds,
         }),
       ),
       user_weight_kg: userWeightKg,
@@ -581,15 +601,17 @@ export default function AICameraWorkoutScreen() {
           : null;
     const pauseExtra =
       pausedAccumMs + (pauseStartedAt.current != null ? now.getTime() - pauseStartedAt.current : 0);
-    const setDurationSec = Math.max(
+    const workSec = Math.max(
       1,
       Math.floor((now.getTime() - setStartedAt.getTime() - pauseExtra) / 1000),
     );
-    const kcal = calcSetKcal({
+    const kcal = calcActiveSetKcal({
       exerciseName: currentExercise.exercise_name,
       userWeightKg,
-      setDurationSec,
-      restDurationSec: currentExercise.rest_seconds,
+      workSec,
+      restSec: currentExercise.rest_seconds,
+      reps: opts.reps,
+      prescribedReps: currentExercise.reps,
     });
     const quality =
       opts.method === "ai_camera"
@@ -604,6 +626,8 @@ export default function AICameraWorkoutScreen() {
       completed_at: now.toISOString(),
       kcal,
       tracking_method: opts.method,
+      prescribed_reps: currentExercise.reps,
+      rest_seconds: currentExercise.rest_seconds,
       form_quality_pct: quality,
     });
 

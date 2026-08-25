@@ -14,6 +14,8 @@ export interface CompleteSessionPayload {
     started_at: string;
     completed_at: string;
     tracking_method?: "manual" | "ai_camera";
+    prescribed_reps?: number;
+    rest_seconds?: number;
   }>;
   user_weight_kg: number;
   ai_tracking?: {

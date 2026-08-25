@@ -905,7 +905,6 @@ export const WorkoutScreen = () => {
         reps: parsedReps,
         duration: durationMin,
         difficulty: activeDifficulty === SELECT_CHOICE ? resolvedEntry.difficulty : activeDifficulty,
-        metValue: resolvedEntry.metValue,
         timeTaken,
       };
     }
@@ -919,7 +918,6 @@ export const WorkoutScreen = () => {
         reps: parsedReps,
         duration: durationMin,
         difficulty: activeDifficulty === SELECT_CHOICE ? selectedGlobalExercise.difficulty : activeDifficulty,
-        metValue: selectedGlobalExercise.met_value,
         timeTaken,
       };
     }
@@ -1064,7 +1062,6 @@ export const WorkoutScreen = () => {
           reps: parsedReps,
           duration: toDurationMinutes(timeTaken),
           difficulty: activeDifficulty === SELECT_CHOICE ? resolvedEntry.difficulty : activeDifficulty,
-          metValue: resolvedEntry.metValue,
           timeTaken,
           notes: `body_part=${resolvedEntry.bodyPart}; goal_tag=${activeGoalTag === SELECT_CHOICE ? resolvedEntry.goalTag : activeGoalTag}; difficulty=${activeDifficulty === SELECT_CHOICE ? resolvedEntry.difficulty : activeDifficulty}; equipment=${resolvedEntry.equipment}; recommendation=${resolvedRecommendation}; recommended_weight_kg=${recommendedWeight}; planned_sets=${resolvedEntry.sets}; planned_reps=${resolvedEntry.reps}; planned_duration=${resolvedEntry.duration}`,
         });
@@ -1078,7 +1075,6 @@ export const WorkoutScreen = () => {
           reps: parsedReps,
           duration: toDurationMinutes(timeTaken),
           difficulty: activeDifficulty === SELECT_CHOICE ? globalEntry.difficulty : activeDifficulty,
-          metValue: globalEntry.met_value,
           timeTaken,
           notes: `body_part=${bodyPart}; global_exercise=1; equipment=${globalEntry.equipment}; category=${globalEntry.category}; difficulty=${globalEntry.difficulty}`,
         });

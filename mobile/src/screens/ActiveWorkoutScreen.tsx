@@ -17,7 +17,9 @@ import type { RouteProp } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { postSessionComplete } from "../api/workoutSessions";
+import { fetchOnboardingMeShared } from "../api/onboarding";
 import { getProfile } from "../api/user";
+import { fetchWeightLatest } from "../api/weight";
 import { EndEarlySheet } from "../components/EndEarlySheet";
 import { CameraGuidedSessionFrame } from "../components/aiTrainer/CameraGuidedSessionFrame";
 import { useCameraTracking } from "../hooks/useCameraTracking";
@@ -30,10 +32,11 @@ import {
 } from "../store/workoutSessionStore";
 import type { RootStackParamList } from "../navigation/types";
 import {
+  calcActiveSetKcal,
   calcExerciseEstimateKcal,
-  calcSetKcal,
 } from "../utils/sessionCalories";
 import { resolveMetForExercise } from "../utils/exerciseMetLookup";
+import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 import { notifyUser } from "../utils/notify";
 
 const GREEN = "#0F6E56";
@@ -110,10 +113,15 @@ export default function ActiveWorkoutScreen() {
   }, []);
 
   useEffect(() => {
-    getProfile()
-      .then((p: any) => {
-        const w = Number(p?.weight ?? p?.weight_kg ?? 70);
-        if (Number.isFinite(w) && w > 0) setUserWeightKg(w);
+    Promise.all([getProfile(), fetchWeightLatest(), fetchOnboardingMeShared()])
+      .then(([profile, weightLatest, onboardingRes]) => {
+        const profileWeightKg = Number(profile?.weight ?? profile?.weight_kg);
+        const kg = resolveBurnTargetWeightKg({
+          weightLatest,
+          profileWeightKg: Number.isFinite(profileWeightKg) && profileWeightKg > 0 ? profileWeightKg : undefined,
+          onboardingWeightKg: onboardingRes?.onboarding?.personal?.weight_kg,
+        });
+        setUserWeightKg(kg);
       })
       .catch(() => undefined);
   }, []);
@@ -241,7 +249,17 @@ export default function ActiveWorkoutScreen() {
       ended_at: new Date().toISOString(),
       status,
       set_logs: s.set_logs.map(
-        ({ exercise_name, set_number, reps, weight_kg, started_at, completed_at, tracking_method }) => ({
+        ({
+          exercise_name,
+          set_number,
+          reps,
+          weight_kg,
+          started_at,
+          completed_at,
+          tracking_method,
+          prescribed_reps,
+          rest_seconds,
+        }) => ({
           exercise_name,
           set_number,
           reps,
@@ -249,6 +267,8 @@ export default function ActiveWorkoutScreen() {
           started_at,
           completed_at,
           tracking_method: tracking_method ?? "manual",
+          prescribed_reps,
+          rest_seconds,
         }),
       ),
       user_weight_kg: userWeightKg,
@@ -259,11 +279,13 @@ export default function ActiveWorkoutScreen() {
     if (!session || !currentExercise) return;
     const now = new Date();
     const weight = weightInput.trim() ? Number(weightInput) : null;
-    const kcal = calcSetKcal({
+    const kcal = calcActiveSetKcal({
       exerciseName: currentExercise.exercise_name,
       userWeightKg,
-      setDurationSec: setElapsedSec,
-      restDurationSec: currentExercise.rest_seconds,
+      workSec: setElapsedSec,
+      restSec: currentExercise.rest_seconds,
+      reps: currentExercise.reps,
+      prescribedReps: currentExercise.reps,
     });
 
     logSet({
@@ -274,6 +296,8 @@ export default function ActiveWorkoutScreen() {
       completed_at: now.toISOString(),
       kcal,
       tracking_method: "manual",
+      prescribed_reps: currentExercise.reps,
+      rest_seconds: currentExercise.rest_seconds,
     });
 
     const isLastSet = session.current_set >= currentExercise.sets;

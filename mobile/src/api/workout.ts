@@ -35,7 +35,6 @@ export const addWorkout = async (payload: {
   reps?: number;
   duration?: number;
   difficulty?: string;
-  metValue?: number;
   timeTaken?: string;
   notes?: string;
 }) => {
@@ -53,7 +52,6 @@ export const estimateWorkoutCalories = async (payload: {
   reps?: number;
   duration?: number;
   difficulty?: string;
-  metValue?: number;
   timeTaken?: string;
 }): Promise<{ estimatedCalories: number }> => {
   const { data } = await apiClient.post<{ estimatedCalories: number }>("/workout/estimate", payload);

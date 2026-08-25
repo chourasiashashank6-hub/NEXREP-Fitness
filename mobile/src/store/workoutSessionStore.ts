@@ -29,6 +29,8 @@ export interface SetLog {
   completed_at: string;
   kcal: number;
   tracking_method: TrackingMethod;
+  prescribed_reps?: number;
+  rest_seconds?: number;
   form_quality_pct?: number | null;
 }
 

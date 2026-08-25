@@ -20,6 +20,8 @@ from src.models.models import (
 )
 from src.services.activity_feed_service import emit_streak_milestone_if_needed
 from src.services.exercise_met_service import resolve_met_for_exercise
+from src.services.resolve_burn_target_weight_kg import resolve_burn_target_weight_kg
+from src.services.session_calories import calc_active_set_kcal
 from src.utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/sessions", tags=["workout-sessions"])
@@ -33,6 +35,8 @@ class SetLogIn(BaseModel):
     started_at: datetime
     completed_at: datetime
     tracking_method: Literal["manual", "ai_camera"] = "manual"
+    prescribed_reps: int | None = None
+    rest_seconds: int | None = None
 
 
 class CompleteSessionRequest(BaseModel):
@@ -57,9 +61,16 @@ def _lookup_met(db: Session, exercise_name: str) -> float:
     return resolve_met_for_exercise(db, exercise_name=exercise_name)
 
 
-def _set_kcal(met: float, user_weight_kg: float, started_at: datetime, completed_at: datetime) -> float:
-    duration = max(0.0, (completed_at - started_at).total_seconds())
-    return round(met * user_weight_kg * ((duration + 90.0) / 3600.0), 2)
+def _active_set_kcal(log: SetLogIn, met: float, weight: float) -> int:
+    work_sec = max(0.0, (log.completed_at - log.started_at).total_seconds())
+    return calc_active_set_kcal(
+        met=met,
+        user_weight_kg=weight,
+        work_sec=work_sec,
+        rest_sec=log.rest_seconds,
+        reps=log.reps,
+        prescribed_reps=log.prescribed_reps,
+    )
 
 
 @router.post("/complete", response_model=CompleteSessionResponse)
@@ -85,13 +96,13 @@ def complete_session(
             streak_incremented=bool(existing.streak_incremented),
         )
 
-    weight = float(payload.user_weight_kg or current_user.weight or 70)
+    weight = resolve_burn_target_weight_kg(db, current_user)
 
-    computed_logs: list[tuple[SetLogIn, float]] = []
-    total_kcal = 0.0
+    computed_logs: list[tuple[SetLogIn, int]] = []
+    total_kcal = 0
     for log in payload.set_logs:
         met = _lookup_met(db, log.exercise_name)
-        kcal = _set_kcal(met, weight, log.started_at, log.completed_at)
+        kcal = _active_set_kcal(log, met, weight)
         computed_logs.append((log, kcal))
         total_kcal += kcal
 
