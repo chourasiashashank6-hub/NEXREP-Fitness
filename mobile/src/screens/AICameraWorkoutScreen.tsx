@@ -22,6 +22,8 @@ import { fetchOnboardingMeShared } from "../api/onboarding";
 import { getProfile } from "../api/user";
 import { fetchWeightLatest } from "../api/weight";
 import { EndEarlySheet } from "../components/EndEarlySheet";
+import { SetWeightPrompt } from "../components/SetWeightPrompt";
+import { useSetWeightAfterLog } from "../hooks/useSetWeightAfterLog";
 import type { MediaPipeTrackingUpdate } from "../components/MediaPipeGuidanceView";
 import { useCameraFlipLock } from "../hooks/useCameraFlipLock";
 import { CameraWorkoutShell } from "../components/aiTrainer/CameraWorkoutShell";
@@ -171,7 +173,6 @@ export default function AICameraWorkoutScreen() {
   const [, tick] = useState(0);
   const [loading, setLoading] = useState(true);
   const [userWeightKg, setUserWeightKg] = useState(70);
-  const [weightInput, setWeightInput] = useState("");
   const [manualReps, setManualReps] = useState("");
   const [setStartedAt, setSetStartedAt] = useState(() => new Date());
   const [pausedAccumMs, setPausedAccumMs] = useState(0);
@@ -209,6 +210,8 @@ export default function AICameraWorkoutScreen() {
   const restFinishLock = useRef(false);
   const checkpointTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { weightPrompt, afterSetLogged, confirmSetWeight, skipSetWeight } =
+    useSetWeightAfterLog(userWeightKg);
 
   useEffect(() => {
     const id = setInterval(() => tick((n) => n + 1), 1000);
@@ -588,30 +591,26 @@ export default function AICameraWorkoutScreen() {
   const completeCurrentSet = async (opts: {
     reps: number;
     method: "ai_camera" | "manual";
-    weightKg?: number | null;
   }) => {
     if (!session || !currentExercise || completingRef.current) return;
     completingRef.current = true;
     const now = new Date();
-    const weight =
-      opts.weightKg !== undefined
-        ? opts.weightKg
-        : weightInput.trim()
-          ? Number(weightInput)
-          : null;
     const pauseExtra =
       pausedAccumMs + (pauseStartedAt.current != null ? now.getTime() - pauseStartedAt.current : 0);
     const workSec = Math.max(
       1,
       Math.floor((now.getTime() - setStartedAt.getTime() - pauseExtra) / 1000),
     );
+    const reps = opts.reps;
+    const prescribedReps = parseReps(currentExercise.reps);
+    const setNumber = session.current_set;
     const kcal = calcActiveSetKcal({
       exerciseName: currentExercise.exercise_name,
       userWeightKg,
       workSec,
       restSec: currentExercise.rest_seconds,
-      reps: opts.reps,
-      prescribedReps: currentExercise.reps,
+      reps,
+      prescribedReps,
     });
     const quality =
       opts.method === "ai_camera"
@@ -620,24 +619,39 @@ export default function AICameraWorkoutScreen() {
 
     logSet({
       exercise_name: currentExercise.exercise_name,
-      reps: opts.reps,
-      weight_kg: Number.isFinite(weight as number) ? (weight as number) : null,
+      reps,
+      weight_kg: null,
       started_at: setStartedAt.toISOString(),
       completed_at: now.toISOString(),
       kcal,
       tracking_method: opts.method,
-      prescribed_reps: currentExercise.reps,
+      prescribed_reps: prescribedReps,
       rest_seconds: currentExercise.rest_seconds,
       form_quality_pct: quality,
     });
 
     const isLastSet = session.current_set >= currentExercise.sets;
     const isLastExercise = session.current_exercise_index >= session.exercises.length - 1;
-    const volumeAdd = opts.reps * (Number.isFinite(weight as number) ? (weight as number) : 0);
 
     setForceManual(false);
     resetRepTracking();
     setLiveStatus("no_body");
+
+    const proceedAfterWeight = () => {
+      if (!isLastSet) {
+        completingRef.current = false;
+        return;
+      }
+      if (!isLastExercise) {
+        markExerciseCheckpoint();
+        completingRef.current = false;
+        return;
+      }
+      const latest = useWorkoutSessionStore.getState().session;
+      const latestKcal = latest?.set_logs.reduce((s, l) => s + l.kcal, 0) ?? 0;
+      const latestVolume = latest?.set_logs.reduce((s, l) => s + l.reps * (l.weight_kg ?? 0), 0) ?? 0;
+      void finishWorkout(latestKcal, latestVolume);
+    };
 
     if (!isLastSet) {
       beginRest(currentExercise.rest_seconds);
@@ -645,17 +659,24 @@ export default function AICameraWorkoutScreen() {
         new Date(Date.now() + currentExercise.rest_seconds * 1000),
         `Set ${session.current_set + 1} of ${currentExercise.sets} — ${currentExercise.exercise_name}`,
       );
-      completingRef.current = false;
-      return;
     }
 
-    if (!isLastExercise) {
-      markExerciseCheckpoint();
-      completingRef.current = false;
-      return;
-    }
-
-    await finishWorkout(kcal, volumeAdd);
+    const logsAfter = useWorkoutSessionStore.getState().session?.set_logs ?? [];
+    await afterSetLogged(
+      {
+        exercise_name: currentExercise.exercise_name,
+        set_number: setNumber,
+        reps,
+        workSec,
+        restSec: currentExercise.rest_seconds,
+        prescribedReps,
+        tracking_method: opts.method,
+        started_at: setStartedAt.toISOString(),
+        completed_at: now.toISOString(),
+        form_quality_pct: quality,
+      },
+      { showRest: !isLastSet, onDone: proceedAfterWeight, setLogs: logsAfter },
+    );
   };
 
   const handleContinueAfterCheckpoint = () => {
@@ -826,11 +847,10 @@ export default function AICameraWorkoutScreen() {
   const handleManualSetDone = () => {
     if (!currentExercise) return;
     const repsRaw = manualReps.trim() ? Number(manualReps) : currentExercise.reps;
-    const reps = Number.isFinite(repsRaw) && repsRaw > 0 ? Math.round(repsRaw) : currentExercise.reps;
+    const reps = Number.isFinite(repsRaw) && repsRaw > 0 ? Math.round(repsRaw) : parseReps(currentExercise.reps);
     void completeCurrentSet({
       reps,
       method: "manual",
-      weightKg: weightInput.trim() ? Number(weightInput) : null,
     });
   };
 
@@ -868,6 +888,20 @@ export default function AICameraWorkoutScreen() {
     : session.current_set < currentExercise.sets
       ? `Set ${session.current_set + 1}`
       : "Workout complete";
+
+  const weightPromptNode = (
+    <SetWeightPrompt
+      visible={weightPrompt != null}
+      exerciseName={weightPrompt?.exercise_name ?? ""}
+      setNumber={weightPrompt?.set_number ?? 1}
+      prefillKg={weightPrompt?.prefillKg ?? null}
+      showRestTimer={weightPrompt?.showRest ?? false}
+      restRemainingSec={restRemainingSec}
+      restTotalSec={restTotalSec}
+      onConfirm={confirmSetWeight}
+      onSkip={skipSetWeight}
+    />
+  );
 
   // —— Exercise complete checkpoint (camera off) ——
   if (phase === "exercise_complete") {
@@ -942,6 +976,7 @@ export default function AICameraWorkoutScreen() {
           setsCompleted={completedSets}
           {...CAMERA_CANCEL_COPY}
         />
+        {weightPromptNode}
       </SafeAreaView>
     );
   }
@@ -1051,6 +1086,7 @@ export default function AICameraWorkoutScreen() {
           setsCompleted={completedSets}
           {...CAMERA_CANCEL_COPY}
         />
+        {weightPromptNode}
       </SafeAreaView>
     );
   }
@@ -1094,15 +1130,6 @@ export default function AICameraWorkoutScreen() {
               placeholderTextColor={MUTED}
               keyboardType="number-pad"
             />
-            <Text style={styles.manualLbl}>kg</Text>
-            <TextInput
-              style={styles.manualInput}
-              value={weightInput}
-              onChangeText={setWeightInput}
-              placeholder="0"
-              placeholderTextColor={MUTED}
-              keyboardType="decimal-pad"
-            />
           </View>
           <Pressable style={styles.primaryBtn} onPress={handleManualSetDone}>
             <Text style={styles.primaryBtnTxt}>✓ Set done</Text>
@@ -1128,6 +1155,7 @@ export default function AICameraWorkoutScreen() {
           setsCompleted={completedSets}
           {...CAMERA_CANCEL_COPY}
         />
+        {weightPromptNode}
       </SafeAreaView>
     );
   }
@@ -1216,6 +1244,7 @@ export default function AICameraWorkoutScreen() {
         setsCompleted={completedSets}
         {...CAMERA_CANCEL_COPY}
       />
+      {weightPromptNode}
     </SafeAreaView>
   );
 }

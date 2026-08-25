@@ -185,7 +185,7 @@ def test_completion_path_uses_same_helper():
         reps=10,
         prescribed_reps=10,
     )
-    assert _active_set_kcal(log, MET, WEIGHT_KG) == direct
+    assert _active_set_kcal(log, MET, WEIGHT_KG, baseline_load_kg=None) == direct
 
 
 def test_magnitude_near_duration_only_baseline():
@@ -195,3 +195,108 @@ def test_magnitude_near_duration_only_baseline():
         met=MET, user_weight_kg=WEIGHT_KG, work_sec=45, rest_sec=90, reps=10, prescribed_reps=10
     )
     assert abs(option_a - duration_only) / duration_only <= 0.05
+
+
+def test_load_multiplier_worked_examples():
+    """Incline DB Press baseline 30kg — 20/30/50kg loads."""
+    met = 6.0
+    baseline = 30.0
+    at_baseline = calc_active_set_kcal(
+        met=met,
+        user_weight_kg=WEIGHT_KG,
+        work_sec=45,
+        rest_sec=90,
+        reps=10,
+        prescribed_reps=10,
+        load_kg=30,
+        baseline_load_kg=baseline,
+    )
+    light = calc_active_set_kcal(
+        met=met,
+        user_weight_kg=WEIGHT_KG,
+        work_sec=45,
+        rest_sec=90,
+        reps=10,
+        prescribed_reps=10,
+        load_kg=20,
+        baseline_load_kg=baseline,
+    )
+    heavy = calc_active_set_kcal(
+        met=met,
+        user_weight_kg=WEIGHT_KG,
+        work_sec=45,
+        rest_sec=90,
+        reps=10,
+        prescribed_reps=10,
+        load_kg=50,
+        baseline_load_kg=baseline,
+    )
+    assert at_baseline == 17
+    assert light == 15
+    assert heavy == 20
+    assert light < at_baseline < heavy
+
+
+def test_load_multiplier_missing_load_is_neutral():
+    base = calc_active_set_kcal(
+        met=MET,
+        user_weight_kg=WEIGHT_KG,
+        work_sec=45,
+        rest_sec=90,
+        reps=10,
+        prescribed_reps=10,
+        load_kg=None,
+        baseline_load_kg=30,
+    )
+    no_baseline = calc_active_set_kcal(
+        met=MET,
+        user_weight_kg=WEIGHT_KG,
+        work_sec=45,
+        rest_sec=90,
+        reps=10,
+        prescribed_reps=10,
+        load_kg=50,
+        baseline_load_kg=None,
+    )
+    assert base == 15
+    assert no_baseline == base
+
+
+def test_history_recompute_includes_load_weight(met_db: Session, monkeypatch):
+    started = datetime.utcnow()
+    set_logs = [
+        ActiveSetLogInput(
+            reps=10,
+            started_at=started,
+            completed_at=started + timedelta(seconds=45),
+            prescribed_reps=10,
+            weight_kg=50,
+        ),
+    ]
+
+    def _mock_load(_db, workout):
+        if "active_session:load-test" in str(getattr(workout, "notes", "")):
+            return set_logs
+        return []
+
+    monkeypatch.setattr(
+        "src.services.session_calories.load_active_set_logs_for_workout",
+        _mock_load,
+    )
+    monkeypatch.setattr(
+        "src.services.resolve_baseline_load_kg.resolve_baseline_load_kg",
+        lambda _db, _uid, _name: 30.0,
+    )
+
+    workout = SimpleNamespace(
+        user_id=1,
+        exercise_id=None,
+        type="strength",
+        exercise_name="Incline Dumbbell Press",
+        sets=1,
+        reps=10,
+        duration=2,
+        notes="active_session:load-test",
+    )
+    with_load = estimate_saved_workout_calories(workout, WEIGHT_KG, met_db, met=6.0)
+    assert with_load == 20

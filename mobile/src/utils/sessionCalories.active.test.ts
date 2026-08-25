@@ -40,4 +40,42 @@ assert.equal(low6, 13);
 assert.equal(high15, 18);
 assert.notEqual(fast10, low6);
 
+const atBaseline = calcActiveSetKcal({
+  exerciseName: "Incline Dumbbell Press",
+  userWeightKg: WEIGHT,
+  metValue: 6,
+  workSec: 45,
+  restSec: 90,
+  reps: 10,
+  prescribedReps: 10,
+  loadKg: 30,
+  baselineLoadKg: 30,
+});
+const lightLoad = calcActiveSetKcal({
+  exerciseName: "Incline Dumbbell Press",
+  userWeightKg: WEIGHT,
+  metValue: 6,
+  workSec: 45,
+  restSec: 90,
+  reps: 10,
+  prescribedReps: 10,
+  loadKg: 20,
+  baselineLoadKg: 30,
+});
+const heavyLoad = calcActiveSetKcal({
+  exerciseName: "Incline Dumbbell Press",
+  userWeightKg: WEIGHT,
+  metValue: 6,
+  workSec: 45,
+  restSec: 90,
+  reps: 10,
+  prescribedReps: 10,
+  loadKg: 50,
+  baselineLoadKg: 30,
+});
+
+assert.equal(atBaseline, 17);
+assert.equal(lightLoad, 15);
+assert.equal(heavyLoad, 20);
+
 console.log("sessionCalories.active.test.ts: all assertions passed");

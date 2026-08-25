@@ -20,6 +20,11 @@ from src.models.models import (
 )
 from src.services.activity_feed_service import emit_streak_milestone_if_needed
 from src.services.exercise_met_service import resolve_met_for_exercise
+from src.services.resolve_baseline_load_kg import (
+    is_bodyweight_exercise,
+    resolve_baseline_load_kg,
+    resolve_prefill_load_kg,
+)
 from src.services.resolve_burn_target_weight_kg import resolve_burn_target_weight_kg
 from src.services.session_calories import calc_active_set_kcal
 from src.utils.auth import get_current_user
@@ -57,11 +62,23 @@ class CompleteSessionResponse(BaseModel):
     streak_incremented: bool
 
 
+class LoadHintsResponse(BaseModel):
+    baseline_load_kg: float | None
+    prefill_kg: float | None
+    is_bodyweight: bool
+
+
 def _lookup_met(db: Session, exercise_name: str) -> float:
     return resolve_met_for_exercise(db, exercise_name=exercise_name)
 
 
-def _active_set_kcal(log: SetLogIn, met: float, weight: float) -> int:
+def _active_set_kcal(
+    log: SetLogIn,
+    met: float,
+    weight: float,
+    *,
+    baseline_load_kg: float | None,
+) -> int:
     work_sec = max(0.0, (log.completed_at - log.started_at).total_seconds())
     return calc_active_set_kcal(
         met=met,
@@ -70,6 +87,25 @@ def _active_set_kcal(log: SetLogIn, met: float, weight: float) -> int:
         rest_sec=log.rest_seconds,
         reps=log.reps,
         prescribed_reps=log.prescribed_reps,
+        load_kg=log.weight_kg,
+        baseline_load_kg=baseline_load_kg,
+    )
+
+
+@router.get("/load-hints", response_model=LoadHintsResponse)
+def load_hints(
+    exercise_name: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> LoadHintsResponse:
+    name = exercise_name.strip()
+    is_bw = is_bodyweight_exercise(db, name) if name else False
+    baseline = resolve_baseline_load_kg(db, current_user.id, name) if name else None
+    prefill = resolve_prefill_load_kg(db, current_user.id, name) if name and not is_bw else None
+    return LoadHintsResponse(
+        baseline_load_kg=baseline,
+        prefill_kg=prefill,
+        is_bodyweight=is_bw,
     )
 
 
@@ -98,11 +134,22 @@ def complete_session(
 
     weight = resolve_burn_target_weight_kg(db, current_user)
 
+    baseline_by_exercise: dict[str, float | None] = {}
     computed_logs: list[tuple[SetLogIn, int]] = []
     total_kcal = 0
     for log in payload.set_logs:
+        exercise_key = log.exercise_name.strip()
+        if exercise_key not in baseline_by_exercise:
+            baseline_by_exercise[exercise_key] = resolve_baseline_load_kg(
+                db, current_user.id, exercise_key
+            )
         met = _lookup_met(db, log.exercise_name)
-        kcal = _active_set_kcal(log, met, weight)
+        kcal = _active_set_kcal(
+            log,
+            met,
+            weight,
+            baseline_load_kg=baseline_by_exercise[exercise_key],
+        )
         computed_logs.append((log, kcal))
         total_kcal += kcal
 

@@ -10,8 +10,25 @@ export const ACTIVE_SESSION_CALORIE_DEFAULTS = {
   DENSITY_EXPONENT: 0.35,
   REP_MULT_MIN: 0.8,
   REP_MULT_MAX: 1.2,
+  LOAD_MULT_MIN: 0.8,
+  LOAD_MULT_MAX: 1.2,
+  LOAD_DENSITY_EXPONENT: 0.35,
   MIN_WORK_SEC: 1,
 } as const;
+
+function loadMultiplier(loadKg?: number | null, baselineLoadKg?: number | null): number {
+  const actual = loadKg != null && loadKg > 0 ? loadKg : 0;
+  const baseline = baselineLoadKg != null && baselineLoadKg > 0 ? baselineLoadKg : 0;
+  if (actual <= 0 || baseline <= 0) return 1;
+  const ratio = actual / baseline;
+  return Math.max(
+    ACTIVE_SESSION_CALORIE_DEFAULTS.LOAD_MULT_MIN,
+    Math.min(
+      ACTIVE_SESSION_CALORIE_DEFAULTS.LOAD_MULT_MAX,
+      ratio ** ACTIVE_SESSION_CALORIE_DEFAULTS.LOAD_DENSITY_EXPONENT,
+    ),
+  );
+}
 
 export function calcSetKcal({
   exerciseName,
@@ -40,6 +57,8 @@ export function calcActiveSetKcal({
   reps,
   prescribedReps,
   prescribedWorkSec = ACTIVE_SESSION_CALORIE_DEFAULTS.BASELINE_WORK_SEC,
+  loadKg,
+  baselineLoadKg,
 }: {
   exerciseName: string;
   userWeightKg: number;
@@ -49,6 +68,8 @@ export function calcActiveSetKcal({
   reps?: number | null;
   prescribedReps?: number | null;
   prescribedWorkSec?: number;
+  loadKg?: number | null;
+  baselineLoadKg?: number | null;
 }): number {
   const met = metValue != null && metValue > 0 ? metValue : resolveMetForExercise(exerciseName);
   const weight = Math.max(0, Number(userWeightKg) || 0);
@@ -81,7 +102,7 @@ export function calcActiveSetKcal({
     ACTIVE_SESSION_CALORIE_DEFAULTS.REP_MULT_MIN,
     Math.min(ACTIVE_SESSION_CALORIE_DEFAULTS.REP_MULT_MAX, densityRatio ** ACTIVE_SESSION_CALORIE_DEFAULTS.DENSITY_EXPONENT),
   );
-  const effectiveMet = met * repMultiplier;
+  const effectiveMet = met * repMultiplier * loadMultiplier(loadKg, baselineLoadKg);
   return Math.max(1, Math.round(effectiveMet * weight * ((work + rest) / 3600)));
 }
 

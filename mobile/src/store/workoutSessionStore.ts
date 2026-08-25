@@ -90,6 +90,11 @@ interface WorkoutSessionStore {
     sessionType?: SessionType,
   ) => void;
   logSet: (log: Omit<SetLog, "set_number">) => void;
+  updateSetLog: (
+    exerciseName: string,
+    setNumber: number,
+    patch: Pick<SetLog, "weight_kg" | "kcal">,
+  ) => void;
   beginRest: (restSeconds: number) => void;
   endRest: () => void;
   /**
@@ -172,6 +177,21 @@ export const useWorkoutSessionStore = create<WorkoutSessionStore>()(
                   tracking_method: log.tracking_method ?? "manual",
                 },
               ],
+            },
+          };
+        }),
+
+      updateSetLog: (exerciseName, setNumber, patch) =>
+        set((state) => {
+          if (!state.session) return state;
+          return {
+            session: {
+              ...state.session,
+              set_logs: state.session.set_logs.map((entry) =>
+                entry.exercise_name === exerciseName && entry.set_number === setNumber
+                  ? { ...entry, ...patch }
+                  : entry,
+              ),
             },
           };
         }),

@@ -33,6 +33,17 @@ export interface CompleteSessionResponse {
   streak_incremented: boolean;
 }
 
+export async function fetchLoadHints(exerciseName: string): Promise<{
+  baseline_load_kg: number | null;
+  prefill_kg: number | null;
+  is_bodyweight: boolean;
+}> {
+  const { data } = await apiClient.get("/api/sessions/load-hints", {
+    params: { exercise_name: exerciseName },
+  });
+  return data;
+}
+
 export async function postSessionComplete(
   payload: CompleteSessionPayload,
 ): Promise<CompleteSessionResponse> {

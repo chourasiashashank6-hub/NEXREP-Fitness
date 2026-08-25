@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,7 +20,9 @@ import { fetchOnboardingMeShared } from "../api/onboarding";
 import { getProfile } from "../api/user";
 import { fetchWeightLatest } from "../api/weight";
 import { EndEarlySheet } from "../components/EndEarlySheet";
+import { SetWeightPrompt } from "../components/SetWeightPrompt";
 import { CameraGuidedSessionFrame } from "../components/aiTrainer/CameraGuidedSessionFrame";
+import { useSetWeightAfterLog } from "../hooks/useSetWeightAfterLog";
 import { useCameraTracking } from "../hooks/useCameraTracking";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 import { navigationRef } from "../navigation/navigationRef";
@@ -87,7 +88,6 @@ export default function ActiveWorkoutScreen() {
   const [loading, setLoading] = useState(true);
   const [userWeightKg, setUserWeightKg] = useState(70);
   const [currentStreak] = useState(0);
-  const [weightInput, setWeightInput] = useState("");
   const [setStartedAt, setSetStartedAt] = useState(() => new Date());
   const [showEndSheet, setShowEndSheet] = useState(false);
   const [showSessionCamera, setShowSessionCamera] = useState(false);
@@ -96,6 +96,8 @@ export default function ActiveWorkoutScreen() {
   const needsCalBanner = usePoseCalibrationStore((s) => s.skipped && !s.hasCalibration());
   const needsRecalibration = usePoseCalibrationStore((s) => s.needsRecalibration);
   const bootstrapped = useRef(false);
+  const { weightPrompt, afterSetLogged, confirmSetWeight, skipSetWeight } =
+    useSetWeightAfterLog(userWeightKg);
 
   useEffect(() => {
     // Don't tick while camera is open — parent re-renders remount MediaPipe on web/native.
@@ -278,43 +280,41 @@ export default function ActiveWorkoutScreen() {
   const handleSetDone = async () => {
     if (!session || !currentExercise) return;
     const now = new Date();
-    const weight = weightInput.trim() ? Number(weightInput) : null;
+    const reps = parseReps(currentExercise.reps);
+    const workSec = setElapsedSec;
+    const setNumber = session.current_set;
     const kcal = calcActiveSetKcal({
       exerciseName: currentExercise.exercise_name,
       userWeightKg,
-      workSec: setElapsedSec,
+      workSec,
       restSec: currentExercise.rest_seconds,
-      reps: currentExercise.reps,
-      prescribedReps: currentExercise.reps,
+      reps,
+      prescribedReps: reps,
     });
 
     logSet({
       exercise_name: currentExercise.exercise_name,
-      reps: currentExercise.reps,
-      weight_kg: Number.isFinite(weight as number) ? (weight as number) : null,
+      reps,
+      weight_kg: null,
       started_at: setStartedAt.toISOString(),
       completed_at: now.toISOString(),
       kcal,
       tracking_method: "manual",
-      prescribed_reps: currentExercise.reps,
+      prescribed_reps: reps,
       rest_seconds: currentExercise.rest_seconds,
     });
 
     const isLastSet = session.current_set >= currentExercise.sets;
     const isLastExercise = session.current_exercise_index >= session.exercises.length - 1;
 
-    if (!isLastSet) {
-      beginRest(currentExercise.rest_seconds);
-      const restEnd = new Date(Date.now() + currentExercise.rest_seconds * 1000);
-      const nextLabel = `Set ${session.current_set + 1} of ${currentExercise.sets} — ${currentExercise.exercise_name}`;
-      void scheduleRestEndNotification(restEnd, nextLabel);
-    } else if (!isLastExercise) {
-      advanceExercise();
-      setSetStartedAt(new Date());
-    } else {
+    const completeWorkout = async () => {
       completeSession();
       const payload = buildCompletePayload("completed");
-      let serverResult = { server_kcal_total: totalKcal + kcal, streak_incremented: true };
+      const latest = useWorkoutSessionStore.getState().session;
+      const latestKcal = latest?.set_logs.reduce((s, l) => s + l.kcal, 0) ?? totalKcal + kcal;
+      const latestVolume =
+        latest?.set_logs.reduce((s, l) => s + l.reps * (l.weight_kg ?? 0), 0) ?? totalVolume;
+      let serverResult = { server_kcal_total: latestKcal, streak_incremented: true };
       if (payload) {
         try {
           serverResult = await postSessionComplete(payload);
@@ -324,13 +324,48 @@ export default function ActiveWorkoutScreen() {
       }
       navigation.replace("WorkoutCompletion", {
         elapsedSec,
-        clientKcal: totalKcal + kcal,
+        clientKcal: latestKcal,
         serverKcal: serverResult.server_kcal_total,
-        volumeKg: totalVolume + currentExercise.reps * (Number.isFinite(weight as number) ? (weight as number) : 0),
-        setsCompleted: completedSets + 1,
+        volumeKg: latestVolume,
+        setsCompleted: (latest?.set_logs.length ?? completedSets + 1),
         streakIncremented: serverResult.streak_incremented,
       });
+    };
+
+    const afterWeight = () => {
+      if (!isLastSet) {
+        return;
+      }
+      if (!isLastExercise) {
+        advanceExercise();
+        setSetStartedAt(new Date());
+        return;
+      }
+      void completeWorkout();
+    };
+
+    if (!isLastSet) {
+      beginRest(currentExercise.rest_seconds);
+      const restEnd = new Date(Date.now() + currentExercise.rest_seconds * 1000);
+      const nextLabel = `Set ${session.current_set + 1} of ${currentExercise.sets} — ${currentExercise.exercise_name}`;
+      void scheduleRestEndNotification(restEnd, nextLabel);
     }
+
+    const logsAfter = useWorkoutSessionStore.getState().session?.set_logs ?? [];
+    await afterSetLogged(
+      {
+        exercise_name: currentExercise.exercise_name,
+        set_number: setNumber,
+        reps,
+        workSec,
+        restSec: currentExercise.rest_seconds,
+        prescribedReps: reps,
+        tracking_method: "manual",
+        started_at: setStartedAt.toISOString(),
+        completed_at: now.toISOString(),
+      },
+      { showRest: !isLastSet, onDone: afterWeight, setLogs: logsAfter },
+    );
   };
 
   const handleSkipRest = () => {
@@ -480,18 +515,7 @@ export default function ActiveWorkoutScreen() {
             </Text>
           </View>
           <Text style={styles.exName}>{currentExercise.exercise_name}</Text>
-          <View style={styles.repsRow}>
-            <Text style={styles.repsTxt}>{currentExercise.reps} reps · </Text>
-            <TextInput
-              style={styles.weightInput}
-              value={weightInput}
-              onChangeText={setWeightInput}
-              placeholder="0"
-              placeholderTextColor={MUTED}
-              keyboardType="decimal-pad"
-            />
-            <Text style={styles.repsTxt}> kg</Text>
-          </View>
+          <Text style={styles.repsTxt}>{parseReps(currentExercise.reps)} reps</Text>
 
           {sessionCameraError ? <Text style={styles.mismatch}>{sessionCameraError}</Text> : null}
 
@@ -587,6 +611,18 @@ export default function ActiveWorkoutScreen() {
         currentStreak={currentStreak}
         estimatedMinutesLeft={estimatedMinutesLeft}
         setsCompleted={completedSets}
+      />
+
+      <SetWeightPrompt
+        visible={weightPrompt != null}
+        exerciseName={weightPrompt?.exercise_name ?? ""}
+        setNumber={weightPrompt?.set_number ?? 1}
+        prefillKg={weightPrompt?.prefillKg ?? null}
+        showRestTimer={weightPrompt?.showRest ?? false}
+        restRemainingSec={restRemainingSec}
+        restTotalSec={Math.max(1, session.rest_ring_total_sec ?? currentExercise.rest_seconds)}
+        onConfirm={confirmSetWeight}
+        onSkip={skipSetWeight}
       />
     </SafeAreaView>
   );

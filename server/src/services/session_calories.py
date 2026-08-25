@@ -21,6 +21,9 @@ DEFAULT_REST_SEC = 90
 DENSITY_EXPONENT = 0.35
 REP_MULT_MIN = 0.80
 REP_MULT_MAX = 1.20
+LOAD_DENSITY_EXPONENT = 0.35
+LOAD_MULT_MIN = 0.80
+LOAD_MULT_MAX = 1.20
 MIN_WORK_SEC = 1
 
 ACTIVE_SESSION_NOTES_RE = re.compile(r"^active_session(?:_partial)?:([^\s;,]+)", re.IGNORECASE)
@@ -35,6 +38,7 @@ class ActiveSetLogInput:
     completed_at: datetime | None
     prescribed_reps: int | None = None
     rest_seconds: int | None = None
+    weight_kg: float | None = None
 
 
 def parse_active_session_id(notes: str | None) -> str | None:
@@ -65,6 +69,15 @@ def calc_set_kcal(
     return max(0, int(round(met_value * weight * hours)))
 
 
+def _load_multiplier(load_kg: float | None, baseline_load_kg: float | None) -> float:
+    actual = float(load_kg) if load_kg is not None and float(load_kg) > 0 else 0.0
+    baseline = float(baseline_load_kg) if baseline_load_kg is not None and float(baseline_load_kg) > 0 else 0.0
+    if actual <= 0 or baseline <= 0:
+        return 1.0
+    ratio = actual / baseline
+    return max(LOAD_MULT_MIN, min(LOAD_MULT_MAX, ratio**LOAD_DENSITY_EXPONENT))
+
+
 def calc_active_set_kcal(
     *,
     met: float,
@@ -74,9 +87,11 @@ def calc_active_set_kcal(
     reps: int | None = None,
     prescribed_reps: int | None = None,
     prescribed_work_sec: int = BASELINE_WORK_SEC,
+    load_kg: float | None = None,
+    baseline_load_kg: float | None = None,
 ) -> int:
     """
-    Rep-adjusted MET × body weight × (work + rest) / 3600 for one logged set.
+    Rep- and load-adjusted MET × body weight × (work + rest) / 3600 for one logged set.
 
     Fallback order: full (time+reps) → reps with baseline work time → time only → flat set.
     """
@@ -110,7 +125,8 @@ def calc_active_set_kcal(
     actual_density = reps_eff / work
     density_ratio = actual_density / baseline_density if baseline_density > 0 else 1.0
     rep_multiplier = max(REP_MULT_MIN, min(REP_MULT_MAX, density_ratio**DENSITY_EXPONENT))
-    effective_met = met_value * rep_multiplier
+    load_multiplier = _load_multiplier(load_kg, baseline_load_kg)
+    effective_met = met_value * rep_multiplier * load_multiplier
     hours = (work + rest) / 3600.0
     return max(1, int(round(effective_met * weight * hours)))
 
@@ -122,6 +138,7 @@ def calc_active_exercise_kcal(
     user_weight_kg: float,
     prescribed_reps: int | None = None,
     rest_sec: int | None = None,
+    baseline_load_kg: float | None = None,
 ) -> int:
     if not set_logs:
         return 1
@@ -137,6 +154,8 @@ def calc_active_exercise_kcal(
             rest_sec=entry.rest_seconds if entry.rest_seconds is not None else rest_sec,
             reps=entry.reps,
             prescribed_reps=entry.prescribed_reps if entry.prescribed_reps is not None else prescribed_reps,
+            load_kg=entry.weight_kg,
+            baseline_load_kg=baseline_load_kg,
         )
     return max(1, total)
 
@@ -265,6 +284,7 @@ def load_active_set_logs_for_workout(db: Any, workout: Any) -> list[ActiveSetLog
             completed_at=row.completed_at,
             prescribed_reps=_prescribed_reps_per_set(workout),
             rest_seconds=DEFAULT_REST_SEC,
+            weight_kg=float(row.weight_kg) if row.weight_kg is not None and row.weight_kg > 0 else None,
         )
         for row in rows
     ]
@@ -298,12 +318,21 @@ def estimate_saved_workout_calories(
     if session_id and db is not None:
         set_logs = load_active_set_logs_for_workout(db, workout)
         if set_logs:
+            from src.services.resolve_baseline_load_kg import resolve_baseline_load_kg
+
+            exercise_name = getattr(workout, "exercise_name", None)
+            user_id = getattr(workout, "user_id", None)
+            baseline_load: float | None = None
+            if user_id and exercise_name:
+                baseline_load = resolve_baseline_load_kg(db, int(user_id), str(exercise_name))
+
             return calc_active_exercise_kcal(
                 set_logs,
                 met=float(effective_met),
                 user_weight_kg=user_weight_kg,
                 prescribed_reps=_prescribed_reps_per_set(workout),
                 rest_sec=DEFAULT_REST_SEC,
+                baseline_load_kg=baseline_load,
             )
 
     effective_time_taken = override_time_taken or (
