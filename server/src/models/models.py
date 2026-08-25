@@ -510,6 +510,7 @@ class GlobalExercise(Base):
     difficulty = Column(Text, nullable=True)
     is_compound = Column(Boolean, default=False)
     catalog_id = Column(BigInteger, ForeignKey("workout_catalog_v2.id"), nullable=True, index=True)
+    cues = Column(JSONB, nullable=True)
 
 
 class GlobalExerciseLabel(Base):

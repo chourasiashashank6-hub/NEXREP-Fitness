@@ -48,6 +48,7 @@ import {
 import type { CoachStackParamList } from "../../navigation/coachTypes";
 import type { FocusMuscle, WorkoutDayPlan, WorkoutExercise, WorkoutPlanCurrent } from "../../types/planner";
 import { isWorkoutRestDay } from "../../utils/workoutRestDay";
+import { formatSuggestedWeightRange, formatWorkoutSplitName } from "../../utils/workoutPlanDisplay";
 import { runSmartReflowDetection, markTier3ReflowAccepted, markTier3ReflowDeclined } from "../../services/smartReflowRunner";
 import { isTier3PromptAcknowledged } from "../../utils/reflowTierState";
 import { type ReflowTaggedExercise } from "../../utils/reflowExerciseMeta";
@@ -750,7 +751,10 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
           `planned_sets=${exercise.sets}`,
           `planned_reps=${exercise.reps}`,
           `planned_rest_seconds=${exercise.rest_seconds}`,
-        ].join("; "),
+          exercise.exercise_id ? `exercise_id=${exercise.exercise_id}` : "",
+        ]
+          .filter(Boolean)
+          .join("; "),
       });
       const savedId = Number(saved?.id);
       if (Number.isFinite(savedId) && savedId > 0) {
@@ -1169,7 +1173,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                     {!isWorkoutRestDay(dayDetail) ? (
                       <View style={styles.dayHeaderMainRow}>
                         <View style={styles.dayHeaderLeft}>
-                          <Text style={styles.split}>{dayDetail.split_name.toUpperCase()}</Text>
+                          <Text style={styles.split}>{formatWorkoutSplitName(dayDetail.split_name, t).toUpperCase()}</Text>
                           <View style={styles.statChipsRow}>
                             <View style={styles.statChip}>
                               <Ionicons name="time-outline" size={13} color={WHITE} />
@@ -1289,6 +1293,20 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                                   <Text style={styles.exercisePrescription}>
                                     {t("coach.workoutPlannerScreen.restSeconds", { sets: ex.sets, reps: ex.reps, seconds: ex.rest_seconds })}
                                   </Text>
+                                  {formatSuggestedWeightRange(ex, t) ? (
+                                    <Text style={styles.suggestedWeight}>{formatSuggestedWeightRange(ex, t)}</Text>
+                                  ) : null}
+                                  {ex.progression_note ? (
+                                    <View style={styles.progressionBadge}>
+                                      <Text style={styles.progressionBadgeText}>{ex.progression_note}</Text>
+                                    </View>
+                                  ) : ex.weight_change_kg && ex.weight_change_kg > 0 ? (
+                                    <View style={styles.progressionBadge}>
+                                      <Text style={styles.progressionBadgeText}>
+                                        +{ex.weight_change_kg} kg {t("coach.workoutPlannerScreen.progressingBadge").toLowerCase()}
+                                      </Text>
+                                    </View>
+                                  ) : null}
                                   <View style={styles.exerciseMetaRow}>
                                     <View style={[styles.muscleTag, { backgroundColor: tag.bg }]}>
                                       <Text style={[styles.muscleTagText, { color: tag.text }]}>{ex.muscle}</Text>
@@ -1448,6 +1466,16 @@ const styles = StyleSheet.create({
   reflowBadge: { backgroundColor: PURPLE_LIGHT, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: PURPLE_MID },
   reflowBadgeText: { color: PURPLE_MID, fontSize: 10, fontWeight: "800" },
   exercisePrescription: { color: ORANGE, fontSize: 12, fontWeight: "800", marginBottom: 4 },
+  suggestedWeight: { color: MUTED, fontSize: 11, marginBottom: 4 },
+  progressionBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E8F5EE",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 4,
+  },
+  progressionBadgeText: { color: GREEN, fontSize: 11, fontWeight: "700" },
   exerciseMetaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
   muscleTag: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
   muscleTagText: { fontSize: 10, fontWeight: "800" },

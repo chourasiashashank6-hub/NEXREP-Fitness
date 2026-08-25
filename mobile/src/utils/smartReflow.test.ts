@@ -6,7 +6,7 @@ import { buildSmartReflowPatches } from "./smartReflow";
 import type { ReflowDaySnapshot } from "./smartReflow";
 import type { WorkoutExercise, WorkoutPlanCurrent } from "../types/planner";
 import { buildReflowAdaptationId } from "./reflowAcknowledgment";
-import { isExerciseCompatibleWithDay, REFLOW_MAX_EXERCISES_PER_DAY } from "./reflowMuscleCompat";
+import { isExerciseCompatibleWithDay, REFLOW_MAX_EXERCISES_PER_DAY, focusMusclesForSplit } from "./reflowMuscleCompat";
 import { sanitizePlannerDayDetail, plannerDayNeedsSanitization, sanitizeWorkoutPlanCurrent } from "./sanitizePlannerDay";
 import {
   assessReflowTier,
@@ -14,6 +14,7 @@ import {
   REFLOW_TIER3_MIN_MISSED_DAYS,
 } from "./smartReflowTiers";
 import { isCompoundExercise } from "./exerciseCompoundLookup";
+import { resolveMetForExercise } from "./exerciseMetLookup";
 
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error("FAIL: " + msg);
@@ -361,6 +362,60 @@ const overviewDay22 = {
     isEntirePlanPeriodMissed(plan, assessment.missedDays.map((entry) => entry.day)),
     "helper matches assessment",
   );
+}
+
+// Engine v3 i18n split keys still resolve push/pull/legs via substring match
+{
+  const pushFocus = ["Chest", "Shoulders", "Triceps"];
+  assert(
+    JSON.stringify(focusMusclesForSplit("coach.workout.split.push_a")) === JSON.stringify(pushFocus),
+    "i18n push split resolves focus muscles",
+  );
+  const chestPress: WorkoutExercise = {
+    name: "Barbell Bench Press",
+    sets: 4,
+    reps: "8",
+    muscle: "Chest",
+    note: "Brace core",
+    rest_seconds: 90,
+    exercise_id: 1,
+    met_value: 5,
+  };
+  assert(
+    isExerciseCompatibleWithDay(chestPress, {
+      split_name: "coach.workout.split.push_a",
+      focus_muscles: pushFocus,
+    }),
+    "chest exercise compatible with engine push day",
+  );
+  assert(isCompoundExercise("Barbell Bench Press") === true, "catalog compound lookup");
+  assert(isCompoundExercise("Barbell Curl") === false, "catalog isolation lookup");
+}
+
+// full_body i18n key without focus_muscles still accepts any muscle via split family
+{
+  const squat: WorkoutExercise = {
+    name: "Bodyweight Squat",
+    sets: 3,
+    reps: "12",
+    muscle: "Legs",
+    note: "",
+    rest_seconds: 60,
+  };
+  assert(
+    isExerciseCompatibleWithDay(squat, {
+      split_name: "coach.workout.split.full_body_a",
+      focus_muscles: [],
+    }),
+    "full_body split accepts leg exercise without stored focus list",
+  );
+}
+
+// Synced catalog exercises (migration 031) resolve MET + compound client-side
+{
+  assert(resolveMetForExercise("Pike Push-Up") === 4.5, "Pike Push-Up MET from synced catalog");
+  assert(isCompoundExercise("Close-Grip Push-Up") === false, "new arm isolation in catalog");
+  assert(isCompoundExercise("Pike Push-Up") === true, "new shoulder compound in catalog");
 }
 
 console.log("smartReflow.test.ts: all passed");

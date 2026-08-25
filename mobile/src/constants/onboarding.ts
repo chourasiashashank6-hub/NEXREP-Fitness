@@ -50,6 +50,7 @@ export const DEFAULT_ONBOARDING_DATA: OnboardingData = {
     workouts_per_week: null,
     tdee_multiplier: null,
     workout_types: [],
+    equipment_access: "full_gym",
   },
   dietary: {
     diet_type: "standard",

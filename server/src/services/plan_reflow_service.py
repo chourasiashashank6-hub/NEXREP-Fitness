@@ -118,6 +118,7 @@ def _exercise_names(exercises: list[dict[str, Any]]) -> set[str]:
 
 def _split_family(split_name: str) -> str:
     name = (split_name or "").lower()
+    normalized = name.replace(".", "_").replace("-", "_")
     if "push" in name:
         return "push"
     if "pull" in name:
@@ -126,7 +127,7 @@ def _split_family(split_name: str) -> str:
         return "legs"
     if "upper" in name:
         return "upper"
-    if "full body" in name or "full-body" in name:
+    if "full_body" in normalized or "full body" in name or "full-body" in name:
         return "full_body"
     return "unknown"
 

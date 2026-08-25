@@ -8,9 +8,7 @@ export function isWorkoutRestDay(
   day: Pick<WorkoutDayPlan, "is_rest_day" | "split_name"> | null | undefined,
 ): boolean {
   if (!day) return true;
-  if (day.is_rest_day) return true;
-  const split = (day.split_name ?? "").trim().toLowerCase();
-  return split.includes("rest") || split === "off";
+  return Boolean(day.is_rest_day);
 }
 
 /**

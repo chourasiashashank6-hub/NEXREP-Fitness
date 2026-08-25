@@ -20,7 +20,7 @@ import {
   isGoalFocusMuscleSelected,
   toggleGoalFocusMuscle,
 } from "../../utils/onboardingFocusMuscles";
-import type { ActivityLevel } from "../../types/onboarding";
+import type { ActivityLevel, EquipmentAccess } from "../../types/onboarding";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -29,6 +29,12 @@ const BG = "#F7F6F3";
 const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
 const BORDER = "#ECEAE5";
+
+const EQUIPMENT_OPTIONS: { value: EquipmentAccess; labelKey: string }[] = [
+  { value: "full_gym", labelKey: "onboarding.screen3.equipment.fullGym" },
+  { value: "dumbbells", labelKey: "onboarding.screen3.equipment.dumbbells" },
+  { value: "bodyweight_only", labelKey: "onboarding.screen3.equipment.bodyweightOnly" },
+];
 
 const LEVEL_COPY: Record<ActivityLevel, string> = {
   sedentary: "A good starting point - we'll help you build a routine.",
@@ -56,6 +62,7 @@ export default function Screen3Activity({ navigation }: any) {
 
   const selectedFocus = getGoalFocusMuscles(data.goal);
   const workoutsCount = data.activity.workouts_per_week ?? 0;
+  const selectedEquipment: EquipmentAccess = data.activity.equipment_access ?? "full_gym";
   const previewLevel = getActivityLevel(workoutsCount);
 
   const activityLevelLabels: Record<ActivityLevel, string> = {
@@ -133,6 +140,30 @@ export default function Screen3Activity({ navigation }: any) {
           </Pressable>
         </View>
         {errors.workouts ? <Text style={styles.error}>{errors.workouts}</Text> : null}
+
+        <View style={styles.block}>
+          <RequiredLabelRow>
+            <Text style={styles.labelInline}>{t("onboarding.screen3.equipmentAccess")}</Text>
+            <RequiredBadge />
+          </RequiredLabelRow>
+          <Text style={styles.sub}>{t("onboarding.screen3.equipmentAccessHelper")}</Text>
+          <View style={styles.chips}>
+            {EQUIPMENT_OPTIONS.map((option) => {
+              const selected = selectedEquipment === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  style={[styles.chip, selected ? styles.chipSelected : null]}
+                  onPress={() => updateActivity({ equipment_access: option.value })}
+                >
+                  <Text style={[styles.chipLabel, selected ? styles.chipLabelSelected : null]}>
+                    {t(option.labelKey)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         <View style={styles.previewCard}>
           <Text style={styles.previewTitle}>{activityLevelLabels[previewLevel]}</Text>

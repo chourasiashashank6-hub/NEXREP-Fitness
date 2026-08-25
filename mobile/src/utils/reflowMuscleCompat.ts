@@ -10,6 +10,16 @@ const UPPER_MUSCLES = [...PUSH_MUSCLES, ...PULL_MUSCLES, "arms"];
 
 type SplitFamily = "push" | "pull" | "legs" | "upper" | "full_body" | "unknown";
 
+function normalizeSplitName(splitName: string): string {
+  return splitName.toLowerCase().replace(/\./g, "_").replace(/-/g, "_");
+}
+
+function isFullBodySplit(splitName: string): boolean {
+  const name = splitName.toLowerCase();
+  const normalized = normalizeSplitName(splitName);
+  return normalized.includes("full_body") || name.includes("full body") || name.includes("full-body");
+}
+
 export type ReflowDayFocus = {
   split_name: string;
   focus_muscles: string[];
@@ -22,7 +32,7 @@ export function focusMusclesForSplit(splitName: string): string[] {
   if (name.includes("pull")) return ["Back", "Biceps", "Rear Delts"];
   if (name.includes("leg") || name.includes("lower")) return ["Quads", "Hamstrings", "Glutes", "Calves"];
   if (name.includes("upper")) return ["Chest", "Back", "Shoulders", "Arms"];
-  if (name.includes("full body") || name.includes("full-body")) return ["Full Body"];
+  if (isFullBodySplit(splitName)) return ["Chest", "Back", "Legs", "Shoulders"];
   return ["Chest", "Shoulders", "Triceps"];
 }
 
@@ -37,7 +47,7 @@ function splitFamily(splitName: string): SplitFamily {
   if (name.includes("pull")) return "pull";
   if (name.includes("leg") || name.includes("lower")) return "legs";
   if (name.includes("upper")) return "upper";
-  if (name.includes("full body") || name.includes("full-body")) return "full_body";
+  if (isFullBodySplit(splitName)) return "full_body";
   return "unknown";
 }
 

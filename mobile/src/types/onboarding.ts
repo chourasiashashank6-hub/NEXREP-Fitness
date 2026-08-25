@@ -1,4 +1,4 @@
-export type BiologicalSex = "male" | "female" | "other";
+export type EquipmentAccess = "full_gym" | "dumbbells" | "bodyweight_only";
 export type UnitSystem = "metric" | "imperial";
 export type GoalType = "fat_loss" | "muscle_gain" | "strength" | "recomp" | "maintain";
 export type GoalPace = "slow" | "moderate" | "aggressive";
@@ -44,6 +44,8 @@ export type OnboardingData = {
     workouts_per_week: number | null;
     tdee_multiplier: number | null;
     workout_types: string[];
+    /** Hard constraint for workout engine catalog filtering. Defaults to full_gym when absent. */
+    equipment_access?: EquipmentAccess | null;
   };
   dietary: {
     diet_type: string;

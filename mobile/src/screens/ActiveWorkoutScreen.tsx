@@ -153,7 +153,7 @@ export default function ActiveWorkoutScreen() {
           sets: ex.sets,
           reps: parseReps(ex.reps),
           rest_seconds: ex.rest_seconds || 90,
-          met_value: resolveMetForExercise(ex.name),
+          met_value: ex.met_value ?? resolveMetForExercise(ex.name, ex.exercise_id),
         }));
 
         const dayName = planDay.split_name;

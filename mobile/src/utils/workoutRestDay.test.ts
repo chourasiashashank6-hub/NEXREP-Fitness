@@ -26,8 +26,8 @@ function planStub(partial: Partial<WorkoutPlanCurrent> & { today?: WorkoutPlanCu
 {
   assert(isWorkoutRestDay(null) === true, "null day → rest");
   assert(isWorkoutRestDay({ is_rest_day: true, split_name: "Push" }) === true, "flag → rest");
-  assert(isWorkoutRestDay({ is_rest_day: false, split_name: "Rest Day" }) === true, "split rest → rest");
-  assert(isWorkoutRestDay({ is_rest_day: false, split_name: "Off" }) === true, "off → rest");
+  assert(isWorkoutRestDay({ is_rest_day: false, split_name: "Rest Day" }) === false, "split name alone does not imply rest");
+  assert(isWorkoutRestDay({ is_rest_day: false, split_name: "Off" }) === false, "off label alone does not imply rest");
   assert(isWorkoutRestDay({ is_rest_day: false, split_name: "Push A" }) === false, "training day");
 }
 

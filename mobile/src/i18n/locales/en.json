@@ -1758,6 +1758,30 @@
       "noWorkoutYet": "No workout yet",
       "year": "Year"
     },
+    "workout": {
+      "split": {
+        "rest": "Rest Day",
+        "push": "Push Day",
+        "push_a": "Push A",
+        "push_b": "Push B",
+        "pull": "Pull Day",
+        "pull_a": "Pull A",
+        "pull_b": "Pull B",
+        "legs": "Legs",
+        "legs_a": "Legs A",
+        "legs_b": "Legs B",
+        "upper": "Upper Body",
+        "upper_a": "Upper A",
+        "upper_b": "Upper B",
+        "lower": "Lower Body",
+        "lower_a": "Lower A",
+        "lower_b": "Lower B",
+        "full_body": "Full Body",
+        "full_body_a": "Full Body A",
+        "full_body_b": "Full Body B",
+        "full_body_c": "Full Body C"
+      }
+    },
     "journey": {
       "sectionTitle": "COACH NOTICED",
       "timelineTitle": "YOUR JOURNEY",
@@ -2250,6 +2274,9 @@
       "tier3Regenerated": "Your remaining workouts this month have been regenerated."
     },
     "workoutPlannerScreen": {
+      "suggestedWeightRange": "Starting suggestion: {{low}}–{{high}} kg",
+      "suggestedWeightSingle": "Starting suggestion: ~{{weight}} kg",
+      "progressingBadge": "Progressing",
       "balancedHint": "Balanced — all muscle groups will be trained equally",
       "singleMuscleHint": "Extra volume for {{muscle}} in every session",
       "multiMuscleHint": "Extra volume for {{muscles}} across your plan",
@@ -2697,6 +2724,13 @@
       "preWorkoutEnabledSub": "Get an AI-recommended warm-up before each workout.",
       "muscleFocusOptional": "Muscle Focus (Optional)",
       "muscleFocusHelper": "Select one or more muscle groups — we'll add extra volume in your monthly workout plan",
+      "equipmentAccess": "Equipment available",
+      "equipmentAccessHelper": "We'll only prescribe exercises you can actually perform with what you have.",
+      "equipment": {
+        "fullGym": "Full gym",
+        "dumbbells": "Dumbbells at home",
+        "bodyweightOnly": "Bodyweight only"
+      },
       "errors": {
         "activityRequired": "Activity level is required",
         "workoutsRequired": "Workouts per week is required"

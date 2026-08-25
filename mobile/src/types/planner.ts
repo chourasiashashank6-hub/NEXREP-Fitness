@@ -209,6 +209,13 @@ export type WorkoutExercise = {
   muscle: string;
   note: string;
   rest_seconds: number;
+  exercise_id?: number;
+  met_value?: number;
+  weight_kg?: number | null;
+  weight_kg_low?: number | null;
+  weight_kg_high?: number | null;
+  weight_change_kg?: number | null;
+  progression_note?: string | null;
   /** Set when Smart Reflow moved this exercise from a missed plan day. */
   reflow_source_day?: number;
 };
