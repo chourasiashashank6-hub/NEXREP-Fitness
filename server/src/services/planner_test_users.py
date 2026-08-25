@@ -9,8 +9,8 @@ PLANNER_TEST_EMAILS = frozenset({"prashant@gmail.com", "shashank1@gmail.com"})
 # Per-email workout regen limits (used counts still tracked on monthly_workout_plans).
 PLANNER_WORKOUT_REGEN_LIMITS: dict[str, dict[str, int]] = {
     "nexrep.prod.test@gmail.com": {
-        "day_regens": 5,
-        "month_plan_regens": 5,
+        "day_regens": 10,
+        "month_plan_regens": 10,
     },
 }
 
