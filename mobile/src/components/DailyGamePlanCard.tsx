@@ -12,6 +12,7 @@ import {
 import { isWorkoutRestDay } from "../utils/workoutRestDay";
 import { countReflowedExercises } from "../utils/reflowExerciseMeta";
 import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
+import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -229,7 +230,7 @@ export function DailyGamePlanCard({
         {!restDayActive && todayPlanDay && exerciseLine ? (
           <Text style={styles.meta}>
             {t("home.gamePlan.workoutMeta", {
-              split: todayPlanDay.split_name,
+              split: formatWorkoutSplitName(todayPlanDay.split_name, t),
               muscles: muscleLine || "—",
               minutes: todayPlanDay.estimated_duration_min,
             })}

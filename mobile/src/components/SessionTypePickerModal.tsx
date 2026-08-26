@@ -1,4 +1,5 @@
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { BlurredModalBackdrop } from "./BlurredModalBackdrop";
 
 const GREEN = "#0F6E56";
 const CREAM = "#F1EFE8";
@@ -18,43 +19,43 @@ interface Props {
 export function SessionTypePickerModal({ visible, onDismiss, onChoose, dayTitle }: Props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
-      <Pressable style={styles.backdrop} onPress={onDismiss}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.handle} />
-          <Text style={styles.eyebrow}>START SESSION</Text>
-          <Text style={styles.title}>{dayTitle || "Guided workout"}</Text>
-          <Text style={styles.sub}>Choose how you want to train today</Text>
+      <View style={styles.root}>
+        <BlurredModalBackdrop onPress={onDismiss} accessibilityLabel="Cancel" />
+        <View style={styles.sheetWrap} pointerEvents="box-none">
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.handle} />
+            <Text style={styles.eyebrow}>START SESSION</Text>
+            <Text style={styles.title}>{dayTitle || "Guided workout"}</Text>
+            <Text style={styles.sub}>Choose how you want to train today</Text>
 
-          <Pressable style={styles.card} onPress={() => onChoose("standard")}>
-            <Text style={styles.cardTitle}>Standard session</Text>
-            <Text style={styles.cardMeta}>Manual sets · rest timers · form camera on demand</Text>
-          </Pressable>
+            <Pressable style={styles.card} onPress={() => onChoose("standard")}>
+              <Text style={styles.cardTitle}>Standard session</Text>
+              <Text style={styles.cardMeta}>Manual sets · rest timers · form camera on demand</Text>
+            </Pressable>
 
-          <Pressable style={[styles.card, styles.cardAi]} onPress={() => onChoose("ai_camera")}>
-            <View style={styles.newBadge}>
-              <Text style={styles.newBadgeTxt}>New</Text>
-            </View>
-            <Text style={styles.cardTitle}>AI camera session</Text>
-            <Text style={styles.cardMeta}>
-              Auto-count reps · posture cues · hands-free set advance
-            </Text>
-          </Pressable>
+            <Pressable style={[styles.card, styles.cardAi]} onPress={() => onChoose("ai_camera")}>
+              <View style={styles.newBadge}>
+                <Text style={styles.newBadgeTxt}>New</Text>
+              </View>
+              <Text style={styles.cardTitle}>Active camera Session</Text>
+              <Text style={styles.cardMeta}>
+                Auto-count reps · posture cues · hands-free set advance
+              </Text>
+            </Pressable>
 
-          <Pressable style={styles.cancel} onPress={onDismiss}>
-            <Text style={styles.cancelTxt}>Cancel</Text>
+            <Pressable style={styles.cancel} onPress={onDismiss}>
+              <Text style={styles.cancelTxt}>Cancel</Text>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "flex-end",
-  },
+  root: { flex: 1, backgroundColor: "transparent" },
+  sheetWrap: { flex: 1, justifyContent: "flex-end" },
   sheet: {
     backgroundColor: CREAM,
     borderTopLeftRadius: 20,

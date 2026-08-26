@@ -1758,30 +1758,6 @@
       "noWorkoutYet": "No workout yet",
       "year": "Year"
     },
-    "workout": {
-      "split": {
-        "rest": "Rest Day",
-        "push": "Push Day",
-        "push_a": "Push A",
-        "push_b": "Push B",
-        "pull": "Pull Day",
-        "pull_a": "Pull A",
-        "pull_b": "Pull B",
-        "legs": "Legs",
-        "legs_a": "Legs A",
-        "legs_b": "Legs B",
-        "upper": "Upper Body",
-        "upper_a": "Upper A",
-        "upper_b": "Upper B",
-        "lower": "Lower Body",
-        "lower_a": "Lower A",
-        "lower_b": "Lower B",
-        "full_body": "Full Body",
-        "full_body_a": "Full Body A",
-        "full_body_b": "Full Body B",
-        "full_body_c": "Full Body C"
-      }
-    },
     "journey": {
       "sectionTitle": "COACH NOTICED",
       "timelineTitle": "YOUR JOURNEY",
@@ -2110,6 +2086,28 @@
       "mealPlannerSubtitle": "Budget-friendly daily meals for {{month}}"
     },
     "workout": {
+      "split": {
+        "rest": "Rest Day",
+        "push": "Push Day",
+        "push_a": "Push A",
+        "push_b": "Push B",
+        "pull": "Pull Day",
+        "pull_a": "Pull A",
+        "pull_b": "Pull B",
+        "legs": "Leg Day",
+        "legs_a": "Legs A",
+        "legs_b": "Legs B",
+        "upper": "Upper Day",
+        "upper_a": "Upper A",
+        "upper_b": "Upper B",
+        "lower": "Lower Day",
+        "lower_a": "Lower A",
+        "lower_b": "Lower B",
+        "full_body": "Full Body",
+        "full_body_a": "Full Body A",
+        "full_body_b": "Full Body B",
+        "full_body_c": "Full Body C"
+      },
       "analyzedAt": "Analyzed at {{time}}",
       "notAnalyzed": "Not analyzed yet",
       "usingHistoryFallback": "Using history fallback data",

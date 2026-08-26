@@ -11,6 +11,7 @@ import { useAppTheme } from "../theme";
 import type { WorkoutDayPlan, WorkoutExercise } from "../types/planner";
 import { isWorkoutRestDay } from "../utils/workoutRestDay";
 import { sanitizePlannerDayDetail } from "../utils/sanitizePlannerDay";
+import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 
 const ACCENT = "#22d3ee";
 const ACCENT_PLANNER = ["#3b82f6", "#22d3ee", "transparent"] as const;
@@ -106,7 +107,9 @@ export function TodaysFocusCard() {
     (dayPlan.exercises?.length ?? 0) > 0;
 
   const muscles = showWorkout ? dedupeMusclesFromExercises(dayPlan!.exercises ?? []) : [];
-  const heading = showWorkout ? (dayPlan!.split_name ?? "").trim().toUpperCase() : "";
+  const heading = showWorkout
+    ? formatWorkoutSplitName(dayPlan!.split_name ?? "", t).toUpperCase()
+    : "";
 
   return (
     <AppCard>

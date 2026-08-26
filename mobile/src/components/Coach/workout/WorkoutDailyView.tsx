@@ -98,18 +98,24 @@ export function WorkoutDailyView({ summary }: Props) {
       <View style={styles.section}>
         <MuscleRecoveryMap muscles={muscles} />
       </View>
-      {tips.length > 0 ? <CoachingTips tips={tips} /> : null}
-      <Text style={styles.sectionLabel}>{t("coach.summary.workout.daily.recoveryTitle")}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recoveryRow}>
-        {day.recovery_cards.map((card) => (
-          <RecoveryTipCard
-            key={card.title_key}
-            icon={card.icon}
-            title={t(card.title_key)}
-            description={t(card.body_key)}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("coach.summary.workout.daily.recoveryTitle")}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recoveryRow}>
+          {day.recovery_cards.map((card) => (
+            <RecoveryTipCard
+              key={card.title_key}
+              icon={card.icon}
+              title={t(card.title_key)}
+              description={t(card.body_key)}
+            />
+          ))}
+        </ScrollView>
+      </View>
+      {tips.length > 0 ? (
+        <View style={styles.section}>
+          <CoachingTips tips={tips} />
+        </View>
+      ) : null}
     </View>
   );
 }

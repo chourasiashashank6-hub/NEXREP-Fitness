@@ -100,3 +100,44 @@ def test_prescribe_weight_bodyweight_returns_nulls(monkeypatch):
     )
     result = v3._prescribe_weight(db, ctx, ex, "primary_compound")
     assert result["weight_kg"] is None
+
+
+def _front_squat_fixture() -> v3.CatalogExercise:
+    return v3.CatalogExercise(
+        id=100,
+        name="Barbell Front Squat",
+        body_part="Legs",
+        equipment="Barbell",
+        difficulty="Advanced",
+        is_compound=True,
+        met_value=6.0,
+        muscles_primary=["Quadriceps"],
+        muscles_secondary=["Glutes", "Core", "Upper Back"],
+        cues=[],
+        movement_pattern="squat_pattern",
+    )
+
+
+def test_front_squat_does_not_match_back():
+    ex = _front_squat_fixture()
+    assert v3._muscle_matches(ex, "Back") is False
+    assert v3._muscle_matches(ex, "Legs") is True
+    assert v3._split_excludes_body_part("upper", "Legs") is True
+    assert v3._split_excludes_body_part("full_body", "Legs") is False
+
+
+def test_deficit_deadlift_matches_back():
+    ex = v3.CatalogExercise(
+        id=52,
+        name="Deficit Deadlift",
+        body_part="Back",
+        equipment="Barbell",
+        difficulty="Advanced",
+        is_compound=True,
+        met_value=6.0,
+        muscles_primary=["Hamstrings", "Glutes", "Erector Spinae"],
+        muscles_secondary=["Quads", "Lats"],
+        cues=[],
+        movement_pattern="hinge_pattern",
+    )
+    assert v3._muscle_matches(ex, "Back") is True

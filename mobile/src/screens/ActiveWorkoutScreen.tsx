@@ -38,6 +38,7 @@ import {
 } from "../utils/sessionCalories";
 import { resolveMetForExercise } from "../utils/exerciseMetLookup";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
+import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { notifyUser } from "../utils/notify";
 
 const GREEN = "#0F6E56";
@@ -156,7 +157,7 @@ export default function ActiveWorkoutScreen() {
           met_value: ex.met_value ?? resolveMetForExercise(ex.name, ex.exercise_id),
         }));
 
-        const dayName = planDay.split_name;
+        const dayName = formatWorkoutSplitName(planDay.split_name, t);
         const planDayId = String(todayPlan.plan_id);
         const existing = useWorkoutSessionStore.getState().session;
         const canResume =
@@ -432,7 +433,7 @@ export default function ActiveWorkoutScreen() {
     return (
       <CameraGuidedSessionFrame
         exerciseName={currentExercise.exercise_name}
-        exerciseSubtitle={`Set ${session.current_set} of ${currentExercise.sets} · ${session.day_name}`}
+        exerciseSubtitle={`Set ${session.current_set} of ${currentExercise.sets} · ${formatWorkoutSplitName(session.day_name, t)}`}
         targetReps={cameraTargetReps}
         poseSpec={cameraTracking.poseSpec}
         calibration={cameraTracking.calibrationPayload}
@@ -484,7 +485,7 @@ export default function ActiveWorkoutScreen() {
           <View style={styles.headerLeft}>
             <View style={styles.dot} />
             <Text style={styles.headerStatus}>
-              {session.day_name} · in progress
+              {formatWorkoutSplitName(session.day_name, t)} · in progress
             </Text>
           </View>
           <View style={styles.lockedRow}>

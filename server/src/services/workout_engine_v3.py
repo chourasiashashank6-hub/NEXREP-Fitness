@@ -457,19 +457,99 @@ def _split_target_muscles(split_key: str, focus_muscles: list[str]) -> list[str]
     return base
 
 
-def _muscle_matches(ex: CatalogExercise, muscle: str) -> bool:
-    m = muscle.lower()
-    if ex.body_part.lower() == m:
+def _normalize_split_key(split_key: str | None) -> str:
+    return (split_key or "").strip().lower().replace("-", "_")
+
+
+def _split_excludes_body_part(split_key: str | None, body_part: str) -> bool:
+    """Hard backstop: block obvious body-part leaks per split family (skipped for full_body)."""
+    sk = _normalize_split_key(split_key)
+    bp = (body_part or "").strip().lower()
+    if not sk or not bp:
+        return False
+    if sk.startswith("full_body") or sk == "full_body":
+        return False
+    if bp == "legs" and (sk.startswith(("upper", "push", "pull")) or sk in {"push", "pull"}):
         return True
-    primary = " ".join(ex.muscles_primary).lower()
-    secondary = " ".join(ex.muscles_secondary).lower()
-    if m in {"arms", "biceps", "triceps"}:
-        return ex.body_part.lower() == "arms" or "bicep" in primary or "tricep" in primary
+    if bp == "chest" and (sk.startswith(("lower", "legs")) or sk in {"legs", "lower"}):
+        return True
+    return False
+
+
+def _primary_blob(ex: CatalogExercise) -> str:
+    return " ".join(ex.muscles_primary).lower()
+
+
+def _body_part_norm(ex: CatalogExercise) -> str:
+    return ex.body_part.strip().lower()
+
+
+def _primary_has_term(primary: str, terms: tuple[str, ...]) -> bool:
+    return any(term in primary for term in terms)
+
+
+BACK_PRIMARY_TERMS = (
+    "lat",
+    "rhomboid",
+    "trap",
+    "erector",
+    "teres",
+    "mid back",
+    "lower back",
+    "infraspinatus",
+    "spinae",
+)
+CHEST_PRIMARY_TERMS = ("chest", "pectoral", "pec ")
+SHOULDER_PRIMARY_TERMS = ("delt", "shoulder", "rotator")
+LEG_PRIMARY_TERMS = ("quad", "hamstring", "glute", "calf", "adductor", "abductor")
+ARM_BICEP_TERMS = ("bicep", "brachialis")
+ARM_TRICEP_TERMS = ("tricep",)
+
+
+def _muscle_matches(ex: CatalogExercise, muscle: str) -> bool:
+    """Match target split/focus muscles using body_part + primary muscles only (no loose secondary/name substring hits)."""
+    m = muscle.strip().lower()
+    if not m:
+        return False
+
+    body = _body_part_norm(ex)
+    primary = _primary_blob(ex)
+
+    if m == body:
+        return True
+
+    if m in {"chest"}:
+        return body == "chest" or _primary_has_term(primary, CHEST_PRIMARY_TERMS)
+
+    if m in {"back"}:
+        return body == "back" or _primary_has_term(primary, BACK_PRIMARY_TERMS)
+
+    if m in {"shoulders", "shoulder"}:
+        return body == "shoulders" or _primary_has_term(primary, SHOULDER_PRIMARY_TERMS)
+
+    if m in {"arms", "biceps", "bicep"}:
+        return body == "arms" or _primary_has_term(primary, ARM_BICEP_TERMS)
+
+    if m in {"triceps", "tricep"}:
+        return body == "arms" or _primary_has_term(primary, ARM_TRICEP_TERMS)
+
     if m in {"rear delts", "rear delt"}:
-        return "rear" in primary or "rear" in secondary or "face pull" in ex.name.lower()
-    if m in {"legs", "quads", "hamstrings", "glutes", "calves"}:
-        return ex.body_part.lower() == "legs" or m.rstrip("s") in primary
-    return m.rstrip("s") in primary or m.rstrip("s") in secondary or m in ex.name.lower()
+        return ("rear" in primary and "delt" in primary) or "face pull" in ex.name.lower()
+
+    if m in {"legs", "leg", "quads", "quad", "hamstrings", "hamstring", "glutes", "glute", "calves", "calf"}:
+        return body == "legs" or _primary_has_term(primary, LEG_PRIMARY_TERMS)
+
+    if m in {"core"}:
+        return body == "core" or "core" in primary or "ab" in primary
+
+    for token in primary.split():
+        if m == token or m.rstrip("s") == token.rstrip("s"):
+            return True
+    for part in ex.muscles_primary:
+        pl = part.lower()
+        if m in pl or pl.startswith(m):
+            return True
+    return False
 
 
 def _filter_pool(
@@ -480,10 +560,13 @@ def _filter_pool(
     equipment_access: EquipmentAccess,
     exclude_ids: set[int],
     required_patterns: list[str],
+    split_key: str | None = None,
 ) -> list[CatalogExercise]:
     pool: list[CatalogExercise] = []
     for ex in catalog:
         if ex.id in exclude_ids:
+            continue
+        if split_key and _split_excludes_body_part(split_key, ex.body_part):
             continue
         if not _equipment_allowed(ex, equipment_access):
             continue
@@ -882,6 +965,7 @@ def build_training_day(
         equipment_access=equipment_access,
         exclude_ids=exclude_ids,
         required_patterns=required,
+        split_key=split_key,
     )
     if len(pool) < ctx.exercises_per_session:
         pool = _filter_pool(
@@ -891,6 +975,7 @@ def build_training_day(
             equipment_access=equipment_access,
             exclude_ids=set(),
             required_patterns=[],
+            split_key=split_key,
         )
     if len(pool) < ctx.exercises_per_session:
         raise RuntimeError(

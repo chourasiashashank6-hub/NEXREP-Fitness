@@ -65,6 +65,7 @@ import { useLanguageStore } from "../i18n/languageStore";
 import { useCameraTracking } from "../hooks/useCameraTracking";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import { useAuthStore } from "../store/authStore";
+import { useActivityDataRefreshStore } from "../store/activityDataRefreshStore";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import type { WorkoutPlanCurrent } from "../types/planner";
@@ -85,6 +86,7 @@ import {
   sessionMilestonePlannedTarget,
 } from "../utils/sessionMilestoneSlots";
 import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
+import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 import { navigationRef } from "../navigation/navigationRef";
 import MonthlyWorkoutPlannerScreen from "./Coach/MonthlyWorkoutPlannerScreen";
@@ -460,6 +462,7 @@ export const WorkoutScreen = () => {
   const lastAutoFilledExerciseRef = useRef<string | null>(null);
   const workoutInputsEditedRef = useRef(false);
   const lastFocusLoadAt = useRef(0);
+  const activityRefreshVersion = useActivityDataRefreshStore((s) => s.version);
 
   const isNoChoice = (value: string) => NO_CHOICE_VALUES.has((value || "").trim().toLowerCase());
   const needsGoalTagInput = isNoChoice(profileGoalTag);
@@ -707,6 +710,12 @@ export const WorkoutScreen = () => {
       }
     }, [needsGoalTagInput, needsDifficultyInput, language]),
   );
+
+  useEffect(() => {
+    if (activityRefreshVersion === 0) return;
+    lastFocusLoadAt.current = 0;
+    void loadInitial({ preservePlannerState: true });
+  }, [activityRefreshVersion]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1354,9 +1363,15 @@ export const WorkoutScreen = () => {
   const plannedActivityLabel = useCallback(
     (activity: PlannedBurnActivity) => {
       if (activity.kind === "cardioWarmup") return t("workoutLog.plannedCardioWarmup");
-      return t("workoutLog.plannedWorkoutSession", { name: activity.sessionLabel });
+      return t("workoutLog.plannedWorkoutSession", {
+        name: formatWorkoutSplitName(activity.sessionLabel, t),
+      });
     },
     [t],
+  );
+  const todaySplitLabel = useMemo(
+    () => formatWorkoutSplitName(todayPlanDay?.split_name ?? "", t),
+    [todayPlanDay?.split_name, t],
   );
   const plannedSessionKcal = useMemo(
     () => plannedBurnActivities.find((activity) => activity.kind === "workoutSession")?.kcal ?? 0,
@@ -1486,7 +1501,7 @@ export const WorkoutScreen = () => {
                     <Text style={styles.sessionBannerEyebrow}>TODAY'S PLAN</Text>
                     <Text style={styles.sessionPlay}>▶</Text>
                   </View>
-                  <Text style={styles.sessionBannerTitle}>{today!.split_name}</Text>
+                  <Text style={styles.sessionBannerTitle}>{todaySplitLabel}</Text>
                   <Text style={styles.sessionBannerMeta}>
                     {today!.exercises.length} exercises · ~{today!.estimated_duration_min} min · ~{totalEstKcal}{" "}
                     kcal
@@ -1505,7 +1520,7 @@ export const WorkoutScreen = () => {
                 </View>
                 <SessionTypePickerModal
                   visible={showSessionPicker}
-                  dayTitle={today!.split_name}
+                  dayTitle={todaySplitLabel}
                   onDismiss={() => setShowSessionPicker(false)}
                   onChoose={(type) => {
                     setShowSessionPicker(false);

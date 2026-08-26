@@ -684,3 +684,127 @@ def test_migration_dry_run_preserves_past_and_logs(db: Session):
 
     db.query(Workout).filter(Workout.id == log_id).delete()
     delete_workout_plan(db, plan)
+
+
+def _day_has_body_part_leak(day: dict[str, Any], catalog_by_name: dict[str, v3.CatalogExercise], body_part: str) -> bool:
+    target = body_part.strip().lower()
+    for row in day.get("exercises") or []:
+        name = str(row.get("name") or "").lower()
+        ex = catalog_by_name.get(name)
+        if ex and ex.body_part.strip().lower() == target:
+            return True
+    return False
+
+
+def test_upper_and_pull_days_exclude_leg_body_part(db: Session):
+    catalog = v3.load_catalog(db)
+    catalog_by_name = {ex.name.lower(): ex for ex in catalog}
+    leaks = 0
+    trials = 60
+    for uid in range(1, trials + 1):
+        for split_key in ("upper", "upper_a", "pull", "pull_b"):
+            ctx = v3.WorkoutEngineContext(
+                user_id=uid + 10_000,
+                workouts_per_week=5,
+                exercises_per_session=6,
+                goal_type="muscle_gain",
+                difficulty="intermediate",
+                activity_level="moderately_active",
+                focus_muscles=[],
+                user_weight_kg=75,
+                user_sex="male",
+                problem_areas=[],
+                equipment_access="full_gym",
+                regen_version=uid % 23,
+                week_number=4,
+            )
+            day = v3.build_training_day(
+                db,
+                ctx,
+                day=26,
+                month=8,
+                year=2026,
+                split_key=split_key,
+                recent_exercise_ids=[],
+                exclude_ids=set(),
+                catalog=catalog,
+            )
+            if _day_has_body_part_leak(day, catalog_by_name, "Legs"):
+                leaks += 1
+    assert leaks == 0, f"upper/pull leaked Legs body_part in {leaks} generations"
+
+
+def test_lower_days_exclude_chest_body_part(db: Session):
+    catalog = v3.load_catalog(db)
+    catalog_by_name = {ex.name.lower(): ex for ex in catalog}
+    leaks = 0
+    trials = 60
+    for uid in range(1, trials + 1):
+        for split_key in ("lower", "lower_a", "legs", "legs_b"):
+            ctx = v3.WorkoutEngineContext(
+                user_id=uid + 20_000,
+                workouts_per_week=4,
+                exercises_per_session=6,
+                goal_type="muscle_gain",
+                difficulty="intermediate",
+                activity_level="moderately_active",
+                focus_muscles=[],
+                user_weight_kg=75,
+                user_sex="male",
+                problem_areas=[],
+                equipment_access="full_gym",
+                regen_version=uid % 19,
+                week_number=4,
+            )
+            day = v3.build_training_day(
+                db,
+                ctx,
+                day=26,
+                month=8,
+                year=2026,
+                split_key=split_key,
+                recent_exercise_ids=[],
+                exclude_ids=set(),
+                catalog=catalog,
+            )
+            if _day_has_body_part_leak(day, catalog_by_name, "Chest"):
+                leaks += 1
+    assert leaks == 0, f"lower/legs leaked Chest body_part in {leaks} generations"
+
+
+def test_full_body_days_may_include_legs_and_chest(db: Session):
+    catalog = v3.load_catalog(db)
+    catalog_by_name = {ex.name.lower(): ex for ex in catalog}
+    saw_legs = saw_chest = False
+    for uid in range(1, 40):
+        ctx = v3.WorkoutEngineContext(
+            user_id=uid + 30_000,
+            workouts_per_week=3,
+            exercises_per_session=6,
+            goal_type="muscle_gain",
+            difficulty="intermediate",
+            activity_level="moderately_active",
+            focus_muscles=[],
+            user_weight_kg=75,
+            user_sex="male",
+            problem_areas=[],
+            equipment_access="full_gym",
+            regen_version=uid,
+            week_number=2,
+        )
+        day = v3.build_training_day(
+            db,
+            ctx,
+            day=10,
+            month=8,
+            year=2026,
+            split_key="full_body_a",
+            recent_exercise_ids=[],
+            exclude_ids=set(),
+            catalog=catalog,
+        )
+        saw_legs = saw_legs or _day_has_body_part_leak(day, catalog_by_name, "Legs")
+        saw_chest = saw_chest or _day_has_body_part_leak(day, catalog_by_name, "Chest")
+        if saw_legs and saw_chest:
+            break
+    assert saw_legs and saw_chest, "full_body should still be able to draw leg and chest exercises"

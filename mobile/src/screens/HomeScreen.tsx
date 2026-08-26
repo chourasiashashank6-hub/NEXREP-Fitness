@@ -54,6 +54,7 @@ import { setGamePlanCache } from "../store/gamePlanCache";
 import { useActivityDataRefreshStore } from "../store/activityDataRefreshStore";
 import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
+import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import {
   deriveTodaysGoalPendingItems,
   formatTodaysGoalPendingLabel,
@@ -579,7 +580,7 @@ export const HomeScreen = () => {
   const plannedBurnChipLabel = useCallback(
     (activity: PlannedBurnActivity) => {
       if (activity.kind === "cardioWarmup") return t("home.burnChipCardio");
-      return activity.sessionLabel.trim() || t("home.burnChipWorkout");
+      return formatWorkoutSplitName(activity.sessionLabel, t) || t("home.burnChipWorkout");
     },
     [t],
   );

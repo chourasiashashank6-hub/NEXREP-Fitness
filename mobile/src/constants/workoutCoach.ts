@@ -46,10 +46,10 @@ export const MUSCLE_STATUS_CONFIG = {
 } as const;
 
 export const READINESS_FACTOR_COLORS = {
-  good: { bg: "rgba(99,153,34,0.25)", color: "#C0DD97" },
-  warning: { bg: "rgba(239,159,39,0.25)", color: "#FAC775" },
-  bad: { bg: "rgba(224,75,74,0.25)", color: "#F09595" },
-  info: { bg: "rgba(239,159,39,0.25)", color: "#FAC775" },
+  good: { bg: WC_COLORS.GREEN_LIGHT, color: WC_COLORS.GREEN },
+  warning: { bg: WC_COLORS.AMBER_LIGHT, color: WC_COLORS.AMBER_TEXT },
+  bad: { bg: WC_COLORS.SORE_BG, color: WC_COLORS.SORE },
+  info: { bg: WC_COLORS.AMBER_LIGHT, color: WC_COLORS.AMBER_TEXT },
 } as const;
 
 export const DEFAULT_COACHING_TIPS: CoachingTip[] = [

@@ -3,6 +3,7 @@ import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { Linking, PermissionsAndroid, Platform } from "react-native";
 import i18n from "../i18n";
+import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { DEFAULT_NOTIFICATION_PREFERENCES, getNotificationPreferences, registerPushToken, type NotificationPreferences } from "../api/notifications";
 import { getDailyQuote, type QuoteCategory } from "../api/quotes";
 import type { MealDayPlan, MealPlanCurrent, WorkoutPlanCurrent } from "../types/planner";
@@ -344,7 +345,11 @@ export async function rescheduleWorkoutPlanNotifications(plan: WorkoutPlanCurren
     const scheduleItems = [
       {
         title: i18n.t("notifications.scheduled.workoutTimeTitle"),
-        body: i18n.t("notifications.scheduled.workoutTimeBody", { workout: day.split_name || i18n.t("notifications.scheduled.workoutFallback") }),
+        body: i18n.t("notifications.scheduled.workoutTimeBody", {
+          workout:
+            formatWorkoutSplitName(day.split_name || "") ||
+            i18n.t("notifications.scheduled.workoutFallback"),
+        }),
         date: workoutAt,
       },
       {

@@ -39,6 +39,7 @@ import { ScreenContainer } from "../../components/ScreenContainer";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import { getFirebaseAuth } from "../../config/firebase";
 import { useAuthStore } from "../../store/authStore";
+import { useActivityDataRefreshStore } from "../../store/activityDataRefreshStore";
 import { confirmUser, formatApiDetail, notifyReflowApplied, notifyUser } from "../../utils/notify";
 import {
   getNotificationPermissionState,
@@ -317,6 +318,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const [loggedExerciseIds, setLoggedExerciseIds] = useState<Record<string, number>>({});
   const [loggingExerciseKey, setLoggingExerciseKey] = useState<string | null>(null);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
+  const activityRefreshVersion = useActivityDataRefreshStore((s) => s.version);
   const signedInEmail = String(getFirebaseAuth().currentUser?.email || "")
     .trim()
     .toLowerCase();
@@ -714,6 +716,11 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       void refreshPlannerDayLogs();
     }, [refreshPlannerDayLogs]),
   );
+
+  useEffect(() => {
+    if (activityRefreshVersion === 0) return;
+    void refreshPlannerDayLogs();
+  }, [activityRefreshVersion, refreshPlannerDayLogs]);
 
   const handleToggleLogExercise = async (exercise: WorkoutExercise, index: number) => {
     if (!canLogExercises) return;
@@ -1208,7 +1215,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                         ) : null}
                       </View>
                     ) : (
-                      <Text style={styles.split}>{dayDetail.split_name.toUpperCase()}</Text>
+                      <Text style={styles.split}>{formatWorkoutSplitName(dayDetail.split_name, t).toUpperCase()}</Text>
                     )}
                     {!isWorkoutRestDay(dayDetail) &&
                     activeFocusMuscles.length > 0 &&

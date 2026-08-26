@@ -60,6 +60,7 @@ import {
 } from "../utils/sessionCalories";
 import { resolveMetForExercise } from "../utils/exerciseMetLookup";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
+import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { notifyUser } from "../utils/notify";
 
 const GREEN = "#0F6E56";
@@ -304,7 +305,7 @@ export default function AICameraWorkoutScreen() {
           met_value: ex.met_value ?? resolveMetForExercise(ex.name, ex.exercise_id),
         }));
 
-        const dayName = planDay.split_name;
+        const dayName = formatWorkoutSplitName(planDay.split_name, t);
         const planDayId = String(todayPlan.plan_id);
         const existing = useWorkoutSessionStore.getState().session;
         const canResume =
@@ -875,7 +876,7 @@ export default function AICameraWorkoutScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={GREEN} />
-          <Text style={styles.loadingTxt}>Loading AI camera session…</Text>
+          <Text style={styles.loadingTxt}>Loading Active camera Session…</Text>
         </View>
       </SafeAreaView>
     );
@@ -1097,7 +1098,7 @@ export default function AICameraWorkoutScreen() {
       <SafeAreaView style={styles.safeCream} edges={["top"]}>
         <View style={styles.headerRow}>
           <Text style={styles.headerStatus}>
-            {session.day_name} · {formatElapsed(elapsedSec)}
+            {formatWorkoutSplitName(session.day_name, t)} · {formatElapsed(elapsedSec)}
           </Text>
           <Pressable onPress={() => setShowEndSheet(true)}>
             <Text style={styles.endLink}>End</Text>
@@ -1182,7 +1183,7 @@ export default function AICameraWorkoutScreen() {
           <CameraWorkoutShell
             key={`pose-${poseExerciseName}-${session.current_exercise_index}-${session.current_set}`}
             exerciseName={poseExerciseName || currentExercise.exercise_name}
-            exerciseSubtitle={`Set ${session.current_set} of ${currentExercise.sets} · ${session.day_name}`}
+            exerciseSubtitle={`Set ${session.current_set} of ${currentExercise.sets} · ${formatWorkoutSplitName(session.day_name, t)}`}
             targetReps={parseReps(currentExercise.reps)}
             poseSpec={livePoseSpec}
             calibration={calibrationPayload}
