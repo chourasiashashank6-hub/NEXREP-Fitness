@@ -279,7 +279,8 @@ export default function AIWorkoutCoachScreen() {
   };
 
   return (
-    <ScreenContainer bg={WC_COLORS.SCREEN_BG} contentStyle={styles.screenContent}>
+    <ScreenContainer bg={WC_COLORS.SCREEN_BG} scroll={false} contentStyle={styles.screenContent}>
+      <View style={styles.body}>
       <View style={styles.topHeader}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={18} color={WC_COLORS.TEXT} />
@@ -306,10 +307,11 @@ export default function AIWorkoutCoachScreen() {
             onYearlyPress={handleYearlyPress}
             isCadenceLocked={isCadenceLocked}
           />
-          {renderCadenceBody()}
+          <View style={styles.cadenceBody}>{renderCadenceBody()}</View>
         </>
       ) : null}
       {showLegacyContent ? (
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.legacyScroll}>
       <View>
         <View style={styles.heroCard}>
           <View style={styles.heroCircleOne} />
@@ -406,14 +408,19 @@ export default function AIWorkoutCoachScreen() {
           <CoachJourneySection domain="workout" accentColor={WC_COLORS.PURPLE_MID} />
           <CoachingTips tips={coachingTips} loading={loading} />
         </View>
-      </View>
+        </View>
+      </ScrollView>
       ) : null}
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContent: { paddingHorizontal: 18, paddingTop: 16 },
+  screenContent: { flex: 1, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 0 },
+  body: { flex: 1, minHeight: 0 },
+  cadenceBody: { flex: 1, minHeight: 0 },
+  legacyScroll: { flex: 1 },
   topHeader: { flexDirection: "row", alignItems: "center", paddingBottom: 10, gap: 8 },
   backBtn: {
     width: 32,

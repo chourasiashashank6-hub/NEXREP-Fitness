@@ -20,8 +20,10 @@ import { fetchOnboardingMeShared } from "../api/onboarding";
 import { getProfile } from "../api/user";
 import { fetchWeightLatest } from "../api/weight";
 import { EndEarlySheet } from "../components/EndEarlySheet";
+import SessionInsightSections from "../components/session/SessionInsightSections";
 import { SetWeightPrompt } from "../components/SetWeightPrompt";
 import { CameraGuidedSessionFrame } from "../components/aiTrainer/CameraGuidedSessionFrame";
+import { useSessionExerciseInsights } from "../hooks/useSessionExerciseInsights";
 import { useSetWeightAfterLog } from "../hooks/useSetWeightAfterLog";
 import { useCameraTracking } from "../hooks/useCameraTracking";
 import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
@@ -99,6 +101,7 @@ export default function ActiveWorkoutScreen() {
   const bootstrapped = useRef(false);
   const { weightPrompt, afterSetLogged, confirmSetWeight, skipSetWeight } =
     useSetWeightAfterLog(userWeightKg);
+  const { bestByExercise } = useSessionExerciseInsights(session?.exercises);
 
   useEffect(() => {
     // Don't tick while camera is open — parent re-renders remount MediaPipe on web/native.
@@ -569,6 +572,14 @@ export default function ActiveWorkoutScreen() {
             <Text style={styles.chipLbl}>Volume</Text>
           </View>
         </View>
+
+        {currentExercise ? (
+          <SessionInsightSections
+            exerciseName={currentExercise.exercise_name}
+            plannerMuscle={currentExercise.muscle}
+            bestByExercise={bestByExercise}
+          />
+        ) : null}
 
         {upcoming.length > 0 ? (
           <View style={styles.upNext}>

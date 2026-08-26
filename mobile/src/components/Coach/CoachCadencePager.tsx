@@ -62,7 +62,13 @@ export function CoachCadencePager({
       style={styles.pager}
     >
       {CADENCE_ORDER.map((value) => (
-        <ScrollView key={value} showsVerticalScrollIndicator={false} contentContainerStyle={styles.pageContent}>
+        <ScrollView
+          key={value}
+          style={styles.pageScroll}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.pageContent}
+        >
           {renderPage(value)}
         </ScrollView>
       ))}
@@ -71,6 +77,7 @@ export function CoachCadencePager({
 }
 
 const styles = StyleSheet.create({
-  pager: { flex: 1, minHeight: 280 },
+  pager: { flex: 1, minHeight: 0 },
+  pageScroll: { flex: 1 },
   pageContent: { paddingBottom: 24 },
 });

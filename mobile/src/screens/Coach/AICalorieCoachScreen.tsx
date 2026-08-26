@@ -144,7 +144,8 @@ export default function AICalorieCoachScreen() {
   };
 
   return (
-    <ScreenContainer bg={WHITE} contentStyle={styles.screenContent}>
+    <ScreenContainer bg={WHITE} scroll={false} contentStyle={styles.screenContent}>
+      <View style={styles.body}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={18} color={TEXT} />
@@ -177,10 +178,10 @@ export default function AICalorieCoachScreen() {
               <Text style={styles.emptySub}>{t("coach.calorie.emptySubtitle")}</Text>
             </View>
           ) : null}
-          {renderCadenceBody()}
+          <View style={styles.cadenceBody}>{renderCadenceBody()}</View>
         </>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.legacyScroll}>
           {!nutritionData && !loading ? (
             <View style={styles.emptyBox}>
               <Text style={styles.emptyTitle}>{t("coach.calorie.emptyTitle")}</Text>
@@ -203,12 +204,16 @@ export default function AICalorieCoachScreen() {
           ) : null}
         </ScrollView>
       )}
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContent: { paddingBottom: 28, flex: 1 },
+  screenContent: { flex: 1, paddingBottom: 0 },
+  body: { flex: 1, minHeight: 0 },
+  cadenceBody: { flex: 1, minHeight: 0 },
+  legacyScroll: { flex: 1 },
   header: { flexDirection: "row", alignItems: "center", marginBottom: 14, gap: 8 },
   backBtn: {
     width: 32,
