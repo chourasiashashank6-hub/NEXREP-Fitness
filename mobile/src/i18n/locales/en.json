@@ -392,6 +392,10 @@
       "detected": "Detected: {{foodName}}. Please verify the values.",
       "foodRecognition": "Food recognition",
       "retryHint": "Tap the camera button to try again.",
+      "scanLimitTitle": "Scan limit reached",
+      "scanLimitResets": "Resets at {{time}}",
+      "scanLimitUpgradePro": "Upgrade to Pro for 2 scans per meal.",
+      "scanLimitUpgradeElite": "Upgrade to Elite for 3 scans per meal.",
       "deleteFailed": "Could not delete meal.",
       "updateQtyFailed": "Could not update meal quantity.",
       "generic": "Something went wrong."
@@ -423,6 +427,8 @@
     "glassHint": "Each glass = 250ml",
     "addFood": "ADD FOOD",
     "scanCaption": "Snap a photo to auto-fill macros",
+    "scanUsageDaily": "{{remaining}} of {{cap}} scans left today",
+    "scanUsageMeal": "{{remaining}} of {{cap}} scans left for {{meal}}",
     "searchPlaceholder": "Search food (type at least 2 letters)",
     "searching": "Searching...",
     "selectedDatabase": "Selected from database",
@@ -1610,7 +1616,8 @@
       "malformedApi": "Malformed JSON response from API.",
       "detectFailed": "Could not detect food from this image.",
       "analyzeFailed": "Could not analyze image right now. Please retry.",
-      "timeout": "Request timed out. Please try another photo."
+      "timeout": "Request timed out. Please try another photo.",
+      "scanLimitReached": "You've reached your food scan limit for now."
     },
     "image": {
       "browserProcessFailed": "Could not process image on this browser.",

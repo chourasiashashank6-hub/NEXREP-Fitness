@@ -28,15 +28,73 @@ from src.services.activity_feed_service import calculate_user_streak, emit_strea
 from src.services.xp_service import award_xp_for_meal_log, reevaluate_xp_after_meal_change
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.services.food_image_utils import prepare_food_image_for_vision
+from src.services.food_scan_limits import build_scan_usage, enforce_food_scan_limits
 from src.services.language_service import normalize_language_tag
 from src.services.ai_logger import log_gemini_call, log_groq_call
 from src.services.gemini_client import gemini_generate_content_models, has_gemini_key
 from src.utils.auth import get_current_user
+from src.utils.app_time import today_ist
 
 router = APIRouter()
 goal_progress_router = APIRouter()
 
 MEAL_ORDER = ["Breakfast", "Lunch", "Dinner", "Snack", "Pre_Workout", "Post_Workout"]
+
+INDIAN_FOOD_RULES = (
+    "For Indian dishes, base values on ICMR-NIN IFCT.\n"
+    "SCALE: steel katori = 150ml standard (large/restaurant 250-300ml); "
+    "roti by diameter 6in=25g atta, 8in=35g, 10in=50g; thali plate 26-30cm; steel glass 200-250ml. "
+    "No reference object visible: assume standard home portions.\n"
+    "COOKING FAT is the biggest error source and is not directly visible - estimate added oil/ghee "
+    "and include it. Cues: oil pooling at gravy edges, sheen on sabzi, tadka on dal, glossy roti, fried colour. "
+    "Defaults: dry sabzi 1-1.5 tsp/katori, home gravy 1.5-2.5, dal tadka 1-1.5, restaurant gravy 2-4 plus cream; "
+    "roti no ghee unless visible sheen.\n"
+    "CONTEXT: judge home vs restaurant - restaurant runs 20-40% higher. Restaurant cues: uniform bright gravy, "
+    "cream swirl, oil separation, restaurant servingware, large portions.\n"
+    "INCLUDE small high-density items: pickle, chutney, papad, ghee on roti/rice, raita, sugar in chai.\n"
+    "DISTINGUISH lookalikes: poha/upma, biryani/pulao, sambar/dal, paratha/roti/naan, dahi/raita, "
+    "idli/dhokla, rajma/chana.\n"
+    "In gravy, solids (paneer, chicken, rajma) are partly submerged - estimate the full quantity from "
+    "surface density, not just what is visible.\n"
+    "CONFIDENCE: \"high\" only if the dish is clear AND a scale reference is present AND the prep is dry/low-oil. "
+    "A gravy dish in an unfamiliar bowl is \"medium\" at most."
+)
+
+FOOD_SCAN_USER_MESSAGE = "Analyze this food image and estimate total nutrition values."
+
+FOOD_SCAN_SYSTEM_PROMPT = (
+    "You are a strict nutrition expert AI for meal photo analysis, specialising in Indian home-cooked food. "
+    "Do NOT miss any visible food item in the image. "
+    "You must account for every detectable food component (including sides, toppings, sauces, oils, and drinks if visible) "
+    "and return combined totals for the entire image.\n"
+    + INDIAN_FOOD_RULES
+    + "\n"
+    "Return ONLY one valid JSON object with keys: "
+    "foodName, estimatedServingSize, calories, protein, carbs, fats, fibre, confidence. "
+    "foodName should summarize the full meal using common Indian dish names. "
+    "estimatedServingSize should describe the total serving in Indian household units "
+    "(e.g. '2 roti + 1 katori dal + 1 katori sabzi'). "
+    "calories/protein/carbs/fats/fibre must be TOTALS for all detected items together, not per-item or per-100g. "
+    "confidence must be one of low|medium|high. "
+    'If no food is visible, return {"error":"No food detected"}. '
+    "No markdown, no code fences, no extra text."
+)
+
+FOOD_SCAN_GEMINI_PROMPT = (
+    "Analyze this meal photo strictly. You specialise in Indian home-cooked food. "
+    "Do NOT miss any visible food item. Include all detectable components "
+    "(main dish, side items, toppings, sauces, oils, drinks if visible) and compute combined totals.\n"
+    + INDIAN_FOOD_RULES
+    + "\n"
+    "Return ONLY valid JSON with keys: "
+    "foodName, estimatedServingSize, calories, protein, carbs, fats, fibre, confidence. "
+    "foodName should summarize all detected items using common Indian dish names in one meal name. "
+    "estimatedServingSize must describe the total serving in Indian household units. "
+    "calories/protein/carbs/fats/fibre must be TOTALS for the full image. "
+    "confidence must be one of low|medium|high. "
+    'If no food is visible, return {"error":"No food detected"}. '
+    "No markdown, no extra text."
+)
 
 DEFAULT_TARGETS = {
     "target_calories": 2100,
@@ -159,56 +217,6 @@ def _default_targets_for_user(target_calories: int, body_weight_kg: float | None
     }
 
 
-CALORIE_COACH_SYSTEM_PROMPT = (
-    "You are an elite sports nutrition coach inside a premium calorie tracking app.\n"
-    "Return ONLY a valid JSON object with these exact keys:\n\n"
-    '1. "insight" — string, 3-4 concise sentences covering: calorie status vs goal, macro balance assessment, '
-    "hydration status, and one specific next-meal recommendation using foods from the provided dataset with realistic portions.\n\n"
-    '2. "bodyImpact" — string, 2-3 sentences about how today\'s current intake is likely affecting: energy levels, '
-    "mental clarity, muscle recovery, digestion, or metabolic rate. Be practical and evidence-based. No fear language or diagnoses.\n\n"
-    '3. "mealPlan" — array of exactly 3 objects, each with keys:\n'
-    '   - "meal": string (e.g. "Lunch", "Evening Snack", "Dinner")\n'
-    '   - "items": string (specific foods with quantities from the dataset)\n'
-    '   - "calories": number (estimated kcal for this meal)\n'
-    '   - "protein": number (grams)\n'
-    '   - "carbs": number (grams)\n'
-    '   - "fat": number (grams)\n'
-    "   These 3 meals should roughly fill the remaining calorie and macro gaps for the day.\n\n"
-    '4. "macroVerdict" — object with exactly 3 keys:\n'
-    '   - "protein": object with "status" (one of "low", "on_track", "high") and "tip" (one sentence actionable fix)\n'
-    '   - "carbs": object with "status" and "tip"\n'
-    '   - "fat": object with "status" and "tip"\n\n'
-    '5. "hydrationPlan" — object with keys:\n'
-    '   - "currentMl": number (from user data)\n'
-    '   - "targetMl": number (recommended daily total, typically 2500-3500 based on activity)\n'
-    '   - "remainingMl": number\n'
-    '   - "nextAction": string (e.g. "Drink 500ml water before your next meal")\n\n'
-    '6. "dailyScore" — integer 0-100 representing overall nutrition quality today. Factor in calorie adherence (40%), '
-    "macro balance (30%), hydration (15%), meal timing/frequency (15%).\n\n"
-    '7. "scoreLabel" — string, one of: "Needs Work", "Getting There", "Solid Day", "Excellent", "Perfect"\n\n'
-    '8. "alerts" — array of exactly 4 objects with keys: "type", "icon", "title", "subtitle". '
-    'Types must be: "calorie", "hydration", "meal", "nutrition".\n\n'
-    '9. "dietTips" — array of exactly 5 objects personalized from the provided DATA. Each object must have keys:\n'
-    '   - "emoji": string, one relevant emoji only\n'
-    '   - "title": string, concise health or diet tip\n'
-    '   - "body": string, 1 practical sentence tied to today\'s calories, protein, carbs, fat, fibre, water, meals, goal, or activity\n'
-    '   - "tag": string, short label such as "Gut", "Protein", "Digestion", "Timing", or "Fat"\n'
-    '   - "category": string, one of "gut", "protein", "digestion", "timing", "fat"\n'
-    "   Tips must be specific to the user's logged intake and targets, not generic wellness advice.\n\n"
-    "Rules:\n"
-    "- DIETARY COMPLIANCE IS MANDATORY: Read diet_type and allergies from the DATA object. "
-    "If diet_type is 'vegetarian', every single food item across insight, mealPlan items, "
-    "dietTips, and alerts MUST be vegetarian. No exceptions. "
-    "If diet_type is 'vegan', exclude all animal products. "
-    "Never suggest any food listed in allergies.\n"
-    "- Suggest only foods from the provided food_dataset_reference with approximate quantities.\n"
-    '- No markdown, no bullets, no headings. Do not use emojis except in dietTips[].emoji.\n'
-    "- All numbers must be realistic integers, not strings.\n"
-    "- If remaining_calories <= 0, mealPlan should contain only very light options (salad, herbal tea, etc.) totaling under 200 kcal.\n"
-    "- If no meals logged, provide a complete full-day plan across breakfast, lunch, dinner."
-)
-
-
 MACRO_ON_TRACK_RATIO = 0.8
 MACRO_HIGH_RATIO = 1.15
 
@@ -234,193 +242,6 @@ def _score_label(score: int) -> str:
     if score >= 31:
         return "Getting There"
     return "Needs Work"
-
-
-def _user_coach_profile(db: Session, user: User) -> dict[str, Any]:
-    weight = float(user.weight or 70)
-    goal = "maintain"
-    activity = "moderate"
-    diet_type = "none"
-    allergies: list[str] = []
-
-    ob = db.query(UserOnboarding).filter(UserOnboarding.user_id == user.id).first()
-    if ob and isinstance(ob.onboarding_json, dict):
-        oj = ob.onboarding_json
-
-        g = oj.get("goal")
-        if isinstance(g, dict):
-            goal = str(g.get("primary") or g.get("type") or goal).lower().replace(" ", "_")
-
-        act = oj.get("activity")
-        if isinstance(act, dict):
-            activity = str(act.get("level") or activity).lower().replace(" ", "_")
-
-        dietary = oj.get("dietary")
-        if isinstance(dietary, dict):
-            raw_diet = dietary.get("diet_type") or dietary.get("dietType") or "none"
-            diet_type = str(raw_diet).lower().strip()
-
-            raw_allergies = dietary.get("allergies") or dietary.get("food_allergies") or []
-            if isinstance(raw_allergies, list):
-                allergies = [str(a).lower().strip() for a in raw_allergies if a]
-
-    elif user.goal_tag:
-        goal = str(user.goal_tag).lower().replace(" ", "_")
-
-    return {
-        "user_weight_kg": round(weight, 1),
-        "goal": goal,
-        "activity_level": activity,
-        "diet_type": diet_type,
-        "allergies": allergies,
-    }
-
-
-def _coach_macro_targets(log: dict[str, Any], profile_weight: float) -> dict[str, int]:
-    daily_goal = int(log.get("target_calories") or 2100)
-    pt = float(log.get("target_protein_g") or 0)
-    if pt > 0:
-        water_target = int(round(float(log.get("target_water_l") or 0) * 1000))
-        if water_target <= 0:
-            water_target = max(2500, int(profile_weight * 35))
-        return {
-            "protein_target_g": int(round(pt)),
-            "carbs_target_g": int(round(float(log.get("target_carbs_g") or 0))),
-            "fat_target_g": int(round(float(log.get("target_fat_g") or 0))),
-            "water_target_ml": water_target,
-        }
-    return {
-        "protein_target_g": round(daily_goal * 0.30 / 4),
-        "carbs_target_g": round(daily_goal * 0.50 / 4),
-        "fat_target_g": round(daily_goal * 0.20 / 9),
-        "water_target_ml": max(2500, int(profile_weight * 35)),
-    }
-
-
-def _format_meal_time(logged_at: str | None, meal_type: str | None) -> str:
-    if logged_at:
-        try:
-            raw = logged_at.replace("Z", "+00:00")
-            dt = datetime.fromisoformat(raw)
-            return dt.strftime("%I:%M %p").lstrip("0")
-        except Exception:
-            pass
-    return str(meal_type or "Meal")
-
-
-def _build_coach_user_msg(db: Session, user: User, day_payload: dict[str, Any]) -> dict[str, Any]:
-    log = day_payload.get("log", {})
-    water = day_payload.get("water", {})
-    meals = day_payload.get("meals") or []
-    profile = _user_coach_profile(db, user)
-    macros = _coach_macro_targets(log, profile["user_weight_kg"])
-    daily_goal = int(log.get("target_calories") or 2100)
-    consumed = int(round(_num(log.get("total_calories"))))
-    water_ml = int(round(_num(water.get("total_water_l")) * 1000))
-
-    dataset_rows: list[dict[str, Any]] = []
-    try:
-        diet_type = profile.get("diet_type", "none").lower().strip()
-        if diet_type == "vegan":
-            diet_where = "WHERE is_vegan = TRUE"
-        elif diet_type == "vegetarian":
-            diet_where = "WHERE is_vegetarian = TRUE"
-        else:
-            diet_where = ""
-
-        refs = (
-            db.execute(
-                text(
-                    f"""
-                    SELECT food_name, calories_per_100g, protein_g, carbs_g, fat_g
-                    FROM food_items
-                    {diet_where}
-                    ORDER BY food_id ASC
-                    LIMIT 60
-                    """
-                )
-            )
-            .mappings()
-            .all()
-        )
-        dataset_rows.extend(
-            [
-                {
-                    "food": r["food_name"],
-                    "cal_per_100g": float(r["calories_per_100g"] or 0),
-                    "protein_per_100g": float(r["protein_g"] or 0),
-                    "carbs_per_100g": float(r["carbs_g"] or 0),
-                    "fat_per_100g": float(r["fat_g"] or 0),
-                }
-                for r in refs
-            ]
-        )
-    except Exception:
-        db.rollback()
-
-    for m in meals[:15]:
-        if isinstance(m, dict):
-            dataset_rows.append(
-                {
-                    "food": m.get("food_name"),
-                    "cal_per_100g": m.get("calories_per_100g"),
-                    "protein_per_100g": m.get("protein_per_100g"),
-                    "carbs_per_100g": m.get("carbs_per_100g"),
-                    "fat_per_100g": m.get("fat_per_100g"),
-                }
-            )
-
-    meals_eaten = [
-        {
-            "name": m.get("food_name") or "Meal",
-            "calories": int(round(_num(m.get("total_calories")))),
-            "time": _format_meal_time(m.get("logged_at"), m.get("meal_type")),
-        }
-        for m in meals[:15]
-        if isinstance(m, dict)
-    ]
-
-    return {
-        "time_of_day": datetime.now().strftime("%I:%M %p").lstrip("0"),
-        "consumed_calories": consumed,
-        "daily_goal": daily_goal,
-        "remaining_calories": daily_goal - consumed,
-        "protein_g": int(round(_num(log.get("total_protein_g")))),
-        "protein_target_g": macros["protein_target_g"],
-        "carbs_g": int(round(_num(log.get("total_carbs_g")))),
-        "carbs_target_g": macros["carbs_target_g"],
-        "fat_g": round(_num(log.get("total_fat_g")), 1),
-        "fat_target_g": macros["fat_target_g"],
-        "fibre_g": int(round(_num(log.get("total_fiber_g")))),
-        "water_ml": water_ml,
-        "water_target_ml": macros["water_target_ml"],
-        "meals_logged": len(meals),
-        "meals_target": 3,
-        "user_weight_kg": profile["user_weight_kg"],
-        "activity_level": profile["activity_level"],
-        "goal": profile["goal"],
-        "diet_type": profile.get("diet_type", "none"),
-        "allergies": profile.get("allergies", []),
-        "food_dataset_reference": dataset_rows,
-        "meals_eaten_today": meals_eaten,
-        "rules": [
-            f"CRITICAL: User's diet_type is '{profile.get('diet_type', 'none')}'. "
-            "You MUST strictly follow this. "
-            "If diet_type is 'vegetarian': NEVER suggest meat, poultry, seafood, fish, "
-            "or any non-vegetarian ingredient in ANY field (insight, mealPlan, dietTips, alerts). "
-            "If diet_type is 'vegan': NEVER suggest any animal product including dairy or eggs. "
-            "If diet_type is 'keto': keep carbs under 30g total across mealPlan. "
-            "If diet_type is 'paleo': exclude grains, legumes, dairy, and processed foods.",
-            f"ALLERGIES: User is allergic to or intolerant of: "
-            f"{', '.join(profile.get('allergies', [])) or 'none'}. "
-            "NEVER suggest any food containing these allergens in any form.",
-            "If remaining_calories <= 0 suggest stopping intake or very light options.",
-            "If no meals logged, suggest a full-day plan.",
-            "Use approximate quantities.",
-            "Prioritize foods from the dataset. If dataset is insufficient, use common Indian foods.",
-            "mealPlan must fill the remaining macro gaps realistically.",
-        ],
-    }
 
 
 def _normalize_coach_response(parsed: dict[str, Any], day_payload: dict[str, Any]) -> dict[str, Any]:
@@ -593,7 +414,7 @@ def _normalize_coach_response(parsed: dict[str, Any], day_payload: dict[str, Any
     }
 
 
-def _fallback_coach(day_payload: dict[str, Any]) -> dict[str, Any]:
+def build_calorie_coach_insight(day_payload: dict[str, Any]) -> dict[str, Any]:
     log = day_payload.get("log", {})
     water = day_payload.get("water", {})
     c = _num(log.get("total_calories"))
@@ -658,30 +479,8 @@ def _fallback_coach(day_payload: dict[str, Any]) -> dict[str, Any]:
         },
         day_payload,
     )
-    base["source"] = "fallback"
+    base["source"] = "deterministic"
     return base
-
-
-def _ai_provider_fallback_error(err: str) -> bool:
-    lowered = err.lower()
-    return (
-        "groq http 403" in lowered
-        or "error code: 1010" in lowered
-        or "ssl" in lowered
-        or "certificate" in lowered
-        or "network error" in lowered
-        or "timed out" in lowered
-    )
-
-
-def _groq_model_unavailable(status_code: int, body: str) -> bool:
-    lower = body.lower()
-    return status_code in (400, 404) and (
-        "decommissioned" in lower
-        or "no longer supported" in lower
-        or "model_not_found" in lower
-        or "not found" in lower
-    )
 
 
 def _extract_json_object(raw: str) -> dict[str, Any]:
@@ -777,6 +576,7 @@ def _groq_food_image_analysis(
     mime_type: str | None,
     *,
     user_id: int | None = None,
+    meal_slot: str | None = None,
 ) -> dict[str, Any]:
     groq_keys: list[str] = []
     for key in (settings.GROQ_API_KEY, settings.GROQ_API_KEY_FALLBACK):
@@ -795,20 +595,7 @@ def _groq_food_image_analysis(
         "meta-llama/llama-4-maverick-17b-128e-instruct",
     ]
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
-    system_prompt = (
-        "You are a strict nutrition expert AI for meal photo analysis. "
-        "Do NOT miss any visible food item in the image. "
-        "You must account for every detectable food component (including sides, toppings, sauces, oils, and drinks if visible) "
-        "and return combined totals for the entire image. "
-        "Return ONLY one valid JSON object with keys: "
-        "foodName, estimatedServingSize, calories, protein, carbs, fats, fibre, confidence. "
-        "foodName should summarize the full meal (all detected items). "
-        "estimatedServingSize should describe total serving for the full meal. "
-        "calories/protein/carbs/fats/fibre must be TOTALS for all detected items together, not per-item or per-100g. "
-        "confidence must be one of low|medium|high. "
-        "If no food is visible, return {\"error\":\"No food detected\"}. "
-        "No markdown, no code fences, no extra text."
-    )
+    system_prompt = FOOD_SCAN_SYSTEM_PROMPT
     payload: dict[str, Any] | None = None
     used_model = model_candidates[0]
     used_fallback_key = False
@@ -832,7 +619,7 @@ def _groq_food_image_analysis(
                             {
                                 "role": "user",
                                 "content": [
-                                    {"type": "text", "text": "Analyze this food image and estimate nutrition values."},
+                                    {"type": "text", "text": FOOD_SCAN_USER_MESSAGE},
                                     {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
                                 ],
                             },
@@ -875,6 +662,7 @@ def _groq_food_image_analysis(
             endpoint="/api/calories/foods/analyze-image",
             response_json=payload,
             is_fallback=used_fallback_key,
+            meal_slot=meal_slot,
         )
     except Exception:
         pass
@@ -892,6 +680,7 @@ def _gemini_food_image_analysis(
     *,
     user_id: int | None = None,
     is_fallback: bool = False,
+    meal_slot: str | None = None,
 ) -> dict[str, Any]:
     if not has_gemini_key():
         raise RuntimeError("GEMINI_API_KEY missing on server")
@@ -905,22 +694,7 @@ def _gemini_food_image_analysis(
         "contents": [
             {
                 "parts": [
-                    {
-                        "text": (
-                            "Analyze this meal photo strictly. "
-                            "Do NOT miss any visible food item. "
-                            "You must include all detectable components (main dish, side items, toppings, sauces, oils, drinks if visible) "
-                            "and compute combined totals for the entire image. "
-                            "Return ONLY valid JSON with keys: "
-                            "foodName, estimatedServingSize, calories, protein, carbs, fats, fibre, confidence. "
-                            "foodName should summarize all detected items in one meal name. "
-                            "estimatedServingSize must describe total serving for all items combined. "
-                            "calories/protein/carbs/fats/fibre must be TOTALS for the full image. "
-                            "confidence must be one of low|medium|high. "
-                            'If no food is visible, return {"error":"No food detected"}. '
-                            "No markdown, no extra text."
-                        )
-                    },
+                    {"text": FOOD_SCAN_GEMINI_PROMPT},
                     {"inline_data": {"mime_type": image_mime, "data": base64}},
                 ]
             }
@@ -944,6 +718,7 @@ def _gemini_food_image_analysis(
             endpoint="/api/calories/foods/analyze-image",
             response_json=payload,
             is_fallback=is_fallback or used_fallback_key,
+            meal_slot=meal_slot,
         )
     except Exception:
         pass
@@ -982,18 +757,12 @@ def _openai_food_image_analysis(
             "messages": [
                 {
                     "role": "system",
-                    "content": (
-                        "You are a strict nutrition expert AI for meal photo analysis. "
-                        "Return ONLY valid JSON with keys: foodName, estimatedServingSize, "
-                        "calories, protein, carbs, fats, fibre, confidence. "
-                        "confidence must be low|medium|high. "
-                        'If no food is visible, return {"error":"No food detected"}.'
-                    ),
+                    "content": FOOD_SCAN_SYSTEM_PROMPT,
                 },
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Analyze this food image and estimate nutrition values."},
+                        {"type": "text", "text": FOOD_SCAN_USER_MESSAGE},
                         {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
                     ],
                 },
@@ -1009,144 +778,6 @@ def _openai_food_image_analysis(
     return _normalize_food_analysis_payload(parsed)
 
 
-def _gemini_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[str, Any]:
-    if not has_gemini_key():
-        raise RuntimeError("GEMINI_API_KEY missing on server")
-
-    user_msg = _build_coach_user_msg(db, user, day_payload)
-
-    prompt_text = (
-        f"{CALORIE_COACH_SYSTEM_PROMPT}\n\n"
-        "Return only the JSON object described above.\n\n"
-        f"DATA:\n{json.dumps(user_msg)}"
-    )
-
-    model_candidates = [
-        settings.GEMINI_MODEL.strip() if settings.GEMINI_MODEL else "",
-        "gemini-2.0-flash",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-flash",
-    ]
-    model_candidates = [m for i, m in enumerate(model_candidates) if m and m not in model_candidates[:i]]
-
-    request_payload = {
-        "contents": [{"parts": [{"text": prompt_text}]}],
-        "generationConfig": {
-            "temperature": 0.3,
-            "responseMimeType": "application/json",
-            "maxOutputTokens": 1800,
-        },
-    }
-    payload, used_model, used_fallback_key = gemini_generate_content_models(
-        model_candidates,
-        request_payload,
-        timeout=30,
-    )
-
-    try:
-        log_gemini_call(
-            db=db,
-            user_id=user.id,
-            feature="calorie_coach",
-            model=used_model,
-            endpoint="/api/calories/coach/insight",
-            response_json=payload,
-            is_fallback=used_fallback_key,
-        )
-    except Exception:
-        pass
-
-    raw = (
-        (payload.get("candidates") or [{}])[0]
-        .get("content", {})
-        .get("parts", [{}])[0]
-        .get("text", "")
-    )
-    if not raw:
-        raise RuntimeError("Gemini returned empty content")
-    clean = raw.replace("```json", "").replace("```", "").strip()
-    parsed = json.loads(clean)
-    if not isinstance(parsed, dict):
-        raise RuntimeError("Gemini invalid JSON shape")
-    out = _normalize_coach_response(parsed, day_payload)
-    out["source"] = "gemini"
-    return out
-
-
-def _groq_coach(db: Session, day_payload: dict[str, Any], user: User) -> dict[str, Any]:
-    if not settings.GROQ_API_KEY:
-        raise RuntimeError("GROQ_API_KEY missing on server")
-
-    user_msg = _build_coach_user_msg(db, user, day_payload)
-
-    model_candidates = [
-        settings.GROQ_MODEL.strip() if settings.GROQ_MODEL else "",
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
-    ]
-    model_candidates = [m for i, m in enumerate(model_candidates) if m and m not in model_candidates[:i]]
-    model_candidates = model_candidates[:2]
-
-    payload: dict[str, Any] | None = None
-    last_err: str | None = None
-    used_model = model_candidates[0] if model_candidates else "llama-3.3-70b-versatile"
-    for model_name in model_candidates:
-        try:
-            payload = post_json(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                    "Accept": "application/json",
-                    "User-Agent": "fitness-ai-coach/1.0",
-                },
-                payload={
-                    "model": model_name,
-                    "temperature": 0.3,
-                    "max_tokens": 1400,
-                    "response_format": {"type": "json_object"},
-                    "messages": [
-                        {"role": "system", "content": CALORIE_COACH_SYSTEM_PROMPT},
-                        {"role": "user", "content": json.dumps(user_msg)},
-                    ],
-                },
-                timeout=30,
-            )
-            used_model = model_name
-            break
-        except ExternalHTTPError as e:
-            if _groq_model_unavailable(e.status_code, e.body):
-                last_err = f"{model_name}: unavailable"
-                continue
-            raise RuntimeError(f"Groq HTTP {e.status_code}: {e.body[:260]}") from e
-
-    if payload is None:
-        raise RuntimeError(f"No compatible Groq model available. Last tried: {last_err or 'unknown'}")
-
-    try:
-        log_groq_call(
-            db=db,
-            user_id=user.id,
-            feature="calorie_coach",
-            model=used_model,
-            endpoint="/api/calories/coach/insight",
-            response_json=payload,
-        )
-    except Exception:
-        pass
-
-    raw = (payload.get("choices") or [{}])[0].get("message", {}).get("content", "")
-    if not raw:
-        raise RuntimeError("Groq returned empty content")
-    clean = raw.replace("```json", "").replace("```", "").strip()
-    parsed = json.loads(clean)
-    if not isinstance(parsed, dict):
-        raise RuntimeError("Groq invalid JSON shape")
-    out = _normalize_coach_response(parsed, day_payload)
-    out["source"] = "groq"
-    return out
-
-
 def _to_decimal(v: Any, default: Decimal) -> Decimal:
     if v is None:
         return default
@@ -1158,7 +789,7 @@ def _to_decimal(v: Any, default: Decimal) -> Decimal:
 
 def _parse_log_date(value: str | None) -> date:
     if not value:
-        return datetime.utcnow().date()
+        return today_ist()
     try:
         return date.fromisoformat(value.strip()[:10])
     except ValueError as exc:
@@ -1497,7 +1128,7 @@ def get_daily_log_history(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    today = datetime.utcnow().date()
+    today = today_ist()
     search_term = search.strip() if search and search.strip() else None
     db_meals_query = (
         db.query(MealEntry, DailyNutritionLog.log_date)
@@ -1834,14 +1465,23 @@ def lookup_food_nutrition(
     return found
 
 
+@router.get("/foods/scan-usage")
+def get_food_scan_usage(
+    meal_type: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return build_scan_usage(db, current_user, meal_type=meal_type)
+
+
 @router.post("/foods/analyze-image")
 def analyze_food_image(
     payload: FoodImageAnalyzeRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    _ = current_user
-    _ = db
+    meal_type = payload.meal_type
+    enforce_food_scan_limits(db, current_user, meal_type=meal_type)
     try:
         clean_base64, image_mime = prepare_food_image_for_vision(payload.base64, payload.mime_type)
     except ValueError as e:
@@ -1849,7 +1489,13 @@ def analyze_food_image(
 
     def _try_fallbacks() -> dict[str, Any]:
         try:
-            return _gemini_food_image_analysis(clean_base64, image_mime, user_id=current_user.id, is_fallback=True)
+            return _gemini_food_image_analysis(
+                clean_base64,
+                image_mime,
+                user_id=current_user.id,
+                is_fallback=True,
+                meal_slot=meal_type,
+            )
         except Exception as ge:
             gemini_msg = str(ge)
             try:
@@ -1867,7 +1513,12 @@ def analyze_food_image(
             ) from ge
 
     try:
-        return _groq_food_image_analysis(clean_base64, image_mime, user_id=current_user.id)
+        return _groq_food_image_analysis(
+            clean_base64,
+            image_mime,
+            user_id=current_user.id,
+            meal_slot=meal_type,
+        )
     except ValueError as e:
         detail = str(e).strip()
         lowered = detail.lower()
@@ -1946,20 +1597,7 @@ def coach_calorie_insight(
 ):
     log_date = _parse_log_date(local_date)
     day_payload = _serialize_day(db, current_user, log_date)
-    # Free the pooled connection before Groq/Gemini HTTP (can take 30–60s).
-    from src.db.session import release_db_connection
-
-    release_db_connection(db)
-    try:
-        return _groq_coach(db, day_payload, current_user)
-    except Exception as e:
-        err = str(e)
-        if has_gemini_key() and _ai_provider_fallback_error(err):
-            try:
-                return _gemini_coach(db, day_payload, current_user)
-            except Exception:
-                pass
-        return _fallback_coach(day_payload)
+    return build_calorie_coach_insight(day_payload)
 
 
 def _onboarding_weight_kg(onboarding: dict[str, Any] | None) -> float | None:
@@ -2022,7 +1660,7 @@ def get_goal_progress(
         else (current_user.weight or onboarding_weight_kg)
     )
     days_since_weigh_in = (
-        (date.today() - date.fromisoformat(latest_log.log_date)).days if latest_log else None
+        (today_ist() - date.fromisoformat(latest_log.log_date)).days if latest_log else None
     )
 
     weekly_change_kg = None

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { apiClient } from "./client";
+import { localDateIso } from "../utils/localDate";
 import { bumpXpRefresh } from "../store/xpRefreshStore";
 
 export type MealType = "Breakfast" | "Lunch" | "Dinner" | "Snack" | "Pre_Workout" | "Post_Workout";
@@ -189,13 +190,27 @@ async function withCaloriesRoute<T>(
   throw lastError ?? new Error("Calorie Log API not found on this server.");
 }
 
-export const todayLocal = () => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+export type FoodScanUsage = {
+  tier: "free" | "pro" | "elite";
+  meals_per_day: number;
+  meal_type: string | null;
+  cap: number;
+  used: number;
+  remaining: number;
+  resets_at: string;
+  slots?: Array<{ meal_type: string; cap: number; used: number; remaining: number }> | null;
 };
+
+export const getFoodScanUsage = async (mealType?: MealType) => {
+  return withCaloriesRoute("/foods/scan-usage", async (path) => {
+    const { data } = await apiClient.get<FoodScanUsage>(path, {
+      params: mealType ? { meal_type: mealType } : undefined,
+    });
+    return data;
+  });
+};
+
+export const todayLocal = () => localDateIso();
 
 export const ensureDailyCalorieLog = async (date?: string) => {
   return withCaloriesRoute("/daily-log", async (path) => {

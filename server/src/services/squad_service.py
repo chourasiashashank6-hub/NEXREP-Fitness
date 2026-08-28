@@ -14,6 +14,7 @@ from src.models.squads import Squad, SquadMember
 from src.services.notification_service import send_push_to_user
 from src.services.social_challenge_service import _is_blocked_between, is_friend, public_user
 from src.services.xp_service import _logged_meal_count
+from src.utils.app_time import today_ist
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ def parse_log_date(value: str | None) -> date:
             return date.fromisoformat(value[:10])
         except ValueError:
             pass
-    return datetime.utcnow().date()
+    return today_ist()
 
 
 def _workout_logged_on_date(db: Session, user_id: int, log_date: date) -> bool:
@@ -148,7 +149,7 @@ def serialize_squad(
     log_date: date | None = None,
     include_members: bool = True,
 ) -> dict[str, Any]:
-    day = log_date or datetime.utcnow().date()
+    day = log_date or today_ist()
     creator = db.query(User).filter(User.id == squad.creator_id).first()
     viewer_member = (
         db.query(SquadMember)

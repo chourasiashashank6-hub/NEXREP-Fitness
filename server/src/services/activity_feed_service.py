@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from src.models.models import ActivityEvent, FeedReaction, Friendship, NotificationPreference, User, Workout
 from src.models.nutrition_calories import DailyNutritionLog
 from src.services.notification_service import send_push_to_user
+from src.utils.app_time import today_ist
 
 EventType = Literal["pr", "streak_milestone", "thread_joined"]
 ReactionType = Literal["flame", "clap"]
@@ -126,7 +127,7 @@ def _activity_dates(db: Session, user_id: int) -> set[date]:
 
 
 def _current_streak_from_dates(active_dates: set[date], today: date | None = None) -> int:
-    today = today or datetime.utcnow().date()
+    today = today or today_ist()
     start = today if today in active_dates else today - timedelta(days=1)
     streak = 0
     cursor = start
@@ -166,7 +167,7 @@ def emit_streak_milestone_if_needed(db: Session, *, user_id: int, source: str, s
     if current <= 0:
         return None
     best = _best_streak_from_dates(dates)
-    today = datetime.utcnow().date()
+    today = today_ist()
     previous_best = _best_streak_from_dates({d for d in dates if d < today})
     is_multiple_of_7 = current % 7 == 0
     is_new_personal_best = current > previous_best

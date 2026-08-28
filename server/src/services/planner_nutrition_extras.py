@@ -1,4 +1,4 @@
-"""Protein gap suggestions (Groq + fallback) and rule-based supplement recommendations."""
+"""Protein gap suggestions and rule-based supplement recommendations."""
 
 from __future__ import annotations
 
@@ -10,8 +10,6 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from src.core.config import settings
-from src.core.http_client import post_json
-from src.services.ai_logger import log_groq_call
 from src.models.meal_plan import MonthlyMealPlan
 from src.models.models import User
 from src.services.planner_common import parse_local_date
@@ -196,53 +194,6 @@ def _get_cached_supplements(user_id: int) -> dict[str, Any] | None:
 
 def _set_cached_supplements(user_id: int, data: dict[str, Any]) -> None:
     _supplement_cache[str(user_id)] = {"data": data, "cached_at": datetime.now()}
-
-
-def _groq_protein_suggestions(
-    system_prompt: str,
-    user_msg: dict[str, Any],
-    *,
-    user_id: int | None = None,
-) -> list[dict[str, Any]]:
-    model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
-    raw = post_json(
-        "https://api.groq.com/openai/v1/chat/completions",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-        },
-        payload={
-            "model": model_name,
-            "temperature": 0.4,
-            "max_tokens": 600,
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": json.dumps(user_msg)},
-            ],
-        },
-        timeout=30,
-    )
-    try:
-        log_groq_call(
-            user_id=user_id,
-            feature="protein_suggestions",
-            model=model_name,
-            endpoint="/api/meal-planner/protein-suggestions",
-            response_json=raw,
-        )
-    except Exception:
-        pass
-    content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
-    parsed = json.loads(content.replace("```json", "").replace("```", "").strip())
-    suggestions = parsed.get("suggestions") if isinstance(parsed, dict) else None
-    if not isinstance(suggestions, list):
-        raise ValueError("Invalid protein suggestions response")
-    out: list[dict[str, Any]] = []
-    for s in suggestions[:5]:
-        if isinstance(s, dict) and s.get("title"):
-            out.append(s)
-    return out
 
 
 def compute_supplement_recommendations(onboarding_ctx: dict) -> dict[str, Any]:

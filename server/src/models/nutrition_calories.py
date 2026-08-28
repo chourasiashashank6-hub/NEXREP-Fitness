@@ -89,3 +89,15 @@ class AIFoodMealEntry(Base):
     confidence = Column(String(16), default="medium")
     estimated_serving_size = Column(String(120), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ShownHealthTip(Base):
+    __tablename__ = "shown_health_tips"
+    __table_args__ = (
+        UniqueConstraint("user_id", "tip_id", "shown_on", name="uq_shown_health_tip_user_tip_day"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    tip_id = Column(String(32), nullable=False)
+    shown_on = Column(Date, nullable=False, index=True)

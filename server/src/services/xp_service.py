@@ -15,6 +15,7 @@ from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, Me
 from src.models.recipes import UserMealPlan
 from src.models.xp import UserXpTotal, XpEvent, XpSeason
 from src.services.activity_feed_service import calculate_user_streak
+from src.utils.app_time import today_ist
 
 logger = logging.getLogger(__name__)
 
@@ -262,7 +263,7 @@ def _calorie_target_hit(log: DailyNutritionLog) -> bool:
 
 
 def ensure_default_season(db: Session) -> XpSeason | None:
-    today = date.today()
+    today = today_ist()
     active = (
         db.query(XpSeason)
         .filter(XpSeason.start_date <= today, XpSeason.end_date >= today)
@@ -321,7 +322,7 @@ def reconcile_user_xp_totals(db: Session, user_id: int) -> UserXpTotal:
 def award_xp_for_workout_log(db: Session, *, user_id: int, workout_id: int, log_date: date | None = None) -> None:
     """Hook for POST /workout — manual log and planner checkbox share this path."""
     try:
-        activity_date = log_date or date.today()
+        activity_date = log_date or today_ist()
         _maybe_activate_comeback(db, user_id, activity_date)
         _award_xp(
             db,

@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import { localDateIso } from "../utils/localDate";
 
 export type FastingPeriodType =
   | "navratri"
@@ -35,13 +36,7 @@ export type FastingPreferencePayload = {
   active?: boolean;
 };
 
-const localDateParam = () => {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
+const localDateParam = () => localDateIso();
 
 export async function getFastingPreferences(): Promise<FastingPreferencesResponse> {
   const { data } = await apiClient.get<FastingPreferencesResponse>("/api/fasting/preferences", {

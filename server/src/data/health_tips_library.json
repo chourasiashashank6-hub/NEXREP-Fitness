@@ -1,0 +1,1285 @@
+[
+  {
+    "id": "prot_001",
+    "category": "protein",
+    "title": "Pair dal with rice or roti",
+    "body": "Dal is high in lysine but low in methionine; rice and wheat are the opposite. Together they cover all nine essential amino acids.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "protein_gap"
+    ],
+    "priority": 2,
+    "cooldown_days": 21,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "prot_002",
+    "category": "protein",
+    "title": "You don't need to combine at one meal",
+    "body": "Complementary proteins work across the whole day. Dal at lunch and curd at dinner still completes the profile.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "prot_003",
+    "category": "protein",
+    "title": "Paneer is the density leader",
+    "body": "About 18g protein per 100g — among the highest in Indian vegetarian food. A 100g block closes a big part of most protein gaps.",
+    "diet": [
+      "veg",
+      "eggetarian"
+    ],
+    "goals": [
+      "muscle_gain",
+      "strength",
+      "maintain"
+    ],
+    "triggers": [
+      "protein_gap"
+    ],
+    "priority": 2,
+    "cooldown_days": 14
+  },
+  {
+    "id": "prot_004",
+    "category": "protein",
+    "title": "Soya chunks are a complete protein",
+    "body": "Unlike most plant foods, soya needs no pairing — it has all nine essential amino acids on its own, at roughly 52g protein per 100g dry.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "muscle_gain",
+      "strength"
+    ],
+    "triggers": [
+      "protein_gap"
+    ],
+    "priority": 2,
+    "cooldown_days": 21
+  },
+  {
+    "id": "prot_005",
+    "category": "protein",
+    "title": "Moong dal digests easiest",
+    "body": "Around 85% protein digestibility versus 65–70% for most other dals. Good choice on days your stomach feels heavy.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "prot_006",
+    "category": "protein",
+    "title": "Total protein beats perfect timing",
+    "body": "Research consistently finds daily total matters far more than hitting a specific window. Spread it across your meals and don't stress the clock.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain",
+      "strength"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 30
+  },
+  {
+    "id": "prot_007",
+    "category": "protein",
+    "title": "Eggs are the reference standard",
+    "body": "All nine essential amino acids in near-ideal ratio, and about as digestible as protein gets. Two eggs add roughly 12g.",
+    "diet": [
+      "non_veg",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "protein_gap"
+    ],
+    "priority": 2,
+    "cooldown_days": 14
+  },
+  {
+    "id": "prot_008",
+    "category": "protein",
+    "title": "Add curd to any meal",
+    "body": "A cup adds around 7g protein and improves the amino acid profile of a dal-and-grain plate.",
+    "diet": [
+      "veg",
+      "eggetarian",
+      "non_veg"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "protein_gap"
+    ],
+    "priority": 3,
+    "cooldown_days": 14,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "prot_009",
+    "category": "protein",
+    "title": "Seeds are the forgotten protein",
+    "body": "Pumpkin, sunflower and sesame run 15–25g per 100g, plus zinc and magnesium. Easy to sprinkle on anything.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "protein_gap"
+    ],
+    "priority": 4,
+    "cooldown_days": 30
+  },
+  {
+    "id": "prot_010",
+    "category": "protein",
+    "title": "Protein protects muscle in a deficit",
+    "body": "When calories are low, adequate protein is what keeps weight loss coming from fat rather than muscle.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [
+      "protein_gap"
+    ],
+    "priority": 1,
+    "cooldown_days": 10
+  },
+  {
+    "id": "prot_011",
+    "category": "protein",
+    "title": "Spread it, don't stack it",
+    "body": "Roughly 20–40g per meal across the day supports muscle better than one large protein hit.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain",
+      "strength"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 30
+  },
+  {
+    "id": "prot_012",
+    "category": "protein",
+    "title": "Chicken breast is the lean workhorse",
+    "body": "About 31g protein per 100g cooked with very little fat — efficient when calories are tight.",
+    "diet": [
+      "non_veg"
+    ],
+    "goals": [
+      "fat_loss",
+      "muscle_gain",
+      "strength"
+    ],
+    "triggers": [
+      "protein_gap"
+    ],
+    "priority": 2,
+    "cooldown_days": 14
+  },
+  {
+    "id": "prot_013",
+    "category": "protein",
+    "title": "Fish adds omega-3 with the protein",
+    "body": "Rohu, surmai or salmon give you complete protein plus fats most Indian diets run short on.",
+    "diet": [
+      "non_veg"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30
+  },
+  {
+    "id": "prot_014",
+    "category": "protein",
+    "title": "Tofu for a dairy-free complete protein",
+    "body": "Soy-based, so no pairing needed — useful when you're avoiding paneer and curd.",
+    "diet": [
+      "vegan"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "protein_gap"
+    ],
+    "priority": 2,
+    "cooldown_days": 21
+  },
+  {
+    "id": "prot_015",
+    "category": "protein",
+    "title": "Sprouting improves absorption",
+    "body": "Sprouting dal before cooking increases protein bioavailability and cuts antinutrients that block minerals.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 45,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "prot_016",
+    "category": "protein",
+    "title": "Vary your dals through the week",
+    "body": "Moong, masoor, chana, toor and urad have different amino acid and micronutrient profiles. Rotating them covers more ground than sticking to one.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 5,
+    "cooldown_days": 45,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "prot_017",
+    "category": "protein",
+    "title": "You're well short today",
+    "body": "Protein is under 40% of your target with the day mostly gone. A scoop of whey, 100g paneer, or two eggs closes most of it fast.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "protein_severe_gap"
+    ],
+    "priority": 1,
+    "cooldown_days": 3
+  },
+  {
+    "id": "prot_018",
+    "category": "protein",
+    "title": "Quinoa and rajgira are complete",
+    "body": "Both carry all nine essential amino acids without pairing — a swap worth knowing if you're bored of rice.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 5,
+    "cooldown_days": 45,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "prot_019",
+    "category": "protein",
+    "title": "Most Indians run a protein shortfall",
+    "body": "Typical intake sits around 40–45g a day against a need closer to 0.8–1g per kg bodyweight — and higher if you train.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 45
+  },
+  {
+    "id": "prot_020",
+    "category": "protein",
+    "title": "Training raises the bar",
+    "body": "Lifting regularly pushes protein needs toward 1.2–2.0g per kg bodyweight, well above the sedentary baseline.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain",
+      "strength"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 30
+  },
+  {
+    "id": "cal_001",
+    "category": "calories",
+    "title": "You're over budget today",
+    "body": "You've passed your calorie target. One day won't undo progress — get back to your normal pattern tomorrow rather than compensating hard.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss",
+      "maintain"
+    ],
+    "triggers": [
+      "over_calories"
+    ],
+    "priority": 1,
+    "cooldown_days": 5
+  },
+  {
+    "id": "cal_002",
+    "category": "calories",
+    "title": "You're eating too little",
+    "body": "Well under target this late in the day. Chronic under-eating stalls fat loss by driving down energy and training quality.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [
+      "under_calories"
+    ],
+    "priority": 1,
+    "cooldown_days": 5
+  },
+  {
+    "id": "cal_003",
+    "category": "calories",
+    "title": "A surplus is required to build",
+    "body": "Muscle gain needs consistent extra calories. Under-eating on a bulk is the most common reason gains stall.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain"
+    ],
+    "triggers": [
+      "under_calories"
+    ],
+    "priority": 1,
+    "cooldown_days": 7
+  },
+  {
+    "id": "cal_004",
+    "category": "calories",
+    "title": "Liquid calories add up quietly",
+    "body": "Juice, sweetened chai, and soft drinks contribute meaningfully without registering as a meal.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss",
+      "maintain"
+    ],
+    "triggers": [
+      "over_calories"
+    ],
+    "priority": 3,
+    "cooldown_days": 21
+  },
+  {
+    "id": "cal_005",
+    "category": "calories",
+    "title": "Ghee and oil are the hidden multiplier",
+    "body": "A tablespoon is roughly 120 kcal. Two extra spoons across a day is often the whole difference between deficit and maintenance.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [
+      "over_calories"
+    ],
+    "priority": 2,
+    "cooldown_days": 21
+  },
+  {
+    "id": "cal_006",
+    "category": "calories",
+    "title": "Weekly average beats daily perfection",
+    "body": "Fat loss tracks your weekly total. One high day inside a good week changes very little.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [
+      "over_calories"
+    ],
+    "priority": 3,
+    "cooldown_days": 21
+  },
+  {
+    "id": "cal_007",
+    "category": "calories",
+    "title": "Slow gaining stays leaner",
+    "body": "A modest surplus builds nearly as much muscle as a large one, with far less fat along for the ride.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 30
+  },
+  {
+    "id": "cal_008",
+    "category": "calories",
+    "title": "Eat enough to lift heavy",
+    "body": "Strength work suffers first when calories run low. Fuel the session or the session won't progress.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "strength"
+    ],
+    "triggers": [
+      "under_calories"
+    ],
+    "priority": 2,
+    "cooldown_days": 14
+  },
+  {
+    "id": "fib_001",
+    "category": "fiber",
+    "title": "Fiber is running low",
+    "body": "You're under target. Dal, whole fruit, vegetables and whole grains are the easiest ways to close the gap.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "low_fiber"
+    ],
+    "priority": 2,
+    "cooldown_days": 10,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "fib_002",
+    "category": "fiber",
+    "title": "Fiber keeps you full for free",
+    "body": "High-fiber foods add bulk and slow digestion without adding many calories — useful when you're cutting.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [
+      "low_fiber"
+    ],
+    "priority": 2,
+    "cooldown_days": 14
+  },
+  {
+    "id": "fib_003",
+    "category": "fiber",
+    "title": "Whole fruit over juice",
+    "body": "Juicing strips the fiber that slows sugar absorption and keeps you satisfied.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "low_fiber"
+    ],
+    "priority": 3,
+    "cooldown_days": 21,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "fib_004",
+    "category": "fiber",
+    "title": "Vegetables first",
+    "body": "Starting a meal with the vegetable portion tends to reduce total intake without conscious restriction.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss",
+      "maintain"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30
+  },
+  {
+    "id": "fib_005",
+    "category": "fiber",
+    "title": "Increase fiber gradually",
+    "body": "A sudden jump causes bloating. Raise it over a week and drink more water alongside.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "low_fiber"
+    ],
+    "priority": 4,
+    "cooldown_days": 45
+  },
+  {
+    "id": "hyd_001",
+    "category": "hydration",
+    "title": "You're behind on water",
+    "body": "Well under target today. Thirst is a late signal — most people are already low by the time they feel it.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "low_hydration"
+    ],
+    "priority": 2,
+    "cooldown_days": 7
+  },
+  {
+    "id": "hyd_002",
+    "category": "hydration",
+    "title": "Hydration affects lifting",
+    "body": "Even mild dehydration reduces strength output and makes sessions feel harder than they are.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "strength",
+      "muscle_gain"
+    ],
+    "triggers": [
+      "low_hydration"
+    ],
+    "priority": 2,
+    "cooldown_days": 14
+  },
+  {
+    "id": "hyd_003",
+    "category": "hydration",
+    "title": "Thirst can read as hunger",
+    "body": "Having water before deciding you're hungry costs nothing and sometimes settles it.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [
+      "low_hydration"
+    ],
+    "priority": 3,
+    "cooldown_days": 21
+  },
+  {
+    "id": "hyd_004",
+    "category": "hydration",
+    "title": "Anchor water to habits",
+    "body": "A glass with every meal and one on waking gets most people close to target without tracking each sip.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "low_hydration"
+    ],
+    "priority": 3,
+    "cooldown_days": 21
+  },
+  {
+    "id": "hyd_005",
+    "category": "hydration",
+    "title": "Heat and training raise your need",
+    "body": "Indian summers plus a gym session can add a litre or more to what you actually need.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 45
+  },
+  {
+    "id": "tim_001",
+    "category": "timing",
+    "title": "Log meals soon after eating",
+    "body": "Logging within a few minutes keeps portions accurate. Recall at night is where most tracking error creeps in.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 21
+  },
+  {
+    "id": "tim_002",
+    "category": "timing",
+    "title": "You've skipped a planned meal",
+    "body": "You're behind your planned meal count for today. Skipping usually means a larger, less controlled meal later.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "meal_skipped"
+    ],
+    "priority": 2,
+    "cooldown_days": 7
+  },
+  {
+    "id": "tim_003",
+    "category": "timing",
+    "title": "A late first meal compresses your day",
+    "body": "Starting after noon leaves less room to spread protein and hit your calorie target comfortably.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain",
+      "strength"
+    ],
+    "triggers": [
+      "late_first_meal"
+    ],
+    "priority": 3,
+    "cooldown_days": 14
+  },
+  {
+    "id": "tim_004",
+    "category": "timing",
+    "title": "Meal frequency is your choice",
+    "body": "Two meals or six — when calories and protein match, results are similar. Pick what you can sustain.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 45
+  },
+  {
+    "id": "tim_005",
+    "category": "timing",
+    "title": "Eat something before you train",
+    "body": "A meal or snack in the few hours before lifting generally makes for a better session than training fully empty.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "strength",
+      "muscle_gain"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30
+  },
+  {
+    "id": "hab_001",
+    "category": "habit",
+    "title": "Nothing logged yet today",
+    "body": "Log your first meal to unlock macro coaching. Even a rough entry beats no entry.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "no_logs"
+    ],
+    "priority": 1,
+    "cooldown_days": 2
+  },
+  {
+    "id": "hab_002",
+    "category": "habit",
+    "title": "Consistency beats precision",
+    "body": "A roughly-logged day every day tells you more than a perfectly-logged day once a week.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "no_logs"
+    ],
+    "priority": 2,
+    "cooldown_days": 14
+  },
+  {
+    "id": "hab_003",
+    "category": "habit",
+    "title": "Log it even when it's off-plan",
+    "body": "Skipping the entries you'd rather not see is what makes tracking stop working.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 30
+  },
+  {
+    "id": "hab_004",
+    "category": "habit",
+    "title": "Slow down at the table",
+    "body": "Fullness signals take time to register. Eating more slowly gives them a chance to arrive before you've overshot.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss",
+      "maintain"
+    ],
+    "triggers": [
+      "over_calories"
+    ],
+    "priority": 3,
+    "cooldown_days": 21
+  },
+  {
+    "id": "hab_005",
+    "category": "habit",
+    "title": "Serve, then sit",
+    "body": "Plating your portion and putting the serving dish away removes the second helping decision entirely.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [
+      "over_calories"
+    ],
+    "priority": 4,
+    "cooldown_days": 30
+  },
+  {
+    "id": "hab_006",
+    "category": "habit",
+    "title": "You're on track today",
+    "body": "Calories, protein and hydration all where they should be. This is the pattern that produces results — nothing to change.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "on_track"
+    ],
+    "priority": 2,
+    "cooldown_days": 5
+  },
+  {
+    "id": "hab_007",
+    "category": "habit",
+    "title": "Weigh food while you learn",
+    "body": "A few weeks on a scale calibrates your eye permanently. Most people over-estimate rice and under-estimate oil.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 45,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "hab_008",
+    "category": "habit",
+    "title": "Plan tomorrow tonight",
+    "body": "Deciding meals in advance removes the hungry-and-deciding moment, which is where most plans break.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30
+  },
+  {
+    "id": "gut_001",
+    "category": "gut",
+    "title": "Fermented foods support gut bacteria",
+    "body": "Curd, buttermilk and idli batter feed gut bacteria and are staples you likely already keep at home.",
+    "diet": [
+      "veg",
+      "eggetarian",
+      "non_veg"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "gut_002",
+    "category": "gut",
+    "title": "Fermenting improves absorption",
+    "body": "Idli and dosa batter ferment before cooking, which improves how well you absorb what's in them.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 5,
+    "cooldown_days": 45,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "gut_003",
+    "category": "gut",
+    "title": "Variety feeds a better gut",
+    "body": "A wider range of plants across the week supports more diverse gut bacteria than eating the same three vegetables.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 5,
+    "cooldown_days": 45
+  },
+  {
+    "id": "gut_004",
+    "category": "gut",
+    "title": "Soak dal before cooking",
+    "body": "Six to eight hours reduces phytic acid, which otherwise blocks mineral absorption from the same meal.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 5,
+    "cooldown_days": 45,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "mic_001",
+    "category": "micronutrient",
+    "title": "Pair iron with vitamin C",
+    "body": "Lemon on dal or a citrus fruit alongside meaningfully improves iron absorption from plant sources.",
+    "diet": [
+      "veg",
+      "vegan",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "mic_002",
+    "category": "micronutrient",
+    "title": "B12 needs attention on a vegan diet",
+    "body": "It's essentially absent from plant foods. Fortified products or a supplement is the standard route — worth discussing with a doctor.",
+    "diet": [
+      "vegan"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 45
+  },
+  {
+    "id": "mic_003",
+    "category": "micronutrient",
+    "title": "Calcium beyond dairy",
+    "body": "Ragi, sesame, and leafy greens carry meaningful calcium if you're not using milk or curd.",
+    "diet": [
+      "vegan"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 45,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "mic_004",
+    "category": "micronutrient",
+    "title": "Don't fear the yolk",
+    "body": "Yolks carry most of the egg's micronutrients. Whites-only discards the more nutritious half.",
+    "diet": [
+      "non_veg",
+      "eggetarian"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 45
+  },
+  {
+    "id": "mic_005",
+    "category": "micronutrient",
+    "title": "Fats aren't optional",
+    "body": "Some dietary fat is needed to absorb vitamins A, D, E and K. Cutting it to near-zero works against you.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [
+      "low_fat"
+    ],
+    "priority": 2,
+    "cooldown_days": 21
+  },
+  {
+    "id": "crb_001",
+    "category": "carbs",
+    "title": "That meal leaned heavily on carbs",
+    "body": "Adding a protein source to a carb-dominant plate improves both satiety and your macro balance.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [
+      "high_carb_meal"
+    ],
+    "priority": 3,
+    "cooldown_days": 10,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "crb_002",
+    "category": "carbs",
+    "title": "Carbs fuel hard sessions",
+    "body": "They're your main energy source for lifting. Cutting them too far usually shows up as weaker training.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "strength",
+      "muscle_gain"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "crb_003",
+    "category": "carbs",
+    "title": "Whole grains over refined",
+    "body": "Bajra, jowar, and brown rice bring fiber and micronutrients that white rice and maida have lost.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "crb_004",
+    "category": "carbs",
+    "title": "Rice isn't the problem",
+    "body": "Total calories drive fat loss, not any single food. Portion your rice rather than fearing it.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 30,
+    "excluded_diets": [
+      "keto"
+    ]
+  },
+  {
+    "id": "rec_001",
+    "category": "recovery",
+    "title": "Sleep drives recovery",
+    "body": "Short sleep reduces training quality and makes appetite harder to manage the next day.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "all"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30
+  },
+  {
+    "id": "rec_002",
+    "category": "recovery",
+    "title": "Rest days build the muscle",
+    "body": "Growth happens between sessions. Training through genuine fatigue slows progress rather than speeding it.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain",
+      "strength"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30
+  },
+  {
+    "id": "rec_003",
+    "category": "recovery",
+    "title": "Eat on rest days too",
+    "body": "Recovery has a fuel cost. Dropping intake sharply on non-training days undercuts the work you did.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain",
+      "strength"
+    ],
+    "triggers": [
+      "under_calories"
+    ],
+    "priority": 3,
+    "cooldown_days": 21
+  },
+  {
+    "id": "fl_001",
+    "category": "goal",
+    "title": "Expect the scale to bounce",
+    "body": "Daily weight swings on water and food volume. The weekly trend is the signal.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 30
+  },
+  {
+    "id": "fl_002",
+    "category": "goal",
+    "title": "Steady loss holds better",
+    "body": "Aggressive deficits cost more muscle and are harder to sustain than a moderate one.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 30
+  },
+  {
+    "id": "fl_003",
+    "category": "goal",
+    "title": "Keep lifting while cutting",
+    "body": "Resistance training during a deficit is what signals your body to keep muscle rather than burn it.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "fat_loss"
+    ],
+    "triggers": [],
+    "priority": 2,
+    "cooldown_days": 21
+  },
+  {
+    "id": "mg_001",
+    "category": "goal",
+    "title": "Progressive overload comes first",
+    "body": "Nutrition supports growth, but adding weight or reps over time is what actually drives it.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain",
+      "strength"
+    ],
+    "triggers": [],
+    "priority": 3,
+    "cooldown_days": 30
+  },
+  {
+    "id": "mg_002",
+    "category": "goal",
+    "title": "Muscle gain is slow by nature",
+    "body": "Real rates are measured in months. Rapid scale movement is usually mostly fat and water.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "muscle_gain"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 45
+  },
+  {
+    "id": "st_001",
+    "category": "goal",
+    "title": "Strength needs recovery between sessions",
+    "body": "Heavy work taxes the nervous system as much as the muscle. Spacing sessions is part of the programme.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "strength"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30
+  },
+  {
+    "id": "mt_001",
+    "category": "goal",
+    "title": "Maintenance is an active skill",
+    "body": "Holding a weight takes the same attention as changing it. The logging habit is what keeps it stable.",
+    "diet": [
+      "all"
+    ],
+    "goals": [
+      "maintain"
+    ],
+    "triggers": [],
+    "priority": 4,
+    "cooldown_days": 30
+  }
+]

@@ -22,6 +22,7 @@ def _write_log(
     endpoint: str | None,
     is_fallback: bool,
     success: bool,
+    meal_slot: str | None = None,
 ) -> None:
     cost_usd, cost_inr = calculate_cost(model, prompt_tokens, completion_tokens)
     own_session = db is None
@@ -40,6 +41,7 @@ def _write_log(
             success=success,
             is_fallback=is_fallback,
             endpoint=endpoint,
+            meal_slot=meal_slot,
         )
         session.add(log)
         session.commit()
@@ -58,6 +60,7 @@ def log_groq_call(
     response_json: dict[str, Any],
     is_fallback: bool = False,
     success: bool = True,
+    meal_slot: str | None = None,
 ) -> None:
     usage = response_json.get("usage", {}) or {}
     prompt_tokens = int(usage.get("prompt_tokens", 0) or 0)
@@ -75,6 +78,7 @@ def log_groq_call(
         endpoint=endpoint,
         is_fallback=is_fallback,
         success=success,
+        meal_slot=meal_slot,
     )
 
 
@@ -88,6 +92,7 @@ def log_gemini_call(
     response_json: dict[str, Any],
     is_fallback: bool = False,
     success: bool = True,
+    meal_slot: str | None = None,
 ) -> None:
     usage = response_json.get("usageMetadata", {}) or {}
     prompt_tokens = int(usage.get("promptTokenCount", 0) or 0)
@@ -105,4 +110,5 @@ def log_gemini_call(
         endpoint=endpoint,
         is_fallback=is_fallback,
         success=success,
+        meal_slot=meal_slot,
     )

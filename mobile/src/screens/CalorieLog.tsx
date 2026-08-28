@@ -27,6 +27,7 @@ import {
   deleteAIFoodMeal,
   deleteCalorieMeal,
   getDailyCalorieLog,
+  getFoodScanUsage,
   invalidateCaloriesRoutePrefix,
   lookupFoodNutrition,
   patchCalorieMealQty,
@@ -46,7 +47,7 @@ import { PlannerLockedUpsell } from "../components/PlannerLockedUpsell";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { useFoodRecognition } from "../hooks/useFoodRecognition";
-import type { FoodAnalysisResult } from "../services/foodRecognitionService";
+import type { FoodAnalysisResult, FoodScanLimitDetail } from "../services/foodRecognitionService";
 import { useAuthStore } from "../store/authStore";
 import type { MainTabParamList } from "../navigation/types";
 import MonthlyMealPlannerScreen from "./Coach/MonthlyMealPlannerScreen";
@@ -144,6 +145,25 @@ const mealHeading = (t: MealType) =>
 const mealRowLabel = (t: MealType) => {
   if (t === "Snack") return i18n.t("calorieLog.mealLabels.snacks");
   return mealHeading(t);
+};
+
+const formatScanMealLabel = (meal: string | null | undefined) => {
+  if (!meal) return "";
+  if (MEAL_ORDER.includes(meal as MealType)) return mealHeading(meal as MealType);
+  return meal.replace(/_/g, " ");
+};
+
+const formatScanResetAt = (iso: string) => {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Kolkata",
+    }).format(new Date(iso));
+  } catch {
+    return "";
+  }
 };
 
 const mealTypeFromLocalTime = (d: Date = new Date()): MealType => {
@@ -406,6 +426,7 @@ export const CalorieLog = () => {
   const [aiConfidence, setAiConfidence] = useState<"low" | "medium" | "high">("medium");
   const [aiServingSize, setAiServingSize] = useState("");
   const [cameraBase, setCameraBase] = useState<CameraBaseNutrition | null>(null);
+  const [scanUsage, setScanUsage] = useState<Awaited<ReturnType<typeof getFoodScanUsage>> | null>(null);
   const { isAnalyzing, error: foodRecognitionError, analyzeImage, resetFoodRecognition } = useFoodRecognition();
 
   const animP = useRef(new Animated.Value(0)).current;
@@ -414,6 +435,59 @@ export const CalorieLog = () => {
   const animW = useRef(new Animated.Value(0)).current;
   const animFi = useRef(new Animated.Value(0)).current;
   const viewModeInitialized = useRef(false);
+
+  const refreshScanUsage = useCallback(async () => {
+    if (!token) {
+      setScanUsage(null);
+      return;
+    }
+    try {
+      const usage = await getFoodScanUsage(mealType);
+      setScanUsage(usage);
+    } catch {
+      setScanUsage(null);
+    }
+  }, [mealType, token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshScanUsage();
+    }, [refreshScanUsage]),
+  );
+
+  useEffect(() => {
+    void refreshScanUsage();
+  }, [refreshScanUsage]);
+
+  const scanUsageLabel = useMemo(() => {
+    if (!scanUsage) return null;
+    if (scanUsage.tier === "free") {
+      return t("calorieLog.scanUsageDaily", { remaining: scanUsage.remaining, cap: scanUsage.cap });
+    }
+    const mealLabel = formatScanMealLabel(scanUsage.meal_type ?? mealType);
+    return t("calorieLog.scanUsageMeal", { remaining: scanUsage.remaining, cap: scanUsage.cap, meal: mealLabel });
+  }, [mealType, scanUsage, t]);
+
+  const showScanLimitAlert = useCallback(
+    (limit?: FoodScanLimitDetail | null) => {
+      if (!limit) {
+        Alert.alert(t("calorieLog.alerts.foodRecognition"), t("calorieLog.alerts.analysisFailed"));
+        return;
+      }
+      const resetTime = formatScanResetAt(limit.resets_at);
+      const lines = [t("services.food.scanLimitReached")];
+      if (resetTime) {
+        lines.push(t("calorieLog.alerts.scanLimitResets", { time: resetTime }));
+      }
+      if (limit.tier === "free") {
+        lines.push(t("calorieLog.alerts.scanLimitUpgradePro"));
+      } else if (limit.tier === "pro") {
+        lines.push(t("calorieLog.alerts.scanLimitUpgradeElite"));
+      }
+      Alert.alert(t("calorieLog.alerts.scanLimitTitle"), lines.join("\n\n"));
+    },
+    [t],
+  );
 
   const refresh = useCallback(async () => {
     const d = await getDailyCalorieLog(logDate);
@@ -790,27 +864,19 @@ export const CalorieLog = () => {
   };
 
   const runFoodRecognition = async (payload: { base64: string; mimeType?: string }) => {
-    const result = await analyzeImage(payload);
-    if (!result) {
-      showToast(foodRecognitionError || t("calorieLog.alerts.analysisFailed"));
+    const response = await analyzeImage({ ...payload, mealType });
+    if (!response.ok) {
+      if (response.limit) {
+        showScanLimitAlert(response.limit);
+      } else {
+        showToast(response.error || t("calorieLog.alerts.analysisFailed"));
+      }
       return;
     }
-    applyAnalysisToForm(result);
-    showToast(t("calorieLog.alerts.detected", { foodName: result.foodName }));
+    applyAnalysisToForm(response.result);
+    void refreshScanUsage();
+    showToast(t("calorieLog.alerts.detected", { foodName: response.result.foodName }));
   };
-
-  useEffect(() => {
-    if (!foodRecognitionError) return;
-    Alert.alert(t("calorieLog.alerts.foodRecognition"), foodRecognitionError, [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("calorieLog.retry"),
-        onPress: () => {
-          showToast(t("calorieLog.alerts.retryHint"));
-        },
-      },
-    ]);
-  }, [foodRecognitionError, t]);
 
   const onDeleteMeal = async (mealId: number, sourceType?: "database" | "camera_ai" | "meal_planner") => {
     try {
@@ -998,7 +1064,9 @@ export const CalorieLog = () => {
             <Text style={styles.cardLabel}>{t("calorieLog.addFood")}</Text>
             <FoodCameraButton disabled={saving || isAnalyzing} onImageSelected={runFoodRecognition} variant="scanPill" />
           </View>
-          <Text style={styles.scanCaption}>{t("calorieLog.scanCaption")}</Text>
+          <Text style={styles.scanCaption}>
+            {scanUsageLabel ? `${scanUsageLabel} · ${t("calorieLog.scanCaption")}` : t("calorieLog.scanCaption")}
+          </Text>
           <View style={styles.searchWrap}>
             <TextInput
               placeholder={t("calorieLog.searchPlaceholder")}

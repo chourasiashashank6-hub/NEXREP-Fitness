@@ -3,10 +3,12 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
+import { fetchHealthTips, type HealthTipItem } from "../../api/coachHealthTips";
+import { todayLocal } from "../../api/caloriesLog";
 import { loadOnboardingWithFallback } from "../../api/onboarding";
 import i18n from "../../i18n";
 import { useAuthStore } from "../../store/authStore";
-import { type AICoachResponse, type DietTipItem, type NutritionData, type Task } from "../../types/coach";
+import { type NutritionData, type Task } from "../../types/coach";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -35,6 +37,7 @@ const STREAK_KEY = "streak_data";
 type StreakData = Record<string, boolean>;
 
 type DietTip = {
+  id?: string;
   emoji: string;
   title: string;
   body: string;
@@ -44,6 +47,48 @@ type DietTip = {
   tagText: string;
   iconBg: string;
 };
+
+function tipPresentation(tip: HealthTipItem): DietTip {
+  const category = tip.category || "habit";
+  const palette =
+    category === "protein"
+      ? { emoji: "🥚", bg: BLUE_LIGHT, text: BLUE }
+      : category === "hydration"
+        ? { emoji: "💧", bg: BLUE_LIGHT, text: BLUE }
+        : category === "calories"
+          ? { emoji: "🔥", bg: ORANGE_LIGHT, text: ORANGE }
+          : category === "fiber" || category === "gut"
+            ? { emoji: "🥦", bg: GREEN_LIGHT, text: GREEN }
+            : category === "timing"
+              ? { emoji: "🕐", bg: PURPLE_LIGHT, text: PURPLE }
+              : category === "micronutrient"
+                ? { emoji: "🌾", bg: AMBER_LIGHT, text: AMBER_TEXT }
+                : category === "carbs"
+                  ? { emoji: "🍚", bg: PURPLE_LIGHT, text: PURPLE }
+                  : category === "recovery" || category === "goal"
+                    ? { emoji: "💪", bg: GREEN_LIGHT, text: GREEN }
+                    : { emoji: "🌿", bg: GREEN_LIGHT, text: GREEN };
+
+  return {
+    id: tip.id,
+    emoji: palette.emoji,
+    title: tip.title,
+    body: tip.body,
+    tag: tip.tag || category.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    category,
+    tagBg: palette.bg,
+    tagText: palette.text,
+    iconBg: palette.bg,
+  };
+}
+
+const FILTERS: Array<{ value: FilterValue; label: string }> = [
+  { value: "all", label: i18n.t("coach.actionPlan.filters.all") },
+  { value: "water", label: i18n.t("coach.actionPlan.filters.water") },
+  { value: "food", label: i18n.t("coach.actionPlan.filters.food") },
+  { value: "log", label: i18n.t("coach.actionPlan.filters.log") },
+  { value: "move", label: i18n.t("coach.actionPlan.filters.move") },
+];
 
 function buildMealLogTasks(mealsPerDay: number, mealsLogged: number): Task[] {
   const normalizedMeals = Number.isFinite(mealsPerDay) ? Math.max(1, Math.min(8, Math.round(mealsPerDay))) : 3;
@@ -163,130 +208,6 @@ function buildIntakeDrivenTasks(nutritionData: NutritionData | null, mealsPerDay
   return tasks;
 }
 
-function buildFallbackTips(n: NutritionData, mealsLogged: number, mealsPerDay: number): DietTip[] {
-  const proteinTarget = n.proteinTargetG ?? Math.max(90, Math.round((n.tdee * 0.25) / 4));
-  const waterTarget = n.waterTargetMl ?? 2500;
-  const fatTarget = n.fatTargetG ?? Math.round((n.tdee * 0.2) / 9);
-  const tips: DietTip[] = [
-    {
-      emoji: "🥦",
-      title: "Add fermented foods today",
-      body: "Curd, buttermilk or idli feed gut bacteria and improve digestion and immunity.",
-      tag: "Gut",
-      tagBg: GREEN_LIGHT,
-      tagText: GREEN,
-      iconBg: GREEN_LIGHT,
-      category: "gut",
-    },
-  ];
-
-  if (n.proteinG < proteinTarget * 0.5) {
-    tips.push({
-      emoji: "⏰",
-      title: "Eat protein within 30 min of waking",
-      body: `Protein is at ${Math.round(n.proteinG)}g of ${Math.round(proteinTarget)}g. Early protein stabilises blood sugar and reduces cortisol spikes.`,
-      tag: "Protein",
-      tagBg: BLUE_LIGHT,
-      tagText: BLUE,
-      iconBg: BLUE_LIGHT,
-      category: "protein",
-    });
-  }
-
-  if (n.waterMl >= waterTarget) {
-    tips.push({
-      emoji: "💧",
-      title: "Drink water 20 min before meals",
-      body: "You've hit your water target! Drinking water before (not during) meals improves digestion and prevents overeating.",
-      tag: "Digestion",
-      tagBg: BLUE_LIGHT,
-      tagText: BLUE,
-      iconBg: BLUE_LIGHT,
-      category: "digestion",
-    });
-  }
-
-  if (n.waterMl < waterTarget * 0.5) {
-    tips.push({
-      emoji: "💧",
-      title: "Stay hydrated for better digestion",
-      body: `You're at ${Math.round(n.waterMl)}ml of ${Math.round(waterTarget)}ml. Dehydration slows digestion — drink a glass now.`,
-      tag: "Digestion",
-      tagBg: BLUE_LIGHT,
-      tagText: BLUE,
-      iconBg: BLUE_LIGHT,
-      category: "digestion",
-    });
-  }
-
-  if (n.fatG >= fatTarget * 0.7) {
-    tips.push({
-      emoji: "🥑",
-      title: "Healthy fats protect your gut lining",
-      body: "Almonds and olive oil reduce gut inflammation and help absorb fat-soluble vitamins A, D, E, K.",
-      tag: "Gut",
-      tagBg: AMBER_LIGHT,
-      tagText: AMBER_TEXT,
-      iconBg: AMBER_LIGHT,
-      category: "fat",
-    });
-  }
-
-  if (mealsLogged > mealsPerDay) {
-    tips.push({
-      emoji: "🕐",
-      title: "Space meals 3–4 hours apart",
-      body: `You've logged ${mealsLogged} meals today. Spacing meals lets your gut rest, reducing bloating and improving absorption.`,
-      tag: "Timing",
-      tagBg: PURPLE_LIGHT,
-      tagText: PURPLE,
-      iconBg: PURPLE_LIGHT,
-      category: "timing",
-    });
-  }
-
-  tips.push({
-    emoji: "🍽️",
-    title: "Chew slowly — digestion starts in the mouth",
-    body: "Chewing each bite 20–30 times reduces digestive load and prevents bloating after meals.",
-    tag: "Gut",
-    tagBg: GREEN_LIGHT,
-    tagText: GREEN,
-    iconBg: GREEN_LIGHT,
-    category: "gut",
-  });
-
-  return tips.slice(0, 5);
-}
-
-function tipTone(category: DietTipItem["category"]) {
-  if (category === "protein") return { tagBg: BLUE_LIGHT, tagText: BLUE, iconBg: BLUE_LIGHT };
-  if (category === "digestion") return { tagBg: BLUE_LIGHT, tagText: BLUE, iconBg: BLUE_LIGHT };
-  if (category === "timing") return { tagBg: PURPLE_LIGHT, tagText: PURPLE, iconBg: PURPLE_LIGHT };
-  if (category === "fat") return { tagBg: AMBER_LIGHT, tagText: AMBER_TEXT, iconBg: AMBER_LIGHT };
-  return { tagBg: GREEN_LIGHT, tagText: GREEN, iconBg: GREEN_LIGHT };
-}
-
-function mapApiTipToLocal(t: DietTipItem): DietTip {
-  const tone = tipTone(t.category);
-  return {
-    emoji: t.emoji || "🌿",
-    title: t.title,
-    body: t.body,
-    tag: t.tag || "Gut",
-    category: t.category,
-    ...tone,
-  };
-}
-
-const FILTERS: Array<{ value: FilterValue; label: string }> = [
-  { value: "all", label: i18n.t("coach.actionPlan.filters.all") },
-  { value: "water", label: i18n.t("coach.actionPlan.filters.water") },
-  { value: "food", label: i18n.t("coach.actionPlan.filters.food") },
-  { value: "log", label: i18n.t("coach.actionPlan.filters.log") },
-  { value: "move", label: i18n.t("coach.actionPlan.filters.move") },
-];
-
 function tagTone(tag: Task["tag"]) {
   if (tag === "food") return { bg: GREEN_LIGHT, color: GREEN, label: i18n.t("coach.actionPlan.tags.food") };
   if (tag === "water") return { bg: BLUE_LIGHT, color: BLUE, label: i18n.t("coach.actionPlan.tags.water") };
@@ -370,8 +291,8 @@ function DietTipsSection({ tips }: { tips: DietTip[] }) {
         </View>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tipsScrollContent}>
-        {tips.map((tip, index) => (
-          <View key={`${tip.title}-${index}`} style={styles.tipCard}>
+        {tips.map((tip) => (
+          <View key={tip.id ?? tip.title} style={styles.tipCard}>
             <View style={styles.tipHeader}>
               <View style={[styles.tipIconTile, { backgroundColor: tip.iconBg }]}>
                 <Text style={styles.tipEmoji}>{tip.emoji}</Text>
@@ -394,14 +315,13 @@ function DietTipsSection({ tips }: { tips: DietTip[] }) {
   );
 }
 
-export function ActionPlanCard({ nutritionData, coachResult }: { nutritionData: NutritionData | null; coachResult?: AICoachResponse | null; accentColor?: string }) {
+export function ActionPlanCard({ nutritionData }: { nutritionData: NutritionData | null; accentColor?: string }) {
   const { t } = useTranslation();
   const token = useAuthStore((s) => s.token);
   const [mealsPerDay, setMealsPerDay] = useState(3);
   const [filter, setFilter] = useState<FilterValue>("all");
   const [streakData, setStreakData] = useState<StreakData>({});
   const [dietTips, setDietTips] = useState<DietTip[]>([]);
-  const [actionPlanExpanded, setActionPlanExpanded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -430,18 +350,25 @@ export function ActionPlanCard({ nutritionData, coachResult }: { nutritionData: 
   }, [token]);
 
   useEffect(() => {
-    const apiTips = coachResult?.dietTips;
-    if (apiTips && apiTips.length > 0) {
-      setDietTips(apiTips.map((tip) => mapApiTipToLocal(tip)));
-      return;
-    }
-    if (!nutritionData) {
+    if (!token) {
       setDietTips([]);
       return;
     }
-    const mealsLogged = Number(nutritionData.mealsLogged || 0);
-    setDietTips(buildFallbackTips(nutritionData, mealsLogged, mealsPerDay));
-  }, [coachResult, nutritionData, mealsPerDay]);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { tips } = await fetchHealthTips(todayLocal());
+        if (!cancelled) {
+          setDietTips(tips.map(tipPresentation));
+        }
+      } catch {
+        if (!cancelled) setDietTips([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, nutritionData?.mealsLogged, nutritionData?.caloriesConsumed, nutritionData?.proteinG, nutritionData?.waterMl]);
 
   const tasks = useMemo(() => buildIntakeDrivenTasks(nutritionData, mealsPerDay), [nutritionData, mealsPerDay]);
 
@@ -461,38 +388,23 @@ export function ActionPlanCard({ nutritionData, coachResult }: { nutritionData: 
     <View>
       <DietTipsSection tips={dietTips} />
       <View style={styles.card}>
-        <Pressable
-          style={styles.headRow}
-          onPress={() => setActionPlanExpanded((next) => !next)}
-          accessibilityRole="button"
-          accessibilityLabel={actionPlanExpanded ? t("coach.actionPlan.collapse") : t("coach.actionPlan.expand")}
-        >
+        <View style={styles.headRow}>
           <Text style={styles.title}>{t("coach.actionPlan.title")}</Text>
-          <View style={styles.headRight}>
-            <View style={styles.donePill}>
-              <Text style={styles.doneText}>
-                {t("coach.actionPlan.doneCount", { done, total: tasks.length })}
-              </Text>
-            </View>
-            <View style={styles.expandBtn}>
-              <Ionicons name={actionPlanExpanded ? "chevron-up" : "chevron-down"} size={16} color={GREEN} />
-            </View>
+          <View style={styles.donePill}>
+            <Text style={styles.doneText}>
+              {t("coach.actionPlan.doneCount", { done, total: tasks.length })}
+            </Text>
           </View>
-        </Pressable>
+        </View>
 
-        {actionPlanExpanded ? (
-          <>
-            <ProgressBarView done={done} total={tasks.length} />
-            <FilterTabs value={filter} onChange={setFilter} />
+        <ProgressBarView done={done} total={tasks.length} />
+        <FilterTabs value={filter} onChange={setFilter} />
 
-            {filtered.length === 0 ? (
-              <Text style={styles.empty}>{t("coach.actionPlan.empty")}</Text>
-            ) : (
-              filtered.map((task) => <TaskItem key={task.id} task={task} />)
-            )}
-
-          </>
-        ) : null}
+        {filtered.length === 0 ? (
+          <Text style={styles.empty}>{t("coach.actionPlan.empty")}</Text>
+        ) : (
+          filtered.map((task) => <TaskItem key={task.id} task={task} />)
+        )}
       </View>
     </View>
   );
@@ -522,11 +434,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   headRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  headRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   title: { color: TEXT, fontSize: 15, fontWeight: "900", letterSpacing: 0.2 },
   donePill: { backgroundColor: GREEN_LIGHT, borderRadius: 99, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 10, paddingVertical: 6 },
   doneText: { color: GREEN, fontSize: 12, fontWeight: "900" },
-  expandBtn: { width: 28, height: 28, borderRadius: 99, backgroundColor: GREEN_LIGHT, alignItems: "center", justifyContent: "center" },
   progressWrap: { marginTop: 12, flexDirection: "row", alignItems: "center", gap: 10 },
   progressTrack: { height: 8, flex: 1, borderRadius: 99, backgroundColor: TRACK, overflow: "hidden" },
   progressFill: { height: 8, borderRadius: 99, backgroundColor: GREEN },

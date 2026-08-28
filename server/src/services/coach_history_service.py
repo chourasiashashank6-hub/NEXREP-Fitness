@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from src.models.models import Workout
 from src.models.nutrition_calories import DailyNutritionLog, MealEntry
+from src.utils.app_time import today_ist
 
 YEARLY_UNLOCK_DAYS = 90
 
@@ -35,7 +36,7 @@ def _span_days(earliest: date | None, anchor: date) -> int | None:
 
 
 def coach_history_meta(db: Session, user_id: int, *, anchor: date | None = None) -> dict[str, int | bool | None]:
-    anchor = anchor or date.today()
+    anchor = anchor or today_ist()
     nutrition_start = _earliest_meal_log_date(db, user_id)
     workout_start = _earliest_workout_date(db, user_id)
     nutrition_days = _span_days(nutrition_start, anchor)

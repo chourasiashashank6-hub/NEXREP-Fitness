@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import { ensureDailyCalorieLog, todayLocal } from "../../api/caloriesLog";
 import { getSummary } from "../../api/dashboard";
-import { AICoachCard } from "../../components/Coach/AICoachCard";
 import { ActionPlanCard } from "../../components/Coach/ActionPlanCard";
 import { CalorieCoachSummaryViews } from "../../components/Coach/calorie/CalorieCoachSummaryViews";
 import { CoachCadencePager } from "../../components/Coach/CoachCadencePager";
@@ -14,9 +13,8 @@ import { CoachCadenceSelector } from "../../components/Coach/CoachCadenceSelecto
 import { RefreshCountPill } from "../../components/Coach/shared/RefreshCountPill";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { useCoachCadence } from "../../hooks/useCoachCadence";
-import { useCoachRedesignEnabled } from "../../hooks/useCoachRedesign";
 import { useRefreshUsageCount } from "../../hooks/useRefreshUsageCount";
-import type { AICoachResponse, NutritionData } from "../../types/coach";
+import type { NutritionData } from "../../types/coach";
 import { coachRefreshUsageKey } from "../../utils/refreshUsageCounter";
 import { refreshScopeLabel } from "../../utils/refreshScopeLabel";
 import { SESSION_DATA_STALE_MS } from "../../utils/sessionDataCache";
@@ -25,40 +23,25 @@ import type { CoachStackParamList } from "./CoachHomeScreen";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
-const BLUE = "#4A90D9";
-const BLUE_LIGHT = "#EEF4FB";
-const ORANGE = "#D85A30";
-const ORANGE_LIGHT = "#FFF1EE";
-const AMBER = "#FFB800";
-const AMBER_LIGHT = "#FFF8E8";
-const AMBER_TEXT = "#C08000";
-const PURPLE = "#7B68CC";
-const GOLD = "#FFD700";
-const BG = "#F7F6F3";
 const WHITE = "#FFFFFF";
 const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const TRACK = "#E5E4E0";
+const BG = "#F7F6F3";
 const BORDER = "#ECEAE5";
 
 export default function AICalorieCoachScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
-  const { enabled: redesignEnabled } = useCoachRedesignEnabled();
   const { cadence, setCadence, isCadenceLocked, handleYearlyPress } = useCoachCadence();
-  const coachCardRef = useRef<{ refresh: () => void } | null>(null);
   const [nutritionData, setNutritionData] = useState<NutritionData | null>(null);
-  const [coachResult, setCoachResult] = useState<AICoachResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [coachRefreshing, setCoachRefreshing] = useState(false);
   const [summaryRefresh, setSummaryRefresh] = useState(0);
   const logDate = todayLocal();
   const lastNutritionLoadAt = useRef(0);
   const activityRefreshVersion = useActivityDataRefreshStore((s) => s.version);
-  const effectiveCadence = redesignEnabled ? cadence : "daily";
   const refreshUsageKey = useMemo(
-    () => coachRefreshUsageKey("nutrition", effectiveCadence, logDate),
-    [effectiveCadence, logDate],
+    () => coachRefreshUsageKey("nutrition", cadence, logDate),
+    [cadence, logDate],
   );
   const { count: refreshUsageCount, increment: incrementRefreshUsage } = useRefreshUsageCount(refreshUsageKey);
 
@@ -110,100 +93,62 @@ export default function AICalorieCoachScreen() {
     void load({ force: true });
   }, [activityRefreshVersion, load]);
 
-  const showLegacyDaily = !redesignEnabled || cadence === "daily";
-
   const handleRefresh = () => {
     void incrementRefreshUsage();
-    if (redesignEnabled) {
-      setSummaryRefresh((n) => n + 1);
-      void load({ force: true });
-      return;
-    }
-    coachCardRef.current?.refresh();
-  };
-
-  const renderCadenceBody = () => {
-    if (!redesignEnabled) return null;
-    return (
-      <CoachCadencePager
-        cadence={cadence}
-        accentColor={GREEN}
-        isCadenceLocked={isCadenceLocked}
-        onCadenceChange={setCadence}
-        onYearlyPress={handleYearlyPress}
-        renderSummary={(value) => (
-          <>
-            <CalorieCoachSummaryViews cadence={value} activeCadence={cadence} refreshToken={summaryRefresh} />
-            {value === "daily" ? (
-              <ActionPlanCard nutritionData={nutritionData} coachResult={null} accentColor="#a78bfa" />
-            ) : null}
-          </>
-        )}
-      />
-    );
+    setSummaryRefresh((n) => n + 1);
+    void load({ force: true });
   };
 
   return (
     <ScreenContainer bg={WHITE} scroll={false} contentStyle={styles.screenContent}>
       <View style={styles.body}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={18} color={TEXT} />
-        </Pressable>
-        <Text style={styles.title}>{t("coach.calorie.title")}</Text>
-        <RefreshCountPill
-          scopeLabel={refreshScopeLabel(effectiveCadence, t)}
-          count={refreshUsageCount}
-          accentColor={GREEN}
-          accentLightBg={GREEN_LIGHT}
-          loading={coachRefreshing}
-          disabled={coachRefreshing}
-          onPress={handleRefresh}
-          accessibilityLabel={t("coach.common.refresh")}
-        />
-        <View style={styles.onlineDot} />
-      </View>
-      {redesignEnabled ? (
-        <>
-          <CoachCadenceSelector
-            value={cadence}
+        <View style={styles.header}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={18} color={TEXT} />
+          </Pressable>
+          <Text style={styles.title}>{t("coach.calorie.title")}</Text>
+          <RefreshCountPill
+            scopeLabel={refreshScopeLabel(cadence, t)}
+            count={refreshUsageCount}
             accentColor={GREEN}
-            onChange={setCadence}
-            onYearlyPress={handleYearlyPress}
-            isCadenceLocked={isCadenceLocked}
+            accentLightBg={GREEN_LIGHT}
+            loading={loading}
+            disabled={loading}
+            onPress={handleRefresh}
+            accessibilityLabel={t("coach.common.refresh")}
           />
-          {!nutritionData && !loading ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyTitle}>{t("coach.calorie.emptyTitle")}</Text>
-              <Text style={styles.emptySub}>{t("coach.calorie.emptySubtitle")}</Text>
-            </View>
-          ) : null}
-          <View style={styles.cadenceBody}>{renderCadenceBody()}</View>
-        </>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false} style={styles.legacyScroll}>
-          {!nutritionData && !loading ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyTitle}>{t("coach.calorie.emptyTitle")}</Text>
-              <Text style={styles.emptySub}>{t("coach.calorie.emptySubtitle")}</Text>
-            </View>
-          ) : null}
-          {showLegacyDaily ? (
-            <>
-              <AICoachCard
-                ref={coachCardRef}
-                logDate={logDate}
-                nutritionData={nutritionData}
-                accentColor="#22d3ee"
-                onNutritionRefresh={() => void load()}
-                onCoachResult={setCoachResult}
-                onLoadingChange={setCoachRefreshing}
-              />
-              <ActionPlanCard nutritionData={nutritionData} coachResult={coachResult} accentColor="#a78bfa" />
-            </>
-          ) : null}
-        </ScrollView>
-      )}
+          <View style={styles.onlineDot} />
+        </View>
+        <CoachCadenceSelector
+          value={cadence}
+          accentColor={GREEN}
+          onChange={setCadence}
+          onYearlyPress={handleYearlyPress}
+          isCadenceLocked={isCadenceLocked}
+        />
+        {!nutritionData && !loading ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyTitle}>{t("coach.calorie.emptyTitle")}</Text>
+            <Text style={styles.emptySub}>{t("coach.calorie.emptySubtitle")}</Text>
+          </View>
+        ) : null}
+        <View style={styles.cadenceBody}>
+          <CoachCadencePager
+            cadence={cadence}
+            accentColor={GREEN}
+            isCadenceLocked={isCadenceLocked}
+            onCadenceChange={setCadence}
+            onYearlyPress={handleYearlyPress}
+            renderSummary={(value) => (
+              <>
+                <CalorieCoachSummaryViews cadence={value} activeCadence={cadence} refreshToken={summaryRefresh} />
+                {value === "daily" ? (
+                  <ActionPlanCard nutritionData={nutritionData} accentColor="#a78bfa" />
+                ) : null}
+              </>
+            )}
+          />
+        </View>
       </View>
     </ScreenContainer>
   );
@@ -213,7 +158,6 @@ const styles = StyleSheet.create({
   screenContent: { flex: 1, paddingBottom: 0 },
   body: { flex: 1, minHeight: 0 },
   cadenceBody: { flex: 1, minHeight: 0 },
-  legacyScroll: { flex: 1 },
   header: { flexDirection: "row", alignItems: "center", marginBottom: 14, gap: 8 },
   backBtn: {
     width: 32,

@@ -45,6 +45,7 @@ class FoodLookupRequest(BaseModel):
 class FoodImageAnalyzeRequest(BaseModel):
     base64: str = Field(..., min_length=20)
     mime_type: str | None = Field(default="image/jpeg", min_length=3, max_length=100)
+    meal_type: MealTypeLiteral | None = None
 
 
 class AIFoodMealCreateRequest(BaseModel):

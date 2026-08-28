@@ -8,6 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.models.nutrition_calories import DailyNutritionLog, MealEntry
+from src.utils.app_time import today_ist
 
 
 def _last_meal_log_date(db: Session, user_id: int) -> date | None:
@@ -20,22 +21,23 @@ def _last_meal_log_date(db: Session, user_id: int) -> date | None:
     return value if isinstance(value, date) else None
 
 
-def resolve_user_log_today(db: Session, user_id: int, now_utc: datetime) -> date:
-    """Best-effort user-local log day when timezone is not stored on the user.
+def resolve_user_log_today(db: Session, user_id: int, now_utc: datetime | None = None) -> date:
+    """Best-effort log day for cron/background jobs — anchored on IST calendar date.
 
-    Calorie Log keys rows by the client's local date. For cron runs we anchor on the
-    latest meal-log date when UTC midnight has not caught up yet (common UTC+ offsets),
-    or when the user is still on the previous local day relative to UTC.
+    Calorie Log keys rows by the client's IST date. When no client date is present,
+    use today's IST date, with a fallback to the latest meal-log date when it is still
+    ahead of the IST calendar (e.g. late-night logging edge cases).
     """
-    utc_today = now_utc.date()
+    _ = now_utc  # kept for call-site compatibility; IST is the app default
+    ist_today = today_ist()
     latest = _last_meal_log_date(db, user_id)
     if latest is None:
-        return utc_today
-    if latest >= utc_today:
+        return ist_today
+    if latest >= ist_today:
         return latest
-    if (utc_today - latest).days == 1:
+    if (ist_today - latest).days == 1:
         return latest
-    return utc_today
+    return ist_today
 
 
 def nutrition_day_has_meals(db: Session, user, log_date: date) -> bool:
@@ -48,14 +50,15 @@ def nutrition_day_has_meals(db: Session, user, log_date: date) -> bool:
 
 def nutrition_day_actuals(db: Session, user, log_date: date) -> dict[str, float]:
     """Return recalculated day totals — same path as GET /api/calories/daily-log."""
-    from src.routes.calories import _get_or_create_daily_log, recalculate_daily_log
+    from src.routes.calories import _get_or_create_daily_log, _serialize_day
 
-    log = _get_or_create_daily_log(db, user, log_date)
-    recalculate_daily_log(db, log)
-    db.flush()
+    day = _serialize_day(db, user, log_date)
+    log = day.get("log") or {}
+    water = day.get("water") or {}
     return {
-        "protein_g": float(log.total_protein_g or 0),
-        "calories": float(log.total_calories or 0),
-        "target_protein_g": float(log.target_protein_g or 0),
-        "target_calories": float(log.target_calories or 0),
+        "calories": float(log.get("total_calories") or 0),
+        "protein_g": float(log.get("total_protein_g") or 0),
+        "carbs_g": float(log.get("total_carbs_g") or 0),
+        "fat_g": float(log.get("total_fat_g") or 0),
+        "water_l": float(water.get("total_water_l") or 0),
     }

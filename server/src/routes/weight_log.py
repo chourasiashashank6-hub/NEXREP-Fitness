@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.models.weight_log import WeightLog
 from src.utils.auth import get_current_user
+from src.utils.app_time import today_ist
 
 router = APIRouter(prefix="/api/weight", tags=["weight"])
 
@@ -114,7 +115,7 @@ async def get_weight_history(
     db: Session = Depends(get_db),
 ):
     """Returns weight log history for the past N days, most recent first."""
-    since = (date.today() - timedelta(days=days)).isoformat()
+    since = (today_ist() - timedelta(days=days)).isoformat()
 
     logs = (
         db.query(WeightLog)
@@ -181,7 +182,7 @@ async def get_latest_weight(
             "has_logs": False,
         }
 
-    days_since = (date.today() - date.fromisoformat(latest.log_date)).days
+    days_since = (today_ist() - date.fromisoformat(latest.log_date)).days
 
     return {
         "weight_kg": latest.weight_kg,

@@ -16,6 +16,7 @@ from src.services.journey_detection_service import run_journey_detection, run_jo
 from src.services.journey_engine_config import journey_engine_enabled
 from src.services.journey_recommendations import recommendation_for_event
 from src.utils.auth import get_current_user
+from src.utils.app_time import now_ist
 
 router = APIRouter(prefix="/api/journey", tags=["journey"])
 
@@ -92,7 +93,7 @@ def run_journey_detection_now(
     from src.services.planner_common import parse_local_date
 
     log_today = parse_local_date(local_date) if local_date else None
-    run_journey_detection_for_user(db, current_user, datetime.utcnow(), log_today=log_today)
+    run_journey_detection_for_user(db, current_user, now_ist(), log_today=log_today)
     db.commit()
     return {
         "ok": True,
@@ -114,6 +115,6 @@ def run_journey_detection_all(
     if not _journey_table_ready(db):
         raise HTTPException(status_code=503, detail="journey_events table missing — run alembic upgrade head")
 
-    run_journey_detection(db, datetime.utcnow())
+    run_journey_detection(db, now_ist())
     total_active = db.query(JourneyEvent).filter(JourneyEvent.status == "active").count()
     return {"ok": True, "active_events_total": total_active}

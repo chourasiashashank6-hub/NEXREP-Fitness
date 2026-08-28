@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import { localDateIso } from "../utils/localDate";
 import type { SocialUserProfile } from "./social";
 
 export type SquadStatus = "active" | "cancelled";
@@ -45,13 +46,7 @@ export type SquadCreatePayload = {
   max_members?: number;
 };
 
-const localDateParam = () => {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
+const localDateParam = () => localDateIso();
 
 export async function listSquads(bucket: "active" | "invited"): Promise<{ items: GymSquad[]; log_date: string }> {
   const { data } = await apiClient.get<{ items: GymSquad[]; log_date: string }>("/api/social/squads", {

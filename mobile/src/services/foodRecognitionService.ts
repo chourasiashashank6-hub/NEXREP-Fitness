@@ -1,4 +1,6 @@
+import axios from "axios";
 import { apiClient, resolveApiBaseUrl } from "../api/client";
+import type { MealType } from "../api/caloriesLog";
 import i18n from "../i18n";
 import { normalizeImageBase64Payload } from "../utils/foodImagePayload";
 
@@ -6,7 +8,6 @@ export interface FoodAnalysisResult {
   foodName: string;
   estimatedServingSize: string;
   quantityGrams?: number;
-  // Per-100g nutrition values used directly by Add Food form fields.
   calories: number;
   protein: number;
   carbs: number;
@@ -17,7 +18,20 @@ export interface FoodAnalysisResult {
 
 export interface FoodAnalysisError {
   error: string;
+  limit?: FoodScanLimitDetail;
 }
+
+export type FoodScanLimitDetail = {
+  code: string;
+  limit_type: "daily" | "meal_slot" | "throttle";
+  tier: "free" | "pro" | "elite";
+  cap: number;
+  used: number;
+  remaining: number;
+  meal_type?: string | null;
+  meals_per_day?: number | null;
+  resets_at: string;
+};
 
 const REQUEST_TIMEOUT_MS = 40_000;
 
@@ -74,9 +88,6 @@ const normalizePayload = (value: unknown): FoodAnalysisResult | FoodAnalysisErro
     foodName,
     estimatedServingSize: String(obj.estimatedServingSize ?? "").trim() || "100g",
     quantityGrams: quantityGrams > 0 ? quantityGrams : undefined,
-    // Supports both:
-    // 1) Top-level macros (legacy format)
-    // 2) nutritionPer100g object (requested format)
     calories: safeNumber(per100?.calories ?? obj.calories),
     protein: safeNumber(per100?.protein ?? obj.protein),
     carbs: safeNumber(per100?.carbs ?? obj.carbs),
@@ -86,20 +97,42 @@ const normalizePayload = (value: unknown): FoodAnalysisResult | FoodAnalysisErro
   };
 };
 
-// TODO: route through server — never call AI APIs from mobile (this function uses the server API only).
+const parseLimitDetail = (detail: unknown): FoodScanLimitDetail | undefined => {
+  if (!detail || typeof detail !== "object") return undefined;
+  const row = detail as Record<string, unknown>;
+  if (row.code !== "FOOD_SCAN_LIMIT") return undefined;
+  return {
+    code: String(row.code),
+    limit_type: row.limit_type as FoodScanLimitDetail["limit_type"],
+    tier: row.tier as FoodScanLimitDetail["tier"],
+    cap: Number(row.cap ?? 0),
+    used: Number(row.used ?? 0),
+    remaining: Number(row.remaining ?? 0),
+    meal_type: typeof row.meal_type === "string" ? row.meal_type : null,
+    meals_per_day: typeof row.meals_per_day === "number" ? row.meals_per_day : null,
+    resets_at: String(row.resets_at ?? ""),
+  };
+};
+
 export const analyzeFoodImageWithGroq = async ({
   base64,
   mimeType,
+  mealType,
 }: {
   base64: string;
   mimeType?: string;
+  mealType?: MealType;
 }): Promise<FoodAnalysisResult | FoodAnalysisError> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
     const prepared = normalizeImageBase64Payload(base64, mimeType);
-    const payload = { base64: prepared.base64, mime_type: prepared.mimeType };
+    const payload = {
+      base64: prepared.base64,
+      mime_type: prepared.mimeType,
+      meal_type: mealType,
+    };
     const origin = resolveApiBaseUrl().replace(/\/+$/, "");
     const prefixes = ["/api/calories", "/v1/calories"];
     let responseData: unknown = null;
@@ -114,8 +147,6 @@ export const analyzeFoodImageWithGroq = async ({
       } catch (error) {
         lastError = error;
         const status = (error as { response?: { status?: number } })?.response?.status;
-        // Only try alternate prefix when route may be missing. For provider 5xx/429
-        // errors, repeating the same request doubles quota burn without helping.
         if (status && status !== 404 && status !== 405) {
           break;
         }
@@ -123,10 +154,23 @@ export const analyzeFoodImageWithGroq = async ({
     }
 
     if (responseData == null) {
+      if (axios.isAxiosError(lastError) && lastError.response?.status === 429) {
+        const detail = parseLimitDetail(lastError.response.data?.detail);
+        return {
+          error: i18n.t("services.food.scanLimitReached"),
+          limit: detail,
+        };
+      }
       const detail =
-        (lastError as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        i18n.t("services.food.analyzeFailed");
-      return { error: String(detail) };
+        (lastError as { response?: { data?: { detail?: string | Record<string, unknown> } } })?.response?.data?.detail;
+      if (detail && typeof detail === "object") {
+        const limit = parseLimitDetail(detail);
+        if (limit) {
+          return { error: i18n.t("services.food.scanLimitReached"), limit };
+        }
+      }
+      const message = typeof detail === "string" ? detail : i18n.t("services.food.analyzeFailed");
+      return { error: String(message) };
     }
     return normalizePayload(responseData);
   } catch (error) {

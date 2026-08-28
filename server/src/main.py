@@ -10,7 +10,6 @@ import secrets
 from typing import Any
 import smtplib
 from email.message import EmailMessage
-from src.core.http_client import ExternalHTTPError, post_json
 from sqlalchemy import func, or_, text
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
@@ -38,7 +37,6 @@ from src.routes.workout_planner import router as workout_planner_router
 from src.routes.xp import router as xp_router
 from src.schemas.schemas import (
     ActivityRequest,
-    ChatRequest,
     FeedbackRequest,
     FirebaseLoginRequest,
     FirebaseRenewRequest,
@@ -77,7 +75,6 @@ from src.services.notification_service import (
 )
 from src.services.activity_feed_service import emit_activity_event, emit_streak_milestone_if_needed
 from src.services.xp_service import award_xp_for_workout_log, reverse_xp_for_workout_delete, reverse_xp_for_guided_warmup_delete
-from src.services.language_service import ai_language_instruction
 from src.services.language_service import normalize_language_tag
 from src.services.subscription_service import (
     activate_subscription,
@@ -104,8 +101,8 @@ from src.routes.journey import router as journey_router
 from src.routes.coach_config import router as coach_config_router
 from src.routers.body_types import router as body_types_router
 from src.routes.workout_sessions import router as workout_sessions_router
-from src.services.ai_logger import log_groq_call
 from src.utils.auth import decode_user_id_from_token
+from src.utils.app_time import now_ist, today_ist
 from src.coach_targets import (
     get_muscle_weekly_targets,
     get_onboarding_weekly_target_inputs,
@@ -215,7 +212,7 @@ async def track_user_activity(request: Request, call_next):
         if not user_id:
             return response
 
-        today = date.today()
+        today = today_ist()
         db = SessionLocal()
         try:
             db.execute(
@@ -725,7 +722,7 @@ def _infer_muscles_from_workout(workout: Workout, db: Session) -> list[str]:
 def _relative_label(dt: datetime | None) -> str:
     if not dt:
         return "Not trained recently"
-    diff_hours = max(0, int((datetime.utcnow() - dt).total_seconds() // 3600))
+    diff_hours = max(0, int((now_ist() - dt).total_seconds() // 3600))
     if diff_hours < 24:
         return "Today"
     days = max(1, round(diff_hours / 24))
@@ -740,62 +737,6 @@ def _weekly_target_context(db: Session, user_id: int) -> tuple[dict[str, int], i
     workouts_per_week, focus_muscles = get_onboarding_weekly_target_inputs(onboarding)
     muscle_targets = get_muscle_weekly_targets(workouts_per_week, focus_muscles)
     return muscle_targets, get_target_weekly_sets(workouts_per_week, focus_muscles)
-
-
-WORKOUT_COACH_SYSTEM_PROMPT = (
-    "You are an elite strength and conditioning coach inside a premium workout tracking app.\n"
-    "Return ONLY valid JSON with these exact keys:\n\n"
-    '1. "insightText" — string, 3-4 sentences. State which muscles are ready to train, which to avoid, '
-    'suggest a specific workout split for today (e.g. "Push day: chest, shoulders, triceps"), and mention one recovery tip.\n\n'
-    '2. "todaysPlan" — object with keys:\n'
-    '   - "splitName": string (e.g. "Push Day", "Pull Day", "Legs", "Upper Body", "Active Recovery")\n'
-    '   - "focusMuscles": array of strings (muscles to target today)\n'
-    '   - "avoidMuscles": array of strings (muscles still recovering)\n'
-    '   - "exercises": array of exactly 4-6 objects, each with:\n'
-    '     - "name": string (exercise name)\n'
-    '     - "sets": number\n'
-    '     - "reps": string (e.g. "8-12", "15", "to failure")\n'
-    '     - "muscle": string (primary muscle targeted)\n'
-    '     - "note": string (one-line coaching cue)\n'
-    '   - "estimatedDuration": string (e.g. "45-55 min")\n\n'
-    '3. "readinessScore" — integer 0-100.\n\n'
-    '4. "readinessLabel" — one of: "Rest day recommended", "Light activity only", "Train moderately", '
-    '"Ready to push", "Peak readiness"\n\n'
-    '5. "readinessDescription" — string, 1-2 sentences explaining the score.\n\n'
-    '6. "readinessFactors" — array of exactly 4 objects with keys:\n'
-    '   - "label": string\n'
-    '   - "type": one of "good", "warning", "bad", "info"\n\n'
-    '7. "weeklyProgress" — object with keys:\n'
-    '   - "completedSets": number\n'
-    '   - "targetSets": number\n'
-    '   - "percentComplete": number (0-100)\n'
-    '   - "insight": string (one sentence)\n\n'
-    '8. "recoveryTips" — array of exactly 3 objects with keys:\n'
-    '   - "icon": one of "sleep", "water", "stretch", "food", "rest"\n'
-    '   - "title": string (short, 3-5 words)\n'
-    '   - "description": string (one actionable sentence)\n\n'
-    '9. "coachingTips" — array of exactly 4 objects with keys:\n'
-    '   - "icon": one of "lightning", "repeat", "droplet", "moon", "target", "fire", "clock", "shield", "chart", "dumbbell"\n'
-    '   - "title": string, max 5 words, punchy and specific (NOT generic)\n'
-    '   - "body": string, exactly 1-2 sentences, actionable and specific to THIS user\'s data.\n'
-    '     Reference actual muscles, actual numbers, or actual patterns from the user\'s workout data.\n'
-    '   - "category": one of "recovery", "volume", "technique", "nutrition", "mindset", "programming"\n'
-    '   - "priority": one of "high", "medium", "low" — based on how urgently the user needs this advice right now\n\n'
-    "Coaching tips rules:\n"
-    "- Reference specific muscle groups that are sore or undertrained.\n"
-    "- Reference actual set counts vs targets.\n"
-    "- Reference how long ago the user last trained.\n"
-    "- Reference any imbalances in weekly volume (e.g. lots of push, no pull).\n"
-    "- If readinessScore < 50, at least 2 tips should be about recovery.\n"
-    "- If readinessScore > 75, at least 2 tips should be about training optimization.\n"
-    "- Tips must NOT repeat advice already in insightText or recoveryTips.\n\n"
-    "Rules:\n"
-    "- Base exercise selection on which muscles are fresh (recoveryPercent > 70).\n"
-    "- If all muscles are sore (recoveryPercent < 40), recommend active recovery with mobility/stretching exercises.\n"
-    "- Do not suggest training a muscle group that was trained less than 48 hours ago unless it is marked as fresh.\n"
-    "- exercises should be real, standard gym exercises — no made-up names.\n"
-    "- No markdown, no bullets, no emojis in any string value."
-)
 
 
 COACHING_TIP_ICONS = frozenset(
@@ -1114,83 +1055,9 @@ def _normalize_workout_coach_response(parsed: dict, payload: dict, target_weekly
     }
 
 
-def _fallback_workout_coach(payload: dict, target_weekly_sets_default: int = 84) -> dict:
+def build_workout_coach_insight(payload: dict, target_weekly_sets_default: int = 84) -> dict:
     out = _normalize_workout_coach_response({}, payload, target_weekly_sets_default=target_weekly_sets_default)
-    out["source"] = "fallback"
-    return out
-
-
-def _groq_workout_coach(
-    payload: dict,
-    user_id: int | None = None,
-    target_weekly_sets_default: int = 84,
-    preferred_language: str | None = None,
-) -> dict:
-    if not settings.GROQ_API_KEY:
-        raise RuntimeError("GROQ_API_KEY missing on server")
-
-    model_candidates = [
-        (settings.GROQ_MODEL or "").strip(),
-        "llama-3.3-70b-versatile",
-    ]
-    model_candidates = [m for i, m in enumerate(model_candidates) if m and m not in model_candidates[:i]]
-    model_name = model_candidates[0] if model_candidates else "llama-3.3-70b-versatile"
-    raw: dict[str, Any] | None = None
-    for model_name in model_candidates[:2]:
-        try:
-            raw = post_json(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                    "Accept": "application/json",
-                    "User-Agent": "fitness-workout-coach/1.0",
-                },
-                payload={
-                    "model": model_name,
-                    "temperature": 0.3,
-                    "max_tokens": 1200,
-                    "response_format": {"type": "json_object"},
-                    "messages": [
-                        {"role": "system", "content": WORKOUT_COACH_SYSTEM_PROMPT + ai_language_instruction(preferred_language)},
-                        {"role": "user", "content": json.dumps(payload)},
-                    ],
-                },
-                timeout=30,
-            )
-            break
-        except ExternalHTTPError as e:
-            lower = (e.body or "").lower()
-            if e.status_code in (400, 404) and (
-                "decommissioned" in lower
-                or "no longer supported" in lower
-                or "model_not_found" in lower
-                or "not found" in lower
-            ):
-                continue
-            raise RuntimeError(f"Groq HTTP {e.status_code}: {e.body[:260]}") from e
-    if raw is None:
-        raise RuntimeError("No compatible Groq model available for workout coach")
-    try:
-        log_groq_call(
-            user_id=user_id,
-            feature="workout_coach",
-            model=model_name,
-            endpoint="/workout/coach/insight",
-            response_json=raw,
-        )
-    except Exception:
-        pass
-
-    content = (raw.get("choices") or [{}])[0].get("message", {}).get("content", "")
-    if not content:
-        raise RuntimeError("Groq returned empty workout insight")
-    clean = content.replace("```json", "").replace("```", "").strip()
-    parsed = json.loads(clean)
-    if not isinstance(parsed, dict):
-        raise RuntimeError("Groq returned invalid workout JSON")
-    out = _normalize_workout_coach_response(parsed, payload, target_weekly_sets_default=target_weekly_sets_default)
-    out["source"] = "groq"
+    out["source"] = "deterministic"
     return out
 
 
@@ -1421,7 +1288,7 @@ def _strength_weeks_left(goal: dict) -> int | None:
         target_day = date.fromisoformat(str(target_date)[:10])
     except ValueError:
         return None
-    return max(0, (target_day - date.today()).days // 7)
+    return max(0, (target_day - today_ist()).days // 7)
 
 
 def _serialize_strength_lift_for_history(lift: StrengthLift | None, db: Session, user_id: int) -> dict[str, Any] | None:
@@ -1709,7 +1576,7 @@ def get_daily_motivational_quote(
     if normalized_category and normalized_category not in valid_categories:
         raise HTTPException(status_code=422, detail="category must be one of: fat_loss, muscle_gain, strength")
 
-    date_key = local_date.strip() if isinstance(local_date, str) and local_date.strip() else date.today().isoformat()
+    date_key = local_date.strip() if isinstance(local_date, str) and local_date.strip() else today_ist().isoformat()
     if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_key):
         raise HTTPException(status_code=422, detail="local_date must be YYYY-MM-DD")
 
@@ -1911,11 +1778,11 @@ def put_my_onboarding(
             and old_goal_type != new_goal_type
         )
         if goal_type_changed or not existing_started:
-            payload.onboarding["goal_started_at"] = date.today().isoformat()
+            payload.onboarding["goal_started_at"] = today_ist().isoformat()
         else:
             payload.onboarding["goal_started_at"] = existing_started
     else:
-        payload.onboarding["goal_started_at"] = date.today().isoformat()
+        payload.onboarding["goal_started_at"] = today_ist().isoformat()
 
     if row:
         row.onboarding_json = payload.onboarding
@@ -1945,7 +1812,7 @@ def reset_goal_journey(
         raise HTTPException(status_code=404, detail="Onboarding not found")
 
     updated_onboarding = dict(row.onboarding_json)
-    updated_onboarding["goal_started_at"] = date.today().isoformat()
+    updated_onboarding["goal_started_at"] = today_ist().isoformat()
 
     row.onboarding_json = updated_onboarding
     db.add(row)
@@ -2303,7 +2170,7 @@ def _delete_workout_impl(
         StrengthLift.workout_id == workout.id,
     ).delete(synchronize_session=False)
 
-    workout_log_date = workout.date.date() if workout.date else date.today()
+    workout_log_date = workout.date.date() if workout.date else today_ist()
     reverse_xp_for_workout_delete(
         db,
         user_id=current_user.id,
@@ -2511,7 +2378,6 @@ def workout_coach_insight(
     _, target_weekly_sets_default = _weekly_target_context(db, current_user.id)
     payload = body if isinstance(body, dict) else {}
     workout_data = payload.get("workoutData") if isinstance(payload.get("workoutData"), dict) else {}
-    preferred_language = current_user.preferred_language
     user_id = current_user.id
     if not workout_data:
         recent = (
@@ -2537,19 +2403,7 @@ def workout_coach_insight(
             "totalWeeklySets": int(sum((i.sets or 0) for i in recent)),
             "targetWeeklySets": target_weekly_sets_default,
         }
-    # Free the pooled connection before Groq HTTP (can take ~60s).
-    from src.db.session import release_db_connection
-
-    release_db_connection(db)
-    try:
-        return _groq_workout_coach(
-            workout_data,
-            user_id=user_id,
-            target_weekly_sets_default=target_weekly_sets_default,
-            preferred_language=preferred_language,
-        )
-    except Exception:
-        return _fallback_workout_coach(workout_data, target_weekly_sets_default=target_weekly_sets_default)
+    return build_workout_coach_insight(workout_data, target_weekly_sets_default=target_weekly_sets_default)
 
 
 @app.get("/workout/coach/data")
@@ -2817,19 +2671,6 @@ def calories(current_user: User = Depends(get_current_user), db: Session = Depen
             }
             for i in items
         ],
-    }
-
-
-@app.post("/ai/chat")
-def chat(payload: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    workouts = db.query(Workout).filter(Workout.user_id == current_user.id).count()
-    meals = db.query(Meal).filter(Meal.user_id == current_user.id).count()
-    score = compute_discipline_score(workouts, meals, workouts + meals)
-    return {
-        "reply": (
-            f"You have logged {workouts} workouts and {meals} meals. "
-            f"Discipline score is {score}. Focus on one cardio and one strength session today."
-        )
     }
 
 

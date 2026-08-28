@@ -6,13 +6,16 @@ from datetime import date, datetime
 from typing import Any, TypedDict
 
 
+from src.utils.app_time import today_ist
+
+
 def parse_local_date(local_date: str | None) -> date:
     if local_date:
         try:
             return date.fromisoformat(local_date[:10])
         except ValueError:
             pass
-    return date.today()
+    return today_ist()
 
 
 def days_in_month(month: int, year: int) -> int:
