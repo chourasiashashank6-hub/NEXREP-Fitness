@@ -30,7 +30,7 @@ Declare collection/use of:
 ## Privacy policy
 
 - Host a public privacy policy URL before submission.
-- Placeholder: `https://yourapp.com/privacy`
+- Placeholder: `https://nexrep.in/privacy`
 
 ## Content rating
 

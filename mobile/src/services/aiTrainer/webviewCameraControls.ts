@@ -3,11 +3,13 @@
  * the WebView. Optical zoom via applyConstraints when supported; otherwise
  * digital zoom with landmark display transform (__mpZoomLms).
  */
+import { devLog } from "../../utils/devLog";
+
 export const WEBVIEW_CAMERA_CONTROLS_JS = `
 (function(){
   if(window.__mpCamControlsReady)return;
   window.__mpCamControlsReady=true;
-  window.__mpEnableCameraDiagnostics=false;
+  window.__mpEnableCameraDiagnostics=${__DEV__};
   var __flipSeq=0;
   window.__mpFlipInProgress=false;
   window.__mpCamState={facing:"user",zoom:1,opticalMax:1,digital:false};
@@ -343,10 +345,10 @@ export type CameraDiagnosticsPayload = {
 /** Log camera diagnostics to Metro / adb logcat — dev-only (pending lens feasibility test). */
 export function logCameraDiagnostics(payload: CameraDiagnosticsPayload): void {
   if (typeof __DEV__ === "undefined" || !__DEV__) return;
-  console.log("[CAM-DIAG] summary:", JSON.stringify(payload.summary));
+  devLog("[CAM-DIAG] summary:", JSON.stringify(payload.summary));
   for (let i = 0; i < payload.devices.length; i++) {
     const d = payload.devices[i];
-    console.log(
+    devLog(
       `[CAM-DIAG] device[${i}] back=${d.isBack} probeOk=${d.probeOk} label="${d.label}" zoom=${JSON.stringify(d.zoom)}`,
     );
   }

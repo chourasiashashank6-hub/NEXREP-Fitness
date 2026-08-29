@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
+import { devLog } from "../utils/devLog";
 import i18n from "../i18n";
 import { LiveSessionTracker } from "../services/aiTrainer/liveSessionTracker";
 import { MEDIAPIPE_VERSION, MP_TEXT, buildInjectedConfigScript } from "../services/aiTrainer/mediaPipeHtmlTemplate";
@@ -1523,7 +1524,7 @@ function MediaPipeGuidanceView({
 
     (async () => {
       try {
-        console.log("[MediaPipe web] requesting camera…");
+        devLog("[MediaPipe web] requesting camera…");
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode,
@@ -1535,7 +1536,7 @@ function MediaPipeGuidanceView({
         });
         video.srcObject = stream;
         await video.play();
-        console.log("[MediaPipe web] camera frames flowing, loading WASM…");
+        devLog("[MediaPipe web] camera frames flowing, loading WASM…");
         const vision = await FilesetResolver.forVisionTasks(
           `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`,
         );
@@ -1553,7 +1554,7 @@ function MediaPipeGuidanceView({
           outputSegmentationMasks: false,
         });
         if (cancelled) return;
-        console.log("[MediaPipe web] PoseLandmarker ready", {
+        devLog("[MediaPipe web] PoseLandmarker ready", {
           sessionMode,
           hasPoseSpec: Boolean(poseSpec),
           tracker: Boolean(sessionTracker),

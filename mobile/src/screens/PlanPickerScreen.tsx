@@ -43,8 +43,8 @@ const MUTED = "#BBBBBB";
 const BORDER = "#ECEAE5";
 const SCREEN_BG = "#FFFFFF";
 
-const DEFAULT_TERMS_URL = "https://nexrep.app/terms";
-const DEFAULT_PRIVACY_URL = "https://nexrep.app/privacy";
+const DEFAULT_TERMS_URL = "https://nexrep.in/terms";
+const DEFAULT_PRIVACY_URL = "https://nexrep.in/privacy";
 
 export type PlanPickerScreenProps = {
   onSelectPlan?: (planId: PlanId, price: number, isYearly: boolean) => void;
@@ -246,7 +246,6 @@ export function PlanPickerScreen({
         <View style={styles.trustRow}>
           <TrustTile icon="shield-checkmark" label={t("subscription.planPicker.securePayment")} />
           <TrustTile icon="calendar-outline" label={t("subscription.planPicker.trial")} />
-          <TrustTile icon="people" label={t("subscription.planPicker.athletes")} />
         </View>
 
         <Text style={styles.legal}>

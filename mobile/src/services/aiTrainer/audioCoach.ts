@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import * as Speech from "expo-speech";
 import i18n from "../../i18n";
+import { devLog } from "../../utils/devLog";
 
 function webSpeechAvailable(): boolean {
   return (
@@ -62,10 +63,10 @@ function pollSpeakingState(tag: string, synth: SpeechSynthesis): void {
     paused: synth.paused,
     held: heldUtterances.size,
   });
-  console.log(`[${tag}] speaking poll immediate`, snap());
+  devLog(`[${tag}] speaking poll immediate`, snap());
   for (const ms of [100, 500, 1500] as const) {
     setTimeout(() => {
-      console.log(`[${tag}] speaking poll +${ms}ms`, snap());
+      devLog(`[${tag}] speaking poll +${ms}ms`, snap());
     }, ms);
   }
 }
@@ -87,11 +88,11 @@ function speakHeldUtterance(
 ): void {
   retainUtterance(utter);
   utter.onstart = () => {
-    console.log(`[${opts.tag}] onstart`);
+    devLog(`[${opts.tag}] onstart`);
     opts.onStart?.();
   };
   utter.onend = () => {
-    console.log(`[${opts.tag}] onend`);
+    devLog(`[${opts.tag}] onend`);
     releaseUtterance(utter);
     opts.onEnd?.();
   };
@@ -225,7 +226,7 @@ export function unlockWebSpeech(): void {
     if (synth.speaking || synth.pending) {
       webAudioUnlocked = true;
       notifyUnlock();
-      console.log("[WebTTS] unlockWebSpeech() — skip warm-up, synth busy", {
+      devLog("[WebTTS] unlockWebSpeech() — skip warm-up, synth busy", {
         speaking: synth.speaking,
         pending: synth.pending,
       });
@@ -240,7 +241,7 @@ export function unlockWebSpeech(): void {
     warm.lang = lang;
     const voice = pickVoice(synth.getVoices(), lang);
     if (voice) warm.voice = voice;
-    console.log("[WebTTS] unlockWebSpeech() — sync speak", {
+    devLog("[WebTTS] unlockWebSpeech() — sync speak", {
       speaking: synth.speaking,
       pending: synth.pending,
       paused: synth.paused,
@@ -275,7 +276,7 @@ function stopAllSpeech(reason: string): void {
 
 /** Dev/manual isolation: speak raw text with no coach queue. */
 export function speakTestUtterance(text = "Test audio one two three"): void {
-  console.log("[TestAudio] speakTestUtterance enter", {
+  devLog("[TestAudio] speakTestUtterance enter", {
     platform: Platform.OS,
     webSpeechAvailable: webSpeechAvailable(),
   });
@@ -289,7 +290,7 @@ export function speakTestUtterance(text = "Test audio one two three"): void {
     const voice = pickVoice(voices, lang);
     if (voice) utter.voice = voice;
     utter.volume = 1;
-    console.log("[TestAudio] wrapper before speak (sync)", {
+    devLog("[TestAudio] wrapper before speak (sync)", {
       text,
       speaking: synth.speaking,
       pending: synth.pending,
@@ -300,8 +301,8 @@ export function speakTestUtterance(text = "Test audio one two three"): void {
     try {
       speakHeldUtterance(synth, utter, {
         tag: "TestAudio wrapper",
-        onStart: () => console.log("[TestAudio] wrapper onstart", text),
-        onEnd: () => console.log("[TestAudio] wrapper onend", text),
+        onStart: () => devLog("[TestAudio] wrapper onstart", text),
+        onEnd: () => devLog("[TestAudio] wrapper onend", text),
         onError: (error) => console.error("[TestAudio] wrapper onerror", error),
       });
       markWebSpeechUnlocked();
@@ -311,7 +312,7 @@ export function speakTestUtterance(text = "Test audio one two three"): void {
     return;
   }
 
-  console.log("[TestAudio] falling through to expo-speech");
+  devLog("[TestAudio] falling through to expo-speech");
   Speech.speak(text, { language: speechLocaleForAppLang(i18n.language) });
 }
 
@@ -324,7 +325,7 @@ export function speakBypassTestAudio(text = "bypass test"): boolean {
   const synth = getSynth()!;
   const UtteranceCtor = (globalThis as { SpeechSynthesisUtterance: typeof SpeechSynthesisUtterance })
     .SpeechSynthesisUtterance;
-  console.log("[TestAudio] synth available?", {
+  devLog("[TestAudio] synth available?", {
     hasSynth: Boolean(synth),
     hasUtterance: Boolean(UtteranceCtor),
     voices: synth.getVoices().length,
@@ -335,12 +336,12 @@ export function speakBypassTestAudio(text = "bypass test"): boolean {
   utter.lang = lang;
   const voice = pickVoice(synth.getVoices(), lang);
   if (voice) utter.voice = voice;
-  console.log("[TestAudio] calling raw speechSynthesis.speak (sync)");
+  devLog("[TestAudio] calling raw speechSynthesis.speak (sync)");
   try {
     speakHeldUtterance(synth, utter, {
       tag: "TestAudio bypass",
-      onStart: () => console.log("[TestAudio] bypass onstart"),
-      onEnd: () => console.log("[TestAudio] bypass onend"),
+      onStart: () => devLog("[TestAudio] bypass onstart"),
+      onEnd: () => devLog("[TestAudio] bypass onend"),
       onError: (error) => console.error("[TestAudio] bypass onerror", error),
     });
     markWebSpeechUnlocked();
@@ -556,7 +557,7 @@ export class AudioCoachQueue {
       // wait until the synth is free — cancel-before-every-speak was causing
       // onerror: "canceled" on legitimate utterances.
       if (synth.speaking || synth.pending) {
-        console.log("[WebTTS] speakWeb waiting for synth free", {
+        devLog("[WebTTS] speakWeb waiting for synth free", {
           speaking: synth.speaking,
           pending: synth.pending,
           text,
@@ -583,7 +584,7 @@ export class AudioCoachQueue {
         }
       };
 
-      console.log("[WebTTS] before speak", {
+      devLog("[WebTTS] before speak", {
         text,
         lang,
         voice: voice?.name || null,
@@ -606,7 +607,7 @@ export class AudioCoachQueue {
           tag: "WebTTS",
           onStart: () => {
             clearWatchdog();
-            console.log("[WebTTS] onstart detail", {
+            devLog("[WebTTS] onstart detail", {
               text,
               unlocked: webAudioUnlocked,
               voice: voice?.name || null,
@@ -617,7 +618,7 @@ export class AudioCoachQueue {
           },
           onEnd: () => {
             clearWatchdog();
-            console.log("[WebTTS] onend detail", { text });
+            devLog("[WebTTS] onend detail", { text });
             this.finishUtterance();
           },
           onError: (error) => {

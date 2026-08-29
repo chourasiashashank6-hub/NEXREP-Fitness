@@ -63,12 +63,11 @@ export const PLANS: Plan[] = [
     featured: true,
     features: [
       { label: i18n.t("subscription.plans.elite.features.everythingPro"), included: true },
-      { label: i18n.t("subscription.plans.elite.features.trainerAccess"), included: true },
-      { label: i18n.t("subscription.plans.elite.features.bodyComposition"), included: true },
-      { label: i18n.t("subscription.plans.elite.features.prioritySupport"), included: true },
-      { label: i18n.t("subscription.plans.elite.features.liveChallenges"), included: true },
-      { label: i18n.t("subscription.plans.elite.features.wearableSync"), included: true },
-      { label: i18n.t("subscription.plans.elite.features.earlyAccess"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.aiCoachInsights"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.monthlyInsights"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.yearlyRecap"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.guidedWarmup"), included: true },
+      { label: i18n.t("subscription.plans.elite.features.foodScans"), included: true },
     ],
   },
 ];

@@ -1,5 +1,4 @@
-/**
- * Shared live-session pose tracker for the web DOM MediaPipe path.
+import { devLog } from "../../utils/devLog";
  * Mirrors the WebView session runtime (keep behaviors in sync).
  */
 import type { PoseCalibration, ResolvedPoseSpec, TrainerView } from "../../data/aiTrainer/types";
@@ -253,7 +252,7 @@ export class LiveSessionTracker {
       this.lastDebugAt = nowMs;
       const visCount = landmarks.filter((l) => (l.visibility ?? 0) >= 0.6).length;
       // Dev-only diagnostics when tracking appears stuck.
-      console.log("[LiveSessionTracker]", {
+      devLog("[LiveSessionTracker]", {
         visCount,
         primaryAngle: primaryAngle != null ? Math.round(primaryAngle) : null,
         phase: this.phase.phase,

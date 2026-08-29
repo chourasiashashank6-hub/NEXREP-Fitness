@@ -1189,10 +1189,11 @@
       "eliteBenefitsTitle": "What you get with Elite",
       "proBenefitsTitle": "What you get with Pro",
       "eliteBenefits": [
-        "Unlimited AI swaps & day regenerations",
         "Everything in Pro included",
-        "Personal trainer access",
-        "Priority 24/7 support"
+        "Monthly progress insights from your logs",
+        "Year-in-review coach recap & trends",
+        "Guided warmup sessions",
+        "3 food photo scans per meal"
       ],
       "proBenefits": [
         "Monthly meal + workout planners",
@@ -1475,6 +1476,11 @@
         "headline": "Peak Performance.",
         "features": {
           "everythingPro": "Everything in Pro",
+          "aiCoachInsights": "AI calorie & workout coaches with deeper analysis",
+          "monthlyInsights": "Monthly progress insights from your logs",
+          "yearlyRecap": "Year-in-review coach recap & trends",
+          "guidedWarmup": "Guided warmup sessions",
+          "foodScans": "3 food photo scans per meal (vs 2 on Pro)",
           "trainerAccess": "Personal trainer access",
           "monthlyPlanners": "Monthly meal & workout planners",
           "bodyComposition": "Advanced body composition",

@@ -11,8 +11,7 @@ import { resolveApiBaseUrl } from "../api/client";
 import { useAuthStore } from "../store/authStore";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 
-const DEV_TOGGLE_SECRET =
-  process.env.EXPO_PUBLIC_DEV_TOGGLE_SECRET?.trim() || "nexrep-dev-toggle-2026";
+const DEV_TOGGLE_SECRET = process.env.EXPO_PUBLIC_DEV_TOGGLE_SECRET?.trim() || "";
 
 function devTierEmails(): string[] {
   const raw =
@@ -42,6 +41,7 @@ export default function DevSubscriptionToggle({ email = "", userId = "" }: Props
   const [result, setResult] = useState<string | null>(null);
 
   if (!allowed.includes(email.trim().toLowerCase())) return null;
+  if (!DEV_TOGGLE_SECRET) return null;
 
   const toggle = async (newPlan: "free" | "pro" | "elite") => {
     setLoading(true);

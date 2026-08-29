@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { Linking, PermissionsAndroid, Platform } from "react-native";
-import i18n from "../i18n";
+import { devLog } from "../utils/devLog";
 import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { DEFAULT_NOTIFICATION_PREFERENCES, getNotificationPreferences, registerPushToken, type NotificationPreferences } from "../api/notifications";
 import { getDailyQuote, type QuoteCategory } from "../api/quotes";
@@ -199,7 +199,7 @@ export async function registerExpoPushTokenForCurrentDevice(): Promise<string | 
       device_id: Constants.sessionId ?? undefined,
     });
     if (__DEV__) {
-      console.log("[Notifications] Push token registered:", token.data.slice(0, 28) + "…");
+      devLog("[Notifications] Push token registered:", token.data.slice(0, 28) + "…");
     }
     return token.data;
   } catch (err) {

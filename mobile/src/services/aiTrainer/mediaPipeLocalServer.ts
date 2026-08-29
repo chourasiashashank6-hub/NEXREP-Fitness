@@ -8,9 +8,9 @@ import StaticServer, {
   STATES,
 } from "@dr.pogodin/react-native-static-server";
 import {
-  buildStaticMediaPipeHtml,
   MEDIAPIPE_HTML_BUILD_STAMP,
 } from "./mediaPipeHtmlTemplate";
+import { devLog } from "../../utils/devLog";
 import { buildStaticCalibrationHtml } from "./mediaPipeCalibrationTemplate";
 
 /**
@@ -56,7 +56,7 @@ function writeStaticAssets(): void {
   calibrationFile.write(buildStaticCalibrationHtml());
 
   if (typeof __DEV__ !== "undefined" && __DEV__) {
-    console.log(`[MediaPipe] static assets written (${MEDIAPIPE_HTML_BUILD_STAMP})`);
+    devLog(`[MediaPipe] static assets written (${MEDIAPIPE_HTML_BUILD_STAMP})`);
   }
 }
 
@@ -188,7 +188,7 @@ async function adoptActiveNativeServer(activeId: number): Promise<string | null>
 
   if (serverInstance.state === STATES.ACTIVE && serverInstance.origin) {
     if (__DEV__) {
-      console.log(`[MediaPipe] reusing native server #${activeId} at ${serverInstance.origin}`);
+      devLog(`[MediaPipe] reusing native server #${activeId} at ${serverInstance.origin}`);
     }
     return serverInstance.origin;
   }
@@ -248,7 +248,7 @@ export function acquireMediaPipeServer(
   }
   if (typeof __DEV__ !== "undefined" && __DEV__) {
     writeStaticAssets();
-    console.log(
+    devLog(
       `[MediaPipe] acquire (${MEDIAPIPE_SERVER_RUNTIME}, html ${MEDIAPIPE_HTML_BUILD_STAMP})`,
     );
   }

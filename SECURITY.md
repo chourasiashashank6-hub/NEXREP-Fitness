@@ -16,7 +16,8 @@
 - `allow_origins` is driven by `ALLOWED_ORIGINS` (comma-separated), not `*`.
 
 ### Dev endpoints
-- `/dev/subscription-toggle` **removed** (was a production risk). Use Razorpay webhooks or admin tools instead.
+- `/dev/subscription-toggle` is **disabled in production** (`APP_ENV` must be `development`). It requires a matching `X-Dev-Secret` header (`DEV_TOGGLE_SECRET` on the server). Use Razorpay webhooks or admin tools for real subscription changes in production.
+- The previous default secret `nexrep-dev-toggle-2026` was committed to git and shipped as a mobile fallback — **rotate `DEV_TOGGLE_SECRET` on the server** and set `EXPO_PUBLIC_DEV_TOGGLE_SECRET` in EAS secrets for dev builds; do not reuse the old value.
 
 ### API keys
 - Groq/Gemini/OpenAI keys belong in **server** `.env` only.

@@ -14,8 +14,9 @@ Set these on the **API** service (`server/`):
 | `RAZORPAY_*` | Keys and `RAZORPAY_WEBHOOK_SECRET` when live |
 | `GROQ_API_KEY` / `GEMINI_API_KEY` | Server-side AI only |
 | `COACH_REDESIGN_ENABLED` | `true` to enable tiered coach cadence views and `/api/coach/*` (default `false`) |
+| `DEV_TOGGLE_SECRET` | `openssl rand -hex 32` — required for `/dev/subscription-toggle` when `APP_ENV=development` |
 
-Mobile (EAS / Expo): set `EXPO_PUBLIC_API_URL` to your public API URL in EAS secrets or `mobile/.env.production` at build time.
+Mobile (EAS / Expo): set `EXPO_PUBLIC_API_URL` to your public API URL in EAS secrets or `mobile/.env.production` at build time. Firebase client keys live in **EAS secrets** (referenced from `eas.json` as `@EXPO_PUBLIC_FIREBASE_*`), not in git.
 
 Never commit real `.env` files.
 

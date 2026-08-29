@@ -71,9 +71,6 @@ export default function CoachHomeScreen() {
           <Text style={styles.heroSub}>{t("coach.home.heroSubtitle")}</Text>
           <View style={styles.trustRow}>
             <View style={styles.trustPill}>
-              <Text style={styles.trustPillText}>{t("coach.home.athletes")}</Text>
-            </View>
-            <View style={styles.trustPill}>
               <Text style={styles.trustPillText}>{t("coach.home.coachCount")}</Text>
             </View>
             <View style={styles.trustPill}>
