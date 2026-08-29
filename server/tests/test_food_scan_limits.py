@@ -54,12 +54,42 @@ def test_enforce_free_allows_under_cap():
         enforce_food_scan_limits(db=MagicMock(), user=user, meal_type=None)
 
 
-def test_enforce_pro_requires_meal_type():
+def test_enforce_pro_without_meal_type_uses_legacy_daily_cap():
+    """STOPGAP: old APKs omit meal_type — flat daily cap (Pro=2), not 422."""
     user = User(id=2, plan_id="pro", email="y@test", password_hash="x", name="x")
-    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0):
+    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0), patch(
+        "src.services.food_scan_limits._count_scans",
+        return_value=1,
+    ):
+        enforce_food_scan_limits(db=MagicMock(), user=user, meal_type=None)
+
+
+def test_enforce_pro_without_meal_type_blocks_at_legacy_daily_cap():
+    user = User(id=2, plan_id="pro", email="y@test", password_hash="x", name="x")
+    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0), patch(
+        "src.services.food_scan_limits._count_scans",
+        return_value=2,
+    ), patch("src.services.food_scan_limits.meals_per_day_for_user", return_value=3):
         with pytest.raises(HTTPException) as exc:
             enforce_food_scan_limits(db=MagicMock(), user=user, meal_type=None)
-    assert exc.value.status_code == 422
+    assert exc.value.status_code == 429
+    detail = exc.value.detail
+    assert detail["limit_type"] == "daily"
+    assert detail["tier"] == "pro"
+    assert detail["cap"] == 2
+    assert detail["meal_type"] is None
+
+
+def test_enforce_elite_without_meal_type_blocks_at_legacy_daily_cap():
+    user = User(id=5, plan_id="elite", email="e@test", password_hash="x", name="x")
+    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0), patch(
+        "src.services.food_scan_limits._count_scans",
+        return_value=3,
+    ), patch("src.services.food_scan_limits.meals_per_day_for_user", return_value=3):
+        with pytest.raises(HTTPException) as exc:
+            enforce_food_scan_limits(db=MagicMock(), user=user, meal_type="")
+    assert exc.value.status_code == 429
+    assert exc.value.detail["cap"] == 3
 
 
 def test_enforce_pro_blocks_third_scan_in_meal_slot():

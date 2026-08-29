@@ -23,6 +23,14 @@ FREE_DAILY_CAP = 4
 PRO_PER_MEAL_CAP = 2
 ELITE_PER_MEAL_CAP = 3
 
+# STOPGAP — remove when all clients send meal_type on food scans.
+# Pro/Elite requests without meal_type use a flat IST-day cap equal to the tier's
+# per-meal limit (Pro=2, Elite=3), counting all successful scans that day.
+LEGACY_NO_MEAL_TYPE_DAILY_CAP = {
+    "pro": PRO_PER_MEAL_CAP,
+    "elite": ELITE_PER_MEAL_CAP,
+}
+
 
 @dataclass(frozen=True)
 class ScanLimitState:
@@ -212,8 +220,25 @@ def enforce_food_scan_limits(
             )
         return
 
+    # STOPGAP: old APKs omit meal_type — unified daily bucket, not per-slot (see LEGACY_NO_MEAL_TYPE_DAILY_CAP).
     if not meal_type or not str(meal_type).strip():
-        raise HTTPException(status_code=422, detail="meal_type is required for food photo scans on Pro and Elite plans.")
+        cap = LEGACY_NO_MEAL_TYPE_DAILY_CAP[tier]
+        used = _count_scans(db, user.id, since=day_start, until=day_end)
+        if used >= cap:
+            raise HTTPException(
+                status_code=429,
+                detail=ScanLimitState(
+                    tier=tier,
+                    cap=cap,
+                    used=used,
+                    remaining=0,
+                    meal_type=None,
+                    meals_per_day=meals_per_day_for_user(db, user.id),
+                    resets_at=resets_at,
+                    limit_type="daily",
+                ).as_dict(),
+            )
+        return
 
     meal_slot = str(meal_type).strip()
     cap = per_meal_cap(tier)
