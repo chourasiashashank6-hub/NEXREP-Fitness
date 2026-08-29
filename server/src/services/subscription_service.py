@@ -17,6 +17,14 @@ PLAN_PRICES_INR = {
 TRIAL_DAYS = 7
 
 
+def get_plan_amount_inr(plan_id: str, billing_cycle: str) -> int:
+    """Authoritative GST-inclusive INR price charged via Razorpay (coupons not applied server-side)."""
+    price = PLAN_PRICES_INR.get((plan_id, billing_cycle))
+    if price is None:
+        raise ValueError(f"Unknown plan/cycle: {plan_id}/{billing_cycle}")
+    return int(price)
+
+
 def is_pro(db: Session, user_id: int) -> bool:
     """Server-side pro check — never trust client subscription flags."""
     user = db.query(User).filter(User.id == user_id).first()
@@ -112,6 +120,16 @@ def activate_subscription(
     razorpay_payment_id: Optional[str] = None,
     razorpay_signature: Optional[str] = None,
 ) -> Subscription:
+    if razorpay_payment_id:
+        existing = (
+            db.query(Subscription)
+            .filter(Subscription.razorpay_payment_id == razorpay_payment_id)
+            .order_by(Subscription.created_at.desc())
+            .first()
+        )
+        if existing:
+            return existing
+
     now = datetime.utcnow()
     months = 12 if billing_cycle == "yearly" else 1
     expires = now + timedelta(days=30 * months)

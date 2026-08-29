@@ -18,6 +18,19 @@ export type Plan = {
 
 export const VALID_COUPON = "NEXREP50";
 
+/** Set true when server-side coupon validation ships. */
+export const COUPONS_UI_ENABLED = false;
+
+/** Must match server PLAN_PRICES_INR (GST-inclusive) — used for Razorpay order amount validation. */
+export const SERVER_PLAN_AMOUNTS_INR: Record<PlanId, Record<"monthly" | "yearly", number>> = {
+  pro: { monthly: 999, yearly: 832 * 12 },
+  elite: { monthly: 1999, yearly: 1665 * 12 },
+};
+
+export function getServerPlanAmountInr(planId: PlanId, billingCycle: "monthly" | "yearly"): number {
+  return SERVER_PLAN_AMOUNTS_INR[planId][billingCycle];
+}
+
 export const PLANS: Plan[] = [
   {
     id: "pro",

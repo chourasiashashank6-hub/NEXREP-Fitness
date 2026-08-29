@@ -16,7 +16,11 @@ from src.core.config import settings, warn_missing_razorpay_webhook_secret
 from src.db.session import get_db
 from src.models.admin_models import Subscription
 from src.models.models import User
-from src.services.subscription_service import activate_subscription, cancel_subscription
+from src.services.subscription_service import (
+    activate_subscription,
+    cancel_subscription,
+    get_plan_amount_inr,
+)
 from src.utils.auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -115,7 +119,16 @@ def create_razorpay_order(
     current_user: User = Depends(get_current_user),
 ):
     key_id, key_secret = _razorpay_auth()
-    amount_paise = int(body.amount_inr) * 100
+    try:
+        expected_inr = get_plan_amount_inr(body.plan_id, body.billing_cycle)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid plan or billing cycle") from exc
+    if body.amount_inr != expected_inr:
+        raise HTTPException(
+            status_code=400,
+            detail="Amount does not match the price for the selected plan and billing cycle",
+        )
+    amount_paise = expected_inr * 100
     payload = {
         "amount": amount_paise,
         "currency": "INR",

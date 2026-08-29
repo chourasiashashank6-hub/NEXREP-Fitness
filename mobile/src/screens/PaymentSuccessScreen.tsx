@@ -1,10 +1,13 @@
+import { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ProfileStackParamList } from "../navigation/types";
+import { getProfile } from "../api/user";
 import { useAuthStore } from "../store/authStore";
+import { useSubscriptionStore } from "../store/subscriptionStore";
 
 const ACCENT = "#2ECC9A";
 const BG = "#0a0f0d";
@@ -15,6 +18,22 @@ export function PaymentSuccessScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
   const { planName, paymentId } = route.params;
   const setPlanId = useAuthStore((s) => s.setPlanId);
+  const sessionUserId = useAuthStore((s) => s.sessionUserId);
+  const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const profile = await getProfile();
+        setPlanId(String(profile.plan_id || "free"));
+      } catch {
+        // Profile fetch failed — leave plan_id as set by verify/webhook on next bootstrap.
+      }
+      if (sessionUserId) {
+        void fetchSubscription(sessionUserId).catch(() => undefined);
+      }
+    })();
+  }, [fetchSubscription, sessionUserId, setPlanId]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
@@ -28,7 +47,6 @@ export function PaymentSuccessScreen({ route, navigation }: Props) {
         <TouchableOpacity
           style={styles.cta}
           onPress={() => {
-            setPlanId(planName.toLowerCase());
             navigation.popToTop();
           }}
         >
