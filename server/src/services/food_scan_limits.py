@@ -97,7 +97,7 @@ def _count_scans(
     q = db.query(func.count(AiUsageLog.id)).filter(
         AiUsageLog.user_id == user_id,
         AiUsageLog.feature == FEATURE,
-        AiUsageLog.success.is_(True),
+        AiUsageLog.counts_toward_scan_quota.is_(True),
         AiUsageLog.created_at >= since,
     )
     if until is not None:
@@ -107,6 +107,22 @@ def _count_scans(
     if require_meal_slot:
         q = q.filter(AiUsageLog.meal_slot.isnot(None))
     return int(q.scalar() or 0)
+
+
+@dataclass
+class FoodScanAttempt:
+    """Tracks one user-facing food scan request across provider fallbacks."""
+
+    meal_slot: str | None
+    quota_recorded: bool = False
+
+    def record_if_first_provider(self, db: Session, user_id: int | None) -> None:
+        if self.quota_recorded or user_id is None:
+            return
+        from src.services.ai_logger import log_scan_quota_attempt
+
+        log_scan_quota_attempt(db=db, user_id=user_id, meal_slot=self.meal_slot)
+        self.quota_recorded = True
 
 
 def _count_recent_throttle(db: Session, user_id: int, now_utc: datetime) -> int:

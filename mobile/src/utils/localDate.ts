@@ -54,3 +54,17 @@ export function getNextMonthResetLabel(ref = new Date()): string {
   const next = new Date(Date.UTC(month === 12 ? year + 1 : year, month === 12 ? 0 : month, 1));
   return next.toLocaleDateString("en-IN", { timeZone: APP_TIMEZONE, month: "short", day: "numeric" });
 }
+
+/** Food scan quota resets at IST midnight — time only; copy adds "(midnight IST)". */
+export function formatScanResetAtIST(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: APP_TIMEZONE,
+    }).format(new Date(iso));
+  } catch {
+    return "";
+  }
+}

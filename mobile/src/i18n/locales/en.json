@@ -393,7 +393,7 @@
       "foodRecognition": "Food recognition",
       "retryHint": "Tap the camera button to try again.",
       "scanLimitTitle": "Scan limit reached",
-      "scanLimitResets": "Resets at {{time}}",
+      "scanLimitResets": "Resets at {{time}} (midnight IST)",
       "scanLimitUpgradePro": "Upgrade to Pro for 2 scans per meal.",
       "scanLimitUpgradeElite": "Upgrade to Elite for 3 scans per meal.",
       "deleteFailed": "Could not delete meal.",

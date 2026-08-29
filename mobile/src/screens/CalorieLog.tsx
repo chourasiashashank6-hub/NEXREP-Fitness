@@ -48,6 +48,7 @@ import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { useFoodRecognition } from "../hooks/useFoodRecognition";
 import type { FoodAnalysisResult, FoodScanLimitDetail } from "../services/foodRecognitionService";
+import { formatScanResetAtIST } from "../utils/localDate";
 import { useAuthStore } from "../store/authStore";
 import type { MainTabParamList } from "../navigation/types";
 import MonthlyMealPlannerScreen from "./Coach/MonthlyMealPlannerScreen";
@@ -151,19 +152,6 @@ const formatScanMealLabel = (meal: string | null | undefined) => {
   if (!meal) return "";
   if (MEAL_ORDER.includes(meal as MealType)) return mealHeading(meal as MealType);
   return meal.replace(/_/g, " ");
-};
-
-const formatScanResetAt = (iso: string) => {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Kolkata",
-    }).format(new Date(iso));
-  } catch {
-    return "";
-  }
 };
 
 const mealTypeFromLocalTime = (d: Date = new Date()): MealType => {
@@ -474,7 +462,7 @@ export const CalorieLog = () => {
         Alert.alert(t("calorieLog.alerts.foodRecognition"), t("calorieLog.alerts.analysisFailed"));
         return;
       }
-      const resetTime = formatScanResetAt(limit.resets_at);
+      const resetTime = formatScanResetAtIST(limit.resets_at);
       const lines = [t("services.food.scanLimitReached")];
       if (resetTime) {
         lines.push(t("calorieLog.alerts.scanLimitResets", { time: resetTime }));

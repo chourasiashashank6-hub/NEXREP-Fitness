@@ -10,11 +10,55 @@ from fastapi import HTTPException
 from src.models.models import User
 from src.services.food_scan_limits import (
     FREE_DAILY_CAP,
+    FoodScanAttempt,
     build_scan_usage,
     enforce_food_scan_limits,
     normalize_tier,
     per_meal_cap,
 )
+
+
+def test_food_scan_attempt_records_quota_once():
+    db = MagicMock()
+    attempt = FoodScanAttempt("Lunch")
+    with patch("src.services.ai_logger.log_scan_quota_attempt") as log_mock:
+        attempt.record_if_first_provider(db, 7)
+        attempt.record_if_first_provider(db, 7)
+        attempt.record_if_first_provider(db, 7)
+    log_mock.assert_called_once_with(db=db, user_id=7, meal_slot="Lunch")
+
+
+def test_failed_scan_quota_row_counts_toward_limit():
+    user = User(id=1, plan_id="free", email="x@test", password_hash="x", name="x")
+    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0), patch(
+        "src.services.food_scan_limits._count_scans",
+        return_value=FREE_DAILY_CAP,
+    ), patch("src.services.food_scan_limits.meals_per_day_for_user", return_value=3):
+        with pytest.raises(HTTPException) as exc:
+            enforce_food_scan_limits(db=MagicMock(), user=user, meal_type=None)
+    assert exc.value.status_code == 429
+
+
+def test_enforce_limit_rejection_does_not_record_scan_attempt():
+    user = User(id=1, plan_id="free", email="x@test", password_hash="x", name="x")
+    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0), patch(
+        "src.services.food_scan_limits._count_scans",
+        return_value=FREE_DAILY_CAP,
+    ), patch("src.services.food_scan_limits.meals_per_day_for_user", return_value=3), patch(
+        "src.services.ai_logger.log_scan_quota_attempt",
+    ) as log_mock:
+        with pytest.raises(HTTPException):
+            enforce_food_scan_limits(db=MagicMock(), user=user, meal_type=None)
+    log_mock.assert_not_called()
+
+
+def test_three_provider_touches_record_one_quota_attempt():
+    db = MagicMock()
+    attempt = FoodScanAttempt("Dinner")
+    with patch("src.services.ai_logger.log_scan_quota_attempt") as log_mock:
+        for _provider in ("groq", "gemini", "openai"):
+            attempt.record_if_first_provider(db, 9)
+    log_mock.assert_called_once()
 
 
 def test_normalize_tier_defaults_unknown_to_free():

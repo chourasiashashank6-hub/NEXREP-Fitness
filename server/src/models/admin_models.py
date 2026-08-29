@@ -71,6 +71,7 @@ class AiUsageLog(Base):
     cost_inr = Column(Numeric(12, 4), nullable=False, default=0)
     success = Column(Boolean, nullable=False, default=True)
     is_fallback = Column(Boolean, nullable=False, default=False)
+    counts_toward_scan_quota = Column(Boolean, nullable=False, default=False)
     endpoint = Column(String(128), nullable=True)
     meal_slot = Column(String(32), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

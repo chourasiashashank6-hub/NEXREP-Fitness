@@ -28,9 +28,9 @@ from src.services.activity_feed_service import calculate_user_streak, emit_strea
 from src.services.xp_service import award_xp_for_meal_log, reevaluate_xp_after_meal_change
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.services.food_image_utils import prepare_food_image_for_vision
-from src.services.food_scan_limits import build_scan_usage, enforce_food_scan_limits
+from src.services.food_scan_limits import FoodScanAttempt, build_scan_usage, enforce_food_scan_limits
 from src.services.language_service import normalize_language_tag
-from src.services.ai_logger import log_gemini_call, log_groq_call
+from src.services.ai_logger import log_gemini_call, log_groq_call, log_openai_call, log_provider_failure
 from src.services.gemini_client import gemini_generate_content_models, has_gemini_key
 from src.utils.auth import get_current_user
 from src.utils.app_time import today_ist
@@ -95,6 +95,35 @@ FOOD_SCAN_GEMINI_PROMPT = (
     'If no food is visible, return {"error":"No food detected"}. '
     "No markdown, no extra text."
 )
+
+FOOD_SCAN_ENDPOINT = "/api/calories/foods/analyze-image"
+
+
+def _log_food_provider_failure(
+    *,
+    db: Session | None,
+    user_id: int | None,
+    provider: str,
+    model: str,
+    meal_slot: str | None,
+    is_fallback: bool = False,
+) -> None:
+    if user_id is None:
+        return
+    try:
+        log_provider_failure(
+            db=db,
+            user_id=user_id,
+            feature="food_photo_analysis",
+            provider=provider,
+            model=model,
+            endpoint=FOOD_SCAN_ENDPOINT,
+            is_fallback=is_fallback,
+            meal_slot=meal_slot,
+        )
+    except Exception:
+        pass
+
 
 DEFAULT_TARGETS = {
     "target_calories": 2100,
@@ -577,6 +606,8 @@ def _groq_food_image_analysis(
     *,
     user_id: int | None = None,
     meal_slot: str | None = None,
+    attempt: FoodScanAttempt | None = None,
+    db: Session | None = None,
 ) -> dict[str, Any]:
     groq_keys: list[str] = []
     for key in (settings.GROQ_API_KEY, settings.GROQ_API_KEY_FALLBACK):
@@ -602,6 +633,8 @@ def _groq_food_image_analysis(
     last_err: str | None = None
     for key_idx, api_key in enumerate(groq_keys):
         for model_name in model_candidates:
+            if attempt is not None and user_id is not None:
+                attempt.record_if_first_provider(db, user_id)
             try:
                 payload = post_json(
                     "https://api.groq.com/openai/v1/chat/completions",
@@ -631,6 +664,13 @@ def _groq_food_image_analysis(
                 used_fallback_key = key_idx > 0
                 break
             except ExternalHTTPError as e:
+                _log_food_provider_failure(
+                    db=db,
+                    user_id=user_id,
+                    provider="groq",
+                    model=model_name,
+                    meal_slot=meal_slot,
+                )
                 body = e.body or ""
                 lower = body.lower()
                 if e.status_code == 429:
@@ -648,6 +688,19 @@ def _groq_food_image_analysis(
                     last_err = f"{model_name}: not vision-capable for this key"
                     continue
                 raise RuntimeError(f"Groq HTTP {e.status_code}: {body[:260]}") from e
+            except RuntimeError as e:
+                msg = str(e).lower()
+                if "timed out" in msg or "network error" in msg or "ssl error" in msg:
+                    _log_food_provider_failure(
+                        db=db,
+                        user_id=user_id,
+                        provider="groq",
+                        model=model_name,
+                        meal_slot=meal_slot,
+                    )
+                    last_err = str(e)
+                    continue
+                raise
         if payload is not None:
             break
 
@@ -659,10 +712,11 @@ def _groq_food_image_analysis(
             user_id=user_id,
             feature="food_photo_analysis",
             model=used_model,
-            endpoint="/api/calories/foods/analyze-image",
+            endpoint=FOOD_SCAN_ENDPOINT,
             response_json=payload,
             is_fallback=used_fallback_key,
             meal_slot=meal_slot,
+            db=db,
         )
     except Exception:
         pass
@@ -681,6 +735,8 @@ def _gemini_food_image_analysis(
     user_id: int | None = None,
     is_fallback: bool = False,
     meal_slot: str | None = None,
+    attempt: FoodScanAttempt | None = None,
+    db: Session | None = None,
 ) -> dict[str, Any]:
     if not has_gemini_key():
         raise RuntimeError("GEMINI_API_KEY missing on server")
@@ -705,20 +761,34 @@ def _gemini_food_image_analysis(
             "maxOutputTokens": 400,
         },
     }
-    payload, model_name, used_fallback_key = gemini_generate_content_models(
-        model_candidates,
-        request_payload,
-        timeout=40,
-    )
+    if attempt is not None and user_id is not None:
+        attempt.record_if_first_provider(db, user_id)
+    try:
+        payload, model_name, used_fallback_key = gemini_generate_content_models(
+            model_candidates,
+            request_payload,
+            timeout=40,
+        )
+    except RuntimeError as e:
+        _log_food_provider_failure(
+            db=db,
+            user_id=user_id,
+            provider="gemini",
+            model=model_candidates[0],
+            meal_slot=meal_slot,
+            is_fallback=is_fallback,
+        )
+        raise
     try:
         log_gemini_call(
             user_id=user_id,
             feature="food_photo_analysis",
             model=model_name,
-            endpoint="/api/calories/foods/analyze-image",
+            endpoint=FOOD_SCAN_ENDPOINT,
             response_json=payload,
             is_fallback=is_fallback or used_fallback_key,
             meal_slot=meal_slot,
+            db=db,
         )
     except Exception:
         pass
@@ -737,40 +807,73 @@ def _gemini_food_image_analysis(
 def _openai_food_image_analysis(
     base64: str,
     mime_type: str | None,
+    *,
+    user_id: int | None = None,
+    meal_slot: str | None = None,
+    attempt: FoodScanAttempt | None = None,
+    db: Session | None = None,
+    is_fallback: bool = True,
 ) -> dict[str, Any]:
     api_key = (settings.OPENAI_API_KEY or "").strip()
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY missing on server")
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
-    payload = post_json(
-        "https://api.openai.com/v1/chat/completions",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-            "Accept": "application/json",
-            "User-Agent": "fitness-food-analyzer/1.0",
-        },
-        payload={
-            "model": "gpt-4o-mini",
-            "temperature": 0.1,
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {
-                    "role": "system",
-                    "content": FOOD_SCAN_SYSTEM_PROMPT,
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": FOOD_SCAN_USER_MESSAGE},
-                        {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
-                    ],
-                },
-            ],
-            "max_tokens": 400,
-        },
-        timeout=30,
-    )
+    model_name = "gpt-4o-mini"
+    if attempt is not None and user_id is not None:
+        attempt.record_if_first_provider(db, user_id)
+    try:
+        payload = post_json(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+                "Accept": "application/json",
+                "User-Agent": "fitness-food-analyzer/1.0",
+            },
+            payload={
+                "model": model_name,
+                "temperature": 0.1,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": FOOD_SCAN_SYSTEM_PROMPT,
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": FOOD_SCAN_USER_MESSAGE},
+                            {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
+                        ],
+                    },
+                ],
+                "max_tokens": 400,
+            },
+            timeout=30,
+        )
+    except (ExternalHTTPError, RuntimeError):
+        _log_food_provider_failure(
+            db=db,
+            user_id=user_id,
+            provider="openai",
+            model=model_name,
+            meal_slot=meal_slot,
+            is_fallback=is_fallback,
+        )
+        raise
+    try:
+        log_openai_call(
+            user_id=user_id,
+            feature="food_photo_analysis",
+            model=model_name,
+            endpoint=FOOD_SCAN_ENDPOINT,
+            response_json=payload,
+            is_fallback=is_fallback,
+            meal_slot=meal_slot,
+            db=db,
+        )
+    except Exception:
+        pass
     raw = (payload.get("choices") or [{}])[0].get("message", {}).get("content", "")
     if not raw:
         raise RuntimeError("OpenAI returned empty content")
@@ -1482,6 +1585,7 @@ def analyze_food_image(
 ):
     meal_type = payload.meal_type
     enforce_food_scan_limits(db, current_user, meal_type=meal_type)
+    attempt = FoodScanAttempt(meal_type)
     try:
         clean_base64, image_mime = prepare_food_image_for_vision(payload.base64, payload.mime_type)
     except ValueError as e:
@@ -1495,11 +1599,21 @@ def analyze_food_image(
                 user_id=current_user.id,
                 is_fallback=True,
                 meal_slot=meal_type,
+                attempt=attempt,
+                db=db,
             )
         except Exception as ge:
             gemini_msg = str(ge)
             try:
-                return _openai_food_image_analysis(clean_base64, image_mime)
+                return _openai_food_image_analysis(
+                    clean_base64,
+                    image_mime,
+                    user_id=current_user.id,
+                    meal_slot=meal_type,
+                    attempt=attempt,
+                    db=db,
+                    is_fallback=True,
+                )
             except Exception:
                 pass
             if "429" in gemini_msg or "quota" in gemini_msg.lower():
@@ -1518,6 +1632,8 @@ def analyze_food_image(
             image_mime,
             user_id=current_user.id,
             meal_slot=meal_type,
+            attempt=attempt,
+            db=db,
         )
     except ValueError as e:
         detail = str(e).strip()
