@@ -21,7 +21,9 @@ import { getFirebaseAuth } from "../config/firebase";
 import { devActivatePlan } from "../api/payments";
 import {
   CHECKOUT_COUPONS,
+  COUPONS_UI_ENABLED,
   getPlanById,
+  getServerPlanAmountInr,
   planToCheckout,
   type CheckoutPlan,
 } from "../constants/plans";
@@ -93,6 +95,10 @@ export function PaymentScreen({ route, navigation }: Props) {
   const { planId, isYearly, displayPrice } = route.params;
   const plan: CheckoutPlan = useMemo(() => planToCheckout(getPlanById(planId)), [planId]);
   const billingCycle = isYearly ? "yearly" : "monthly";
+  const chargeAmountInr = useMemo(
+    () => getServerPlanAmountInr(planId, billingCycle),
+    [planId, billingCycle],
+  );
 
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -104,11 +110,11 @@ export function PaymentScreen({ route, navigation }: Props) {
 
   const resetMonthLabel = getNextMonthResetLabel();
 
-  const basePrice = displayPrice;
-  const discountAmt = Math.round(basePrice * discount);
-  const afterDisc = basePrice - discountAmt;
-  const gst = Math.round(afterDisc * 0.18);
-  const totalDue = afterDisc + gst;
+  const basePrice = COUPONS_UI_ENABLED ? displayPrice : chargeAmountInr;
+  const discountAmt = COUPONS_UI_ENABLED ? Math.round(basePrice * discount) : 0;
+  const afterDisc = COUPONS_UI_ENABLED ? basePrice - discountAmt : chargeAmountInr;
+  const gst = COUPONS_UI_ENABLED ? Math.round(afterDisc * 0.18) : 0;
+  const totalDue = COUPONS_UI_ENABLED ? afterDisc + gst : chargeAmountInr;
   const yearlySavings = Math.round(plan.priceMonthly * 12 * 0.2);
   const featurePreview = plan.features.slice(0, 3);
   const remainingFeatureCount = Math.max(0, plan.features.length - featurePreview.length);
@@ -157,10 +163,11 @@ export function PaymentScreen({ route, navigation }: Props) {
   const handlePay = async () => {
     setPaying(true);
     try {
+      const orderAmountInr = chargeAmountInr;
       const checkoutParams = {
         planId: plan.planId,
         billingCycle,
-        amountInr: totalDue,
+        amountInr: orderAmountInr,
         planLabel: plan.name,
         paymentMethod: selectedPm,
         prefill,
@@ -189,7 +196,7 @@ export function PaymentScreen({ route, navigation }: Props) {
                     const res = await devActivatePlan({
                       plan_id: plan.planId,
                       billing_cycle: billingCycle,
-                      amount_inr: totalDue,
+                      amount_inr: chargeAmountInr,
                     });
                     navigation.replace("PaymentSuccess", {
                       planName: plan.name,
@@ -301,6 +308,7 @@ export function PaymentScreen({ route, navigation }: Props) {
           ) : null}
         </View>
 
+        {COUPONS_UI_ENABLED ? (
         <View style={styles.couponRow}>
           <TextInput
             style={styles.couponInput}
@@ -317,8 +325,9 @@ export function PaymentScreen({ route, navigation }: Props) {
             <Text style={styles.couponBtnText}>{t("payment.checkout.apply")}</Text>
           </TouchableOpacity>
         </View>
-        {couponError ? <Text style={styles.couponError}>{couponError}</Text> : null}
-        {discount > 0 ? (
+        ) : null}
+        {COUPONS_UI_ENABLED && couponError ? <Text style={styles.couponError}>{couponError}</Text> : null}
+        {COUPONS_UI_ENABLED && discount > 0 ? (
           <Text style={styles.couponSuccess}>{t("payment.checkout.couponApplied", { percent: Math.round(discount * 100) })}</Text>
         ) : null}
 
@@ -350,8 +359,10 @@ export function PaymentScreen({ route, navigation }: Props) {
             <Text style={styles.summaryLabel}>
               {t("payment.checkout.planSummary", { planName: plan.name, billingCycle })}
             </Text>
-            <Text style={styles.summaryValue}>₹{basePrice}</Text>
+            <Text style={styles.summaryValue}>₹{chargeAmountInr}</Text>
           </View>
+          {COUPONS_UI_ENABLED ? (
+            <>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>{t("payment.checkout.discount")}</Text>
             <Text style={[styles.summaryValue, discountAmt > 0 && styles.discountValue]}>
@@ -362,10 +373,12 @@ export function PaymentScreen({ route, navigation }: Props) {
             <Text style={styles.summaryLabel}>{t("payment.checkout.gst")}</Text>
             <Text style={styles.summaryValue}>₹{gst}</Text>
           </View>
+            </>
+          ) : null}
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>{t("payment.checkout.totalDue")}</Text>
-            <Text style={styles.totalValue}>₹{totalDue}</Text>
+            <Text style={styles.totalValue}>₹{chargeAmountInr}</Text>
           </View>
           <Text style={styles.finePrint}>{t("payment.checkout.finePrint", { billingCycle })}</Text>
         </View>
@@ -381,7 +394,7 @@ export function PaymentScreen({ route, navigation }: Props) {
             <>
               <Ionicons name="lock-closed" size={18} color={WHITE} />
               <Text style={styles.ctaBtnText}>
-                {t("payment.checkout.payCta", { amount: totalDue, planName: plan.name })}
+                {t("payment.checkout.payCta", { amount: chargeAmountInr, planName: plan.name })}
               </Text>
             </>
           )}

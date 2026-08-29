@@ -24,7 +24,7 @@ import {
   PlanOverviewCard,
   SubscriptionHistorySection,
 } from "../components/subscription/SubscriptionOverviewUI";
-import { getOriginalPrice, getPrice, PLANS, type PlanId } from "../constants/plans";
+import { getPrice, getServerPlanAmountInr, PLANS, COUPONS_UI_ENABLED, type PlanId } from "../constants/plans";
 import { runCouponApply } from "../components/CouponInput";
 import type { ProfileStackParamList } from "../navigation/types";
 import { useAuthStore } from "../store/authStore";
@@ -130,20 +130,20 @@ export function PlanPickerScreen({
     (planId: PlanId) => {
       const plan = PLANS.find((p) => p.id === planId);
       if (!plan) return;
-      const price = getPrice(plan, isYearly, couponApplied);
+      const price = getServerPlanAmountInr(planId, isYearly ? "yearly" : "monthly");
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onSelectPlan?.(planId, price, isYearly);
       navigation.navigate("Payment", { planId, displayPrice: price, isYearly });
     },
-    [couponApplied, isYearly, navigation, onSelectPlan],
+    [isYearly, navigation, onSelectPlan],
   );
 
   const proPlan = useMemo(() => PLANS.find((p) => p.id === "pro")!, []);
   const elitePlan = useMemo(() => PLANS.find((p) => p.id === "elite")!, []);
-  const proPrice = getPrice(proPlan, isYearly, couponApplied);
-  const elitePrice = getPrice(elitePlan, isYearly, couponApplied);
-  const proOriginal = couponApplied ? getOriginalPrice(proPlan, isYearly) : null;
-  const eliteOriginal = couponApplied ? getOriginalPrice(elitePlan, isYearly) : null;
+  const proPrice = getPrice(proPlan, isYearly, false);
+  const elitePrice = getPrice(elitePlan, isYearly, false);
+  const proOriginal = null;
+  const eliteOriginal = null;
 
   if (!fontsLoaded) {
     return (
@@ -188,6 +188,7 @@ export function PlanPickerScreen({
           </Pressable>
         </View>
 
+        {COUPONS_UI_ENABLED ? (
         <View style={styles.couponBox}>
           <Text style={styles.couponLabel}>{t("subscription.planPicker.earlyOffer")}</Text>
           <View style={styles.couponRow}>
@@ -216,6 +217,7 @@ export function PlanPickerScreen({
             <Text style={styles.couponError}>{couponError}</Text>
           ) : null}
         </View>
+        ) : null}
 
         <Text style={styles.sectionLabel}>{t("subscription.planPicker.chooseYourPlan")}</Text>
         <View style={styles.planRow}>
