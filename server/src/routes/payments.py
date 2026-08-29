@@ -18,8 +18,10 @@ from src.models.admin_models import Subscription
 from src.models.models import User
 from src.services.subscription_service import (
     activate_subscription,
+    build_razorpay_receipt,
     cancel_subscription,
     get_plan_amount_inr,
+    mark_subscription_past_due,
 )
 from src.utils.auth import get_current_user
 
@@ -113,31 +115,26 @@ def _plan_from_payload(payload: dict[str, Any]) -> tuple[str, str]:
     return plan_id, billing_cycle
 
 
-@router.post("/razorpay/order")
-def create_razorpay_order(
-    body: RazorpayOrderRequest,
-    current_user: User = Depends(get_current_user),
-):
+def create_razorpay_order_for_user(
+    user: User,
+    *,
+    plan_id: str,
+    billing_cycle: str,
+    payment_method: str = "razorpay",
+) -> dict[str, Any]:
+    """Create a Razorpay order and return checkout fields for the client."""
     key_id, key_secret = _razorpay_auth()
-    try:
-        expected_inr = get_plan_amount_inr(body.plan_id, body.billing_cycle)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Invalid plan or billing cycle") from exc
-    if body.amount_inr != expected_inr:
-        raise HTTPException(
-            status_code=400,
-            detail="Amount does not match the price for the selected plan and billing cycle",
-        )
-    amount_paise = expected_inr * 100
+    amount_inr = get_plan_amount_inr(plan_id, billing_cycle)
+    amount_paise = amount_inr * 100
     payload = {
         "amount": amount_paise,
         "currency": "INR",
-        "receipt": f"nexrep_{current_user.id}_{body.plan_id}_{body.billing_cycle}",
+        "receipt": build_razorpay_receipt(user.id, plan_id, billing_cycle),
         "notes": {
-            "user_id": str(current_user.id),
-            "plan_id": body.plan_id,
-            "billing_cycle": body.billing_cycle,
-            "payment_method": body.payment_method,
+            "user_id": str(user.id),
+            "plan_id": plan_id,
+            "billing_cycle": billing_cycle,
+            "payment_method": payment_method,
         },
     }
     try:
@@ -157,7 +154,36 @@ def create_razorpay_order(
         "key_id": key_id,
         "order_id": data["id"],
         "amount": amount_paise,
+        "amount_inr": amount_inr,
         "currency": data.get("currency", "INR"),
+    }
+
+
+@router.post("/razorpay/order")
+def create_razorpay_order(
+    body: RazorpayOrderRequest,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        expected_inr = get_plan_amount_inr(body.plan_id, body.billing_cycle)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid plan or billing cycle") from exc
+    if body.amount_inr != expected_inr:
+        raise HTTPException(
+            status_code=400,
+            detail="Amount does not match the price for the selected plan and billing cycle",
+        )
+    result = create_razorpay_order_for_user(
+        current_user,
+        plan_id=body.plan_id,
+        billing_cycle=body.billing_cycle,
+        payment_method=body.payment_method,
+    )
+    return {
+        "key_id": result["key_id"],
+        "order_id": result["order_id"],
+        "amount": result["amount"],
+        "currency": result["currency"],
     }
 
 
@@ -250,7 +276,9 @@ async def razorpay_webhook(
             razorpay_order_id=razorpay_order_id,
             razorpay_payment_id=razorpay_payment_id,
         )
-    elif event in ("subscription.cancelled", "payment.failed"):
+    elif event == "payment.failed":
+        mark_subscription_past_due(db, user.id)
+    elif event == "subscription.cancelled":
         cancel_subscription(db, user.id)
     else:
         logger.info("Razorpay webhook event not handled: %s", event)

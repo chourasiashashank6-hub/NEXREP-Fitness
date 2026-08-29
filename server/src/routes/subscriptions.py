@@ -11,12 +11,13 @@ from src.core.config import settings
 from src.db.session import get_db
 from src.models.admin_models import Subscription
 from src.models.models import User
-from src.routes.payments import _razorpay_auth
+from src.routes.payments import _razorpay_auth, create_razorpay_order_for_user
 from src.services.subscription_service import (
     PLAN_PRICES_INR,
     activate_subscription,
     cancel_subscription,
     get_display_subscription,
+    get_plan_amount_inr,
 )
 from src.utils.auth import get_current_user
 
@@ -297,11 +298,27 @@ def reactivate_subscription(
     plan_id = body.planTier.lower()
     if plan_id not in ("pro", "elite"):
         plan_id = "pro"
+    billing_cycle = body.billingCycle
+    try:
+        amount_inr = get_plan_amount_inr(plan_id, billing_cycle)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid plan or billing cycle") from exc
+
+    order = create_razorpay_order_for_user(
+        current_user,
+        plan_id=plan_id,
+        billing_cycle=billing_cycle,
+    )
     return {
-        "status": "redirect",
+        "status": "checkout",
         "plan_id": plan_id,
-        "billing_cycle": body.billingCycle,
-        "message": "Complete checkout on the pricing screen to reactivate.",
+        "billing_cycle": billing_cycle,
+        "amount_inr": amount_inr,
+        "message": "Complete checkout to reactivate your subscription.",
+        "key_id": order["key_id"],
+        "order_id": order["order_id"],
+        "amount": order["amount"],
+        "currency": order["currency"],
     }
 
 

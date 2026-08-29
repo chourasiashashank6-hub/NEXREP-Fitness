@@ -1258,6 +1258,8 @@
       "notCompleted": "El pago no se completó",
       "incompleteResponse": "Respuesta de pago incompleta",
       "verifyFailed": "No se pudo verificar el pago",
+      "verifyPendingTitle": "Confirmando tu pago",
+      "verifyPendingMessage": "No pudimos confirmarlo de inmediato, pero es posible que tu pago se haya completado. Vuelve a comprobar en unos minutos; tu plan debería actualizarse pronto.",
       "goBack": "Volver",
       "title": "Verificar",
       "planSubtitle": "NexRep{{planName}}",

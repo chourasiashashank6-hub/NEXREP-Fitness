@@ -469,6 +469,9 @@ def run_hourly_notification_checks(now: datetime | None = None) -> None:
         from src.services.social_challenge_service import complete_expired_challenges
 
         complete_expired_challenges(db)
+        from src.services.subscription_service import downgrade_expired_users
+
+        downgrade_expired_users(db)
         from src.services.squad_service import run_squad_nudges
 
         run_squad_nudges(db, as_of=now)

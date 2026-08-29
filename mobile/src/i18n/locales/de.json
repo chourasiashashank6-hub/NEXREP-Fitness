@@ -1258,6 +1258,8 @@
       "notCompleted": "Die Zahlung wurde nicht abgeschlossen",
       "incompleteResponse": "Unvollständige Zahlungsantwort",
       "verifyFailed": "Die Zahlung konnte nicht bestätigt werden",
+      "verifyPendingTitle": "Zahlung wird bestätigt",
+      "verifyPendingMessage": "Wir konnten die Zahlung nicht sofort bestätigen, aber sie wurde möglicherweise bereits erfolgreich durchgeführt. Prüfe in ein paar Minuten erneut — dein Plan sollte sich bald aktualisieren.",
       "goBack": "Geh zurück",
       "title": "Kasse",
       "planSubtitle": "NexRep {{planName}}",

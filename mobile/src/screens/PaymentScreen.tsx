@@ -36,7 +36,9 @@ import {
   type RazorpayCheckoutResult,
 } from "../services/razorpayCheckout";
 import { getProfile } from "../api/user";
+import { pollProfileForPlanActivation, PaymentConfirmationPendingError } from "../utils/paymentConfirmation";
 import axios from "axios";
+import type { PlanId } from "../constants/plans";
 
 const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E8F5EE";
@@ -151,13 +153,20 @@ export function PaymentScreen({ route, navigation }: Props) {
 
   const finishPayment = useCallback(
     async (checkout: RazorpayCheckoutResult) => {
-      await completePayment(checkout, plan.planId, billingCycle);
+      try {
+        await completePayment(checkout, plan.planId, billingCycle);
+      } catch {
+        const activated = await pollProfileForPlanActivation(plan.planId);
+        if (!activated) {
+          throw new PaymentConfirmationPendingError(t("payment.checkout.verifyPendingMessage"));
+        }
+      }
       navigation.replace("PaymentSuccess", {
         planName: plan.name,
         paymentId: checkout.razorpay_payment_id,
       });
     },
-    [billingCycle, navigation, plan.name, plan.planId],
+    [billingCycle, navigation, plan.name, plan.planId, t],
   );
 
   const handlePay = async () => {
@@ -214,6 +223,10 @@ export function PaymentScreen({ route, navigation }: Props) {
       }
       const code = e && typeof e === "object" && "code" in e ? (e as { code?: number }).code : undefined;
       if (code === 2) return;
+      if (e instanceof PaymentConfirmationPendingError) {
+        Alert.alert(t("payment.checkout.verifyPendingTitle"), e.message);
+        return;
+      }
       Alert.alert(t("payment.checkout.paymentFailed"), e instanceof Error ? e.message : t("payment.checkout.genericFailure"));
     } finally {
       setPaying(false);
@@ -246,7 +259,14 @@ export function PaymentScreen({ route, navigation }: Props) {
         razorpay_order_id: data.razorpay_order_id,
         razorpay_signature: data.razorpay_signature,
       }).catch((err) => {
-        Alert.alert(t("common.error"), err instanceof Error ? err.message : t("payment.checkout.verifyFailed"));
+        if (err instanceof PaymentConfirmationPendingError) {
+          Alert.alert(t("payment.checkout.verifyPendingTitle"), err.message);
+          return;
+        }
+        Alert.alert(
+          t("payment.checkout.paymentFailed"),
+          err instanceof Error ? err.message : t("payment.checkout.genericFailure"),
+        );
       });
     } catch {
       setWebViewHtml(null);

@@ -1295,6 +1295,8 @@
       "notCompleted": "Payment was not completed",
       "incompleteResponse": "Incomplete payment response",
       "verifyFailed": "Could not verify payment",
+      "verifyPendingTitle": "Confirming your payment",
+      "verifyPendingMessage": "We couldn't confirm right away, but your payment may still have gone through. Check back in a few minutes — your plan should update shortly.",
       "goBack": "Go back",
       "title": "Checkout",
       "planSubtitle": "NexRep {{planName}}",
