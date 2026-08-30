@@ -1,4 +1,5 @@
 import { devLog } from "../../utils/devLog";
+/**
  * Mirrors the WebView session runtime (keep behaviors in sync).
  */
 import type { PoseCalibration, ResolvedPoseSpec, TrainerView } from "../../data/aiTrainer/types";
