@@ -68,6 +68,8 @@ module.exports = {
           android: {
             // Required for the local MediaPipe HTTP server (http://127.0.0.1) on Android 9+.
             usesCleartextTraffic: true,
+            // Preview/production APKs are release builds — enable R8 for distribution.
+            enableMinifyInReleaseBuilds: true,
           },
         },
       ],
