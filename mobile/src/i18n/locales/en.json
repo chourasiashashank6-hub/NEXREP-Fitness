@@ -2043,6 +2043,7 @@
       "collapse": "Collapse today's action plan",
       "expand": "Expand today's action plan",
       "doneCount": "{{done}} / {{total}} done",
+      "streakLine": "{{count}} day streak",
       "empty": "No tasks in this category",
       "filters": {
         "all": "All",
@@ -2799,6 +2800,10 @@
       "regionPlaceholder": "India (auto-detected)"
     },
     "results": {
+      "loading": "Loading your plan…",
+      "loadFailedTitle": "Could not load your summary",
+      "loadFailedBody": "Your onboarding was saved locally. You can continue into the app and review targets later in Profile.",
+      "continueAnyway": "Continue to app",
       "yourDetails": "Your details",
       "biologicalSex": "Biological sex",
       "notProvided": "Not provided",
@@ -2916,6 +2921,8 @@
     "saveFailed": "Could not save onboarding",
     "serverRejected": "The server rejected this data. Check all screens and try again.",
     "serverError": "Server error ({{status}}).",
+    "serverUnavailableTitle": "Could not reach the server",
+    "serverUnavailableBody": "Your answers were saved on this device, but the server may not have them yet. You can continue and try syncing again from Profile.",
     "genericFailed": "Something went wrong while saving. Try again."
   },
   "aiTrainer": {

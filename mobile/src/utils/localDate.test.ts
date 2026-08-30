@@ -1,4 +1,4 @@
-import { APP_TIMEZONE, formatScanResetAtIST } from "./localDate";
+import { APP_TIMEZONE, formatScanResetAtIST, istDateFromWallClock } from "./localDate";
 
 describe("formatScanResetAtIST", () => {
   it("formats reset time in IST without duplicating the timezone label", () => {
@@ -10,5 +10,12 @@ describe("formatScanResetAtIST", () => {
 
   it("uses the app IST timezone constant", () => {
     expect(APP_TIMEZONE).toBe("Asia/Kolkata");
+  });
+});
+
+describe("istDateFromWallClock", () => {
+  it("maps plan wall-clock time to the correct absolute instant in IST", () => {
+    const date = istDateFromWallClock(2026, 8, 29, 9, 0);
+    expect(date.toISOString()).toBe("2026-08-29T03:30:00.000Z");
   });
 });

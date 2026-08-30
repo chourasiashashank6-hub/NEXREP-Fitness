@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 import { fetchHealthTips, type HealthTipItem } from "../../api/coachHealthTips";
-import { todayLocal } from "../../api/caloriesLog";
+import { getCalorieStreak, todayLocal } from "../../api/caloriesLog";
+import { getWorkoutHistory } from "../../api/workout";
 import { loadOnboardingWithFallback } from "../../api/onboarding";
 import i18n from "../../i18n";
 import { useAuthStore } from "../../store/authStore";
+import { computeCombinedStreak, getStreakMeta } from "../../utils/streakEngine";
 import { type NutritionData, type Task } from "../../types/coach";
 
 const GREEN = "#0F6E56";
@@ -31,10 +32,7 @@ const BORDER = "#ECEAE5";
 
 type FilterValue = "all" | "water" | "food" | "log" | "move";
 
-const todayKey = () => new Date().toISOString().slice(0, 10);
-const STREAK_KEY = "streak_data";
-
-type StreakData = Record<string, boolean>;
+const STREAK_LOOKBACK_DAYS = 60;
 
 type DietTip = {
   id?: string;
@@ -320,7 +318,7 @@ export function ActionPlanCard({ nutritionData }: { nutritionData: NutritionData
   const token = useAuthStore((s) => s.token);
   const [mealsPerDay, setMealsPerDay] = useState(3);
   const [filter, setFilter] = useState<FilterValue>("all");
-  const [streakData, setStreakData] = useState<StreakData>({});
+  const [streakCount, setStreakCount] = useState(0);
   const [dietTips, setDietTips] = useState<DietTip[]>([]);
 
   useEffect(() => {
@@ -333,21 +331,46 @@ export function ActionPlanCard({ nutritionData }: { nutritionData: NutritionData
           preferredMeals = profile?.dietary?.meals_per_day ?? 3;
         }
         if (!cancelled) setMealsPerDay(preferredMeals);
-
-        const savedStreak = await AsyncStorage.getItem(STREAK_KEY);
-        if (cancelled) return;
-        if (savedStreak) {
-          const parsed = JSON.parse(savedStreak) as StreakData;
-          if (parsed && typeof parsed === "object") setStreakData(parsed);
-        }
       } catch {
-        // silently use memory state
+        // keep default meals-per-day
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [token]);
+
+  useEffect(() => {
+    if (!token) {
+      setStreakCount(0);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const todayKey = todayLocal();
+        const [workoutRes, calorieRes] = await Promise.all([
+          getWorkoutHistory(24 * STREAK_LOOKBACK_DAYS).catch(() => ({ items: [] })),
+          getCalorieStreak(STREAK_LOOKBACK_DAYS, todayKey).catch(() => null),
+        ]);
+        if (cancelled) return;
+        const calorieLogs = (calorieRes?.days ?? []).map((day) => ({
+          date: day.date,
+          total_calories: Number(day.total_calories ?? 0),
+        }));
+        const workoutItems = (workoutRes.items ?? []).map((item) => ({
+          date: item.date,
+          caloriesBurned: Number(item.caloriesBurned) || 0,
+        }));
+        setStreakCount(computeCombinedStreak(calorieLogs, workoutItems));
+      } catch {
+        if (!cancelled) setStreakCount(0);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, nutritionData?.mealsLogged, nutritionData?.caloriesConsumed, nutritionData?.waterMl]);
 
   useEffect(() => {
     if (!token) {
@@ -371,15 +394,7 @@ export function ActionPlanCard({ nutritionData }: { nutritionData: NutritionData
   }, [token, nutritionData?.mealsLogged, nutritionData?.caloriesConsumed, nutritionData?.proteinG, nutritionData?.waterMl]);
 
   const tasks = useMemo(() => buildIntakeDrivenTasks(nutritionData, mealsPerDay), [nutritionData, mealsPerDay]);
-
-  useEffect(() => {
-    const doneCount = tasks.filter((t) => t.done).length;
-    const achieved = doneCount >= 4;
-    const next = { ...streakData, [todayKey()]: achieved };
-    setStreakData(next);
-    void AsyncStorage.setItem(STREAK_KEY, JSON.stringify(next)).catch(() => undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks]);
+  const streakMeta = useMemo(() => getStreakMeta(streakCount), [streakCount]);
 
   const done = tasks.filter((t) => t.done).length;
   const filtered = useMemo(() => (filter === "all" ? tasks : tasks.filter((t) => t.tag === filter)), [filter, tasks]);
@@ -390,10 +405,16 @@ export function ActionPlanCard({ nutritionData }: { nutritionData: NutritionData
       <View style={styles.card}>
         <View style={styles.headRow}>
           <Text style={styles.title}>{t("coach.actionPlan.title")}</Text>
-          <View style={styles.donePill}>
-            <Text style={styles.doneText}>
-              {t("coach.actionPlan.doneCount", { done, total: tasks.length })}
-            </Text>
+          <View style={styles.headRight}>
+            <View style={styles.streakPill}>
+              <Text style={styles.streakEmoji}>{streakMeta.emoji}</Text>
+              <Text style={styles.streakText}>{t("coach.actionPlan.streakLine", { count: streakMeta.streak })}</Text>
+            </View>
+            <View style={styles.donePill}>
+              <Text style={styles.doneText}>
+                {t("coach.actionPlan.doneCount", { done, total: tasks.length })}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -433,8 +454,12 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     marginBottom: 12,
   },
-  headRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   title: { color: TEXT, fontSize: 15, fontWeight: "900", letterSpacing: 0.2 },
+  headRight: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
+  streakPill: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: ORANGE_LIGHT, borderRadius: 99, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 8, paddingVertical: 5 },
+  streakEmoji: { fontSize: 12 },
+  streakText: { color: ORANGE, fontSize: 10, fontWeight: "800" },
   donePill: { backgroundColor: GREEN_LIGHT, borderRadius: 99, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 10, paddingVertical: 6 },
   doneText: { color: GREEN, fontSize: 12, fontWeight: "900" },
   progressWrap: { marginTop: 12, flexDirection: "row", alignItems: "center", gap: 10 },

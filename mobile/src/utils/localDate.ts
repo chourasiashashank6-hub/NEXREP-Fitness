@@ -55,6 +55,12 @@ export function getNextMonthResetLabel(ref = new Date()): string {
   return next.toLocaleDateString("en-IN", { timeZone: APP_TIMEZONE, month: "short", day: "numeric" });
 }
 
+/** Absolute instant for a wall-clock time on a plan calendar day in IST. */
+export function istDateFromWallClock(year: number, month: number, day: number, hour: number, minute: number): Date {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return new Date(`${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:00+05:30`);
+}
+
 /** Food scan quota resets at IST midnight — time only; copy adds "(midnight IST)". */
 export function formatScanResetAtIST(iso: string): string {
   try {

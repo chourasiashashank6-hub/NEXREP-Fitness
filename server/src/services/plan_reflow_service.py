@@ -67,6 +67,40 @@ def day_has_any_workout_log(db: Session, user_id: int, year: int, month: int, da
     )
 
 
+def day_planner_exercises_fully_logged(db: Session, user_id: int, log_date: date) -> bool:
+    """True when every exercise on the plan day has a planner-checkbox workout log."""
+    plan = get_existing_workout_plan(db, user_id, log_date.month, log_date.year)
+    if not plan:
+        return False
+    entry = next((row for row in plan.entries if row.day == log_date.day), None)
+    if not entry or entry.is_rest_day:
+        return False
+    exercises = safe_json_loads(entry.exercises_json) or []
+    if not exercises:
+        return False
+
+    start, end = _day_datetime_bounds(log_date)
+    rows = (
+        db.query(Workout.exercise_name, Workout.notes)
+        .filter(
+            Workout.user_id == user_id,
+            Workout.date >= start,
+            Workout.date < end,
+        )
+        .all()
+    )
+    logged_names = {
+        (name or "").strip().lower()
+        for name, notes in rows
+        if is_planner_logged_workout(notes)
+    }
+    for exercise in exercises:
+        target = str(exercise.get("name") or "").strip().lower()
+        if not target or target not in logged_names:
+            return False
+    return True
+
+
 def _parse_reps(reps: Any) -> int:
     if isinstance(reps, (int, float)):
         n = int(reps)

@@ -1440,6 +1440,38 @@ def apply_onboarding_personal_to_user(user: User, onboarding: dict) -> None:
         user.preferred_language = normalize_language_tag(preferred_language)
 
 
+def _seed_initial_weight_log(db: Session, user: User, onboarding: dict) -> None:
+    """Create the first WeightLog row from onboarding weight when none exist yet."""
+    if db.query(WeightLog).filter(WeightLog.user_id == user.id).first():
+        return
+    personal = onboarding.get("personal") or {}
+    if not isinstance(personal, dict):
+        return
+    unit_system = str(personal.get("unit_system") or "metric")
+    weight_kg: float | None = None
+    try:
+        if unit_system == "imperial" and personal.get("weight_lb") is not None:
+            weight_kg = float(personal["weight_lb"]) * 0.45359237
+        elif personal.get("weight_kg") is not None:
+            weight_kg = float(personal["weight_kg"])
+    except (TypeError, ValueError):
+        weight_kg = None
+    if weight_kg is None or weight_kg <= 0:
+        return
+    log_date = today_ist().isoformat()
+    db.add(
+        WeightLog(
+            user_id=user.id,
+            weight_kg=weight_kg,
+            weight_lb=float(personal["weight_lb"]) if unit_system == "imperial" and personal.get("weight_lb") is not None else None,
+            unit_system=unit_system,
+            note="Onboarding baseline",
+            logged_at=datetime.utcnow(),
+            log_date=log_date,
+        )
+    )
+
+
 @app.post("/signup")
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     email = payload.email.strip().lower()
@@ -1765,6 +1797,7 @@ def put_my_onboarding(
     _normalize_target_lifts(payload.onboarding, db)
     _derive_activity_from_workouts(payload.onboarding)
     apply_onboarding_personal_to_user(current_user, payload.onboarding)
+    _seed_initial_weight_log(db, current_user, payload.onboarding)
     row = db.query(UserOnboarding).filter(UserOnboarding.user_id == current_user.id).first()
 
     if row and isinstance(row.onboarding_json, dict):

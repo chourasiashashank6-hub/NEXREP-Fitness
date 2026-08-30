@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from src.models.models import Challenge, ChallengeParticipant, Friendship, NotificationPreference, User, Workout
 from src.services.activity_feed_service import calculate_user_streak
+from src.utils.app_time import APP_TIMEZONE, today_ist
 from src.services.notification_service import send_push_to_user
 
 ChallengeType = Literal["streak_battle", "workout_count"]
@@ -103,10 +104,11 @@ def set_leaderboard_settings(db: Session, user_id: int, settings: dict[str, Any]
 
 
 def week_window(today: date | None = None) -> tuple[date, date, datetime]:
-    today = today or datetime.utcnow().date()
+    today = today or today_ist()
     start = today - timedelta(days=today.weekday())
     next_start = start + timedelta(days=7)
-    return start, next_start, datetime.combine(next_start, time.min)
+    next_reset_at = datetime.combine(next_start, time.min, tzinfo=APP_TIMEZONE)
+    return start, next_start, next_reset_at
 
 
 def workout_days_between(db: Session, user_id: int, start: date, end: date) -> list[datetime]:
@@ -130,13 +132,15 @@ def workout_days_between(db: Session, user_id: int, start: date, end: date) -> l
 def leaderboard_for_user(db: Session, user_id: int) -> dict[str, Any]:
     start, _, next_reset_at = week_window()
     friend_ids = accepted_friend_ids(db, user_id)
+    participant_ids = friend_ids | {user_id}
     rows: list[dict[str, Any]] = []
-    if friend_ids:
-        users = db.query(User).filter(User.id.in_(friend_ids)).all()
+    if participant_ids:
+        users = db.query(User).filter(User.id.in_(participant_ids)).all()
+        week_end = today_ist()
         for user in users:
             if not get_leaderboard_settings(db, user.id).get("opted_in", True):
                 continue
-            workouts_this_week = len(workout_days_between(db, user.id, start, datetime.utcnow().date()))
+            workouts_this_week = len(workout_days_between(db, user.id, start, week_end))
             current_streak = int(calculate_user_streak(db, user.id).get("current_streak") or 0)
             score = workouts_this_week * 10 + min(current_streak, 30) * 2
             rows.append(
@@ -145,6 +149,7 @@ def leaderboard_for_user(db: Session, user_id: int) -> dict[str, Any]:
                     "workouts_this_week": workouts_this_week,
                     "current_streak": current_streak,
                     "score": score,
+                    "is_self": user.id == user_id,
                 }
             )
     rows.sort(key=lambda item: (-item["score"], -item["workouts_this_week"], -item["current_streak"], item["user"]["name"]))
@@ -156,7 +161,7 @@ def leaderboard_for_user(db: Session, user_id: int) -> dict[str, Any]:
         "next_reset_at": next_reset_at.isoformat(),
         "viewer_settings": get_leaderboard_settings(db, user_id),
         "unlock_required_count": 3,
-        "unlocked": len(rows) >= 3,
+        "unlocked": len(participant_ids) >= 3,
     }
 
 

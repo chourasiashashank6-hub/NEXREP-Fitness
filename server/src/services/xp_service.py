@@ -23,6 +23,7 @@ XP_EXERCISE_LOGGED = 10
 XP_ALL_MEALS_LOGGED = 20
 XP_CALORIE_TARGET_HIT = 30
 XP_STREAK_DAY_BONUS = 15
+XP_WORKOUT_DAY_COMPLETED = 25
 
 LEVEL_THRESHOLDS: list[tuple[int, int]] = [
     (1, 0),
@@ -332,6 +333,16 @@ def award_xp_for_workout_log(db: Session, *, user_id: int, workout_id: int, log_
             idempotency_key=f"workout:{workout_id}",
             metadata={"workout_id": workout_id},
         )
+        if _day_workouts_fully_logged(db, user_id, activity_date):
+            day_key = activity_date.isoformat()
+            _award_xp(
+                db,
+                user_id=user_id,
+                event_type="workout_day_completed",
+                base_xp=XP_WORKOUT_DAY_COMPLETED,
+                idempotency_key=f"daily:{day_key}:workout_day_completed",
+                metadata={"log_date": day_key},
+            )
         db.commit()
     except Exception:
         logger.exception("XP award failed for workout log user=%s workout=%s", user_id, workout_id)
@@ -380,8 +391,9 @@ def _maybe_reverse_workout_day_completed(db: Session, *, user_id: int, log_date:
 
 
 def _day_workouts_fully_logged(db: Session, user_id: int, log_date: date) -> bool:
-    """Placeholder until workout-day completion awards are wired server-side."""
-    return False
+    from src.services.plan_reflow_service import day_planner_exercises_fully_logged
+
+    return day_planner_exercises_fully_logged(db, user_id, log_date)
 
 
 def reevaluate_xp_after_meal_change(db: Session, *, user_id: int, log_date: date) -> None:

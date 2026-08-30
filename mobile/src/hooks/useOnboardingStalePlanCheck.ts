@@ -7,13 +7,14 @@
  *   // Call saveWithCheck() instead of saveAndExit()
  */
 
-import { useRef, useState } from "react";
+import { useRef, useState, useContext } from "react";
 import { fetchOnboardingMe } from "../api/onboarding";
 import { generateWeekPlan } from "../api/mealPlanner";
 import { generateWorkoutPlan, regenerateWorkoutMonthPlan } from "../api/workoutPlanner";
 import { fetchWorkoutPlanCurrent } from "../api/workoutPlanner";
 import { detectAffectedPlanners } from "../utils/stalePlanDiff";
 import { useOnboardingSaveAndExit } from "./useOnboardingSaveAndExit";
+import { EditOnboardingModalContext } from "./useEditOnboardingModal";
 import { useOnboardingContext } from "./OnboardingContext";
 import type { OnboardingData } from "../types/onboarding";
 import i18n from "../i18n";
@@ -49,8 +50,9 @@ export type StalePlanModalProps = {
   onDoItLater: () => void;
 };
 
-export function useOnboardingStalePlanCheck() {
+export function useOnboardingStalePlanCheck(navigation?: { navigate: (screen: string) => void }) {
   const { data } = useOnboardingContext();
+  const isEditModal = useContext(EditOnboardingModalContext);
   const { saveAndExit, saving } = useOnboardingSaveAndExit();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -60,6 +62,14 @@ export function useOnboardingStalePlanCheck() {
 
   // Resolve after the modal decision
   const resolveRef = useRef<((action: "regenerate" | "later") => void) | null>(null);
+
+  const finishOnboardingSave = async () => {
+    const result = await saveAndExit();
+    if (result.ok && !isEditModal && navigation) {
+      navigation.navigate("Results");
+    }
+    return result;
+  };
 
   const saveWithCheck = async () => {
     // Fetch current server-stored onboarding to diff against
@@ -94,7 +104,8 @@ export function useOnboardingStalePlanCheck() {
 
         if (action === "regenerate") {
           // Save first, then regenerate affected planners
-          await saveAndExit();
+          const result = await finishOnboardingSave();
+          if (!result.ok) return;
           setRegenerating(true);
           try {
             if (affected.includes("meal")) {
@@ -127,7 +138,7 @@ export function useOnboardingStalePlanCheck() {
       }
     }
 
-    await saveAndExit();
+    await finishOnboardingSave();
   };
 
   const handleRegenerateNow = () => {

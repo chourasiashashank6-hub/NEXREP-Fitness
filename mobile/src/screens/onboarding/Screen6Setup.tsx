@@ -34,7 +34,7 @@ const SCREEN_BG = "#FFFFFF";
 export default function Screen6Setup({ navigation }: any) {
   const { t } = useTranslation();
   const { data, updateAppSetup } = useOnboardingContext();
-  const { saveWithCheck: saveAndExit, saving: _saving, modalProps } = useOnboardingStalePlanCheck();
+  const { saveWithCheck: saveAndExit, saving: _saving, modalProps } = useOnboardingStalePlanCheck(navigation);
   const [saving, setSaving] = useState(false);
 
   const onFinish = async () => {

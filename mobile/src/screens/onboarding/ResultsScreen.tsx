@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ONBOARDING_COLORS } from "../../constants/onboarding";
 import { loadOnboardingWithFallback } from "../../api/onboarding";
@@ -15,14 +15,38 @@ export default function ResultsScreen({ navigation }: any) {
   const twoCol = width >= 900;
   const [profile, setProfile] = useState<any>(null);
   const [targets, setTargets] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      if (!token) return;
-      const { profile, targets } = await loadOnboardingWithFallback(token);
-      setProfile(profile);
-      setTargets(targets);
+      if (!token) {
+        if (!cancelled) {
+          setLoading(false);
+          setLoadError(true);
+        }
+        return;
+      }
+      setLoading(true);
+      setLoadError(false);
+      try {
+        const { profile: loadedProfile, targets: loadedTargets } = await loadOnboardingWithFallback(token);
+        if (cancelled) return;
+        setProfile(loadedProfile);
+        setTargets(loadedTargets);
+        if (!loadedProfile || !loadedTargets) {
+          setLoadError(true);
+        }
+      } catch {
+        if (!cancelled) setLoadError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   const macroWidths = useMemo(() => {
@@ -30,7 +54,35 @@ export default function ResultsScreen({ navigation }: any) {
     return { p: targets.macros.protein_pct, c: targets.macros.carbs_pct, f: targets.macros.fat_pct };
   }, [targets]);
 
-  if (!profile || !targets) return <View style={styles.safe} />;
+  if (loading) {
+    return (
+      <View style={[styles.safe, styles.centered]}>
+        <ActivityIndicator size="large" color={ONBOARDING_COLORS.primary} />
+        <Text style={styles.loadingText}>{t("onboarding.results.loading")}</Text>
+      </View>
+    );
+  }
+
+  if (!profile || !targets || loadError) {
+    return (
+      <View style={[styles.safe, styles.centered]}>
+        <Text style={styles.errorTitle}>{t("onboarding.results.loadFailedTitle")}</Text>
+        <Text style={styles.errorBody}>{t("onboarding.results.loadFailedBody")}</Text>
+        <Pressable
+          style={styles.retryBtn}
+          onPress={() => {
+            if (isEditModal) {
+              exitOnboardingFlow(true);
+              return;
+            }
+            exitOnboardingFlow(false);
+          }}
+        >
+          <Text style={styles.retryText}>{t("onboarding.results.continueAnyway")}</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.safe}>
@@ -90,7 +142,7 @@ export default function ResultsScreen({ navigation }: any) {
               exitOnboardingFlow(true);
               return;
             }
-            navigation.navigate("Main");
+            exitOnboardingFlow(false);
           }}
         >
           <Text style={styles.startText}>
@@ -106,6 +158,12 @@ const row = (k: string, v: string) => <View style={styles.row} key={k}><Text sty
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: ONBOARDING_COLORS.bg },
+  centered: { alignItems: "center", justifyContent: "center", padding: 24 },
+  loadingText: { color: ONBOARDING_COLORS.textSecondary, fontSize: 14, marginTop: 12 },
+  errorTitle: { color: ONBOARDING_COLORS.textPrimary, fontSize: 18, fontWeight: "700", textAlign: "center" },
+  errorBody: { color: ONBOARDING_COLORS.textSecondary, fontSize: 14, marginTop: 8, textAlign: "center", lineHeight: 20 },
+  retryBtn: { marginTop: 18, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 10, backgroundColor: "#FFFFFF" },
+  retryText: { color: ONBOARDING_COLORS.bg, fontSize: 14, fontWeight: "600" },
   scroll: { padding: 16, paddingBottom: 88 },
   grid: { gap: 12 },
   gridTwo: { flexDirection: "row" },

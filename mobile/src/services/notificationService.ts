@@ -6,7 +6,9 @@ import { devLog } from "../utils/devLog";
 import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { DEFAULT_NOTIFICATION_PREFERENCES, getNotificationPreferences, registerPushToken, type NotificationPreferences } from "../api/notifications";
 import { getDailyQuote, type QuoteCategory } from "../api/quotes";
+import i18n from "../i18n";
 import type { MealDayPlan, MealPlanCurrent, WorkoutPlanCurrent } from "../types/planner";
+import { istDateFromWallClock } from "../utils/localDate";
 
 type NotificationCategory = "workout" | "meals" | "macro-checkins" | "logging-nudges" | "motivational-quotes";
 type PermissionContext = "workout_schedule" | "meal_planner" | "settings";
@@ -102,7 +104,7 @@ const parseTime = (time: string, fallback = DEFAULT_WORKOUT_TIME) => {
 
 const dateForPlanDay = (month: number, year: number, day: number, time: string, offsetMinutes = 0) => {
   const { hour, minute } = parseTime(time);
-  const date = new Date(year, month - 1, day, hour, minute, 0, 0);
+  const date = istDateFromWallClock(year, month, day, hour, minute);
   date.setMinutes(date.getMinutes() + offsetMinutes);
   return date;
 };
