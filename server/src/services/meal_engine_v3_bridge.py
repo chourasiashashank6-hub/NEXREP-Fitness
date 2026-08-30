@@ -25,6 +25,13 @@ def _calorie_log_daily_from_ctx(ctx: dict[str, Any]) -> v3.MacroTarget:
     )
 
 
+def _allergies_from_ctx(ctx: dict[str, Any]) -> list[str]:
+    raw = ctx.get("allergies")
+    if not isinstance(raw, list):
+        return []
+    return [str(a).strip() for a in raw if str(a).strip()]
+
+
 def _fasting_tag_for_user(db: Session, user: User) -> str | None:
     from src.services.fasting_service import get_active_fasting_tag
 
@@ -75,13 +82,15 @@ def sync_day_entry(
     # Prefer caller-supplied ctx so we do not re-resolve targets after the week
     # plan row has been flushed (resolve_user_targets used to db.rollback()).
     if diet is None or goal is None or daily_kcal is None or meals_per_day is None:
-        diet, goal, daily, meals_per_day, _ctx, fasting_tag = _daily_target_for_user(db, user)
+        diet, goal, daily, meals_per_day, ctx, fasting_tag = _daily_target_for_user(db, user)
     else:
         from src.services.meal_planner_service import _build_meal_ctx
 
-        daily = _calorie_log_daily_from_ctx(_build_meal_ctx(db, user))
+        ctx = _build_meal_ctx(db, user)
+        daily = _calorie_log_daily_from_ctx(ctx)
         if fasting_tag is None:
             fasting_tag = _fasting_tag_for_user(db, user)
+    allergies = _allergies_from_ctx(ctx)
     plan_date = _calendar_date(int(plan.year), int(plan.month), int(day))
 
     rows = v3.ensure_day_plan(
@@ -95,6 +104,7 @@ def sync_day_entry(
         force=force,
         daily_override=daily,
         fasting_tag=fasting_tag,
+        allergies=allergies,
     )
     payload = v3.day_payload_from_assignments(plan_date, rows, daily)
     return _write_day_entry(db, plan, day=day, payload=payload)
@@ -269,7 +279,8 @@ def swap_meal_v3(
     day: int,
     meal_type: str,
 ) -> DailyMealPlanEntry:
-    diet, goal, daily, meals_per_day, _ctx, fasting_tag = _daily_target_for_user(db, user)
+    diet, goal, daily, meals_per_day, ctx, fasting_tag = _daily_target_for_user(db, user)
+    allergies = _allergies_from_ctx(ctx)
     slot = v3.parse_slot_from_meal_type(meal_type)
     plan_date = _calendar_date(int(plan.year), int(plan.month), int(day))
 
@@ -284,6 +295,7 @@ def swap_meal_v3(
         force=False,
         daily_override=daily,
         fasting_tag=fasting_tag,
+        allergies=allergies,
     )
     swapped = v3.swap_slot(
         db,
@@ -296,6 +308,7 @@ def swap_meal_v3(
         meals_per_day=meals_per_day,
         daily_override=daily,
         fasting_tag=fasting_tag,
+        allergies=allergies,
     )
     rows = [swapped if row.slot == slot else row for row in rows]
     rows, _reconcile_meta = v3.reconcile_day_kcal(
@@ -325,7 +338,8 @@ def regenerate_day_v3(
     Uses the user's *current* meals_per_day (self-heals days generated under a
     different count). Bumps each slot's swap_version so repeated regenerates vary.
     """
-    diet, goal, daily, meals_per_day, _ctx, fasting_tag = _daily_target_for_user(db, user)
+    diet, goal, daily, meals_per_day, ctx, fasting_tag = _daily_target_for_user(db, user)
+    allergies = _allergies_from_ctx(ctx)
     plan_date = _calendar_date(int(plan.year), int(plan.month), int(day))
     schedule = v3.slot_schedule(meals_per_day)
 
@@ -341,6 +355,7 @@ def regenerate_day_v3(
         force=True,
         daily_override=daily,
         fasting_tag=fasting_tag,
+        allergies=allergies,
     )
 
     forward_dates = [
@@ -383,6 +398,7 @@ def regenerate_day_v3(
             match_current_macros=False,
             daily_override=daily,
             fasting_tag=fasting_tag,
+            allergies=allergies,
         )
         same_day_picked.add(int(row.recipe_id))
         regenerated_rows.append(row)
@@ -416,7 +432,8 @@ def protein_gap_v3(
     year: int,
     month: int,
 ) -> dict[str, Any]:
-    diet, goal, daily, meals_per_day, _ctx, fasting_tag = _daily_target_for_user(db, user)
+    diet, goal, daily, meals_per_day, ctx, fasting_tag = _daily_target_for_user(db, user)
+    allergies = _allergies_from_ctx(ctx)
     plan_date = _calendar_date(year, month, day)
     v3.ensure_day_plan(
         db,
@@ -429,6 +446,7 @@ def protein_gap_v3(
         force=False,
         daily_override=daily,
         fasting_tag=fasting_tag,
+        allergies=allergies,
     )
     result = v3.protein_gap_suggestions(
         db,
@@ -437,6 +455,7 @@ def protein_gap_v3(
         diet=diet,
         goal=goal,
         daily_kcal=daily.kcal,
+        allergies=allergies,
     )
     db.commit()
     return result

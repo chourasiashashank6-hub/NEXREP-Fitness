@@ -15,8 +15,32 @@ from typing import Any, Literal
 from sqlalchemy.orm import Session, joinedload
 
 from src.models.recipes import Recipe, UserMealPlan
+from src.services.recipe_allergy import filter_recipes_by_allergies
 
 logger = logging.getLogger(__name__)
+
+EMPTY_RECIPE_POOL_USER_MESSAGE = (
+    "We couldn't build a meal plan with your current diet, fasting, and allergy settings. "
+    "Try updating allergies in your profile or relaxing an active fasting period, then regenerate."
+)
+
+
+class EmptyRecipePoolError(RuntimeError):
+    """Raised when no recipe matches constraints after the relaxation ladder."""
+
+    def __init__(
+        self,
+        *,
+        diet: str,
+        slot: str,
+        fasting_tag: str | None = None,
+        allergies: list[str] | None = None,
+    ) -> None:
+        self.diet = diet
+        self.slot = slot
+        self.fasting_tag = fasting_tag
+        self.allergies = list(allergies or [])
+        super().__init__(EMPTY_RECIPE_POOL_USER_MESSAGE)
 
 DietFilter = Literal["no_preference", "vegetarian", "vegan"]
 GoalType = Literal["fat_loss", "maintain", "muscle_gain"]
@@ -242,10 +266,62 @@ def _slot_matches(recipe: Recipe, slot: SlotName) -> bool:
     return catalog in slots
 
 
-def fetch_slot_pool(db: Session, diet: DietFilter, slot: SlotName, fasting_tag: str | None = None) -> list[Recipe]:
+def fetch_slot_pool(
+    db: Session,
+    diet: DietFilter,
+    slot: SlotName,
+    fasting_tag: str | None = None,
+    allergies: list[str] | None = None,
+) -> list[Recipe]:
     q = db.query(Recipe).filter(_diet_clause(diet), _fasting_clause(fasting_tag))
     recipes = q.all()
-    return [r for r in recipes if _slot_matches(r, slot)]
+    pool = [r for r in recipes if _slot_matches(r, slot)]
+    return filter_recipes_by_allergies(pool, allergies)
+
+
+def _resolve_slot_pool(
+    db: Session,
+    *,
+    diet: DietFilter,
+    slot: SlotName,
+    fasting_tag: str | None,
+    allergies: list[str] | None,
+    exclude_recipe_ids: set[int],
+    user_id: int,
+    plan_date: date,
+) -> tuple[list[Recipe], dict[str, bool]]:
+    """Relaxation ladder: fasting window → same-day dedup. Never relax diet or allergies."""
+    meta = {"relaxed_fasting": False, "relaxed_dedup": False}
+    attempts: list[tuple[str | None, set[int]]] = [
+        (fasting_tag, exclude_recipe_ids),
+        (None, exclude_recipe_ids),
+        (None, set()),
+    ]
+    for attempt_tag, excl in attempts:
+        pool = [
+            r
+            for r in fetch_slot_pool(db, diet, slot, attempt_tag, allergies)
+            if r.id not in excl
+        ]
+        if pool:
+            if attempt_tag != fasting_tag:
+                meta["relaxed_fasting"] = True
+            if excl != exclude_recipe_ids:
+                meta["relaxed_dedup"] = True
+            if meta["relaxed_fasting"] or meta["relaxed_dedup"]:
+                logger.info(
+                    "meal_engine_v3.pool_relaxed",
+                    extra={
+                        "user_id": user_id,
+                        "plan_date": plan_date.isoformat(),
+                        "slot": slot,
+                        "diet": diet,
+                        "fasting_tag": fasting_tag,
+                        **meta,
+                    },
+                )
+            return pool, meta
+    return [], meta
 
 
 
@@ -490,16 +566,39 @@ def select_for_slot(
     slot_order: int = 0,
     exclude_recipe_ids: set[int] | None = None,
     fasting_tag: str | None = None,
+    allergies: list[str] | None = None,
 ) -> SlotPick:
     exclude = set(exclude_recipe_ids or ())
-    pool = [r for r in fetch_slot_pool(db, diet, slot, fasting_tag) if r.id not in exclude]
+    pool, relax_meta = _resolve_slot_pool(
+        db,
+        diet=diet,
+        slot=slot,
+        fasting_tag=fasting_tag,
+        allergies=allergies,
+        exclude_recipe_ids=exclude,
+        user_id=user_id,
+        plan_date=plan_date,
+    )
     if not pool:
         if fasting_tag:
             logger.error(
                 "meal_engine_v3.empty_fasting_pool",
-                extra={"user_id": user_id, "plan_date": plan_date.isoformat(), "slot": slot, "fasting_tag": fasting_tag, "diet": diet},
+                extra={
+                    "user_id": user_id,
+                    "plan_date": plan_date.isoformat(),
+                    "slot": slot,
+                    "fasting_tag": fasting_tag,
+                    "diet": diet,
+                    "allergies": allergies or [],
+                    **relax_meta,
+                },
             )
-        raise RuntimeError(f"Empty recipe pool for diet={diet} slot={slot}" + (f" fasting_tag={fasting_tag}" if fasting_tag else ""))
+        raise EmptyRecipePoolError(
+            diet=diet,
+            slot=slot,
+            fasting_tag=fasting_tag,
+            allergies=allergies,
+        )
 
     cooled = _cooldown_ids(db, user_id, plan_date)
     filtered = [r for r in pool if r.id not in cooled]
@@ -718,6 +817,7 @@ def ensure_day_plan(
     force: bool = False,
     daily_override: MacroTarget | None = None,
     fasting_tag: str | None = None,
+    allergies: list[str] | None = None,
 ) -> list[UserMealPlan]:
     daily = daily_override or daily_targets(daily_kcal, goal)
     schedule = slot_schedule(meals_per_day)
@@ -753,6 +853,7 @@ def ensure_day_plan(
             slot_order=spec.order,
             exclude_recipe_ids=used_ids,
             fasting_tag=fasting_tag,
+            allergies=allergies,
         )
         used_ids.add(int(pick.recipe.id))
         row = upsert_assignment(
@@ -810,6 +911,7 @@ def swap_slot(
     match_current_macros: bool = True,
     daily_override: MacroTarget | None = None,
     fasting_tag: str | None = None,
+    allergies: list[str] | None = None,
 ) -> UserMealPlan:
     daily = daily_override or daily_targets(daily_kcal, goal)
     q = db.query(UserMealPlan).filter(
@@ -855,6 +957,7 @@ def swap_slot(
         slot_order=order,
         exclude_recipe_ids=exclude,
         fasting_tag=fasting_tag,
+        allergies=allergies,
     )
     if existing and int(pick.recipe.id) == int(existing.recipe_id):
         raise RuntimeError("Swap returned the same recipe")
@@ -885,6 +988,8 @@ def protein_gap_suggestions(
     goal: GoalType,
     daily_kcal: float,
     daily_override: MacroTarget | None = None,
+    fasting_tag: str | None = None,
+    allergies: list[str] | None = None,
 ) -> dict[str, Any]:
     daily = daily_override or daily_targets(daily_kcal, goal)
     rows = (
@@ -916,7 +1021,10 @@ def protein_gap_suggestions(
             def _candidate_pool(excl: set[int]) -> list[Recipe]:
                 pool = [
                     r
-                    for r in db.query(Recipe).filter(_diet_clause(diet)).all()
+                    for r in filter_recipes_by_allergies(
+                        db.query(Recipe).filter(_diet_clause(diet)).all(),
+                        allergies,
+                    )
                     if int(r.id) not in excl and float(r.serving_grams) < PROTEIN_GAP_SERVING_CAP_G
                 ]
                 pool.sort(key=_protein_density, reverse=True)

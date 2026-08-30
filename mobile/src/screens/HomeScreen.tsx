@@ -77,7 +77,7 @@ interface WeightEntry {
 }
 
 interface GoalProgressData {
-  weeks_to_goal?: number | null;
+  goal_reached?: boolean;
   weekly_change_kg?: number | null;
   daily_delta_kcal?: number | null;
   exercise_share?: number | null;
@@ -502,17 +502,22 @@ export const HomeScreen = () => {
     (timelineTargets?.timeline as Record<string, unknown> | undefined) ??
     {};
   const weeksToGoalRaw = Number(goalProgress?.weeks_to_goal ?? timeline.weeks_to_goal);
-  const weeksRemaining = Number.isFinite(weeksToGoalRaw) ? Math.max(0, Math.round(weeksToGoalRaw)) : 12;
+  const goalReached = Boolean(goalProgress?.goal_reached ?? timeline.goal_reached ?? (Number.isFinite(weeksToGoalRaw) && weeksToGoalRaw === 0));
+  const weeksRemaining = goalReached
+    ? 0
+    : Number.isFinite(weeksToGoalRaw)
+      ? Math.max(0, Math.round(weeksToGoalRaw))
+      : null;
   const initialWeeksRaw = Number(
     (timelineTargets?.timeline as Record<string, unknown> | undefined)?.weeks_to_goal ?? timeline.weeks_to_goal,
   );
   const totalGoalWeeks =
     Number.isFinite(initialWeeksRaw) && initialWeeksRaw > 0
       ? Math.round(initialWeeksRaw)
-      : weeksRemaining > 0
+      : weeksRemaining != null && weeksRemaining > 0
         ? weeksRemaining
         : 26;
-  const weeksToGoal = weeksRemaining;
+  const weeksToGoal = weeksRemaining ?? 0;
   const weeklyChangeRaw = goalProgress?.weekly_change_kg ?? timeline.weekly_change_kg ?? timeline.weekly_delta_kg;
   const weeklyDelta = Number(weeklyChangeRaw);
   const paceLabel = Number.isFinite(weeklyDelta) ? t("home.pace", { value: Math.abs(weeklyDelta).toFixed(2) }) : t("home.defaultPace");
@@ -1006,7 +1011,11 @@ export const HomeScreen = () => {
               </View>
               <ProgressBar percent={goalWeeksProgress} color={GREEN} />
               <Text style={styles.goalFooter}>
-                {t("home.goalFooter", { weeks: weeksToGoal, pace: paceLabel })}
+                {goalReached
+                  ? t("profile.progress.goalReached")
+                  : weeksRemaining != null
+                    ? t("home.goalFooter", { weeks: weeksToGoal, pace: paceLabel })
+                    : t("home.defaultPace")}
               </Text>
               {journeyStartedLabel != null ? (
                 <Text style={styles.goalStartedLabel}>Started: {journeyStartedLabel}</Text>

@@ -15,6 +15,7 @@ from src.services.activity_feed_service import (
     react_to_event,
     serialize_event,
     set_feed_auto_share_settings,
+    unreact_from_event,
 )
 from src.utils.auth import get_current_user
 
@@ -95,6 +96,27 @@ def create_reaction(
         },
         "event": serialize_event(db, event, current_user.id),
     }
+
+
+@router.delete("/{event_id}/reactions/{reaction_type}")
+def delete_reaction(
+    event_id: int,
+    reaction_type: ReactionType,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    event = db.query(ActivityEvent).filter(ActivityEvent.id == event_id, ActivityEvent.deleted_at.is_(None)).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Feed event not found")
+    can_view = event.user_id == current_user.id or (
+        event.visibility == "friends" and event.user_id in accepted_friend_ids(db, current_user.id)
+    )
+    if not can_view:
+        raise HTTPException(status_code=404, detail="Feed event not found")
+    removed = unreact_from_event(db, event=event, actor=current_user, reaction_type=reaction_type)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Reaction not found")
+    return {"removed": True, "event": serialize_event(db, event, current_user.id)}
 
 
 @router.delete("/{event_id}")

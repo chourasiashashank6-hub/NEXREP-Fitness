@@ -28,6 +28,7 @@ from src.services.planner_swap_limits import (
     increment_swap,
 )
 from src.services.plan_snapshot import build_meal_snapshot, encode_snapshot, stale_meal_fields
+from src.services.meal_engine_v3 import EmptyRecipePoolError
 from src.services.planner_test_users import (
     is_meal_planner_test_user,
     is_planner_days_unlocked_user,
@@ -92,21 +93,26 @@ def _onboarding_context(db: Session, user_id: int) -> tuple[dict, dict]:
     return onboarding, targets
 
 
-def _meal_pref_key(diet_type: str | None) -> str:
-    """Meal preference identity is the diet type only."""
-    return (diet_type or "").strip().lower()
+def _meal_pref_key(diet_type: str | None, allergies: list[str] | None = None) -> str:
+    """Meal preference identity is diet type plus declared allergies."""
+    diet = (diet_type or "").strip().lower()
+    al = sorted({str(a).strip().lower() for a in (allergies or []) if str(a).strip()})
+    if al:
+        return f"{diet}|{'+'.join(al)}"
+    return diet
 
 
 def _stored_meal_pref_key(plan: MonthlyMealPlan) -> str:
-    return _meal_pref_key(getattr(plan, "diet_type", None))
+    return (getattr(plan, "diet_type", None) or "").strip().lower()
 
 
 def _ctx_meal_pref_key(ctx: dict[str, Any]) -> str:
-    return _meal_pref_key(str(ctx.get("diet_type") or ""))
+    allergies = ctx.get("allergies") if isinstance(ctx.get("allergies"), list) else []
+    return _meal_pref_key(str(ctx.get("diet_type") or ""), allergies)
 
 
 def _store_meal_pref(plan: MonthlyMealPlan, ctx: dict[str, Any]) -> None:
-    plan.diet_type = str(ctx.get("diet_type") or "standard")
+    plan.diet_type = _ctx_meal_pref_key(ctx)
 
 
 def get_user_nutrition_targets(db: Session, user: User) -> dict[str, int | float]:
@@ -759,6 +765,9 @@ def regenerate_single_day(
 
     try:
         new_entry = regenerate_day_v3(db, user, plan=plan, day=day)
+    except EmptyRecipePoolError:
+        db.rollback()
+        raise
     except Exception as gen_exc:
         db.rollback()
         logger.exception("[MealPlanner] regenerate_day_v3 failed for day %s: %s", day, gen_exc)

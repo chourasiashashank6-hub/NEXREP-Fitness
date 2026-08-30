@@ -127,7 +127,14 @@ export default function ResultsScreen({ navigation }: any) {
             {row(t("onboarding.results.formulaUsed"), targets.bmr.formula_used)}
             {row(t("onboarding.results.deficitSurplus"), `${targets.timeline.daily_delta_kcal} kcal`)}
             {row(t("onboarding.results.expectedRate"), targets.timeline.pace_label)}
-            {row(t("onboarding.results.weeksToGoal"), targets.timeline.weeks_to_goal ? String(targets.timeline.weeks_to_goal) : "-" )}
+            {row(
+              t("onboarding.results.weeksToGoal"),
+              targets.timeline.goal_reached
+                ? t("onboarding.results.goalReached")
+                : targets.timeline.weeks_to_goal
+                  ? String(targets.timeline.weeks_to_goal)
+                  : "-",
+            )}
             {row(t("onboarding.results.safetyFloor"), `${targets.safety.floor_kcal} kcal`)}
 
             <View style={styles.coachBox}><Text style={styles.coachLabel}>{t("onboarding.results.aiCoach")}</Text><Text style={styles.coachText}>{targets.coach_message}</Text></View>

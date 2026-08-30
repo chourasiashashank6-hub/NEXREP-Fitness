@@ -1746,6 +1746,32 @@ def _onboarding_target_weight_kg(onboarding: dict[str, Any] | None) -> float | N
     return _onboarding_weight_kg(onboarding)
 
 
+def _weeks_to_goal(
+    goal_type: str | None,
+    current_kg: float | None,
+    target_kg: float | None,
+    weekly_change_kg: float | None,
+) -> tuple[int | None, bool]:
+    """Return (weeks_remaining, goal_reached). None weeks means no active countdown."""
+    if current_kg is None or target_kg is None or weekly_change_kg is None or weekly_change_kg <= 0:
+        return None, False
+    delta = float(current_kg) - float(target_kg)
+    goal = (goal_type or "").strip().lower()
+    if goal == "fat_loss":
+        if delta <= 0:
+            return 0, True
+        return max(0, round(delta / weekly_change_kg)), False
+    if goal in ("muscle_gain", "strength"):
+        if delta >= 0:
+            return 0, True
+        return max(0, round(abs(delta) / weekly_change_kg)), False
+    if goal == "maintain":
+        return None, abs(delta) < 0.5
+    if abs(delta) < 0.1:
+        return 0, True
+    return max(0, round(abs(delta) / weekly_change_kg)), False
+
+
 @goal_progress_router.get("/goal-progress")
 def get_goal_progress(
     local_date: str | None = Query(default=None),
@@ -1788,13 +1814,23 @@ def get_goal_progress(
         weekly_change_kg = None
 
     weeks_to_goal = None
+    goal_reached = False
+    goal_type = None
+    goal_block = onboarding_json.get("goal")
+    if isinstance(goal_block, dict):
+        goal_type = goal_block.get("type")
     if (
         current_weight_kg is not None
         and target_weight_kg is not None
         and weekly_change_kg is not None
         and weekly_change_kg > 0
     ):
-        weeks_to_goal = max(0, round(abs(current_weight_kg - target_weight_kg) / weekly_change_kg))
+        weeks_to_goal, goal_reached = _weeks_to_goal(
+            goal_type,
+            float(current_weight_kg),
+            float(target_weight_kg),
+            float(weekly_change_kg),
+        )
 
     first_log = (
         db.query(WeightLog)
@@ -1844,6 +1880,7 @@ def get_goal_progress(
         "target_weight_kg": target_weight_kg,
         "onboarding_weight_kg": onboarding_weight_kg,
         "weeks_to_goal": weeks_to_goal,
+        "goal_reached": goal_reached,
         "weekly_change_kg": weekly_change_kg,
         "daily_delta_kcal": timeline.get("daily_delta_kcal"),
         "exercise_share": timeline.get("exercise_share"),
@@ -1858,6 +1895,7 @@ def get_goal_progress(
         "journey_started_at": journey_started_at,
         "timeline": {
             **timeline,
-            "weeks_to_goal": weeks_to_goal if weeks_to_goal is not None else timeline.get("weeks_to_goal"),
+            "weeks_to_goal": weeks_to_goal,
+            "goal_reached": goal_reached,
         },
     }

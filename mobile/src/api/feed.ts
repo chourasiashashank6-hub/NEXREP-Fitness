@@ -61,3 +61,8 @@ export const reactToFeedEvent = async (eventId: number, type: FeedReactionType):
   const { data } = await apiClient.post<{ event: FeedEvent }>(`/api/social/feed/${eventId}/reactions`, { type });
   return data.event;
 };
+
+export const unreactToFeedEvent = async (eventId: number, type: FeedReactionType): Promise<FeedEvent> => {
+  const { data } = await apiClient.delete<{ event: FeedEvent }>(`/api/social/feed/${eventId}/reactions/${type}`);
+  return data.event;
+};

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
-import { listFeed, reactToFeedEvent, type FeedEvent, type FeedReactionType } from "../../api/feed";
+import { listFeed, reactToFeedEvent, unreactToFeedEvent, type FeedEvent, type FeedReactionType } from "../../api/feed";
 import { startOrGetDMConversation } from "../../api/messages";
 import { getFriends, type SocialUserProfile } from "../../api/social";
 import { getProfile, type UserProfile } from "../../api/user";
@@ -138,26 +138,37 @@ export default function SocialHomeScreen({ embedded = false }: SocialHomeScreenP
   };
 
   const handleReaction = async (event: FeedEvent, type: FeedReactionType) => {
-    if (event.viewer_reactions.includes(type)) return;
+    const selected = event.viewer_reactions.includes(type);
     const key = `${event.id}:${type}`;
     const previous = feed;
     setBusyReaction(key);
     setFeed((current) =>
       current.map((item) =>
         item.id === event.id
-          ? {
-              ...item,
-              reaction_counts: {
-                ...item.reaction_counts,
-                [type]: (item.reaction_counts[type] ?? 0) + 1,
-              },
-              viewer_reactions: [...item.viewer_reactions, type],
-            }
+          ? selected
+            ? {
+                ...item,
+                reaction_counts: {
+                  ...item.reaction_counts,
+                  [type]: Math.max(0, (item.reaction_counts[type] ?? 0) - 1),
+                },
+                viewer_reactions: item.viewer_reactions.filter((r) => r !== type),
+              }
+            : {
+                ...item,
+                reaction_counts: {
+                  ...item.reaction_counts,
+                  [type]: (item.reaction_counts[type] ?? 0) + 1,
+                },
+                viewer_reactions: [...item.viewer_reactions, type],
+              }
           : item,
       ),
     );
     try {
-      const updated = await reactToFeedEvent(event.id, type);
+      const updated = selected
+        ? await unreactToFeedEvent(event.id, type)
+        : await reactToFeedEvent(event.id, type);
       setFeed((current) => current.map((item) => (item.id === updated.id ? updated : item)));
     } catch {
       setFeed(previous);
@@ -237,7 +248,7 @@ function FeedCard({
     return (
       <Pressable
         style={[styles.reactionButton, selected ? styles.reactionButtonActive : null]}
-        disabled={selected || busyReaction === `${event.id}:${type}`}
+        disabled={busyReaction === `${event.id}:${type}`}
         onPress={() => onReact(event, type)}
       >
         <Text style={[styles.reactionText, selected ? styles.reactionTextActive : null]}>

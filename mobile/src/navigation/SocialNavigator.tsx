@@ -73,7 +73,7 @@ function SocialBrandHeader() {
           accessibilityRole="button"
           accessibilityLabel={t("social.header.findPeople")}
           style={styles.headerIconBtn}
-          onPress={() => navigation.navigate("SocialFriends")}
+          onPress={() => navigation.navigate(incomingFriendRequests > 0 ? "SocialPendingRequests" : "SocialFriends")}
         >
           <Ionicons name="person-add-outline" size={20} color={TEXT} />
           {incomingFriendRequests > 0 ? (

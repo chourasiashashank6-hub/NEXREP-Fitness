@@ -20,6 +20,8 @@ from src.models.models import (
 )
 from src.services.activity_feed_service import emit_streak_milestone_if_needed
 from src.services.exercise_met_service import resolve_met_for_exercise
+from src.services.session_calories import is_guided_warmup
+from src.services.xp_service import award_xp_for_guided_warmup
 from src.services.resolve_baseline_load_kg import (
     is_bodyweight_exercise,
     resolve_baseline_load_kg,
@@ -251,6 +253,8 @@ def complete_session(
         if payload.status == "completed":
             streak_incremented = True
             session.streak_incremented = True
+            if any(is_guided_warmup(name) for name in exercise_map):
+                award_xp_for_guided_warmup(db, user_id=current_user.id, session_id=payload.session_id)
         else:
             # abandoned: streak stays exactly as-is (no increment, no reset)
             streak_incremented = False

@@ -37,6 +37,7 @@ from src.services.planner_common import parse_local_date
 from src.services.planner_test_users import is_meal_planner_test_user
 from src.utils.auth import get_current_user
 from src.utils.plan_check import require_feature
+from src.services.meal_engine_v3 import EmptyRecipePoolError
 
 router = APIRouter(prefix="/api/meal-planner", tags=["meal-planner"])
 
@@ -51,6 +52,14 @@ def _require_meal_planner_plan(
 
 
 router.dependencies.append(Depends(_require_meal_planner_plan))
+
+
+def _meal_engine_http_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, EmptyRecipePoolError):
+        return HTTPException(status_code=422, detail=str(exc))
+    if isinstance(exc, RuntimeError):
+        return HTTPException(status_code=500, detail=str(exc))
+    raise exc
 
 
 class MealPlanGenerateRequest(BaseModel):
@@ -97,8 +106,13 @@ def post_generate(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    plan = generate_meal_plan(db, current_user, budget_level=body.budget_level, local_date=local_date)
-    return meal_plan_current_response(plan, local_date, db=db, user=current_user)
+    try:
+        plan = generate_meal_plan(db, current_user, budget_level=body.budget_level, local_date=local_date)
+        return meal_plan_current_response(plan, local_date, db=db, user=current_user)
+    except EmptyRecipePoolError as e:
+        raise _meal_engine_http_error(e) from e
+    except RuntimeError as e:
+        raise _meal_engine_http_error(e) from e
 
 
 @router.post("/generate-week")
@@ -118,8 +132,10 @@ def post_generate_week(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    except EmptyRecipePoolError as e:
+        raise _meal_engine_http_error(e) from e
     except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise _meal_engine_http_error(e) from e
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to save week plan. Please try again.") from e
@@ -245,8 +261,10 @@ def post_regenerate_week(
         raise HTTPException(status_code=400, detail=str(e)) from e
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+    except EmptyRecipePoolError as e:
+        raise _meal_engine_http_error(e) from e
     except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise _meal_engine_http_error(e) from e
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to save regenerated week. Please try again.") from e
@@ -279,6 +297,8 @@ def post_regenerate_remaining(
         raise HTTPException(status_code=400, detail=str(e)) from e
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+    except EmptyRecipePoolError as e:
+        raise _meal_engine_http_error(e) from e
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(
@@ -310,8 +330,10 @@ def post_regenerate_day(
         raise HTTPException(status_code=400, detail=str(e)) from e
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+    except EmptyRecipePoolError as e:
+        raise _meal_engine_http_error(e) from e
     except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise _meal_engine_http_error(e) from e
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to save regenerated day. Please try again.") from e
@@ -340,6 +362,8 @@ def post_swap_meal(
         raise HTTPException(status_code=404, detail=str(e)) from e
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    except EmptyRecipePoolError as e:
+        raise _meal_engine_http_error(e) from e
 
 
 @router.get("/protein-suggestions")

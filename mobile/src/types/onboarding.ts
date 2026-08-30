@@ -90,6 +90,7 @@ export type NutritionTargets = {
   };
   timeline: {
     weeks_to_goal: number | null;
+    goal_reached?: boolean;
     estimated_completion_date: string | null;
     weekly_change_kg: number;
     daily_delta_kcal: number;

@@ -14,6 +14,7 @@ from src.models.models import User
 from src.models.recipes import Recipe, UserMealPlan
 from src.scripts.import_recipe_seed import load_seed, upsert_recipes
 from src.services import meal_engine_v3 as v3
+from src.services.meal_engine_v3 import EmptyRecipePoolError
 from src.services.meal_engine_v3_bridge import regenerate_day_v3
 
 SEED = Path(__file__).resolve().parents[1] / "nexrep_recipes_seed.json"
@@ -867,19 +868,39 @@ def test_fasting_tag_limits_recipe_pool(db: Session):
     db.commit()
 
 
-def test_empty_fasting_pool_raises(db: Session):
+def test_fasting_pool_relaxes_for_vegan_navratri(db: Session):
     if db.query(Recipe).count() < 40:
         pytest.skip("recipes not imported")
-    user_id = _ensure_user(db, "meal_v3_empty_fasting@test.local")
-    with pytest.raises(RuntimeError, match="Empty recipe pool"):
+    user_id = _ensure_user(db, "meal_v3_relaxed_fasting@test.local")
+    rows = v3.ensure_day_plan(
+        db,
+        user_id=user_id,
+        plan_date=date(2031, 3, 17),
+        diet="vegan",
+        goal="maintain",
+        daily_kcal=2200,
+        meals_per_day=3,
+        force=True,
+        fasting_tag="fasting_navratri",
+    )
+    assert len(rows) == 3
+    db.commit()
+
+
+def test_empty_diet_pool_still_raises(db: Session):
+    if db.query(Recipe).count() < 40:
+        pytest.skip("recipes not imported")
+    user_id = _ensure_user(db, "meal_v3_empty_pool@test.local")
+    with pytest.raises(EmptyRecipePoolError, match="couldn't build a meal plan"):
         v3.ensure_day_plan(
             db,
             user_id=user_id,
-            plan_date=date(2031, 3, 17),
+            plan_date=date(2031, 3, 18),
             diet="vegan",
             goal="maintain",
             daily_kcal=2200,
             meals_per_day=3,
             force=True,
             fasting_tag="fasting_navratri",
+            allergies=["dairy", "gluten", "nuts", "eggs", "soy", "shellfish"],
         )

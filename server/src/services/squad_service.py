@@ -13,7 +13,7 @@ from src.models.models import User, Workout
 from src.models.squads import Squad, SquadMember
 from src.services.notification_service import send_push_to_user
 from src.services.social_challenge_service import _is_blocked_between, is_friend, public_user
-from src.services.xp_service import _logged_meal_count
+from src.services.xp_service import _expected_meal_slots, _logged_meal_count
 from src.utils.app_time import today_ist
 
 logger = logging.getLogger(__name__)
@@ -43,10 +43,15 @@ def _workout_logged_on_date(db: Session, user_id: int, log_date: date) -> bool:
 
 
 def member_activity_for_date(db: Session, user_id: int, log_date: date) -> dict[str, bool]:
-    meals = _logged_meal_count(db, user_id, log_date)
+    logged = _logged_meal_count(db, user_id, log_date)
+    expected = _expected_meal_slots(db, user_id, log_date)
+    if expected is not None and expected > 0:
+        meals_logged = logged >= expected
+    else:
+        meals_logged = logged > 0
     return {
         "workout_logged": _workout_logged_on_date(db, user_id, log_date),
-        "meals_logged": meals > 0,
+        "meals_logged": meals_logged,
     }
 
 

@@ -24,6 +24,7 @@ XP_ALL_MEALS_LOGGED = 20
 XP_CALORIE_TARGET_HIT = 30
 XP_STREAK_DAY_BONUS = 15
 XP_WORKOUT_DAY_COMPLETED = 25
+XP_GUIDED_WARMUP_COMPLETED = 10
 
 LEVEL_THRESHOLDS: list[tuple[int, int]] = [
     (1, 0),
@@ -456,6 +457,23 @@ def reverse_xp_for_guided_warmup_delete(
             user_id,
             session_id,
         )
+
+
+def award_xp_for_guided_warmup(db: Session, *, user_id: int, session_id: str) -> None:
+    """Award XP when a guided warm-up session is completed."""
+    try:
+        _award_xp(
+            db,
+            user_id=user_id,
+            event_type="guided_warmup",
+            base_xp=XP_GUIDED_WARMUP_COMPLETED,
+            idempotency_key=f"guided_warmup:{session_id}",
+            metadata={"session_id": session_id},
+        )
+        db.commit()
+    except Exception:
+        logger.exception("XP award failed for guided warm-up user=%s session=%s", user_id, session_id)
+        db.rollback()
 
 
 def award_xp_for_meal_log(db: Session, *, user_id: int, log_date: date) -> None:

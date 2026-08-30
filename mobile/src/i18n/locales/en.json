@@ -2830,6 +2830,7 @@
       "deficitSurplus": "Deficit / surplus",
       "expectedRate": "Expected rate",
       "weeksToGoal": "Weeks to goal",
+      "goalReached": "Goal reached — maintain your progress",
       "safetyFloor": "Safety floor",
       "aiCoach": "AI COACH",
       "startTracking": "Start tracking →"

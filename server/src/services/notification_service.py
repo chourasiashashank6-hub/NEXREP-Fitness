@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -13,6 +14,8 @@ from src.db.session import SessionLocal
 from src.models.models import MotivationalQuote, NotificationLog, NotificationPreference, PushToken, StrengthLift, User, Workout
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry
 from src.services.language_service import translate
+
+logger = logging.getLogger(__name__)
 
 EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 CHECKPOINTS = {
@@ -475,28 +478,32 @@ def run_hourly_notification_checks(now: datetime | None = None) -> None:
         from src.services.squad_service import run_squad_nudges
 
         run_squad_nudges(db, as_of=now)
+        _run_scheduled_journey_detection(db, now)
         for user in _users_with_active_tokens(db):
             _run_macro_checkpoint(db, user, now)
             _run_missing_log_checks(db, user, now)
             _run_streak_risk_check(db, user, now)
             _run_quote_of_the_day(db, user, now)
             _run_weekly_digest(db, user, now)
-            _run_journey_detection(db, user, now)
     finally:
         db.close()
 
 
-def _run_journey_detection(db: Session, user: User, now: datetime) -> None:
-    from src.services.journey_detection_service import run_journey_detection_for_user
+def _run_scheduled_journey_detection(db: Session, now: datetime) -> None:
+    from src.services.journey_detection_service import run_journey_detection
     from src.services.journey_engine_config import JOURNEY_DETECTION_HOUR_UTC, journey_engine_enabled
 
     if not journey_engine_enabled() or now.hour != JOURNEY_DETECTION_HOUR_UTC:
         return
     try:
-        run_journey_detection_for_user(db, user, now)
-        db.commit()
+        run_journey_detection(db, now)
     except Exception:
-        db.rollback()
+        logger.exception("scheduled journey detection batch failed")
+
+
+def _run_journey_detection(db: Session, user: User, now: datetime) -> None:
+    """Deprecated: journey detection now runs for all users via _run_scheduled_journey_detection."""
+    return
 
 
 def start_notification_scheduler() -> None:

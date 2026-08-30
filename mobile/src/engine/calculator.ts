@@ -116,8 +116,34 @@ export const calculateNutritionTargets = (data: OnboardingData): NutritionTarget
   const exerciseDelta = direction * exerciseAbs;
   const dietDelta = direction * dietAbs;
   let weeks: number | null = null;
-  if (data.goal.target_weight_kg && weightKg > 0 && weeklyChangeKg > 0) {
-    weeks = Math.round(Math.abs(weightKg - data.goal.target_weight_kg) / weeklyChangeKg);
+  let goalReached = false;
+  const goalType = data.goal.type || "maintain";
+  const targetKg = data.goal.target_weight_kg;
+  if (targetKg && weightKg > 0 && weeklyChangeKg > 0) {
+    const delta = weightKg - targetKg;
+    if (goalType === "fat_loss") {
+      if (delta <= 0) {
+        weeks = 0;
+        goalReached = true;
+      } else {
+        weeks = Math.round(delta / weeklyChangeKg);
+      }
+    } else if (goalType === "muscle_gain" || goalType === "strength") {
+      if (delta >= 0) {
+        weeks = 0;
+        goalReached = true;
+      } else {
+        weeks = Math.round(Math.abs(delta) / weeklyChangeKg);
+      }
+    } else if (goalType === "maintain") {
+      weeks = null;
+      goalReached = Math.abs(delta) < 0.5;
+    } else if (Math.abs(delta) < 0.1) {
+      weeks = 0;
+      goalReached = true;
+    } else {
+      weeks = Math.round(Math.abs(delta) / weeklyChangeKg);
+    }
   }
   let completionDate: string | null = null;
   if (weeks) {
@@ -147,6 +173,7 @@ export const calculateNutritionTargets = (data: OnboardingData): NutritionTarget
     },
     timeline: {
       weeks_to_goal: weeks,
+      goal_reached: goalReached,
       estimated_completion_date: completionDate,
       weekly_change_kg: Number(weeklyChangeKg.toFixed(2)),
       daily_delta_kcal: delta,

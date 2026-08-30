@@ -244,6 +244,19 @@ def _reaction_body(actor: User, event: ActivityEvent, reaction_type: ReactionTyp
     return f"{actor.name} {cheer} your activity {suffix}"
 
 
+def unreact_from_event(db: Session, *, event: ActivityEvent, actor: User, reaction_type: ReactionType) -> bool:
+    existing = (
+        db.query(FeedReaction)
+        .filter(FeedReaction.event_id == event.id, FeedReaction.user_id == actor.id, FeedReaction.type == reaction_type)
+        .first()
+    )
+    if not existing:
+        return False
+    db.delete(existing)
+    db.commit()
+    return True
+
+
 def react_to_event(db: Session, *, event: ActivityEvent, actor: User, reaction_type: ReactionType) -> FeedReaction:
     existing = (
         db.query(FeedReaction)
