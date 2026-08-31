@@ -23,9 +23,9 @@ import {
   type ProgressPhotoAngle,
 } from "../services/progressPhotoStorage";
 import { apiErrorMessage, notifyUser } from "../utils/notify";
+import { GREEN, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const TEXT = "#FFFFFF";
+const TEXT = WHITE;
 const MUTED = "rgba(255,255,255,0.72)";
 
 type CameraFacing = "front" | "back";

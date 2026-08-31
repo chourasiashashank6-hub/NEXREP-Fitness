@@ -31,6 +31,26 @@ export const calmTheme = {
   },
 };
 
+/** Light UI palette used across primary app screens. */
+export const lightUi = {
+  green: "#0F6E56",
+  greenLight: "#E8F5EE",
+  bg: "#F7F6F3",
+  text: "#1A1A18",
+  muted: "#6F766F",
+  border: "#ECEAE5",
+  white: "#FFFFFF",
+} as const;
+
+/** Convenience aliases matching common screen-level const names. */
+export const GREEN = lightUi.green;
+export const GREEN_LIGHT = lightUi.greenLight;
+export const BG = lightUi.bg;
+export const TEXT = lightUi.text;
+export const MUTED = lightUi.muted;
+export const BORDER = lightUi.border;
+export const WHITE = lightUi.white;
+
 export type ColorSchemeName = "light" | "dark";
 
 export type AppTheme = typeof calmTheme & { colorScheme: ColorSchemeName };

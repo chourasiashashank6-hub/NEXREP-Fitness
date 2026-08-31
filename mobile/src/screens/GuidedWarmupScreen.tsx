@@ -28,6 +28,7 @@ import {
   finalizePhaseDurations,
 } from "../utils/guidedWarmupComplete";
 import type { WarmupPhase } from "../utils/generatePreworkoutPlan";
+import { GREEN, TEXT, BORDER, WHITE } from "../theme/colors";
 
 type PendingWarmupConfirm = {
   kind: "end" | "skip";
@@ -36,12 +37,7 @@ type PendingWarmupConfirm = {
 
 const PURPLE = "#7B68CC";
 const PURPLE_LIGHT = "#F0EEF9";
-const GREEN = "#0F6E56";
-const TEXT = "#1A1A18";
 const MUTED = "#6B7280";
-const WHITE = "#FFFFFF";
-const BORDER = "#ECEAE5";
-
 function formatClock(totalSec: number): string {
   const sec = Math.max(0, Math.floor(totalSec));
   const m = Math.floor(sec / 60);

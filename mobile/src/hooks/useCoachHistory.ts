@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchCoachConfigMe, type CoachConfigMeResponse } from "../api/coachConfig";
+import { setRemoteFeatureTiers } from "../constants/featureTiers";
 
 const DEFAULT_HISTORY: CoachConfigMeResponse = {
   redesign_enabled: false,
@@ -20,6 +21,7 @@ async function loadCoachConfigMe(): Promise<CoachConfigMeResponse> {
   inflight = fetchCoachConfigMe()
     .then((res) => {
       cached = res;
+      setRemoteFeatureTiers(res.feature_tiers);
       return res;
     })
     .catch(() => DEFAULT_HISTORY)

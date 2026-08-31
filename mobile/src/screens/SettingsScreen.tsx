@@ -33,6 +33,7 @@ import { navigationRef } from "../navigation/navigationRef";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { saveOnboardingData } from "../storage/onboarding";
 import { isPreWorkoutEnabled } from "../utils/preWorkoutPreference";
+import { GREEN, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 const LANGUAGE_OPTIONS = [
@@ -44,15 +45,10 @@ const LANGUAGE_OPTIONS = [
   { value: "de", label: "German" },
 ];
 
-const GREEN = "#0F6E56";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const SCREEN_BG = "#FFFFFF";
+const SCREEN_BG = WHITE;
 
 export function SettingsScreen() {
   const { t } = useTranslation();

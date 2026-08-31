@@ -21,15 +21,10 @@ import {
   toggleGoalFocusMuscle,
 } from "../../utils/onboardingFocusMuscles";
 import type { ActivityLevel, EquipmentAccess } from "../../types/onboarding";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-
 const EQUIPMENT_OPTIONS: { value: EquipmentAccess; labelKey: string }[] = [
   { value: "full_gym", labelKey: "onboarding.screen3.equipment.fullGym" },
   { value: "dumbbells", labelKey: "onboarding.screen3.equipment.dumbbells" },

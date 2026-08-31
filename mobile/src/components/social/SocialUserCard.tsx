@@ -1,16 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { SocialUserProfile } from "../../api/social";
 import { UserAvatar } from "../UserAvatar";
+import { GREEN, GREEN_LIGHT, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE_LIGHT = "#FFF1EE";
 const ORANGE = "#993C1D";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
-
 type Props = {
   user: SocialUserProfile;
   mutualLabel: string;

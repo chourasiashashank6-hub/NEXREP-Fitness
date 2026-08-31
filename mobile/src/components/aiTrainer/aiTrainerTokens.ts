@@ -1,7 +1,8 @@
+import { GREEN } from "../../theme/colors";
 /** NexRep AI Trainer visual tokens — mirrored from reference/nexrep-ai-trainer-mockup.jsx */
 export const AI_C = {
   mint: "#2DD4A7",
-  mintDeep: "#0F6E56",
+  mintDeep: GREEN,
   purple: "#8B5CF6",
   orange: "#FF7A45",
   red: "#FF4D5E",

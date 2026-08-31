@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
 import { prepareFoodImagePayload } from "../utils/foodImagePayload";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
 const askToOpenSettings = () => {
   Alert.alert(i18n.t("components.foodCamera.permissionNeeded"), i18n.t("components.foodCamera.permissionBody"), [
@@ -208,14 +209,14 @@ export const FoodCameraButton = ({ disabled, onImageSelected, variant = "icon" }
             {!isWeb ? (
               <Pressable style={[styles.row, styles.primaryRow]} onPress={() => void onSelectOption("camera")}>
                 <View style={styles.primaryIconTile}>
-                  <Ionicons name="camera-outline" size={18} color="#FFFFFF" />
+                  <Ionicons name="camera-outline" size={18} color=WHITE />
                 </View>
                 <Text style={[styles.rowText, styles.primaryRowText]}>{t("components.foodCamera.takePhoto")}</Text>
               </Pressable>
             ) : null}
             <Pressable style={[styles.row, styles.secondaryRow]} onPress={() => void onSelectOption("gallery")}>
               <View style={styles.secondaryIconTile}>
-                <Ionicons name="image-outline" size={18} color="#1A1A18" />
+                <Ionicons name="image-outline" size={18} color=TEXT />
               </View>
               <Text style={[styles.rowText, styles.secondaryRowText]}>{t("components.foodCamera.uploadImage")}</Text>
             </Pressable>
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scanPill: {
-    backgroundColor: "#0F6E56",
+    backgroundColor: GREEN,
     borderRadius: 10,
     paddingVertical: 7,
     paddingHorizontal: 12,
@@ -251,7 +252,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   scanLabel: {
-    color: "#FFFFFF",
+    color: WHITE,
     fontSize: 11,
     fontWeight: "700",
   },
@@ -263,7 +264,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: WHITE,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     paddingHorizontal: 20,
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   title: {
-    color: "#1A1A18",
+    color: TEXT,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -308,20 +309,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   primaryRow: {
-    backgroundColor: "#E8F5EE",
+    backgroundColor: GREEN_LIGHT,
     borderWidth: 1,
-    borderColor: "#0F6E56",
+    borderColor: GREEN,
   },
   secondaryRow: {
-    backgroundColor: "#F7F6F3",
+    backgroundColor: BG,
     borderWidth: 1,
-    borderColor: "#ECEAE5",
+    borderColor: BORDER,
   },
   primaryIconTile: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#0F6E56",
+    backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -329,9 +330,9 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: WHITE,
     borderWidth: 1,
-    borderColor: "#ECEAE5",
+    borderColor: BORDER,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -339,11 +340,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  primaryRowText: { color: "#0F6E56" },
-  secondaryRowText: { color: "#1A1A18" },
+  primaryRowText: { color: GREEN },
+  secondaryRowText: { color: TEXT },
   cancelRow: {
     borderTopWidth: 1,
-    borderTopColor: "#ECEAE5",
+    borderTopColor: BORDER,
     marginTop: 18,
     paddingTop: 14,
     paddingBottom: 0,

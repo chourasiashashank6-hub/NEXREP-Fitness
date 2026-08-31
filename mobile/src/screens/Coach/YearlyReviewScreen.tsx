@@ -10,15 +10,10 @@ import { CADENCE_FEATURE, useCoachRedesignEnabled } from "../../hooks/useCoachRe
 import { useCoachHistory } from "../../hooks/useCoachHistory";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
+import { GREEN, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
 const GREEN_DARK = "#0A4A3A";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-
 /** Shared yearly review shell — full content ships in a later phase. */
 export default function YearlyReviewScreen() {
   const { t } = useTranslation();

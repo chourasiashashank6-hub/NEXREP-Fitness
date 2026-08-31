@@ -1,12 +1,13 @@
 import type { CoachingTip, WorkoutData } from "../types/workoutCoach";
 import i18n from "../i18n";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
 export const WC_COLORS = {
   PURPLE: "#534AB7",
   PURPLE_LIGHT: "#F0EEF9",
   PURPLE_MID: "#7B68CC",
-  GREEN: "#0F6E56",
-  GREEN_LIGHT: "#E8F5EE",
+  GREEN: GREEN,
+  GREEN_LIGHT: GREEN_LIGHT,
   BLUE: "#4A90D9",
   BLUE_LIGHT: "#EEF4FB",
   ORANGE: "#D85A30",
@@ -15,27 +16,27 @@ export const WC_COLORS = {
   AMBER_LIGHT: "#FFF8E8",
   AMBER_TEXT: "#C08000",
   GOLD: "#FFD700",
-  BG: "#F7F6F3",
-  WHITE: "#FFFFFF",
-  TEXT: "#1A1A18",
+  BG: BG,
+  WHITE: WHITE,
+  TEXT: TEXT,
   MUTED: "#BBBBBB",
   TRACK: "#E5E4E0",
-  BORDER: "#ECEAE5",
-  SCREEN_BG: "#FFFFFF",
+  BORDER: BORDER,
+  SCREEN_BG: WHITE,
   SORE: "#D85A30",
   SORE_BG: "#FFF1EE",
   TIRED: "#FFB800",
   TIRED_BG: "#FFF8E8",
   READY: "#4A90D9",
   READY_BG: "#EEF4FB",
-  FRESH: "#0F6E56",
-  FRESH_BG: "#E8F5EE",
+  FRESH: GREEN,
+  FRESH_BG: GREEN_LIGHT,
   HIGH: "#D85A30",
   HIGH_BG: "#FFF1EE",
   MEDIUM: "#C08000",
   MEDIUM_BG: "#FFF8E8",
-  LOW: "#0F6E56",
-  LOW_BG: "#E8F5EE",
+  LOW: GREEN,
+  LOW_BG: GREEN_LIGHT,
 } as const;
 
 export const MUSCLE_STATUS_CONFIG = {

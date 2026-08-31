@@ -1,9 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
+import { BG, BORDER } from "../../../theme/colors";
 
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const BG = "#F7F6F3";
-
 type Props = {
   message: string;
 };

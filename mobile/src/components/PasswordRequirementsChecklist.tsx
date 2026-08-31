@@ -3,20 +3,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import type { PasswordPolicyChecks } from "../utils/passwordPolicy";
 import { PASSWORD_MAX_LEN, PASSWORD_MIN_LEN, analyzePasswordPolicy } from "../utils/passwordPolicy";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
 type Props = { password: string };
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
-const BORDER = "#ECEAE5";
-
 const Row = ({
   met,
   label,

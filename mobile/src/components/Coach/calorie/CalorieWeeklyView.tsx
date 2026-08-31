@@ -6,14 +6,11 @@ import { CoachInsightNoteFromKey } from "../shared/CoachInsightNote";
 import { CoachNutritionHero } from "../shared/CoachNutritionHero";
 import { CoachPartialPeriodBanner } from "../shared/CoachPartialPeriodBanner";
 import { MacroBreakdownSection } from "../shared/MacroBreakdownSection";
+import { GREEN, TEXT, BORDER, WHITE } from "../../../theme/colors";
 
-const GREEN = "#0F6E56";
 const ORANGE = "#D85A30";
 const TRACK = "#E5E4E0";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const WHITE = "#FFFFFF";
-const BORDER = "#ECEAE5";
 const BLUE = "#38BDF8";
 
 type Props = {

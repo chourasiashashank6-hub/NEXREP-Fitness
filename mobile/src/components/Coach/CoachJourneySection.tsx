@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { fetchJourneyEvents, runJourneyDetection, type JourneyEventItem } from "../../api/journey";
 import { todayLocal } from "../../api/caloriesLog";
+import { GREEN, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
 type Props = {
   domain?: string;
@@ -13,16 +14,11 @@ type Props = {
   refreshOnLoad?: boolean;
 };
 
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-
 export function CoachJourneySection({
   domain,
   titleKey = "coach.journey.sectionTitle",
-  accentColor = "#0F6E56",
+  accentColor = GREEN,
   limit = 5,
   refreshOnLoad = false,
 }: Props) {

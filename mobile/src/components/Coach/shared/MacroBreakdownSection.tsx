@@ -2,20 +2,15 @@ import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import type { MacroStatusValue } from "../../../types/coachSummary";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const BLUE = "#4A90D9";
 const BLUE_LIGHT = "#EEF4FB";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
 const AMBER_TEXT = "#C08000";
 const AMBER_LIGHT = "#FFF8E8";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const WHITE = "#FFFFFF";
-const BORDER = "#ECEAE5";
-
 type MacroKey = "protein" | "carbs" | "fat";
 
 const MACRO_META: Record<MacroKey, { labelKey: string; color: string; light: string }> = {
@@ -159,7 +154,7 @@ const styles = StyleSheet.create({
   gapBadge: { borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
   gapBadgeText: { color: WHITE, fontSize: 11, fontWeight: "900" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, padding: 12, paddingTop: 0 },
-  chip: { backgroundColor: "#F7F6F3", borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 },
+  chip: { backgroundColor: BG, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 },
   chipText: { color: TEXT, fontSize: 10, fontWeight: "700" },
 });
 

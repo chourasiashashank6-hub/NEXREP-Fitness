@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.db.session import get_db
 from src.models.models import User
+from src.core.feature_tiers import FEATURE_TIERS
 from src.services.coach_history_service import coach_history_meta
 from src.services.coach_redesign_config import coach_redesign_enabled
 from src.services.coach_summary_service import build_coach_summary
@@ -23,6 +24,7 @@ def get_coach_config() -> dict:
     """Public config for coach UI gating. Safe to call without auth."""
     return {
         "redesign_enabled": coach_redesign_enabled(),
+        "feature_tiers": FEATURE_TIERS,
     }
 
 
@@ -34,6 +36,7 @@ def get_coach_config_me(
     """Authenticated coach config including history depth for yearly unlock."""
     return {
         "redesign_enabled": coach_redesign_enabled(),
+        "feature_tiers": FEATURE_TIERS,
         **coach_history_meta(db, current_user.id),
     }
 

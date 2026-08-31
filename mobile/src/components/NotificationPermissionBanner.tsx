@@ -2,16 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { AppState, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
+import { GREEN, TEXT, WHITE } from "../theme/colors";
   getNotificationPermissionState,
   openNotificationSettings,
   setupNotificationChannels,
   type NotificationPermissionState,
 } from "../services/notificationService";
 
-const GREEN = "#0F6E56";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
-const TEXT = "#1A1A18";
 const MUTED = "#77776F";
 const BORDER = "#F2D4CA";
 
@@ -80,5 +79,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  actionText: { color: "#FFFFFF", fontSize: 12, fontWeight: "900" },
+  actionText: { color: WHITE, fontSize: 12, fontWeight: "900" },
 });

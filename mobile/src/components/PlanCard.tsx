@@ -8,8 +8,6 @@ import type { AppTheme } from "../theme/colors";
 import { logicalRow, textAlignStart } from "../utils/rtl";
 
 const ORANGE = "#D85A30";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
 
 export type PlanCardProps = {

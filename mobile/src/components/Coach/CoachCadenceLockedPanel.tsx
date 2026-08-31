@@ -5,11 +5,9 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import type { CoachCadence } from "../../hooks/useCoachRedesign";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
+import { BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
-const TEXT = "#1A1A18";
 const MUTED = "#888888";
-const BORDER = "#ECEAE5";
-const BG = "#F7F6F3";
 const ELITE = "#C08000";
 const ELITE_LIGHT = "#FFF8E8";
 
@@ -109,7 +107,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ctaText: {
-    color: "#FFFFFF",
+    color: WHITE,
     fontSize: 13,
     fontWeight: "900",
   },

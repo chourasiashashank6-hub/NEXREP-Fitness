@@ -39,6 +39,7 @@ import { usePoseCalibrationStore } from "../store/poseCalibrationStore";
 import { navigationRef } from "../navigation/navigationRef";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { buildTransformationSummary, type TransformationSummary } from "../utils/buildTransformationSummary";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
 type GoalTag = "Fat Loss" | "Muscle Gain" | "Strength";
 
@@ -57,8 +58,6 @@ const DAY_WINDOW = 30;
 const MAX_SELECTABLE_RANGE_DAYS = 30;
 const CALENDAR_NAV_YEARS = 10;
 const FOCUS_STALE_MS = 45_000;
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
 const BLUE = "#4A90D9";
@@ -66,13 +65,9 @@ const BLUE_LIGHT = "#EEF4FB";
 const PURPLE = "#7B68CC";
 const PURPLE_LIGHT = "#F0EEF9";
 const GOLD = "#FFD700";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
-const BORDER = "#ECEAE5";
-const SCREEN_BG = "#FFFFFF";
+const SCREEN_BG = WHITE;
 const PROFILE_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 const PROFILE_PHOTO_ALLOWED_MIME = new Set(["image/jpeg", "image/png"]);
 

@@ -11,16 +11,11 @@ import {
   type XpSummary,
 } from "../api/xp";
 import { useXpRefreshStore } from "../store/xpRefreshStore";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const GOLD = "#D97706";
 const GOLD_LIGHT = "#FEF3C7";
-const BORDER = "#ECEAE5";
 const TRACK = "#E5E4E0";
 
 const numFmt = (n: number) => Math.round(n).toLocaleString();

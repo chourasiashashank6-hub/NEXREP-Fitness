@@ -1,9 +1,8 @@
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { BlurredModalBackdrop } from "./BlurredModalBackdrop";
+import { GREEN, TEXT } from "../theme/colors";
 
-const GREEN = "#0F6E56";
 const CREAM = "#F1EFE8";
-const TEXT = "#1A1A18";
 const MUTED = "#6B7280";
 const BORDER = "#E5E7EB";
 

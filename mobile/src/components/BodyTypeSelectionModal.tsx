@@ -25,6 +25,7 @@ import {
 import { BodyTypeCard } from "./BodyTypeCard";
 import { useBodyTypeImages } from "../hooks/useBodyTypeImages";
 import { BodyTypeData } from "../types/onboarding";
+import { GREEN } from "../theme/colors";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const MODAL_PAD = 13; // matches scroll contentContainerStyle padding
@@ -57,8 +58,6 @@ const figH2 = Math.max(
   ),
 );
 const figW2 = Math.min(col2W - 8, Math.round((figH2 * 80) / 150));
-const GREEN = "#0F6E56";
-
 interface Props {
   visible: boolean;
   onClose: () => void;

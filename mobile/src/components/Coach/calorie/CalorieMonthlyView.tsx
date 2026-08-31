@@ -5,13 +5,10 @@ import type { CoachSummaryResponse } from "../../../types/coachSummary";
 import { CoachInsightNoteFromKey } from "../shared/CoachInsightNote";
 import { CoachNutritionHero } from "../shared/CoachNutritionHero";
 import { CoachPartialPeriodBanner } from "../shared/CoachPartialPeriodBanner";
+import { GREEN, GREEN_LIGHT, TEXT, BORDER, WHITE } from "../../../theme/colors";
 
-const GREEN = "#0F6E56";
 const TRACK = "#E5E4E0";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const WHITE = "#FFFFFF";
-const BORDER = "#ECEAE5";
 const AMBER = "#C08000";
 const AMBER_LIGHT = "#FFF8E8";
 
@@ -162,7 +159,7 @@ const styles = StyleSheet.create({
   down: { color: "#D85A30" },
   banner: { borderRadius: 14, padding: 14, marginBottom: 10 },
   winBanner: { backgroundColor: AMBER_LIGHT },
-  nextBanner: { backgroundColor: "#E8F5EE" },
+  nextBanner: { backgroundColor: GREEN_LIGHT },
   bannerLabel: { color: AMBER, fontSize: 10, fontWeight: "900", letterSpacing: 0.8, marginBottom: 6 },
   nextLabel: { color: GREEN },
   bannerBody: { color: TEXT, fontSize: 12, lineHeight: 18 },

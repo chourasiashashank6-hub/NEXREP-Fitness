@@ -62,6 +62,7 @@ import {
 } from "../utils/todaysGoalRing";
 import { summarizeTodayBurnActuals } from "../utils/todayBurnActuals";
 import type { WorkoutPlanCurrent } from "../types/planner";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
 interface LatestWeightData {
   weight_kg: number;
@@ -91,15 +92,12 @@ interface GoalProgressData {
   timeline?: Record<string, unknown>;
 }
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FEF1EE";
 const PURPLE = "#7B68CC";
 const PURPLE_LIGHT = "#F0EEF9";
-const BG = "#F7F6F3";
-const CARD = "#FFFFFF";
-const TEXT_PRIMARY = "#1A1A18";
+const CARD = WHITE;
+const TEXT_PRIMARY = TEXT;
 const TEXT_MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
 const STREAK_LOOKBACK_DAYS = 60;
@@ -193,7 +191,7 @@ function streakTileStyle(meta: DayMeta) {
   if (meta.workoutDone) {
     return { backgroundColor: "#FFF1EE", borderColor: "#FFF1EE", color: ORANGE, borderWidth: 0 as const };
   }
-  return { backgroundColor: "#ECEAE5", borderColor: "#ECEAE5", color: "#bbb", borderWidth: 0 as const };
+  return { backgroundColor: BORDER, borderColor: BORDER, color: "#bbb", borderWidth: 0 as const };
 }
 
 function StreakDayColumn({ meta }: { meta: DayMeta }) {
@@ -1150,7 +1148,7 @@ const styles = StyleSheet.create({
   gamePlanBtnText: { fontSize: 14, fontWeight: "700", color: PURPLE },
   streakBestLabel: { fontSize: 10, color: TEXT_MUTED, marginBottom: 2 },
   streakBestValue: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY },
-  streakDivider: { height: 1, backgroundColor: "#ECEAE5", marginVertical: 14 },
+  streakDivider: { height: 1, backgroundColor: BORDER, marginVertical: 14 },
   streakWeekRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1374,7 +1372,7 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 40,
   },
-  weighInModalTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "700", marginBottom: 4 },
+  weighInModalTitle: { color: WHITE, fontSize: 18, fontWeight: "700", marginBottom: 4 },
   weighInModalSubtitle: { color: "#64748B", fontSize: 13, marginBottom: 20 },
   weightInputRow: {
     flexDirection: "row",
@@ -1386,7 +1384,7 @@ const styles = StyleSheet.create({
   weightInput: {
     fontSize: 48,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: WHITE,
     textAlign: "center",
     minWidth: 120,
     borderBottomWidth: 2,

@@ -1,3 +1,11 @@
+/**
+ * Smart reflow runner — client computes patch proposals; server applies and persists.
+ *
+ * Architecture: mobile `smartReflow.ts` detects missed workouts and builds patches;
+ * `applySmartReflow` POSTs to the server, which validates via `plan_reflow_service.py`.
+ * UI must treat reflow as final only after `applySmartReflow` succeeds (see `status: "applied"`).
+ * Weekly compensation cron on the server is a separate scheduled path — not client-preview.
+ */
 import axios from "axios";
 import { getWorkoutHistory } from "../api/workout";
 import {

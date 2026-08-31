@@ -4,15 +4,9 @@ import { useTranslation } from "react-i18next";
 import { getSquad, listSquads, type GymSquad, type GymSquadMember } from "../../api/gymSquads";
 import { UserAvatar } from "../UserAvatar";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
+import { GREEN, GREEN_LIGHT, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
 const TERTIARY = "#9BA39D";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
-
 function memberStatusLabel(member: GymSquadMember, t: (key: string) => string) {
   if (!member.daily) return "";
   if (member.daily.visibility === "private") return t("social.squads.statusPrivate");

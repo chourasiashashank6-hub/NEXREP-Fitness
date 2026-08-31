@@ -17,17 +17,11 @@ import {
 } from "../api/supplementStacks";
 import { BlurredModal } from "../components/BlurredModal";
 import { BlurredModalScreenShell } from "../components/BlurredModalScreenShell";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const BLUE = "#3478C7";
 const AMBER = "#D99118";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
 const TERTIARY = "#9BA39D";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
 const DANGER = "#B42318";
 
 const categories: SupplementCategory[] = ["protein", "creatine", "preworkout", "bcaa", "multivitamin", "other"];

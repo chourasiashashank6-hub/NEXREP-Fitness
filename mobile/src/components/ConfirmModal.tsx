@@ -1,9 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BlurredModal } from "./BlurredModal";
+import { TEXT, BORDER, WHITE } from "../theme/colors";
 
-const TEXT = "#1A1A18";
 const MUTED = "#6B7280";
-const BORDER = "#ECEAE5";
 const PURPLE = "#7B68CC";
 const DESTRUCTIVE = "#C0392B";
 
@@ -92,7 +91,7 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: WHITE,
   },
   cancelText: {
     color: TEXT,
@@ -111,7 +110,7 @@ const styles = StyleSheet.create({
     backgroundColor: DESTRUCTIVE,
   },
   confirmText: {
-    color: "#FFFFFF",
+    color: WHITE,
     fontSize: 14,
     fontWeight: "900",
   },

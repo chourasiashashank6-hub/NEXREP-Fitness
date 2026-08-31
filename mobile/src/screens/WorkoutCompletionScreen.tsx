@@ -5,10 +5,9 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/types";
 import { useWorkoutSessionStore } from "../store/workoutSessionStore";
+import { GREEN, TEXT } from "../theme/colors";
 
-const GREEN = "#0F6E56";
 const AMBER = "#BA7517";
-const TEXT = "#1A1A18";
 const MUTED = "#6B7280";
 
 function formatElapsed(sec: number): string {

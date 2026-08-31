@@ -15,10 +15,10 @@ import type { ProfileStackParamList } from "../navigation/types";
 import { useAuthStore } from "../store/authStore";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import { logicalRow, textAlignStart } from "../utils/rtl";
+import { TEXT, WHITE } from "../theme/colors";
 
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const SCREEN_BG = "#FFFFFF";
+const SCREEN_BG = WHITE;
 
 export function SubscriptionScreen() {
   const { t } = useTranslation();

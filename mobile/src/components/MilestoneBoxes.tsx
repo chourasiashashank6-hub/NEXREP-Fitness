@@ -10,18 +10,16 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { GREEN, GREEN_LIGHT, TEXT, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_SOFT = "#E8F5EE";
+const GREEN_SOFT = GREEN_LIGHT;
 const ORANGE = "#D85A30";
 const ORANGE_SOFT = "#FEF1EE";
 const EXTRA = "#534AB7";
 const EXTRA_SOFT = "#F0EEF9";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#8A8A84";
 const BORDER = "#E8E6E1";
-const CARD_BG = "#FFFFFF";
+const CARD_BG = WHITE;
 
 export type MilestoneItem = {
   key: string;

@@ -20,15 +20,9 @@ import { refreshScopeLabel } from "../../utils/refreshScopeLabel";
 import { SESSION_DATA_STALE_MS } from "../../utils/sessionDataCache";
 import { useActivityDataRefreshStore } from "../../store/activityDataRefreshStore";
 import type { CoachStackParamList } from "./CoachHomeScreen";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BG = "#F7F6F3";
-const BORDER = "#ECEAE5";
-
 export default function AICalorieCoachScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();

@@ -14,8 +14,7 @@ import {
   isMealsPerDayDisabled,
 } from "../../utils/mealsPerDayConstraints";
 import { ALLERGY_OPTIONS, DIET_TYPE_OPTIONS, MEALS_PER_DAY_OPTIONS } from "../../utils/onboardingOptions";
-
-const TEXT = "#1A1A18";
+import { TEXT } from "../../theme/colors";
 
 export default function Screen4Diet({ navigation }: any) {
   const { t } = useTranslation();

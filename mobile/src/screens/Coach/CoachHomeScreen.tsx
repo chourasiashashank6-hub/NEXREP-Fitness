@@ -15,6 +15,7 @@ import ProGateModal from "../../components/ProGateModal";
 import { getRequiredPlan } from "../../constants/featureTiers";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import type { CoachStackParamList } from "../../navigation/coachTypes";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
 export type { CoachStackParamList } from "../../navigation/coachTypes";
 
@@ -26,17 +27,11 @@ type GateConfig = {
   accentColor: string;
 };
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const GREEN_STRIP = "#E8F5EE";
+const GREEN_STRIP = GREEN_LIGHT;
 const PURPLE = "#7B68CC";
 const PURPLE_LIGHT = "#F0EEF9";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const SCREEN_BG = "#FFFFFF";
+const SCREEN_BG = WHITE;
 
 export default function CoachHomeScreen() {
   const { t } = useTranslation();

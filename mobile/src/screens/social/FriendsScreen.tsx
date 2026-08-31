@@ -18,6 +18,7 @@ import type { SupplementStackItem } from "../../api/supplementStacks";
 import SocialProfilePeekSheet from "../../components/social/SocialProfilePeekSheet";
 import SocialUserCard from "../../components/social/SocialUserCard";
 import { notifySocialUnreadChanged } from "../../utils/socialUnreadEvents";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
 type ViewMode = "friends" | "pending";
 
@@ -25,14 +26,7 @@ type Props = {
   initialView?: ViewMode;
 };
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
 const TERTIARY = "#9BA39D";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
 const DANGER = "#B42318";
 
 const withStatus = (user: SocialUserProfile, friendship_status: SocialUserProfile["friendship_status"]) => ({

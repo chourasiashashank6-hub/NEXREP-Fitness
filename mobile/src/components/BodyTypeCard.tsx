@@ -2,6 +2,7 @@ import React from "react";
 import { TouchableOpacity, View, Text, Image, StyleSheet } from "react-native";
 import { BodyTypeItem, BodyGender, SlotCategory, slotKey } from "../data/bodyTypeData";
 import { BodyFigureSVG } from "./BodyFigureSVG";
+import { GREEN } from "../theme/colors";
 
 interface Props {
   item: BodyTypeItem;
@@ -59,7 +60,7 @@ const s = StyleSheet.create({
     backgroundColor: "#FAFAFA",
     position: "relative",
   },
-  cardSel: { borderColor: "#0F6E56", backgroundColor: "#E1F5EE" },
+  cardSel: { borderColor: GREEN, backgroundColor: "#E1F5EE" },
   imgBox: {
     backgroundColor: "#F3F4F6",
     alignItems: "center",
@@ -83,7 +84,7 @@ const s = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: "#0F6E56",
+    backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
   },

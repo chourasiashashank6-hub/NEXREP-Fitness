@@ -12,11 +12,8 @@ import { BlurredModal } from "./BlurredModal";
 import { getWorkoutHistory, getWorkoutTotalBurn, type WorkoutHistoryItem } from "../api/workout";
 import { useTranslation } from "react-i18next";
 import { resolveWorkoutLogSource, WORKOUT_LOG_SOURCE_I18N_KEY } from "../utils/workoutLogSource";
+import { GREEN, GREEN_LIGHT, BG, TEXT, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#8A8A86";
 const TERTIARY = "#BBBBBB";
 const BORDER = "#E2E2DD";
@@ -289,7 +286,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#E8F5EE",
+    backgroundColor: GREEN_LIGHT,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,

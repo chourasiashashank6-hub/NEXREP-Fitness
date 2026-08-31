@@ -8,16 +8,9 @@ import { ScreenContainer } from "../../components/ScreenContainer";
 import { UserAvatar } from "../../components/UserAvatar";
 import type { SocialStackParamList } from "../../navigation/types";
 import { apiErrorMessage, confirmUser, notifyUser } from "../../utils/notify";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
-
 function memberStatusLabel(member: GymSquadMember, t: (key: string) => string) {
   if (!member.daily) return "";
   if (member.daily.visibility === "private") return t("social.squads.statusPrivate");

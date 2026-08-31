@@ -42,15 +42,14 @@ import { resolveMetForExercise } from "../utils/exerciseMetLookup";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { notifyUser } from "../utils/notify";
+import { GREEN, TEXT } from "../theme/colors";
 
-const GREEN = "#0F6E56";
 const GREEN_LIGHT = "#E1F5EE";
 const GREEN_DARK = "#085041";
 const AMBER = "#BA7517";
 const AMBER_BG = "#FAEEDA";
 const PURPLE = "#534AB7";
 const PURPLE_BG = "#EEEDFE";
-const TEXT = "#1A1A18";
 const MUTED = "#6B7280";
 const BORDER = "#E5E7EB";
 const DOT = "#1D9E75";

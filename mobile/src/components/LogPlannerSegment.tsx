@@ -1,12 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { GREEN, GREEN_LIGHT, BORDER, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const WHITE = "#FFFFFF";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-
 export type LogPlannerMode = "log" | "planner";
 
 type Props = {

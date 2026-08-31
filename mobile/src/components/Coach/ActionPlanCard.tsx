@@ -10,9 +10,8 @@ import i18n from "../../i18n";
 import { useAuthStore } from "../../store/authStore";
 import { computeCombinedStreak, getStreakMeta } from "../../utils/streakEngine";
 import { type NutritionData, type Task } from "../../types/coach";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const BLUE = "#4A90D9";
 const BLUE_LIGHT = "#EEF4FB";
 const ORANGE = "#D85A30";
@@ -23,13 +22,8 @@ const AMBER_TEXT = "#C08000";
 const PURPLE = "#7B68CC";
 const PURPLE_LIGHT = "#F1EEFF";
 const GOLD = "#FFD700";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
-const BORDER = "#ECEAE5";
-
 type FilterValue = "all" | "water" | "food" | "log" | "move";
 
 const STREAK_LOOKBACK_DAYS = 60;

@@ -6,14 +6,7 @@ import { acceptSquadInvite, declineSquadInvite, listSquads, type GymSquad } from
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import { apiErrorMessage, notifyUser } from "../../utils/notify";
-
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
 export default function GymSquadScreen() {
   const { t } = useTranslation();

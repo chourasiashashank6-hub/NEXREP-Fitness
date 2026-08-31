@@ -90,18 +90,14 @@ import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 import { navigationRef } from "../navigation/navigationRef";
 import MonthlyWorkoutPlannerScreen from "./Coach/MonthlyWorkoutPlannerScreen";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
 const PURPLE = "#534AB7";
 const PURPLE_LIGHT = "#F3F0FB";
 const PURPLE_BORDER = "#AFA9EC";
 const PURPLE_NUDGE = "#EEEDFE";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
 const BORDER = "#E2E2DD";
@@ -234,7 +230,7 @@ const WORKOUT_SOURCE_BADGE_STYLE: Record<
   manual: { backgroundColor: "#EEF2F7", color: "#475569" },
   workout_planner: { backgroundColor: "#FFF1EE", color: "#993C1D" },
   guided_warmup: { backgroundColor: "#F0EEF9", color: "#7B68CC" },
-  active_session: { backgroundColor: "#E8F5EE", color: "#0F6E56" },
+  active_session: { backgroundColor: GREEN_LIGHT, color: GREEN },
 };
 
 const sessionHistoryLabel = (item: WorkoutHistoryItem): string => {
@@ -2972,10 +2968,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   durationModalTitle: { color: TEXT, fontSize: 20, fontWeight: "900" },
-  durationModalSub: { color: "#6F766F", fontSize: 13, marginTop: 4, marginBottom: 16 },
+  durationModalSub: { color: MUTED, fontSize: 13, marginTop: 4, marginBottom: 16 },
   durationPickerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   durationCol: { alignItems: "center", flex: 1 },
-  durationUnit: { color: "#6F766F", fontSize: 11, fontWeight: "800", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 },
+  durationUnit: { color: MUTED, fontSize: 11, fontWeight: "800", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 },
   durationStepBtn: {
     borderWidth: 1,
     borderColor: BORDER,
@@ -3133,7 +3129,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cameraFloatingCloseText: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", lineHeight: 20 },
+  cameraFloatingCloseText: { color: WHITE, fontSize: 18, fontWeight: "900", lineHeight: 20 },
   cameraPermissionBox: {
     borderWidth: 1,
     borderRadius: 12,

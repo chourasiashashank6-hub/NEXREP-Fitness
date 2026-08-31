@@ -13,19 +13,13 @@ import { WeeklyLeaderboardSection, loadWeeklyLeaderboard } from "../../component
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { UserAvatar } from "../../components/UserAvatar";
 import { useActivityDataRefreshStore } from "../../store/activityDataRefreshStore";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FCECE6";
 const PURPLE = "#534AB7";
 const PURPLE_LIGHT = "#ECEBFF";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
 const TERTIARY = "#9BA39D";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
 const FOCUS_STALE_MS = 45_000;
 
 type SocialHomeScreenProps = {

@@ -1,6 +1,7 @@
 export type PlanId = "free" | "pro" | "elite";
 
-export const FEATURE_TIERS: Record<string, PlanId> = {
+/** Offline fallback — kept in sync with server/src/core/feature_tiers.py */
+export const FEATURE_TIERS_FALLBACK: Record<string, PlanId> = {
   food_photo_analysis: "pro",
   calorie_coach: "pro",
   workout_coach: "pro",
@@ -35,6 +36,26 @@ export const FEATURE_TIERS: Record<string, PlanId> = {
   basic_nutrition: "free",
 };
 
+/** @deprecated Use FEATURE_TIERS_FALLBACK or getFeatureTiers() */
+export const FEATURE_TIERS = FEATURE_TIERS_FALLBACK;
+
+let remoteFeatureTiers: Record<string, PlanId> | null = null;
+
+export function setRemoteFeatureTiers(tiers: Record<string, string> | undefined | null): void {
+  if (!tiers || typeof tiers !== "object") return;
+  const normalized: Record<string, PlanId> = {};
+  for (const [key, plan] of Object.entries(tiers)) {
+    if (plan === "free" || plan === "pro" || plan === "elite") {
+      normalized[key] = plan;
+    }
+  }
+  remoteFeatureTiers = Object.keys(normalized).length ? normalized : null;
+}
+
+export function getFeatureTiers(): Record<string, PlanId> {
+  return remoteFeatureTiers ?? FEATURE_TIERS_FALLBACK;
+}
+
 const PLAN_HIERARCHY: Record<PlanId, number> = {
   free: 0,
   pro: 1,
@@ -42,12 +63,13 @@ const PLAN_HIERARCHY: Record<PlanId, number> = {
 };
 
 export function canAccess(userPlan: PlanId | string, feature: string): boolean {
-  const required = FEATURE_TIERS[feature] ?? "elite";
+  const tiers = getFeatureTiers();
+  const required = tiers[feature] ?? "elite";
   const userLevel = PLAN_HIERARCHY[userPlan as PlanId] ?? 0;
   const neededLevel = PLAN_HIERARCHY[required as PlanId] ?? 2;
   return userLevel >= neededLevel;
 }
 
 export function getRequiredPlan(feature: string): PlanId {
-  return (FEATURE_TIERS[feature] as PlanId) ?? "elite";
+  return (getFeatureTiers()[feature] as PlanId) ?? "elite";
 }

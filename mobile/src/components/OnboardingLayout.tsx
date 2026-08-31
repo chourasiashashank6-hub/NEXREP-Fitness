@@ -15,15 +15,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { logicalRow, textAlignStart } from "../utils/rtl";
+import { GREEN, GREEN_LIGHT, TEXT, BORDER, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
 const TRACK = "#E5E4E0";
-const BORDER = "#ECEAE5";
-const SCREEN_BG = "#FFFFFF";
+const SCREEN_BG = WHITE;
 const ONBOARDING_STEPS = 6;
 
 export const OnboardingLayout = ({

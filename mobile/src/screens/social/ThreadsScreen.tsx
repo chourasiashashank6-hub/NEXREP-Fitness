@@ -13,23 +13,17 @@ import {
 import { getThreadStackDetails, type SupplementCategory, type ThreadStackMember } from "../../api/supplementStacks";
 import { UserAvatar } from "../../components/UserAvatar";
 import { subscribeToSocialUnreadChanges } from "../../utils/socialUnreadEvents";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#993C1D";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
 const TERTIARY = "#9BA39D";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
 const STACK_COLORS: Record<SupplementCategory, string> = {
   protein: "#3478C7",
-  creatine: "#0F6E56",
+  creatine: GREEN,
   preworkout: "#D99118",
   bcaa: "#7B68CC",
   multivitamin: "#D85A30",
-  other: "#6F766F",
+  other: MUTED,
 };
 
 type ThreadFilter = "all" | "mine" | "invites";

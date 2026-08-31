@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
 import {
+import { GREEN, TEXT, BORDER, WHITE } from "../../theme/colors";
   generatePreworkoutPlan,
   isCardioGoal,
   type PreworkoutPlan,
@@ -12,12 +13,7 @@ import {
 
 const PURPLE = "#7B68CC";
 const PURPLE_LIGHT = "#F0EEF9";
-const GREEN = "#0F6E56";
-const TEXT = "#1A1A18";
 const MUTED = "#6B7280";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
-
 type Props = {
   profile: PreworkoutProfile;
   dayMuscleFocus: string[];

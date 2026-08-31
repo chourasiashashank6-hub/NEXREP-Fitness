@@ -1,5 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
+import { resolveApiBaseUrl } from "../api/client";
+import {
+  listBackedUpProgressPhotos,
+  uploadProgressPhotoBackup,
+  type BackedUpProgressPhoto,
+} from "../api/progressPhotos";
 
 export type ProgressPhotoAngle = "front" | "side";
 
@@ -11,6 +17,11 @@ export type LocalProgressPhoto = {
   backedUp?: boolean;
   serverId?: number;
   storagePath?: string;
+};
+
+export type ProgressPhotoListEntry = LocalProgressPhoto & {
+  displayUri: string;
+  source: "local" | "remote" | "both";
 };
 
 const STORAGE_KEY = "@nexrep/progress_photos_v1";
@@ -107,4 +118,75 @@ export async function deleteLocalProgressPhoto(localId: string): Promise<void> {
 
 export async function readLocalProgressPhotoBase64(localUri: string): Promise<string> {
   return FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+}
+
+function remotePhotoUri(storagePath: string): string {
+  const base = resolveApiBaseUrl().replace(/\/$/, "");
+  return `${base}${storagePath}`;
+}
+
+function remoteToListEntry(remote: BackedUpProgressPhoto): ProgressPhotoListEntry {
+  const uri = remotePhotoUri(remote.storage_path);
+  return {
+    id: `remote_${remote.id}`,
+    localUri: uri,
+    displayUri: uri,
+    takenAt: remote.taken_at,
+    angle: remote.angle,
+    backedUp: true,
+    serverId: remote.id,
+    storagePath: remote.storage_path,
+    source: "remote",
+  };
+}
+
+/** Upload any local photos not yet backed up to the server. */
+export async function syncUnbackedProgressPhotosToServer(): Promise<void> {
+  const items = await listLocalProgressPhotos();
+  for (const item of items) {
+    if (item.backedUp) continue;
+    try {
+      const base64 = await readLocalProgressPhotoBase64(item.localUri);
+      const remote = await uploadProgressPhotoBackup({
+        base64,
+        takenAt: item.takenAt,
+        angle: item.angle,
+      });
+      await markLocalProgressPhotoBackedUp(item.id, {
+        id: remote.id,
+        storagePath: remote.storage_path,
+      });
+    } catch {
+      // Offline or upload failed — keep local copy only.
+    }
+  }
+}
+
+/** Local cache merged with server backups (server is authoritative for cloud-only rows). */
+export async function listMergedProgressPhotos(): Promise<ProgressPhotoListEntry[]> {
+  await syncUnbackedProgressPhotosToServer().catch(() => undefined);
+
+  const locals = await listLocalProgressPhotos();
+  let remotes: BackedUpProgressPhoto[] = [];
+  try {
+    remotes = await listBackedUpProgressPhotos();
+  } catch {
+    // Offline — show local cache only.
+  }
+
+  const localByServerId = new Map(
+    locals.filter((item) => item.serverId != null).map((item) => [item.serverId as number, item]),
+  );
+  const merged: ProgressPhotoListEntry[] = locals.map((item) => ({
+    ...item,
+    displayUri: item.localUri,
+    source: item.backedUp ? "both" : "local",
+  }));
+
+  for (const remote of remotes) {
+    if (localByServerId.has(remote.id)) continue;
+    merged.push(remoteToListEntry(remote));
+  }
+
+  return merged.sort((a, b) => b.takenAt.localeCompare(a.takenAt));
 }

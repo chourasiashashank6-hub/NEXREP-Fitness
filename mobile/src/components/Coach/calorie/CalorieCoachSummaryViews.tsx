@@ -5,12 +5,9 @@ import { useCoachSummaryLoad } from "../../../hooks/useCoachSummaryLoad";
 import { CalorieDailyView } from "./CalorieDailyView";
 import { CalorieMonthlyView } from "./CalorieMonthlyView";
 import { CalorieWeeklyView } from "./CalorieWeeklyView";
+import { GREEN, BG, BORDER, WHITE } from "../../../theme/colors";
 
-const GREEN = "#0F6E56";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const BG = "#F7F6F3";
-
 type Props = {
   cadence: Exclude<CoachCadence, "yearly">;
   activeCadence: CoachCadence;
@@ -75,5 +72,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  retryText: { color: "#FFFFFF", fontSize: 12, fontWeight: "900" },
+  retryText: { color: WHITE, fontSize: 12, fontWeight: "900" },
 });

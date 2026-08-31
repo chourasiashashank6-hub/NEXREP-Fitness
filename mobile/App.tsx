@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { setupNotificationChannels } from "./src/services/notificationService";
+import { bootstrapFeatureTiers } from "./src/hooks/useCoachRedesign";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./src/i18n";
 import i18n from "./src/i18n";
@@ -110,6 +111,7 @@ export default function App() {
 
   useEffect(() => {
     void setupNotificationChannels().catch(() => undefined);
+    void bootstrapFeatureTiers();
   }, []);
 
   return (

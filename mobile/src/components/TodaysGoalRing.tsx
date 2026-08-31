@@ -2,15 +2,15 @@ import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import {
+import { GREEN, TEXT } from "../theme/colors";
   computeTodaysGoalProgress,
   describeArc,
   polarToCartesian,
 } from "../utils/todaysGoalRing";
 
-const GREEN = "#0F6E56";
 const TRACK = "#E5E4E0";
 const TEXT_MUTED = "#888780";
-const TEXT_PRIMARY = "#1A1A18";
+const TEXT_PRIMARY = TEXT;
 
 const DEFAULT_SIZE = 168;
 const STROKE = 16;

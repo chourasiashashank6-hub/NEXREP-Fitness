@@ -22,16 +22,11 @@ import {
   type NotificationPermissionState,
 } from "../services/notificationService";
 import { sendTestPush } from "../api/notifications";
+import { GREEN, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#77776F";
-const BORDER = "#ECEAE5";
-
 const timeOptions = Array.from({ length: 24 * 2 }, (_, idx) => {
   const hour = Math.floor(idx / 2);
   const minute = idx % 2 === 0 ? "00" : "30";

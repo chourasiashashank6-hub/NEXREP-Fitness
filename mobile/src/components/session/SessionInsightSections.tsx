@@ -3,8 +3,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { getExerciseCoachCue } from "../../utils/exerciseGuidanceLookup";
 import { resolveExerciseCoachMuscles } from "../../utils/resolveExerciseCoachMuscles";
 import { lookupExerciseBest, type ExerciseBest } from "../../utils/sessionExerciseBest";
+import { TEXT } from "../../theme/colors";
 
-const TEXT = "#1A1A18";
 const MUTED = "#6B7280";
 const BORDER = "#E5E7EB";
 const GREEN_LIGHT = "#E1F5EE";

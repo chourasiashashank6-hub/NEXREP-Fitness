@@ -29,19 +29,14 @@ import { runCouponApply } from "../components/CouponInput";
 import type { ProfileStackParamList } from "../navigation/types";
 import { useAuthStore } from "../store/authStore";
 import { useSubscriptionStore } from "../store/subscriptionStore";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const GOLD = "#FFD700";
 const GOLD_LIGHT = "#FFFBEA";
 const AMBER_TEXT = "#C08000";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const SCREEN_BG = "#FFFFFF";
+const SCREEN_BG = WHITE;
 
 const DEFAULT_TERMS_URL = "https://nexrep.in/terms";
 const DEFAULT_PRIVACY_URL = "https://nexrep.in/privacy";

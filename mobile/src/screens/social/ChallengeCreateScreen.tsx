@@ -6,17 +6,10 @@ import { createChallenge, type ChallengeType } from "../../api/socialChallenges"
 import { getFriends, type SocialUserProfile } from "../../api/social";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { UserAvatar } from "../../components/UserAvatar";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
 const TERTIARY = "#9BA39D";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
-
 const durations = [3, 7, 14, 30];
 const types: ChallengeType[] = ["streak_battle", "workout_count"];
 

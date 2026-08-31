@@ -1,9 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { GREEN, WHITE } from "../../../theme/colors";
 
 const GOLD = "#FFD700";
-const WHITE = "#FFFFFF";
-
 type Props = {
   score: number;
   title: string;
@@ -19,7 +18,7 @@ export function CoachNutritionHero({
   subtitle,
   statLeft,
   statRight,
-  accentColor = "#0F6E56",
+  accentColor = GREEN,
 }: Props) {
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
   const size = 90;

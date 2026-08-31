@@ -75,11 +75,12 @@ import { unlockWebSpeech } from "../../services/aiTrainer/audioCoach";
 import { useGuidedWarmupStore } from "../../store/guidedWarmupStore";
 import type { PreworkoutPlan, PreworkoutProfile } from "../../utils/generatePreworkoutPlan";
 import { lbToKg } from "../../utils/units";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
 const PURPLE_MID = '#7B68CC';
 const PURPLE_LIGHT = '#F0EEF9';
-const GREEN = '#0F6E56';
-const GREEN_LIGHT = '#E8F5EE';
+const GREEN = GREEN;
+const GREEN_LIGHT = GREEN_LIGHT;
 const BLUE = '#4A90D9';
 const BLUE_LIGHT = '#EEF4FB';
 const ORANGE = '#D85A30';
@@ -88,13 +89,13 @@ const AMBER = '#FFB800';
 const AMBER_LIGHT = '#FFF8E8';
 const AMBER_TEXT = '#C08000';
 const GOLD = '#FFD700';
-const BG = '#F7F6F3';
-const WHITE = '#FFFFFF';
-const TEXT = '#1A1A18';
+const BG = BG;
+const WHITE = WHITE;
+const TEXT = TEXT;
 const MUTED = '#BBBBBB';
 const TRACK = '#E5E4E0';
-const BORDER = '#ECEAE5';
-const SCREEN_BG = '#FFFFFF';
+const BORDER = BORDER;
+const SCREEN_BG = WHITE;
 
 const MUSCLE_TAG: Record<string, { bg: string; text: string }> = {
   Chest:     { bg: GREEN_LIGHT,  text: GREEN   },
@@ -1476,7 +1477,7 @@ const styles = StyleSheet.create({
   suggestedWeight: { color: MUTED, fontSize: 11, marginBottom: 4 },
   progressionBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "#E8F5EE",
+    backgroundColor: GREEN_LIGHT,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,

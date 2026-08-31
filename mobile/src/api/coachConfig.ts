@@ -2,6 +2,7 @@ import { apiClient } from "./client";
 
 export type CoachConfigResponse = {
   redesign_enabled: boolean;
+  feature_tiers?: Record<string, string>;
 };
 
 export type CoachConfigMeResponse = CoachConfigResponse & {

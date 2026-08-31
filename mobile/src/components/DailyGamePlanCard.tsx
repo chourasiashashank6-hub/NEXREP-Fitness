@@ -13,13 +13,10 @@ import { isWorkoutRestDay } from "../utils/workoutRestDay";
 import { countReflowedExercises } from "../utils/reflowExerciseMeta";
 import { sanitizeWorkoutPlanCurrent } from "../utils/sanitizePlannerDay";
 import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
+import { GREEN, GREEN_LIGHT, TEXT, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#8A8A84";
 const BORDER = "#E8E6E1";
 

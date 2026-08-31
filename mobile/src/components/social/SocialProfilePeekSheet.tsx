@@ -4,14 +4,9 @@ import { useTranslation } from "react-i18next";
 import { blockSocialUser, submitUserReport, type FriendshipStatus, type SocialUserProfile } from "../../api/social";
 import { getFriendSupplementStack, type SupplementStackItem } from "../../api/supplementStacks";
 import { UserAvatar } from "../UserAvatar";
+import { GREEN, GREEN_LIGHT, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
 const TERTIARY = "#9BA39D";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
 const BACKDROP = "rgba(0,0,0,0.32)";
 
 type Props = {

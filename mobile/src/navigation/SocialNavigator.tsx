@@ -25,16 +25,9 @@ import GymSquadCreateScreen from "../screens/social/GymSquadCreateScreen";
 import GymSquadDetailScreen from "../screens/social/GymSquadDetailScreen";
 import type { SocialHubTab, SocialStackParamList } from "./types";
 import { subscribeToSocialUnreadChanges } from "../utils/socialUnreadEvents";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../theme/colors";
 
 const Stack = createNativeStackNavigator<SocialStackParamList>();
-
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const BG = "#F7F6F3";
-const MUTED = "#6F766F";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 
 function tabToIndex(tab?: SocialHubTab): number {
   if (tab === "threads") return 1;

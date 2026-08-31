@@ -10,16 +10,13 @@ import {
 } from "react-native";
 import { BlurredModal } from "./BlurredModal";
 import {
+import { GREEN, BG, TEXT, WHITE } from "../theme/colors";
   getCalorieMealHistory,
   type CalorieMealDayTotal,
   type CalorieMealHistoryItem,
   type MealType,
 } from "../api/caloriesLog";
 
-const GREEN = "#0F6E56";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#8A8A86";
 const TERTIARY = "#BBBBBB";
 const BORDER = "#E2E2DD";

@@ -14,17 +14,11 @@ import {
   type SquadChallenge,
 } from "../../api/socialChallenges";
 import { UserAvatar } from "../../components/UserAvatar";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const PURPLE = "#534AB7";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
 const TERTIARY = "#9BA39D";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
 const GOLD = "#D8A720";
 const SILVER = "#B8BCC4";
 const BRONZE = "#B7783C";

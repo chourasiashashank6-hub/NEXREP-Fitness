@@ -71,9 +71,10 @@ import type {
 import { isWeeklyPlannerCurrent } from "../../types/planner";
 import { fullDayLabel, monthYearLabel } from "../../utils/localDate";
 import { mealWeekRefreshUsageKey } from "../../utils/refreshUsageCounter";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
-const GREEN = '#0F6E56';
-const GREEN_LIGHT = '#E8F5EE';
+const GREEN = GREEN;
+const GREEN_LIGHT = GREEN_LIGHT;
 const BLUE = '#4A90D9';
 const BLUE_LIGHT = '#EEF4FB';
 const ORANGE = '#D85A30';
@@ -83,13 +84,13 @@ const AMBER_LIGHT = '#FFF8E8';
 const AMBER_TEXT = '#C08000';
 const PURPLE = '#7B68CC';
 const PURPLE_LIGHT = '#F0EEF9';
-const BG = '#F7F6F3';
-const WHITE = '#FFFFFF';
-const TEXT = '#1A1A18';
+const BG = BG;
+const WHITE = WHITE;
+const TEXT = TEXT;
 const MUTED = '#BBBBBB';
 const TRACK = '#E5E4E0';
-const BORDER = '#ECEAE5';
-const SCREEN_BG = '#FFFFFF';
+const BORDER = BORDER;
+const SCREEN_BG = WHITE;
 
 const MEAL_ACCENT: Record<string, { bg: string; text: string; btn: string; strip: string }> = {
   Breakfast:     { bg: AMBER_LIGHT,  text: AMBER_TEXT, btn: AMBER,   strip: AMBER_LIGHT },

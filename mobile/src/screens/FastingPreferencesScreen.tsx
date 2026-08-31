@@ -22,14 +22,8 @@ import {
 import { BottomSheetPicker } from "../components/BottomSheetPicker";
 import { ScreenContainer } from "../components/ScreenContainer";
 import { apiErrorMessage, confirmUser, notifyUser } from "../utils/notify";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
 const ERROR = "#D85A30";
 
 const pad2 = (value: number) => String(value).padStart(2, "0");

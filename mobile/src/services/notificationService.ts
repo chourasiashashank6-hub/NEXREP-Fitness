@@ -9,6 +9,7 @@ import { getDailyQuote, type QuoteCategory } from "../api/quotes";
 import i18n from "../i18n";
 import type { MealDayPlan, MealPlanCurrent, WorkoutPlanCurrent } from "../types/planner";
 import { istDateFromWallClock } from "../utils/localDate";
+import { GREEN } from "../theme/colors";
 
 type NotificationCategory = "workout" | "meals" | "macro-checkins" | "logging-nudges" | "motivational-quotes";
 type PermissionContext = "workout_schedule" | "meal_planner" | "settings";
@@ -35,7 +36,7 @@ const CHANNELS: Record<NotificationCategory, Notifications.NotificationChannelIn
     importance: Notifications.AndroidImportance.HIGH,
     sound: "default",
     vibrationPattern: [0, 250, 250, 250],
-    lightColor: "#0F6E56",
+    lightColor: GREEN,
   },
   meals: {
     name: i18n.t("notifications.channels.meals"),

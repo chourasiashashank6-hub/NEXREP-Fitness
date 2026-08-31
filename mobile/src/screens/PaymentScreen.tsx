@@ -39,19 +39,14 @@ import { getProfile } from "../api/user";
 import { pollProfileForPlanActivation, PaymentConfirmationPendingError } from "../utils/paymentConfirmation";
 import axios from "axios";
 import type { PlanId } from "../constants/plans";
+import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
 const ORANGE = "#D85A30";
 const GOLD = "#FFD700";
 const GOLD_LIGHT = "#FFFBEA";
 const AMBER_TEXT = "#C08000";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const SCREEN_BG = "#FFFFFF";
+const SCREEN_BG = WHITE;
 
 type PaymentMethod = "razorpay" | "gpay" | "upi";
 

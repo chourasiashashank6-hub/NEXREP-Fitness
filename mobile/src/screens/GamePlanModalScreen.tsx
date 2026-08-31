@@ -35,11 +35,9 @@ import {
   type CatalogEquipmentRow,
 } from "../utils/gamePlanPrepLists";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
+import { TEXT, WHITE } from "../theme/colors";
 
-const TEXT = "#1A1A18";
 const MUTED = "#8A8A84";
-const WHITE = "#FFFFFF";
-
 type WorkoutHistoryRow = GamePlanHistoryRow;
 
 function mapHistoryItems(items: { date: string; exerciseName?: string; type?: string; notes?: string | null; bodyPart?: string | null }[]): WorkoutHistoryRow[] {

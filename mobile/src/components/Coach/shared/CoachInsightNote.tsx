@@ -1,7 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-
-const TEXT = "#1A1A18";
+import { GREEN, GREEN_LIGHT, TEXT } from "../../../theme/colors";
 
 type Props = {
   label: string;
@@ -11,7 +10,7 @@ type Props = {
 
 const VARIANTS = {
   purple: { bg: "#F1EEFF", border: "#7B68CC", label: "#7B68CC" },
-  green: { bg: "#E8F5EE", border: "#0F6E56", label: "#0F6E56" },
+  green: { bg: GREEN_LIGHT, border: GREEN, label: GREEN },
   amber: { bg: "#FFF8E8", border: "#C08000", label: "#C08000" },
   coral: { bg: "#FFF1EE", border: "#D85A30", label: "#D85A30" },
 };

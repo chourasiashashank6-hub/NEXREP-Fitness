@@ -1,5 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchCoachConfig } from "../api/coachConfig";
+import { setRemoteFeatureTiers } from "../constants/featureTiers";
+
+let bootstrapInflight: Promise<void> | null = null;
+
+/** Load server-authoritative feature tiers (falls back to local copy offline). */
+export function bootstrapFeatureTiers(): Promise<void> {
+  if (bootstrapInflight) return bootstrapInflight;
+  bootstrapInflight = fetchCoachConfig()
+    .then((res) => {
+      setRemoteFeatureTiers(res.feature_tiers);
+    })
+    .catch(() => undefined)
+    .finally(() => {
+      bootstrapInflight = null;
+    });
+  return bootstrapInflight;
+}
 
 let cachedRedesignEnabled: boolean | null = null;
 let inflight: Promise<boolean> | null = null;
@@ -10,6 +27,7 @@ async function loadRedesignFlag(): Promise<boolean> {
   inflight = fetchCoachConfig()
     .then((res) => {
       cachedRedesignEnabled = Boolean(res.redesign_enabled);
+      setRemoteFeatureTiers(res.feature_tiers);
       return cachedRedesignEnabled;
     })
     .catch(() => {

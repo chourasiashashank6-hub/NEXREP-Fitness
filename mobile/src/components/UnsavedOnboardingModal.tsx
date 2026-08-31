@@ -1,14 +1,11 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { OnboardingFormChange } from "../utils/onboardingFormDiff";
+import { GREEN, TEXT, BORDER, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";
-const TEXT = "#1A1A18";
 const MUTED = "#8A8A84";
-const BORDER = "#ECEAE5";
-
 type Props = {
   visible: boolean;
   changes: OnboardingFormChange[];
@@ -57,7 +54,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: WHITE,
     borderRadius: 16,
     padding: 20,
     width: "100%",
@@ -79,7 +76,7 @@ const styles = StyleSheet.create({
   changeValues: { fontSize: 12, color: MUTED, lineHeight: 17 },
   btn: { borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 8 },
   btnPrimary: { backgroundColor: GREEN },
-  btnPrimaryText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
-  btnDanger: { backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: ORANGE },
+  btnPrimaryText: { color: WHITE, fontWeight: "800", fontSize: 15 },
+  btnDanger: { backgroundColor: WHITE, borderWidth: 1.5, borderColor: ORANGE },
   btnDangerText: { color: ORANGE, fontWeight: "800", fontSize: 15 },
 });

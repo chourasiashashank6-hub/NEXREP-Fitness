@@ -1,12 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { CoachCadence } from "../../hooks/useCoachRedesign";
+import { BG, TEXT, BORDER } from "../../theme/colors";
 
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const BG = "#F7F6F3";
-
 type Props = {
   cadence: Extract<CoachCadence, "weekly" | "monthly">;
 };

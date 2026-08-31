@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { GREEN, TEXT, BORDER } from "../theme/colors";
 
-const GREEN = "#0F6E56";
 const AMBER = "#BA7517";
 const AMBER_BG = "#FAEEDA";
 const RED_BG = "#FCEBEB";
-const TEXT = "#1A1A18";
 const MUTED = "#6B7280";
-const BORDER = "#ECEAE5";
-
 export interface EndEarlySheetProps {
   visible: boolean;
   onDismiss: () => void;

@@ -1,13 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { GREEN, BG, TEXT, BORDER } from "../../theme/colors";
 
-const TEXT = "#1A1A18";
 const MUTED = "#888888";
-const BORDER = "#ECEAE5";
-const BG = "#F7F6F3";
-const GREEN = "#0F6E56";
-
 type Props = {
   daysUntil: number;
   unlockAtDays: number;

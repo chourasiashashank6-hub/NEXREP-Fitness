@@ -21,15 +21,11 @@ import { TIER_COLORS } from "../constants/tierColors";
 import type { ProfileStackParamList } from "../navigation/types";
 import { useSubscriptionStore } from "../store/subscriptionStore";
 import { daysUntil, formatDate } from "../utils/dateFormat";
+import { GREEN, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
-const GREEN = "#0F6E56";
 const ORANGE = "#D85A30";
-const BG = "#F7F6F3";
-const WHITE = "#FFFFFF";
-const TEXT = "#1A1A18";
 const MUTED = "#BBBBBB";
-const BORDER = "#ECEAE5";
-const SCREEN_BG = "#FFFFFF";
+const SCREEN_BG = WHITE;
 
 export function ManageSubscriptionScreen() {
   const { t } = useTranslation();

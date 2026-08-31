@@ -17,16 +17,9 @@ import { fetchWeightHistory } from "../api/weight";
 import { ScreenContainer } from "../components/ScreenContainer";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { navigationRef } from "../navigation/navigationRef";
-import { listLocalProgressPhotos, type LocalProgressPhoto } from "../services/progressPhotoStorage";
+import { listMergedProgressPhotos, type ProgressPhotoListEntry } from "../services/progressPhotoStorage";
 import { buildTransformationSummary } from "../utils/buildTransformationSummary";
-
-const GREEN = "#0F6E56";
-const GREEN_LIGHT = "#E8F5EE";
-const BG = "#F7F6F3";
-const TEXT = "#1A1A18";
-const MUTED = "#6F766F";
-const BORDER = "#ECEAE5";
-const WHITE = "#FFFFFF";
+import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, BORDER, WHITE } from "../theme/colors";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const toIsoDate = (date: Date) => `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
@@ -37,7 +30,7 @@ export function TransformationTimelineScreen() {
   const { hasFeatureAccess } = useFeatureAccess();
   const canCompare = hasFeatureAccess("progress_photo_comparison");
   const [loading, setLoading] = useState(true);
-  const [photos, setPhotos] = useState<LocalProgressPhoto[]>([]);
+  const [photos, setPhotos] = useState<ProgressPhotoListEntry[]>([]);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [summaryView, setSummaryView] = useState<ReturnType<typeof buildTransformationSummary> | null>(null);
@@ -52,7 +45,7 @@ export function TransformationTimelineScreen() {
   const loadPhotos = useCallback(async () => {
     setLoading(true);
     try {
-      setPhotos(await listLocalProgressPhotos());
+      setPhotos(await listMergedProgressPhotos());
     } finally {
       setLoading(false);
     }
@@ -186,7 +179,7 @@ export function TransformationTimelineScreen() {
             <View style={styles.galleryGrid}>
               {photos.map((photo) => (
                 <View key={photo.id} style={styles.photoCard}>
-                  <Image source={{ uri: photo.localUri }} style={styles.photoImage} resizeMode="cover" />
+                  <Image source={{ uri: photo.displayUri }} style={styles.photoImage} resizeMode="cover" />
                   <View style={styles.photoMeta}>
                     <Text style={styles.photoDate}>{photo.takenAt.slice(0, 10)}</Text>
                     <Text style={styles.photoAngle}>{t(`transformation.angles.${photo.angle}`)}</Text>
