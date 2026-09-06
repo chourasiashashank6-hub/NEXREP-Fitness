@@ -541,9 +541,77 @@ def build_nutrition_summary(db: Session, user: User, cadence: str, local_date: d
     raise ValueError(f"Unsupported cadence: {cadence}")
 
 
+def build_yearly_review(db: Session, user: User, local_date: date) -> dict[str, Any]:
+    """Year-to-date nutrition + workout recap for the yearly review screen."""
+    from src.models.models import Workout
+    from src.services.coach_workout_summary_service import _dt_range
+
+    start = date(local_date.year, 1, 1)
+    end = local_date
+    days = [day_nutrition_snapshot(db, user, d) for d in _iter_dates(start, end)]
+    nut_agg = _aggregate_days(days)
+    weight = _weight_in_range(db, user.id, start, end)
+    target_kg = _onboarding_target_weight_kg(db, user.id)
+
+    ws, we = _dt_range(start, end)
+    workout_rows = (
+        db.query(Workout)
+        .filter(Workout.user_id == user.id, Workout.date >= ws, Workout.date < we)
+        .all()
+    )
+    session_dates = {
+        (w.date.date() if isinstance(w.date, datetime) else w.date)
+        for w in workout_rows
+    }
+    total_sets = sum(max(0, int(w.sets or 0)) for w in workout_rows)
+
+    journey_count = (
+        db.query(JourneyEvent)
+        .filter(
+            JourneyEvent.user_id == user.id,
+            JourneyEvent.detected_at >= datetime.combine(start, datetime.min.time()),
+        )
+        .count()
+    )
+
+    year_score = int(
+        round(
+            (
+                int(nut_agg.get("adherence_pct") or 0)
+                + min(100, int(nut_agg.get("days_logged") or 0) * 2)
+                + min(100, len(session_dates) * 3)
+            )
+            / 3
+        )
+    )
+
+    return {
+        "enabled": True,
+        "domain": "combined",
+        "cadence": "yearly",
+        "period": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "year": local_date.year,
+            "days_with_data": int(nut_agg.get("days_logged") or 0) + len(session_dates),
+            "label_partial": end.month < 12 or end.day < 31,
+        },
+        "yearly": {
+            "year_score": year_score,
+            "hero_label_key": "coach.redesign.yearly.recapHero",
+            "nutrition": {**nut_agg, "weight": weight, "target_weight_kg": target_kg},
+            "workout": {"sessions": len(session_dates), "total_sets": total_sets},
+            "journey_events": journey_count,
+        },
+        "notes": [],
+    }
+
+
 def build_coach_summary(db: Session, user: User, domain: str, cadence: str, local_date: date) -> dict[str, Any]:
     if not coach_redesign_enabled():
         return {"enabled": False}
+    if cadence == "yearly":
+        return build_yearly_review(db, user, local_date)
     if domain == "workout":
         from src.services.coach_workout_summary_service import build_workout_summary
 

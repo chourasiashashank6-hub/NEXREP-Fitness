@@ -19,6 +19,23 @@ TRIAL_DAYS = 7
 PAYMENT_FAILED_GRACE_DAYS = 3
 
 
+# KNOWN FOLLOW-UP: Two simultaneous POST .../start-trial requests can both pass
+# user_can_start_trial() before either commits (check-then-act race). Harden with
+# a DB unique constraint on trial per user and/or moving the guard into start_trial().
+def user_can_start_trial(db: Session, user_id: int) -> bool:
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return False
+    if (user.plan_id or "free").lower() != "free":
+        return False
+    used = (
+        db.query(Subscription)
+        .filter(Subscription.user_id == user_id, Subscription.billing_cycle == "trial")
+        .count()
+    )
+    return used == 0
+
+
 def get_plan_amount_inr(plan_id: str, billing_cycle: str) -> int:
     """Authoritative GST-inclusive INR price charged via Razorpay (coupons not applied server-side)."""
     price = PLAN_PRICES_INR.get((plan_id, billing_cycle))

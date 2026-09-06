@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import { todayLocal } from "../../api/caloriesLog";
 import { CoachCadenceSelector } from "../../components/Coach/CoachCadenceSelector";
+import { CoachJourneySection } from "../../components/Coach/CoachJourneySection";
 import { WorkoutCoachSummaryViews } from "../../components/Coach/workout/WorkoutCoachSummaryViews";
 import { CoachCadencePager } from "../../components/Coach/CoachCadencePager";
 import { RefreshCountPill } from "../../components/Coach/shared/RefreshCountPill";
@@ -67,7 +68,10 @@ export default function AIWorkoutCoachScreen() {
             onCadenceChange={setCadence}
             onYearlyPress={handleYearlyPress}
             renderSummary={(value) => (
-              <WorkoutCoachSummaryViews cadence={value} activeCadence={cadence} refreshToken={summaryRefresh} />
+              <>
+                <WorkoutCoachSummaryViews cadence={value} activeCadence={cadence} refreshToken={summaryRefresh} />
+                <CoachJourneySection domain="workout" accentColor={WC_COLORS.PURPLE_MID} refreshOnLoad />
+              </>
             )}
           />
         </View>

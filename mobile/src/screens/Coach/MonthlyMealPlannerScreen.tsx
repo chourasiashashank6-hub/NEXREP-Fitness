@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 import {
   fetchMealPlanCurrent,
+  fetchMealPlanStaleStatus,
   fetchMealPlanDay,
   fetchProteinSuggestions,
   fetchSupplementRecommendations,
@@ -489,10 +490,22 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
     })();
   }, [canUseFastingMeals]);
 
-  // Derive stale fields from the plan response (server computes this).
+  // Derive stale fields from dedicated endpoint (falls back to plan response).
   useEffect(() => {
     setStaleFields(plan?.stale_fields ?? []);
   }, [plan]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void fetchMealPlanStaleStatus()
+        .then((status) => {
+          if (status.stale_fields?.length) {
+            setStaleFields(status.stale_fields);
+          }
+        })
+        .catch(() => undefined);
+    }, []),
+  );
 
   useEffect(() => {
     if (!plan) {

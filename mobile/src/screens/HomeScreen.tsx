@@ -772,6 +772,25 @@ export const HomeScreen = () => {
             </View>
           </View>
 
+          <Pressable
+            style={styles.gamePlanHero}
+            onPress={() => {
+              if (navigationRef.isReady()) navigationRef.navigate("DailyGamePlan");
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t("home.gamePlan.openButton")}
+          >
+            <View style={styles.gamePlanHeroIcon}>
+              <Ionicons name="sparkles" size={22} color={WHITE} />
+            </View>
+            <View style={styles.gamePlanHeroText}>
+              <Text style={styles.gamePlanHeroKicker}>{t("home.gamePlan.morningKicker")}</Text>
+              <Text style={styles.gamePlanHeroTitle}>{t("home.gamePlan.title")}</Text>
+              <Text style={styles.gamePlanHeroSub}>{t("home.gamePlan.morningSub")}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={PURPLE} />
+          </Pressable>
+
           <View style={styles.streakCard}>
             <View style={styles.streakTopRow}>
               <View style={styles.streakBadgeLeft}>
@@ -818,17 +837,6 @@ export const HomeScreen = () => {
               </View>
             </View>
 
-            <Pressable
-              style={styles.gamePlanBtn}
-              onPress={() => {
-                if (navigationRef.isReady()) navigationRef.navigate("DailyGamePlan");
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={t("home.gamePlan.openButton")}
-            >
-              <Ionicons name="sparkles" size={16} color={PURPLE} />
-              <Text style={styles.gamePlanBtnText}>{t("home.gamePlan.openButton")}</Text>
-            </Pressable>
           </View>
         </Animated.View>
 
@@ -1133,19 +1141,29 @@ const styles = StyleSheet.create({
   streakCountLine: { fontSize: 16, fontWeight: "700", color: ORANGE },
   streakMotivation: { fontSize: 11, color: "#C07050", marginTop: 2 },
   streakBestCol: { alignItems: "flex-end" },
-  gamePlanBtn: {
+  gamePlanHero: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    gap: 12,
+    marginBottom: 14,
+    padding: 16,
+    borderRadius: 18,
     backgroundColor: PURPLE_LIGHT,
-    width: "100%",
+    borderWidth: 1,
+    borderColor: "#E4E0F5",
   },
-  gamePlanBtnText: { fontSize: 14, fontWeight: "700", color: PURPLE },
+  gamePlanHeroIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: PURPLE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gamePlanHeroText: { flex: 1, gap: 2 },
+  gamePlanHeroKicker: { fontSize: 10, fontWeight: "900", color: PURPLE, letterSpacing: 0.6 },
+  gamePlanHeroTitle: { fontSize: 17, fontWeight: "800", color: TEXT_PRIMARY },
+  gamePlanHeroSub: { fontSize: 12, color: TEXT_MUTED, lineHeight: 16 },
   streakBestLabel: { fontSize: 10, color: TEXT_MUTED, marginBottom: 2 },
   streakBestValue: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY },
   streakDivider: { height: 1, backgroundColor: BORDER, marginVertical: 14 },

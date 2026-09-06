@@ -44,8 +44,8 @@ def _ensure_user(db: Session, email: str) -> User:
     return user
 
 
-def test_journey_engine_disabled_by_default():
-    assert journey_engine_enabled() is False
+def test_journey_engine_enabled_by_default():
+    assert journey_engine_enabled() is True
 
 
 def test_list_journey_events_empty_when_flag_off(db: Session):

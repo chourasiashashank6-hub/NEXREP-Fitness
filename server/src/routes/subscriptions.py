@@ -18,6 +18,9 @@ from src.services.subscription_service import (
     cancel_subscription,
     get_display_subscription,
     get_plan_amount_inr,
+    start_trial,
+    user_can_start_trial,
+    TRIAL_DAYS,
 )
 from src.utils.auth import get_current_user
 
@@ -249,6 +252,38 @@ class ReactivateSubscriptionBody(BaseModel):
     userId: str
     planTier: Literal["PRO", "ELITE"] = "PRO"
     billingCycle: Literal["monthly", "yearly"] = "monthly"
+
+
+class StartTrialBody(BaseModel):
+    planTier: Literal["PRO", "ELITE"] = "PRO"
+
+
+@router.post("/{user_id}/start-trial")
+def start_user_trial(
+    user_id: str,
+    body: StartTrialBody,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    uid = _assert_user_access(current_user, user_id)
+    if not user_can_start_trial(db, uid):
+        raise HTTPException(status_code=400, detail="Trial not available for this account")
+    plan_id = body.planTier.lower()
+    if plan_id not in ("pro", "elite"):
+        plan_id = "pro"
+    sub = start_trial(db, uid, plan_id=plan_id)
+    db.refresh(current_user)
+    all_rows = (
+        db.query(Subscription)
+        .filter(Subscription.user_id == uid)
+        .order_by(Subscription.created_at.asc())
+        .all()
+    )
+    return {
+        "subscription": _subscription_payload(sub, current_user),
+        "planHistory": _build_plan_history(current_user, all_rows),
+        "message": f"{TRIAL_DAYS}-day trial started.",
+    }
 
 
 @router.post("/cancel")

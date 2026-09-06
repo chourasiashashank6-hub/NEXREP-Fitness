@@ -136,3 +136,11 @@ export async function fetchSupplementRecommendations(): Promise<SupplementRecomm
   );
   return data;
 }
+
+export async function fetchMealPlanStaleStatus(): Promise<{ is_stale: boolean; stale_fields: string[] }> {
+  const { data } = await apiClient.get<{ is_stale: boolean; stale_fields: string[] }>(
+    "/api/meal-planner/stale-status",
+    { params: params() },
+  );
+  return data;
+}

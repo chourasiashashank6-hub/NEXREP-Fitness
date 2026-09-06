@@ -6,7 +6,7 @@ from src.core.config import settings
 
 
 def journey_engine_enabled() -> bool:
-    raw = getattr(settings, "JOURNEY_ENGINE_ENABLED", False)
+    raw = getattr(settings, "JOURNEY_ENGINE_ENABLED", True)
     if isinstance(raw, str):
         return raw.strip().lower() in {"1", "true", "yes", "on"}
     return bool(raw)

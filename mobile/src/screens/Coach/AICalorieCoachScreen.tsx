@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { ensureDailyCalorieLog, todayLocal } from "../../api/caloriesLog";
 import { getSummary } from "../../api/dashboard";
 import { ActionPlanCard } from "../../components/Coach/ActionPlanCard";
+import { CoachJourneySection } from "../../components/Coach/CoachJourneySection";
 import { CalorieCoachSummaryViews } from "../../components/Coach/calorie/CalorieCoachSummaryViews";
 import { CoachCadencePager } from "../../components/Coach/CoachCadencePager";
 import { CoachCadenceSelector } from "../../components/Coach/CoachCadenceSelector";
@@ -139,6 +140,7 @@ export default function AICalorieCoachScreen() {
                 {value === "daily" ? (
                   <ActionPlanCard nutritionData={nutritionData} accentColor="#a78bfa" />
                 ) : null}
+                <CoachJourneySection domain="nutrition" accentColor={GREEN} refreshOnLoad />
               </>
             )}
           />

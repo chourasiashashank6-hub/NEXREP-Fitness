@@ -104,6 +104,8 @@
     "logWeightTitle": "Log Today's Weight",
     "lastLogged": "Last logged: {{weight}}kg",
     "gamePlan": {
+      "morningKicker": "MORNING BRIEFING",
+      "morningSub": "Workout, meals, recovery, and prep — all in one place.",
       "openButton": "View today's game plan",
       "title": "Today's game plan",
       "exerciseCount": "Exercises",
@@ -1448,6 +1450,9 @@
       "noPaymentsYet": "No payments yet — your receipts will appear here after your first billing.",
       "securePayment": "Secure Payment",
       "trial": "7-Day Trial",
+      "startTrialCta": "Start 7-day free Pro trial",
+      "trialStartedTitle": "Trial started",
+      "trialFailed": "Could not start trial",
       "athletes": "50K+ Athletes",
       "legalPrefix": "Subscriptions renew automatically unless cancelled. By continuing you agree to our ",
       "terms": "Terms",
@@ -1779,6 +1784,7 @@
       "active": "Active",
       "resolved": "Resolved",
       "loadMore": "Load more",
+      "dismiss": "Mark resolved",
       "recommendations": {
         "proteinGapStreak": "You've been under your protein target ({{proteinG}}g vs {{targetProteinG}}g) for {{days}} days. Add Greek yogurt, paneer, eggs, or a protein shake to close the gap.",
         "adherenceTrend": "Strong week — {{daysOnTarget}} of the last {{windowDays}} days hit calorie and protein targets. Keep this rhythm going.",
@@ -1829,7 +1835,20 @@
         "historyKicker": "Unlocks with history",
         "historyTitle": "Your year in review",
         "historyBodyCountdown": "Keep logging — your year recap unlocks in {{count}} more days ({{total}} days of nutrition or workout history required).",
-        "historyBodySoon": "You're almost there — year in review unlocks after {{total}} days of logged activity."
+        "historyBodySoon": "You're almost there — year in review unlocks after {{total}} days of logged activity.",
+        "recapHero": "Your year in review",
+        "recapTitle": "{{year}} in review",
+        "recapSubtitle": "Nutrition adherence, training volume, and weight journey combined.",
+        "statDaysLogged": "Days logged",
+        "statAdherence": "Adherence",
+        "statSessions": "Workouts",
+        "statSets": "Total sets",
+        "weightJourney": "Weight change (YTD)",
+        "loadFailed": "Could not load your year in review.",
+        "retry": "Try again",
+        "shareMessage": "My {{year}} on NexRep — score {{score}}/100. {{daysLogged}} nutrition days, {{sessions}} workouts, {{adherence}}% adherence. {{weightLine}}",
+        "shareWeight": "Weight {{direction}} {{kg}} kg",
+        "shareWeightUnknown": "Weight journey tracked"
       }
     },
     "summary": {

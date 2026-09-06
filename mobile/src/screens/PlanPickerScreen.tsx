@@ -27,8 +27,10 @@ import {
 import { getPrice, getServerPlanAmountInr, PLANS, COUPONS_UI_ENABLED, type PlanId } from "../constants/plans";
 import { runCouponApply } from "../components/CouponInput";
 import type { ProfileStackParamList } from "../navigation/types";
+import { startTrialApi } from "../api/subscriptions";
 import { useAuthStore } from "../store/authStore";
 import { useSubscriptionStore } from "../store/subscriptionStore";
+import { notifyUser, apiErrorMessage } from "../utils/notify";
 import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
 const ORANGE = "#D85A30";
@@ -63,12 +65,14 @@ export function PlanPickerScreen({
   const subscriptionTier = useSubscriptionStore((s) => s.subscription?.tier);
   const fetchSubscription = useSubscriptionStore((s) => s.fetchSubscription);
   const fetchPayments = useSubscriptionStore((s) => s.fetchPayments);
+  const setPlanId = useAuthStore((s) => s.setPlanId);
 
   const [fontsLoaded] = useFonts({ BebasNeue_400Regular, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold });
   const [isYearly, setIsYearly] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponError, setCouponError] = useState("");
+  const [startingTrial, setStartingTrial] = useState(false);
 
   const currentTier = String(subscriptionTier ?? authPlanId ?? "FREE").toUpperCase();
 
@@ -132,6 +136,22 @@ export function PlanPickerScreen({
     },
     [isYearly, navigation, onSelectPlan],
   );
+
+  const handleStartTrial = useCallback(async () => {
+    if (!userId || currentTier !== "FREE") return;
+    setStartingTrial(true);
+    try {
+      const result = await startTrialApi(userId, "PRO");
+      setPlanId(result.subscription.tier.toLowerCase());
+      await fetchSubscription(userId);
+      notifyUser(t("subscription.planPicker.trialStartedTitle"), result.message);
+      navigation.goBack();
+    } catch (error) {
+      notifyUser(t("common.error"), apiErrorMessage(error, t("subscription.planPicker.trialFailed")));
+    } finally {
+      setStartingTrial(false);
+    }
+  }, [currentTier, fetchSubscription, navigation, setPlanId, t, userId]);
 
   const proPlan = useMemo(() => PLANS.find((p) => p.id === "pro")!, []);
   const elitePlan = useMemo(() => PLANS.find((p) => p.id === "elite")!, []);
@@ -215,6 +235,24 @@ export function PlanPickerScreen({
         ) : null}
 
         <Text style={styles.sectionLabel}>{t("subscription.planPicker.chooseYourPlan")}</Text>
+        {currentTier === "FREE" ? (
+          <Pressable
+            style={({ pressed }) => [styles.trialCta, pressed && styles.trialCtaPressed]}
+            onPress={() => void handleStartTrial()}
+            disabled={startingTrial}
+            accessibilityRole="button"
+            accessibilityLabel={t("subscription.planPicker.startTrialCta")}
+          >
+            {startingTrial ? (
+              <ActivityIndicator color={WHITE} />
+            ) : (
+              <>
+                <Ionicons name="time-outline" size={18} color={WHITE} />
+                <Text style={styles.trialCtaText}>{t("subscription.planPicker.startTrialCta")}</Text>
+              </>
+            )}
+          </Pressable>
+        ) : null}
         <View style={styles.planRow}>
           <PlanCard
             plan={proPlan}
@@ -291,6 +329,18 @@ const styles = StyleSheet.create({
   couponSuccess: { color: GREEN, fontSize: 11, fontWeight: "800", marginTop: 8 },
   couponError: { color: ORANGE, fontSize: 11, fontWeight: "800", marginTop: 8 },
   sectionLabel: { color: MUTED, fontSize: 10, fontWeight: "900", letterSpacing: 0.9, marginBottom: 10 },
+  trialCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: GREEN,
+    borderRadius: 14,
+    paddingVertical: 14,
+    marginBottom: 14,
+  },
+  trialCtaPressed: { opacity: 0.85 },
+  trialCtaText: { color: WHITE, fontSize: 14, fontWeight: "800" },
   planRow: { flexDirection: "row", gap: 10, alignItems: "flex-start", marginBottom: 14 },
   trustRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
   trustTile: { flex: 1, backgroundColor: BG, borderRadius: 12, paddingVertical: 10, alignItems: "center", gap: 5 },

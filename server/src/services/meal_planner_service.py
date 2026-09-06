@@ -450,6 +450,23 @@ def user_has_stale_meal_plan(db: Session, user: User, local_date: str | None) ->
     return len(stale_meal_fields(legacy.onboarding_snapshot_json, onboarding_raw)) > 0
 
 
+def meal_plan_stale_status(db: Session, user: User, local_date: str | None) -> dict[str, Any]:
+    """Expose staleness for client banners without loading a full plan."""
+    today = parse_local_date(local_date)
+    onboarding_raw, _ = _onboarding_context(db, user.id)
+    stale_fields: list[str] = []
+    weekly_plans = list_weekly_plans_for_month(db, user.id, today.month, today.year)
+    if weekly_plans:
+        for plan in weekly_plans:
+            stale_fields.extend(stale_meal_fields(plan.onboarding_snapshot_json, onboarding_raw))
+    else:
+        legacy = get_existing_monthly_meal_plan(db, user.id, today.month, today.year)
+        if legacy:
+            stale_fields.extend(stale_meal_fields(legacy.onboarding_snapshot_json, onboarding_raw))
+    unique = list(dict.fromkeys(stale_fields))
+    return {"is_stale": len(unique) > 0, "stale_fields": unique}
+
+
 def meal_plan_current_weekly_response(
     db: Session,
     user: User,

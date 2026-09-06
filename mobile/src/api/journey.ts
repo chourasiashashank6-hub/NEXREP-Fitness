@@ -34,3 +34,10 @@ export async function runJourneyDetection(localDate?: string): Promise<void> {
     params: localDate ? { local_date: localDate } : undefined,
   });
 }
+
+export async function resolveJourneyEvent(eventId: number): Promise<JourneyEventItem> {
+  const { data } = await apiClient.post<{ ok: boolean; event: JourneyEventItem }>(
+    `/api/journey/events/${eventId}/resolve`,
+  );
+  return data.event;
+}

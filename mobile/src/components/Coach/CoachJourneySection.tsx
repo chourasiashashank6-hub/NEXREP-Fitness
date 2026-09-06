@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { fetchJourneyEvents, runJourneyDetection, type JourneyEventItem } from "../../api/journey";
+import { fetchJourneyEvents, resolveJourneyEvent, runJourneyDetection, type JourneyEventItem } from "../../api/journey";
 import { todayLocal } from "../../api/caloriesLog";
 import { GREEN, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
@@ -28,6 +28,7 @@ export function CoachJourneySection({
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [resolvingId, setResolvingId] = useState<number | null>(null);
 
   const load = useCallback(
     async (nextOffset: number, append: boolean) => {
@@ -75,6 +76,19 @@ export function CoachJourneySection({
     };
   }, [load, refreshOnLoad]);
 
+  const handleDismiss = async (eventId: number) => {
+    setResolvingId(eventId);
+    try {
+      await resolveJourneyEvent(eventId);
+      setItems((prev) => prev.filter((item) => item.id !== eventId));
+      setTotal((prev) => Math.max(0, prev - 1));
+    } catch {
+      // Keep item visible if resolve fails.
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingBox}>
@@ -104,6 +118,21 @@ export function CoachJourneySection({
             </Text>
             {item.detected_at ? (
               <Text style={styles.cardDate}>{new Date(item.detected_at).toLocaleDateString()}</Text>
+            ) : null}
+            {item.status === "active" ? (
+              <Pressable
+                style={styles.dismissBtn}
+                onPress={() => void handleDismiss(item.id)}
+                disabled={resolvingId === item.id}
+                accessibilityRole="button"
+                accessibilityLabel={t("coach.journey.dismiss")}
+              >
+                {resolvingId === item.id ? (
+                  <ActivityIndicator size="small" color={accentColor} />
+                ) : (
+                  <Ionicons name="checkmark-circle-outline" size={18} color={accentColor} />
+                )}
+              </Pressable>
             ) : null}
           </View>
           <Text style={styles.cardBody}>{t(item.recommendation_key, item.recommendation_params)}</Text>
@@ -144,6 +173,7 @@ const styles = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: 99 },
   cardStatus: { color: TEXT, fontSize: 10, fontWeight: "800", flex: 1 },
   cardDate: { color: MUTED, fontSize: 10, fontWeight: "700" },
+  dismissBtn: { padding: 2 },
   cardBody: { color: "#555555", fontSize: 12, lineHeight: 18 },
   loadMoreBtn: {
     flexDirection: "row",

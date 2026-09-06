@@ -26,6 +26,7 @@ from src.services.meal_planner_service import (
     regenerate_week_plan,
     swap_meal,
     user_has_stale_meal_plan,
+    meal_plan_stale_status,
     weeks_overview_response,
 )
 from src.services.planner_nutrition_extras import (
@@ -180,6 +181,15 @@ def get_current(
         return meal_plan_current_response(plan, local_date, db=db, user=current_user)
 
     raise HTTPException(status_code=404, detail="No meal plan for this month")
+
+
+@router.get("/stale-status")
+def get_stale_status(
+    local_date: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return meal_plan_stale_status(db, current_user, local_date)
 
 
 @router.get("/day/{day}")

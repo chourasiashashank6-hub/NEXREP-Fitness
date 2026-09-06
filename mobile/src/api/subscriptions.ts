@@ -35,3 +35,11 @@ export async function exportInvoicesApi(userId: string): Promise<{
   const { data } = await apiClient.get(`/api/invoices/export/${userId}`);
   return data;
 }
+
+export async function startTrialApi(
+  userId: string,
+  planTier: "PRO" | "ELITE" = "PRO",
+): Promise<{ subscription: Subscription; planHistory: PlanHistoryEntry[]; message: string }> {
+  const { data } = await apiClient.post(`/api/subscriptions/${userId}/start-trial`, { planTier });
+  return data;
+}

@@ -52,6 +52,30 @@ def _serialize_event(row: JourneyEvent) -> dict:
     }
 
 
+@router.post("/events/{event_id}/resolve")
+def resolve_journey_event(
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not journey_engine_enabled():
+        raise HTTPException(status_code=503, detail="Journey engine is disabled")
+    row = (
+        db.query(JourneyEvent)
+        .filter(JourneyEvent.id == event_id, JourneyEvent.user_id == current_user.id)
+        .first()
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Journey event not found")
+    if row.status != "resolved":
+        row.status = "resolved"
+        row.resolved_at = datetime.utcnow()
+        row.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(row)
+    return {"ok": True, "event": _serialize_event(row)}
+
+
 @router.get("/events")
 def list_journey_events(
     domain: str | None = Query(default=None, max_length=32),
