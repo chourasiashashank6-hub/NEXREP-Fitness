@@ -68,8 +68,8 @@ module.exports = {
           android: {
             // Required for the local MediaPipe HTTP server (http://127.0.0.1) on Android 9+.
             usesCleartextTraffic: true,
-            // EAS preview + production profiles use release builds — keep R8 on.
-            enableMinifyInReleaseBuilds: true,
+            // Disabled until R8/minify crash is root-caused; preview uses release builds.
+            enableMinifyInReleaseBuilds: false,
           },
         },
       ],
