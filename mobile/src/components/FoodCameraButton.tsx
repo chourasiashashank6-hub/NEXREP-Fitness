@@ -209,14 +209,14 @@ export const FoodCameraButton = ({ disabled, onImageSelected, variant = "icon" }
             {!isWeb ? (
               <Pressable style={[styles.row, styles.primaryRow]} onPress={() => void onSelectOption("camera")}>
                 <View style={styles.primaryIconTile}>
-                  <Ionicons name="camera-outline" size={18} color=WHITE />
+                  <Ionicons name="camera-outline" size={18} color={WHITE} />
                 </View>
                 <Text style={[styles.rowText, styles.primaryRowText]}>{t("components.foodCamera.takePhoto")}</Text>
               </Pressable>
             ) : null}
             <Pressable style={[styles.row, styles.secondaryRow]} onPress={() => void onSelectOption("gallery")}>
               <View style={styles.secondaryIconTile}>
-                <Ionicons name="image-outline" size={18} color=TEXT />
+                <Ionicons name="image-outline" size={18} color={TEXT} />
               </View>
               <Text style={[styles.rowText, styles.secondaryRowText]}>{t("components.foodCamera.uploadImage")}</Text>
             </Pressable>

@@ -9,8 +9,8 @@ import {
   View,
 } from "react-native";
 import { BlurredModal } from "./BlurredModal";
-import {
 import { GREEN, BG, TEXT, WHITE } from "../theme/colors";
+import {
   getCalorieMealHistory,
   type CalorieMealDayTotal,
   type CalorieMealHistoryItem,

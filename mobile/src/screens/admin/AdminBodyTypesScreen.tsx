@@ -60,7 +60,7 @@ function SlotGrid({
               >
                 {state === "uploading" ? (
                   <View style={s.thumbInner}>
-                    <ActivityIndicator color=GREEN />
+                    <ActivityIndicator color={GREEN} />
                   </View>
                 ) : imgUrl ? (
                   <Image source={{ uri: imgUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
@@ -199,7 +199,7 @@ export function AdminBodyTypesScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          tintColor=GREEN
+          tintColor={GREEN}
           onRefresh={async () => {
             setRefreshing(true);
             await refresh();

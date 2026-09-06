@@ -90,7 +90,7 @@ import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 import { navigationRef } from "../navigation/navigationRef";
 import MonthlyWorkoutPlannerScreen from "./Coach/MonthlyWorkoutPlannerScreen";
-import { GREEN, GREEN_LIGHT, BG, TEXT, MUTED, WHITE } from "../theme/colors";
+import { GREEN, GREEN_LIGHT, BG, TEXT, WHITE } from "../theme/colors";
 
 const ORANGE = "#D85A30";
 const ORANGE_LIGHT = "#FFF1EE";

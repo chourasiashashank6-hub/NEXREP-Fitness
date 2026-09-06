@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppState, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import {
 import { GREEN, TEXT, WHITE } from "../theme/colors";
+import {
   getNotificationPermissionState,
   openNotificationSettings,
   setupNotificationChannels,

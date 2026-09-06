@@ -3,8 +3,8 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
-import {
 import { GREEN, TEXT, BORDER, WHITE } from "../../theme/colors";
+import {
   generatePreworkoutPlan,
   isCardioGoal,
   type PreworkoutPlan,

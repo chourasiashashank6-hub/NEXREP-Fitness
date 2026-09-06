@@ -79,8 +79,6 @@ import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors"
 
 const PURPLE_MID = '#7B68CC';
 const PURPLE_LIGHT = '#F0EEF9';
-const GREEN = GREEN;
-const GREEN_LIGHT = GREEN_LIGHT;
 const BLUE = '#4A90D9';
 const BLUE_LIGHT = '#EEF4FB';
 const ORANGE = '#D85A30';
@@ -89,12 +87,8 @@ const AMBER = '#FFB800';
 const AMBER_LIGHT = '#FFF8E8';
 const AMBER_TEXT = '#C08000';
 const GOLD = '#FFD700';
-const BG = BG;
-const WHITE = WHITE;
-const TEXT = TEXT;
 const MUTED = '#BBBBBB';
 const TRACK = '#E5E4E0';
-const BORDER = BORDER;
 const SCREEN_BG = WHITE;
 
 const MUSCLE_TAG: Record<string, { bg: string; text: string }> = {
