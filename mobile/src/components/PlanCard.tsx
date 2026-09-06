@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import type { Plan } from "../constants/plans";
 import { TIER_COLORS } from "../constants/tierColors";
-import type { AppTheme } from "../theme/colors";
+import { TEXT, WHITE, type AppTheme } from "../theme/colors";
 import { logicalRow, textAlignStart } from "../utils/rtl";
 
 const ORANGE = "#D85A30";
