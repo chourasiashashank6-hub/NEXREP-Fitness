@@ -129,6 +129,7 @@ class PushTokenRequest(BaseModel):
     expo_push_token: str
     platform: str
     device_id: str | None = None
+    timezone: str | None = None
 
 
 class NotificationPreferencesRequest(BaseModel):

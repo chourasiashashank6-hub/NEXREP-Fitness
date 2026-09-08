@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
+import random
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -23,6 +25,9 @@ CHECKPOINTS = {
     20: ("evening", 0.85),
 }
 QUOTE_OF_THE_DAY_HOUR = 8
+STREAK_RISK_HOUR = 19
+STREAK_LOST_HOUR = 9
+WEEKLY_DIGEST_HOUR = 18
 MEAL_THRESHOLDS = {
     "breakfast": 10,
     "lunch": 15,
@@ -36,6 +41,7 @@ DEFAULT_NOTIFICATION_PREFERENCES: dict[str, Any] = {
         "macro_checkins": True,
         "logging_nudges": True,
         "motivational_quotes": True,
+        "social": True,
     },
     "quiet_hours": {
         "enabled": False,
@@ -237,6 +243,32 @@ def send_test_push_to_user(db: Session, *, user_id: int) -> tuple[bool, str]:
         return False, str(exc)[:500]
 
 
+def _normalize_timezone_name(value: str | None) -> str:
+    text = (value or "UTC").strip()
+    if not text:
+        return "UTC"
+    try:
+        ZoneInfo(text)
+        return text
+    except ZoneInfoNotFoundError:
+        return "UTC"
+
+
+def update_user_timezone(db: Session, user: User, timezone_name: str | None) -> str:
+    normalized = _normalize_timezone_name(timezone_name)
+    if getattr(user, "timezone", None) != normalized:
+        user.timezone = normalized
+        db.add(user)
+    return normalized
+
+
+def _user_local_now(user: User, utc_now: datetime) -> datetime:
+    """Convert UTC scheduler time into the user's local wall clock (naive datetime)."""
+    tz_name = _normalize_timezone_name(getattr(user, "timezone", None))
+    aware_utc = utc_now.replace(tzinfo=timezone.utc) if utc_now.tzinfo is None else utc_now.astimezone(timezone.utc)
+    return aware_utc.astimezone(ZoneInfo(tz_name)).replace(tzinfo=None)
+
+
 def _users_with_active_tokens(db: Session) -> list[User]:
     return (
         db.query(User)
@@ -274,6 +306,11 @@ def _t(user: User, key: str, values: dict[str, Any] | None = None) -> str:
     return translate(user.preferred_language, key, values)
 
 
+def _t_rotating(user: User, key_base: str, values: dict[str, Any], variant_count: int = 3) -> str:
+    idx = random.randrange(variant_count)
+    return _t(user, f"{key_base}.{idx}", values)
+
+
 def _meal_logged(db: Session, user_id: int, local_day: date, meal_name: str) -> bool:
     pattern = f"%{meal_name}%"
     daily = (
@@ -299,45 +336,44 @@ def _meal_logged(db: Session, user_id: int, local_day: date, meal_name: str) -> 
 
 
 def _run_macro_checkpoint(db: Session, user: User, now: datetime) -> None:
-    checkpoint = CHECKPOINTS.get(now.hour)
-    if not checkpoint:
-        return
-    label, expected_ratio = checkpoint
     local_day = now.date()
-    log = db.query(DailyNutritionLog).filter(DailyNutritionLog.user_id == user.id, DailyNutritionLog.log_date == local_day).first()
-    if not log:
-        return
-    target_calories = max(1.0, _to_float(log.target_calories))
-    target_protein = max(1.0, _to_float(log.target_protein_g))
-    calories = _to_float(log.total_calories)
-    protein = _to_float(log.total_protein_g)
-    low_calories = calories < target_calories * expected_ratio * 0.7
-    low_protein = protein < target_protein * expected_ratio * 0.7
-    high_calories = calories > target_calories * min(1.2, expected_ratio + 0.35)
-    if not (low_calories or low_protein or high_calories):
-        return
-    parts = []
-    if low_calories:
-        parts.append(
-            _t(user, "notifications.macroCheckin.lowCalories", {"calories": round(calories), "targetCalories": round(target_calories)})
+    for checkpoint_hour, (label, expected_ratio) in CHECKPOINTS.items():
+        if now.hour < checkpoint_hour:
+            continue
+        log = db.query(DailyNutritionLog).filter(DailyNutritionLog.user_id == user.id, DailyNutritionLog.log_date == local_day).first()
+        if not log:
+            continue
+        target_calories = max(1.0, _to_float(log.target_calories))
+        target_protein = max(1.0, _to_float(log.target_protein_g))
+        calories = _to_float(log.total_calories)
+        protein = _to_float(log.total_protein_g)
+        low_calories = calories < target_calories * expected_ratio * 0.7
+        low_protein = protein < target_protein * expected_ratio * 0.7
+        high_calories = calories > target_calories * min(1.2, expected_ratio + 0.35)
+        if not (low_calories or low_protein or high_calories):
+            continue
+        parts = []
+        if low_calories:
+            parts.append(
+                _t(user, "notifications.macroCheckin.lowCalories", {"calories": round(calories), "targetCalories": round(target_calories)})
+            )
+        if low_protein:
+            parts.append(
+                _t(user, "notifications.macroCheckin.lowProtein", {"protein": round(protein), "targetProtein": round(target_protein)})
+            )
+        if high_calories:
+            parts.append(_t(user, "notifications.macroCheckin.highCalories", {"calories": round(calories)}))
+        summary = ", ".join(parts)
+        send_push_to_user(
+            db,
+            user_id=user.id,
+            category="macro_checkins",
+            title=_t(user, "notifications.macroCheckin.title"),
+            body=_t(user, "notifications.macroCheckin.body", {"checkpoint": label, "summary": summary}),
+            event_key=f"macro:{user.id}:{local_day.isoformat()}:{label}",
+            data={"kind": "macro_checkpoint", "checkpoint": label},
+            now=now,
         )
-    if low_protein:
-        parts.append(
-            _t(user, "notifications.macroCheckin.lowProtein", {"protein": round(protein), "targetProtein": round(target_protein)})
-        )
-    if high_calories:
-        parts.append(_t(user, "notifications.macroCheckin.highCalories", {"calories": round(calories)}))
-    summary = ", ".join(parts)
-    send_push_to_user(
-        db,
-        user_id=user.id,
-        category="macro_checkins",
-        title=_t(user, "notifications.macroCheckin.title"),
-        body=_t(user, "notifications.macroCheckin.body", {"checkpoint": label, "summary": summary}),
-        event_key=f"macro:{user.id}:{local_day.isoformat()}:{label}",
-        data={"kind": "macro_checkpoint", "checkpoint": label},
-        now=now,
-    )
 
 
 def _run_missing_log_checks(db: Session, user: User, now: datetime) -> None:
@@ -349,8 +385,8 @@ def _run_missing_log_checks(db: Session, user: User, now: datetime) -> None:
             db,
             user_id=user.id,
             category="meals",
-            title=_t(user, "notifications.missingMeal.title", {"meal": meal_name}),
-            body=_t(user, "notifications.missingMeal.body", {"meal": meal_name}),
+            title=_t_rotating(user, "notifications.missingMeal.titleVariants", {"meal": meal_name}),
+            body=_t_rotating(user, "notifications.missingMeal.bodyVariants", {"meal": meal_name}),
             event_key=f"missing-meal:{user.id}:{local_day.isoformat()}:{meal_name}",
             data={"kind": "missing_meal", "meal": meal_name},
             now=now,
@@ -377,7 +413,7 @@ def _run_missing_log_checks(db: Session, user: User, now: datetime) -> None:
 
 
 def _run_streak_risk_check(db: Session, user: User, now: datetime) -> None:
-    if now.hour != 19:
+    if now.hour < STREAK_RISK_HOUR:
         return
     local_day = now.date()
     meal_logged = db.query(DailyNutritionLog.log_id).filter(DailyNutritionLog.user_id == user.id, DailyNutritionLog.log_date == local_day).first()
@@ -397,7 +433,7 @@ def _run_streak_risk_check(db: Session, user: User, now: datetime) -> None:
 
 
 def _run_quote_of_the_day(db: Session, user: User, now: datetime) -> None:
-    if now.hour != QUOTE_OF_THE_DAY_HOUR:
+    if now.hour < QUOTE_OF_THE_DAY_HOUR:
         return
     quote = _quote_for_context(db, "general")
     if not quote:
@@ -414,8 +450,50 @@ def _run_quote_of_the_day(db: Session, user: User, now: datetime) -> None:
     )
 
 
+def _day_has_streak_activity(db: Session, user_id: int, local_day: date) -> bool:
+    meal_logged = (
+        db.query(DailyNutritionLog.log_id)
+        .filter(
+            DailyNutritionLog.user_id == user_id,
+            DailyNutritionLog.log_date == local_day,
+            DailyNutritionLog.total_calories > 0,
+        )
+        .first()
+    )
+    workout_logged = (
+        db.query(Workout.id)
+        .filter(Workout.user_id == user_id, func.date(Workout.date) == local_day)
+        .first()
+    )
+    return meal_logged is not None or workout_logged is not None
+
+
+def _run_streak_lost_check(db: Session, user: User, now: datetime) -> None:
+    if now.hour < STREAK_LOST_HOUR:
+        return
+    from src.services.activity_feed_service import _activity_dates, _current_streak_from_dates
+
+    yesterday = now.date() - timedelta(days=1)
+    if _day_has_streak_activity(db, user.id, yesterday):
+        return
+    dates = _activity_dates(db, user.id)
+    streak_before_loss = _current_streak_from_dates(dates, today=yesterday)
+    if streak_before_loss <= 0:
+        return
+    send_push_to_user(
+        db,
+        user_id=user.id,
+        category="logging_nudges",
+        title=_t(user, "notifications.streakLost.title"),
+        body=_t(user, "notifications.streakLost.body", {"count": streak_before_loss}),
+        event_key=f"streak-lost:{user.id}:{yesterday.isoformat()}",
+        data={"kind": "streak_lost", "lost_date": yesterday.isoformat(), "streak_length": streak_before_loss},
+        now=now,
+    )
+
+
 def _run_weekly_digest(db: Session, user: User, now: datetime) -> None:
-    if now.weekday() != 6 or now.hour != 18:
+    if now.weekday() != 6 or now.hour < WEEKLY_DIGEST_HOUR:
         return
     from src.services.plan_reflow_service import (
         apply_weekly_compensation,
@@ -480,11 +558,13 @@ def run_hourly_notification_checks(now: datetime | None = None) -> None:
         run_squad_nudges(db, as_of=now)
         _run_scheduled_journey_detection(db, now)
         for user in _users_with_active_tokens(db):
-            _run_macro_checkpoint(db, user, now)
-            _run_missing_log_checks(db, user, now)
-            _run_streak_risk_check(db, user, now)
-            _run_quote_of_the_day(db, user, now)
-            _run_weekly_digest(db, user, now)
+            user_now = _user_local_now(user, now)
+            _run_macro_checkpoint(db, user, user_now)
+            _run_missing_log_checks(db, user, user_now)
+            _run_streak_risk_check(db, user, user_now)
+            _run_streak_lost_check(db, user, user_now)
+            _run_quote_of_the_day(db, user, user_now)
+            _run_weekly_digest(db, user, user_now)
     finally:
         db.close()
 

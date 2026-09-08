@@ -146,8 +146,8 @@ def _send_friend_request_notification(db: Session, sender: User, receiver: User)
         db,
         user_id=receiver.id,
         category="social",
-        title="New friend request",
-        body=f"{sender.name} sent you a friend request.",
+        title="🤝 New friend request",
+        body=f"{sender.name} wants to connect on NexRep.",
         event_key=f"friend-request:{sender.id}:{receiver.id}",
         data={
             "kind": "friend_request_received",
@@ -164,8 +164,8 @@ def _send_friend_accept_notification(db: Session, accepter: User, requester: Use
         db,
         user_id=requester.id,
         category="social",
-        title="Friend request accepted",
-        body=f"{accepter.name} accepted your friend request.",
+        title="🎉 Request accepted",
+        body=f"{accepter.name} accepted your friend request — say hey!",
         event_key=f"friend-accepted:{requester.id}:{accepter.id}",
         data={
             "kind": "friend_request_accepted",

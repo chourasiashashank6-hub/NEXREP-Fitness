@@ -8,6 +8,7 @@ export type NotificationPreferences = {
     macro_checkins: boolean;
     logging_nudges: boolean;
     motivational_quotes: boolean;
+    social: boolean;
   };
   quiet_hours: {
     enabled: boolean;
@@ -29,6 +30,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
     macro_checkins: true,
     logging_nudges: true,
     motivational_quotes: true,
+    social: true,
   },
   quiet_hours: {
     enabled: false,
@@ -46,6 +48,7 @@ export const registerPushToken = async (payload: {
   expo_push_token: string;
   platform: "ios" | "android" | "web";
   device_id?: string;
+  timezone?: string;
 }) => {
   const { data } = await apiClient.post("/api/notifications/push-token", payload);
   return data;

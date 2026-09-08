@@ -521,7 +521,7 @@
     "save": "Speichern",
     "saving": "Speichern...",
     "next": "Weiter",
-    "back": "← Zurück",
+    "back": "Zurück",
     "select": "Auswählen",
     "error": "Fehler",
     "retry": "Erneut versuchen",
@@ -2388,7 +2388,7 @@
     "layout": {
       "screenCounter": "BILDSCHIRM {{step}} VON 6",
       "stepCounter": "{{step}} / 6",
-      "nextArrow": "{{label}} →",
+      "nextArrow": "{{label}}",
       "saveAndExit": "Speichern und beenden ✓",
       "loading": "Deine Daten werden geladen…"
     },
@@ -2631,6 +2631,8 @@
       "title": "App-Setup",
       "subtitle": "Endgültige Präferenzen. Diese beeinflussen das Verhalten der App, nicht die Kalorienberechnung.",
       "saveAndExit": "Speichern und beenden",
+      "completeSetup": "Einrichtung abschließen",
+      "saveProgressAndExit": "Fortschritt speichern und beenden",
       "dailyWeighIn": "📅 Tägliche Wiegeerinnerung",
       "dailyWeighInSub": "Wird für die adaptive Neukalibrierung nach Tag 14 benötigt",
       "reminderTime": "Erinnerungszeit",

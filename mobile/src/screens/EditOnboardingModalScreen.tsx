@@ -19,7 +19,13 @@ export default function EditOnboardingModalScreen() {
     <EditOnboardingModalContext.Provider value={true}>
       <BlurredModalScreenShell onClose={dismissEditOnboardingModal} variant="center" showCloseButton={false}>
         <OnboardingProvider>
-          <Stack.Navigator screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
+          <Stack.Navigator
+            screenOptions={{
+              headerShown: false,
+              animation: "slide_from_right",
+              animationTypeForReplace: "push",
+            }}
+          >
             <Stack.Screen name="Screen1Personal" component={Screen1Personal} />
             <Stack.Screen name="Screen2Goal" component={Screen2Goal} />
             <Stack.Screen name="Screen3Activity" component={Screen3Activity} />

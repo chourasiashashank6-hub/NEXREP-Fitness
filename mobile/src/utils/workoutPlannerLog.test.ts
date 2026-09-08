@@ -11,6 +11,7 @@ import {
   mergeLoggedExerciseIdMap,
   hasAnyPlannerLogForDay,
   allPlannerExercisesLogged,
+  collectLoggedPlannerExerciseNames,
   parsePlannerReps,
 } from "./workoutPlannerLog";
 
@@ -96,5 +97,9 @@ assert(
   findPlannerWorkoutLog([istLateNight], { name: "Plank" }, aug13)?.id === 201,
   "naive UTC timestamp maps to local plan day",
 );
+
+const loggedNames = collectLoggedPlannerExerciseNames(history);
+assert(loggedNames.has("barbell bench press"), "collects planner-logged exercise names");
+assert(!loggedNames.has("back squat"), "manual logs are excluded from reflow completion set");
 
 console.log("workoutPlannerLog.test.ts: all assertions passed");

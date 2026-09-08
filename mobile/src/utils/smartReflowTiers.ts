@@ -1,7 +1,7 @@
 import type { WorkoutHistoryItem } from "../api/workout";
 import type { WorkoutExercise, WorkoutPlanCurrent } from "../types/planner";
 import { pickCompoundReflowCandidates } from "./exerciseCompoundLookup";
-import { hasAnyPlannerLogForDay } from "./workoutPlannerLog";
+import { collectLoggedPlannerExerciseNames, hasAnyPlannerLogForDay } from "./workoutPlannerLog";
 import type { ReflowDaySnapshot } from "./smartReflow";
 
 /** Tier 2 begins at this many missed training days (inclusive). */
@@ -78,17 +78,23 @@ export function isEntirePlanPeriodMissed(plan: WorkoutPlanCurrent, missedDayNumb
 export function collectReflowCandidates(
   assessment: ReflowTierAssessment,
   snapshotByDay: Map<number, ReflowDaySnapshot>,
-  futureDayExerciseNames: Set<string>,
+  historyItems: WorkoutHistoryItem[],
   exerciseNameKey: (name: string) => string,
 ): Array<{ sourceDay: number; exercise: WorkoutExercise }> {
   const items: Array<{ sourceDay: number; exercise: WorkoutExercise }> = [];
+  const loggedExerciseNames = collectLoggedPlannerExerciseNames(historyItems);
 
   for (const missed of assessment.missedDays) {
     const snapshot = snapshotByDay.get(missed.day);
     if (!snapshot) continue;
-    const stillOnSourceDay = snapshot.exercises.filter(
-      (exercise) => !futureDayExerciseNames.has(exerciseNameKey(exercise.name)),
-    );
+    const otherDayExerciseNames = collectExerciseNamesOnOtherDays(snapshotByDay, missed.day, exerciseNameKey);
+    const stillOnSourceDay = snapshot.exercises.filter((exercise) => {
+      const key = exerciseNameKey(exercise.name);
+      if (!key) return false;
+      if (otherDayExerciseNames.has(key)) return false;
+      if (loggedExerciseNames.has(key)) return false;
+      return true;
+    });
     for (const exercise of pickCompoundReflowCandidates(
       stillOnSourceDay,
       REFLOW_COMPOUND_LIMIT_PER_MISSED_DAY,
@@ -104,4 +110,21 @@ export function collectReflowCandidates(
   }
 
   return items;
+}
+
+/** Names on any other training day — catches reflow targets that are now in the past. */
+function collectExerciseNamesOnOtherDays(
+  snapshotByDay: Map<number, ReflowDaySnapshot>,
+  excludeDay: number,
+  exerciseNameKey: (name: string) => string,
+): Set<string> {
+  const names = new Set<string>();
+  for (const snapshot of snapshotByDay.values()) {
+    if (snapshot.is_rest_day || snapshot.day === excludeDay) continue;
+    for (const exercise of snapshot.exercises) {
+      const key = exerciseNameKey(exercise.name);
+      if (key) names.add(key);
+    }
+  }
+  return names;
 }

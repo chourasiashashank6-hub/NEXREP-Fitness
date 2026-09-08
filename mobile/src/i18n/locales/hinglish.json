@@ -522,7 +522,7 @@
     "save": "Save",
     "saving": "Save ho raha hai...",
     "next": "Next",
-    "back": "← Back",
+    "back": "Back",
     "select": "Select",
     "error": "Error",
     "retry": "Retry",
@@ -2404,7 +2404,7 @@
     "layout": {
       "screenCounter": "SCREEN {{step}} OF 6",
       "stepCounter": "{{step}} / 6",
-      "nextArrow": "{{label}} →",
+      "nextArrow": "{{label}}",
       "saveAndExit": "Save & exit ✓",
       "loading": "Loading your info…"
     },
@@ -2647,6 +2647,8 @@
       "title": "App setup",
       "subtitle": "Final preferences. These affect how the app behaves, not the calorie calculation.",
       "saveAndExit": "Save & exit",
+      "completeSetup": "Complete setup",
+      "saveProgressAndExit": "Save progress & exit",
       "dailyWeighIn": "📅 Daily weigh-in reminder",
       "dailyWeighInSub": "Needed for adaptive recalibration ke baad day 14",
       "reminderTime": "Reminder time",

@@ -52,6 +52,36 @@ def test_repair_trims_over_cap_days():
     assert len(repaired) <= 8
 
 
+def test_repair_strips_reflow_exercises_already_logged():
+    from src.services.plan_reflow_service import _strip_completed_reflow_exercises
+
+    exercises = [
+        {"name": "Close Grip Bench Press", "muscle": "Triceps", "sets": 2, "reflow_source_day": 1},
+        {"name": "Bench Press", "muscle": "Chest", "sets": 4},
+    ]
+    stripped = _strip_completed_reflow_exercises(
+        exercises,
+        logged_names={"close grip bench press"},
+        other_day_names=set(),
+    )
+    assert len(stripped) == 1
+    assert stripped[0]["name"] == "Bench Press"
+
+
+def test_repair_strips_reflow_exercises_on_other_plan_day():
+    from src.services.plan_reflow_service import _strip_completed_reflow_exercises
+
+    exercises = [
+        {"name": "Incline Dumbbell Press", "muscle": "Chest", "sets": 4, "reflow_source_day": 1},
+    ]
+    stripped = _strip_completed_reflow_exercises(
+        exercises,
+        logged_names=set(),
+        other_day_names={"incline dumbbell press"},
+    )
+    assert stripped == []
+
+
 class _FakeOnboarding:
     def __init__(self, onboarding_json):
         self.onboarding_json = onboarding_json

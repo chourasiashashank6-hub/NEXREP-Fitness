@@ -521,7 +521,7 @@
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "next": "Suivant",
-    "back": "← Retour",
+    "back": "Retour",
     "select": "Sélectionner",
     "error": "Erreur",
     "retry": "Réessayer",
@@ -2388,7 +2388,7 @@
     "layout": {
       "screenCounter": "SCREEN {{step}} DE 6",
       "stepCounter": "{{step}} / 6",
-      "nextArrow": "{{label}} →",
+      "nextArrow": "{{label}}",
       "saveAndExit": "Enregistrer et quitter ✓",
       "loading": "Chargement de vos informations…"
     },
@@ -2631,6 +2631,8 @@
       "title": "Configuration de l'application",
       "subtitle": "Préférences finales. Ceux-ci affectent le comportement de l'application, et non le calcul des calories.",
       "saveAndExit": "Enregistrer et quitter",
+      "completeSetup": "Terminer la configuration",
+      "saveProgressAndExit": "Enregistrer la progression et quitter",
       "dailyWeighIn": "📅 Rappel quotidien de pesée",
       "dailyWeighInSub": "Nécessaire pour le recalibrage adaptatif après le jour 14",
       "reminderTime": "Heure de rappel",

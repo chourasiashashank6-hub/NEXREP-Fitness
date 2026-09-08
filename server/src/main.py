@@ -1346,8 +1346,8 @@ def _notify_strength_pr_if_needed(lift: StrengthLift, serialized: dict[str, Any]
         db,
         user_id=user_id,
         category="workout",
-        title="New strength PR",
-        body=f"{lift.exercise_name}: estimated 1RM is now {estimated_1rm} kg. Strong work.",
+        title="🏆 New PR!",
+        body=f"{lift.exercise_name} — {estimated_1rm} kg estimated 1RM. New best 💪",
         event_key=f"strength-pr:{user_id}:{lift.id}:{estimated_1rm}",
         data={
             "kind": "strength_pr",
@@ -1641,6 +1641,7 @@ DEFAULT_NOTIFICATION_PREFERENCES = {
         "macro_checkins": True,
         "logging_nudges": True,
         "motivational_quotes": True,
+        "social": True,
     },
     "quiet_hours": {
         "enabled": False,
@@ -1689,6 +1690,7 @@ def _normalize_notification_preferences(raw: dict | None) -> dict:
             "macro_checkins": bool_value(categories.get("macro_checkins"), True),
             "logging_nudges": bool_value(categories.get("logging_nudges"), True),
             "motivational_quotes": bool_value(categories.get("motivational_quotes"), True),
+            "social": bool_value(categories.get("social"), True),
         },
         "quiet_hours": {
             "enabled": bool_value(quiet_hours.get("enabled"), False),
@@ -1740,6 +1742,10 @@ def register_push_token(
             is_active=True,
         )
         db.add(row)
+    from src.services.notification_service import update_user_timezone
+
+    if payload.timezone:
+        update_user_timezone(db, current_user, payload.timezone)
     db.commit()
     db.refresh(row)
     return {"id": row.id, "registered": True}

@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
 import { logicalRow, textAlignStart } from "../utils/rtl";
+import { SCREEN_SAFE_AREA_EDGES } from "../utils/safeAreaEdges";
 import { GREEN, GREEN_LIGHT, TEXT, BORDER, WHITE } from "../theme/colors";
 
 const MUTED = "#BBBBBB";
@@ -34,28 +35,34 @@ export const OnboardingLayout = ({
   nextLoading,
   nextDisabled,
   onSaveExit,
+  saveExitLabel,
   saveLoading,
   saveDisabled,
+  finalStepFooter,
   children,
 }: PropsWithChildren<{
   step: number;
   title: string;
   subtitle: string;
   onBack?: () => void;
-  onNext: () => void | Promise<void>;
+  onNext?: () => void | Promise<void>;
   nextLabel?: string;
   hideBack?: boolean;
   extraFooter?: ReactNode;
   nextLoading?: boolean;
   nextDisabled?: boolean;
   onSaveExit?: () => void | Promise<void>;
+  saveExitLabel?: string;
   saveLoading?: boolean;
   saveDisabled?: boolean;
+  /** Step 6 only: Back + primary Save & exit (full completion), no counter or Next. */
+  finalStepFooter?: boolean;
 }>) => {
   const { t } = useTranslation();
   const { isHydrating } = useOnboardingContext();
 
   const handleNext = () => {
+    if (!onNext) return;
     Keyboard.dismiss();
     const result = onNext();
     if (result && typeof (result as Promise<void>).then === "function") {
@@ -76,12 +83,10 @@ export const OnboardingLayout = ({
     }
   };
 
-  const nextText = t("onboarding.layout.nextArrow", {
-    label: nextLabel ?? t("common.next"),
-  });
+  const nextText = nextLabel ?? t("common.next");
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={SCREEN_SAFE_AREA_EDGES}>
       <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={styles.topPad}>
           <View style={styles.progressRow}>
@@ -114,6 +119,36 @@ export const OnboardingLayout = ({
 
         <View style={styles.footer}>
           {extraFooter}
+          {finalStepFooter ? (
+            <View style={styles.finalNavRow}>
+              <View style={styles.navSide}>
+                {!hideBack && onBack ? (
+                  <Pressable style={styles.outlineBtn} onPress={onBack} hitSlop={8} accessibilityRole="button">
+                    <Ionicons name="chevron-back" size={16} color={GREEN} />
+                    <Text style={styles.outlineBtnText}>{t("common.back")}</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.navSidePlaceholder} />
+                )}
+              </View>
+              <Pressable
+                style={[styles.nextBtn, styles.finalSaveBtn, (saveDisabled || saveLoading) && styles.nextBtnDisabled]}
+                onPress={handleSaveExit}
+                disabled={saveDisabled || saveLoading || !onSaveExit}
+                hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: Boolean(saveDisabled || saveLoading || !onSaveExit) }}
+              >
+                {saveLoading ? (
+                  <ActivityIndicator color={WHITE} />
+                ) : (
+                  <Text style={styles.nextText}>
+                    {saveExitLabel ?? t("onboarding.layout.saveAndExit")}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+          ) : (
           <View style={styles.navRow}>
             <View style={styles.navSide}>
               {!hideBack && onBack ? (
@@ -142,7 +177,7 @@ export const OnboardingLayout = ({
                     <ActivityIndicator size="small" color={GREEN} />
                   ) : (
                     <Text style={styles.outlineBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-                      {t("onboarding.layout.saveAndExit")}
+                      {saveExitLabel ?? t("onboarding.layout.saveAndExit")}
                     </Text>
                   )}
                 </Pressable>
@@ -165,6 +200,7 @@ export const OnboardingLayout = ({
               </Pressable>
             </View>
           </View>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -188,7 +224,7 @@ const styles = StyleSheet.create({
   title: { marginTop: 6, fontSize: 20, fontWeight: "800", color: TEXT, marginBottom: 5 },
   subtitle: { fontSize: 11, color: MUTED, lineHeight: 17, marginBottom: 14 },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: 16, paddingBottom: 18 },
+  content: { paddingHorizontal: 16, paddingBottom: 8 },
   hydratingWrap: { alignItems: "center", justifyContent: "center", paddingVertical: 48, gap: 12 },
   hydratingText: { color: MUTED, fontSize: 14, fontWeight: "700" },
   footer: {
@@ -204,6 +240,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
+    zIndex: 21,
+  },
+  finalNavRow: {
+    flexDirection: logicalRow,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
     zIndex: 21,
   },
   navSide: {
@@ -240,8 +283,8 @@ const styles = StyleSheet.create({
   },
   outlineBtnText: {
     color: GREEN,
-    fontWeight: "700",
-    fontSize: 13,
+    fontWeight: "800",
+    fontSize: 14,
     textAlign: "center",
   },
   actionBtnDisabled: { opacity: 0.7 },
@@ -257,6 +300,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   nextBtnDisabled: { opacity: 0.65 },
+  finalSaveBtn: {
+    flex: 1,
+    maxWidth: undefined,
+    minWidth: 0,
+    paddingHorizontal: 16,
+  },
   nextText: { color: WHITE, fontSize: 14, fontWeight: "800", textAlign: "center" },
   counter: {
     color: MUTED,

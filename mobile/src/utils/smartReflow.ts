@@ -46,23 +46,6 @@ function exerciseNameKey(name: string): string {
   return name.trim().toLowerCase();
 }
 
-function collectExerciseNamesOnFutureDays(
-  plan: WorkoutPlanCurrent,
-  snapshotByDay: Map<number, ReflowDaySnapshot>,
-): Set<string> {
-  const names = new Set<string>();
-  for (const overview of plan.month_overview) {
-    if (overview.is_past || overview.is_rest_day) continue;
-    const snapshot = snapshotByDay.get(overview.day);
-    if (!snapshot) continue;
-    for (const exercise of snapshot.exercises) {
-      const key = exerciseNameKey(exercise.name);
-      if (key) names.add(key);
-    }
-  }
-  return names;
-}
-
 function mergeUniqueExercises(
   base: WorkoutExercise[],
   additions: WorkoutExercise[],
@@ -120,11 +103,10 @@ export function buildSmartReflowPatches(
   }
 
   const snapshotByDay = new Map(daySnapshots.map((snapshot) => [snapshot.day, snapshot]));
-  const futureDayExerciseNames = collectExerciseNamesOnFutureDays(plan, snapshotByDay);
   const exercisesToMove = collectReflowCandidates(
     assessment,
     snapshotByDay,
-    futureDayExerciseNames,
+    historyItems,
     exerciseNameKey,
   );
 

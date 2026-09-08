@@ -138,6 +138,84 @@ const overviewDay22 = {
   assert(moves.length === 0, "does not emit duplicate move metadata");
 }
 
+// Completed on a past reflow target day — must not re-inject onto a later day.
+{
+  const closeGrip: WorkoutExercise = {
+    name: "Close Grip Bench Press",
+    sets: 2,
+    reps: "6-8",
+    muscle: "Triceps",
+    note: "",
+    rest_seconds: 90,
+  };
+  const overviewDay6 = {
+    day: 6,
+    is_past: true,
+    is_today: false,
+    is_future: false,
+    is_rest_day: false,
+    split_name: "Push",
+  };
+  const overviewDay8 = {
+    day: 8,
+    is_past: false,
+    is_today: true,
+    is_future: false,
+    is_rest_day: false,
+    split_name: "Push",
+  };
+  const plan = planStub([overviewDay1, overviewDay6, overviewDay8]);
+  const snapshots = [
+    snapshot(1, [closeGrip, incline], { is_past: true, is_future: false, split_name: "Push" }),
+    snapshot(6, [
+      { ...closeGrip, reflow_source_day: 1 },
+      { ...incline, reflow_source_day: 1 },
+    ], { is_past: true, is_future: false, split_name: "Push" }),
+    snapshot(8, [pullUp], { is_today: true, is_future: false, split_name: "Push" }),
+  ];
+  const history = [
+    {
+      id: 1,
+      exerciseName: "Close Grip Bench Press",
+      notes: "source=workout_planner; body_part=Triceps",
+      date: "2026-08-06T10:00:00Z",
+    },
+    {
+      id: 2,
+      exerciseName: "Incline Dumbbell Press",
+      notes: "source=workout_planner; body_part=Chest",
+      date: "2026-08-06T11:00:00Z",
+    },
+  ];
+  const { patches, moves } = buildSmartReflowPatches(plan, snapshots, history);
+  assert(patches.length === 0, "does not reflow exercises already completed on past reflow day");
+  assert(moves.length === 0, "does not emit moves for completed reflow exercises");
+}
+
+// Deleting a completed log makes the exercise eligible to reflow again.
+{
+  const plan = planStub([overviewDay1, overviewDay21]);
+  const snapshots = [
+    snapshot(1, [bench], { is_past: true, is_future: false, split_name: "Push" }),
+    snapshot(21, [pullUp], { is_future: true, split_name: "Push" }),
+  ];
+  const withoutLog = buildSmartReflowPatches(plan, snapshots, []);
+  assert(withoutLog.moves.length === 1, "missed exercise still reflows when never logged");
+
+  const withLog = buildSmartReflowPatches(plan, snapshots, [
+    {
+      id: 9,
+      exerciseName: "Bench Press",
+      notes: "source=workout_planner; body_part=Chest",
+      date: "2026-08-21T09:00:00Z",
+    },
+  ]);
+  assert(withLog.moves.length === 0, "logged exercise is not reflowed again");
+
+  const afterDelete = buildSmartReflowPatches(plan, snapshots, []);
+  assert(afterDelete.moves.length === 1, "deleting log restores reflow eligibility");
+}
+
 // Upper-body reflow must not land on a leg-focused day.
 {
   const plan = planStub([overviewDay1, overviewDay22]);

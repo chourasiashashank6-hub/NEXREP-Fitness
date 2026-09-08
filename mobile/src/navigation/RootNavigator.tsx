@@ -289,7 +289,13 @@ export const RootNavigator = () => {
         <Stack.Screen name="Onboarding">
           {() => (
             <OnboardingProvider key={sessionUserId ?? token ?? "onboarding"}>
-              <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Navigator
+                screenOptions={{
+                  headerShown: false,
+                  animation: "slide_from_right",
+                  animationTypeForReplace: "push",
+                }}
+              >
                 <Stack.Screen name="Screen1Personal" component={Screen1Personal} />
                 <Stack.Screen name="Screen2Goal" component={Screen2Goal} />
                 <Stack.Screen name="Screen3Activity" component={Screen3Activity} />

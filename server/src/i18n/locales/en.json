@@ -1,31 +1,43 @@
 {
   "notifications": {
     "macroCheckin": {
-      "title": "Macro check-in",
-      "body": "Your {{checkpoint}} check-in is off-track: {{summary}}. Make the next meal count.",
-      "lowCalories": "{{calories}} of {{targetCalories}} kcal",
-      "lowProtein": "{{protein}} of {{targetProtein}}g protein",
-      "highCalories": "{{calories}} kcal already logged"
+      "title": "⏱️ {{checkpoint}} macro check-in",
+      "body": "You're at {{summary}}. A small correction now keeps today's goal alive 🎯",
+      "lowCalories": "{{calories}}/{{targetCalories}} kcal so far",
+      "lowProtein": "{{protein}}/{{targetProtein}}g protein so far",
+      "highCalories": "{{calories}} kcal already — ease off a bit"
     },
     "missingMeal": {
-      "title": "Log your {{meal}}",
-      "body": "It looks like {{meal}} has not been logged yet. Add it now while it is fresh."
+      "titleVariants": {
+        "0": "🍽️ {{meal}} check-in",
+        "1": "Still haven't logged {{meal}}?",
+        "2": "⏰ {{meal}} o'clock"
+      },
+      "bodyVariants": {
+        "0": "A few taps keeps your macros honest. Log {{meal}} before it slips your mind.",
+        "1": "Your plan's waiting on {{meal}} — quick log, big difference 💪",
+        "2": "Don't let {{meal}} fall through the cracks. Log it while it's fresh."
+      }
     },
     "missingWorkout": {
-      "title": "Workout log missing",
-      "body": "No workout is logged today. Log your session or mark it as a rest day in your plan."
+      "title": "🏋️ No workout logged yet",
+      "body": "Log today's session — or mark it a rest day so your streak stays accurate."
     },
     "streakRisk": {
-      "title": "Protect your streak",
-      "body": "You have not logged meals or training today. Add one quick entry before the day ends."
+      "title": "🔥 Your streak's on the line",
+      "body": "Nothing logged today yet. One quick entry keeps the fire burning — don't let it go out now."
+    },
+    "streakLost": {
+      "title": "💔 Streak reset",
+      "body": "Your {{count}}-day streak reset yesterday — let's start climbing again 💪"
     },
     "quoteOfDay": {
-      "title": "Quote of the day",
-      "body": "\"{{quote}}\" - {{author}}"
+      "title": "☀️ Your daily fuel",
+      "body": "\"{{quote}}\" — {{author}}"
     },
     "weeklyDigest": {
-      "title": "Your NexRep weekly digest",
-      "body": "This week: {{mealsLogged}} nutrition days, {{workoutsLogged}} workouts, {{strengthLifts}} strength lifts logged. Open NexRep to plan the next one."
+      "title": "📊 Your week in review",
+      "body": "{{mealsLogged}} nutrition days, {{workoutsLogged}} workouts, {{strengthLifts}} PRs logged 💪 Let's make next week even better."
     }
   }
 }

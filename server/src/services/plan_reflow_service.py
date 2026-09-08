@@ -256,9 +256,72 @@ def _trim_exercises_to_cap(exercises: list[dict[str, Any]]) -> list[dict[str, An
     return trimmed
 
 
-def _repair_day_exercises(exercises: list[dict[str, Any]], entry: DailyWorkoutPlanEntry) -> list[dict[str, Any]]:
+def _planner_logged_exercise_names_in_month(
+    db: Session, user_id: int, year: int, month: int
+) -> set[str]:
+    """Exercise names with planner-checkbox logs anywhere in the plan month."""
+    start = datetime(year, month, 1)
+    if month == 12:
+        end = datetime(year + 1, 1, 1)
+    else:
+        end = datetime(year, month + 1, 1)
+    rows = (
+        db.query(Workout.exercise_name, Workout.notes)
+        .filter(
+            Workout.user_id == user_id,
+            Workout.date >= start,
+            Workout.date < end,
+        )
+        .all()
+    )
+    return {
+        (name or "").strip().lower()
+        for name, notes in rows
+        if is_planner_logged_workout(notes) and (name or "").strip()
+    }
+
+
+def _exercise_names_on_plan_except_day(plan: MonthlyWorkoutPlan, exclude_day: int) -> set[str]:
+    names: set[str] = set()
+    for entry in plan.entries:
+        if entry.is_rest_day or entry.day == exclude_day:
+            continue
+        names |= _exercise_names(_normalize_exercises(safe_json_loads(entry.exercises_json)))
+    return names
+
+
+def _strip_completed_reflow_exercises(
+    exercises: list[dict[str, Any]],
+    *,
+    logged_names: set[str],
+    other_day_names: set[str],
+) -> list[dict[str, Any]]:
+    """Drop reflow-tagged exercises already completed or present on another plan day."""
+    kept: list[dict[str, Any]] = []
+    for exercise in exercises:
+        name = (str(exercise.get("name") or "")).strip().lower()
+        source_day = exercise.get("reflow_source_day")
+        if source_day and name and (name in logged_names or name in other_day_names):
+            continue
+        kept.append(exercise)
+    return kept
+
+
+def _repair_day_exercises(
+    exercises: list[dict[str, Any]],
+    entry: DailyWorkoutPlanEntry,
+    *,
+    logged_names: set[str] | None = None,
+    other_day_names: set[str] | None = None,
+) -> list[dict[str, Any]]:
     """Keep valid Smart Reflow writes; fix duplicates, over-cap, and incompatible reflow only."""
     normalized = _normalize_exercises(exercises)
+    if logged_names is not None and other_day_names is not None:
+        normalized = _strip_completed_reflow_exercises(
+            normalized,
+            logged_names=logged_names,
+            other_day_names=other_day_names,
+        )
     repaired = _dedupe_exercises_by_name(normalized)
     repaired = [
         exercise
@@ -403,6 +466,7 @@ def repair_smart_reflow_plan(
     if not plan:
         raise LookupError("Plan not found")
 
+    logged_names = _planner_logged_exercise_names_in_month(db, user.id, plan.year, plan.month)
     repaired_days: list[int] = []
     updated_days: list[dict[str, Any]] = []
 
@@ -412,15 +476,15 @@ def repair_smart_reflow_plan(
         exercises = _normalize_exercises(safe_json_loads(entry.exercises_json))
         if not exercises:
             continue
-        if not _day_needs_repair(exercises, entry):
+        other_day_names = _exercise_names_on_plan_except_day(plan, entry.day)
+        kept = _repair_day_exercises(
+            exercises,
+            entry,
+            logged_names=logged_names,
+            other_day_names=other_day_names,
+        )
+        if kept == exercises and not _day_needs_repair(exercises, entry):
             continue
-
-        kept = _repair_day_exercises(exercises, entry)
-
-        entry.exercises_json = safe_json_dumps(kept)
-        entry.estimated_duration_min = estimate_duration_min(kept)
-        db.add(entry)
-        repaired_days.append(entry.day)
 
         entry.exercises_json = safe_json_dumps(kept)
         entry.estimated_duration_min = estimate_duration_min(kept)
@@ -625,11 +689,16 @@ def apply_weekly_compensation(
 
     entry_by_day = {entry.day: entry for entry in plan.entries}
     exercises_to_move: list[dict[str, Any]] = []
+    logged_names = _planner_logged_exercise_names_in_month(db, user.id, plan.year, plan.month)
     for day in missed_days:
         entry = entry_by_day.get(int(day))
         if not entry or entry.is_rest_day:
             continue
+        other_day_names = _exercise_names_on_plan_except_day(plan, int(day))
         for exercise in _priority_exercises(db, safe_json_loads(entry.exercises_json), 2):
+            name = (str(exercise.get("name") or "")).strip().lower()
+            if not name or name in logged_names or name in other_day_names:
+                continue
             tagged = dict(exercise)
             tagged["reflow_source_day"] = int(day)
             exercises_to_move.append(tagged)

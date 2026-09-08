@@ -217,6 +217,7 @@ export function NotificationPreferencesScreen({ navigation }: any) {
             <ToggleRow label={t("settings.notifications.macroCheckins")} subLabel={t("settings.notifications.macroCheckinsSub")} value={prefs.categories.macro_checkins} onChange={(v) => updateCategory("macro_checkins", v)} />
             <ToggleRow label={t("settings.notifications.loggingNudges")} subLabel={t("settings.notifications.loggingNudgesSub")} value={prefs.categories.logging_nudges} onChange={(v) => updateCategory("logging_nudges", v)} />
             <ToggleRow label={t("settings.notifications.motivationalQuotes")} subLabel={t("settings.notifications.motivationalQuotesSub")} value={prefs.categories.motivational_quotes} onChange={(v) => updateCategory("motivational_quotes", v)} />
+            <ToggleRow label={t("settings.notifications.social")} subLabel={t("settings.notifications.socialSub")} value={prefs.categories.social} onChange={(v) => updateCategory("social", v)} />
           </View>
 
           <View style={styles.card}>

@@ -103,6 +103,17 @@ export function hasAnyPlannerLogForDay(
   return Object.keys(buildLoggedExerciseIdMap(items, exercises, dayKey)).length > 0;
 }
 
+/** Exercise names with at least one planner-checkbox log on any calendar day. */
+export function collectLoggedPlannerExerciseNames(items: WorkoutHistoryMatchItem[]): Set<string> {
+  const names = new Set<string>();
+  for (const item of items) {
+    if (!isPlannerLoggedWorkout(item)) continue;
+    const key = (item.exerciseName || "").trim().toLowerCase();
+    if (key) names.add(key);
+  }
+  return names;
+}
+
 /** True when every exercise in the day's plan has a planner-checkbox log. */
 export function allPlannerExercisesLogged(
   items: WorkoutHistoryMatchItem[],

@@ -312,8 +312,8 @@ def notify_challenge_invite(db: Session, challenge: Challenge, inviter: User, in
         db,
         user_id=invitee.id,
         category="social",
-        title="Squad challenge invite",
-        body=f"{inviter.name} invited you to {title_snippet}.",
+        title="🏆 Squad challenge!",
+        body=f"{inviter.name} challenged you to {title_snippet} — ready to compete?",
         event_key=f"challenge-invite:{challenge.id}:{invitee.id}",
         data={
             "kind": "challenge_invite",
@@ -332,12 +332,12 @@ def notify_challenge_result(db: Session, challenge: Challenge) -> None:
     for participant in challenge.participants:
         if participant.status != "joined":
             continue
-        body = f"{winner.name} won {title_snippet}." if winner else f"{title_snippet} is complete."
+        body = f"{winner.name} won {title_snippet} 🏆" if winner else f"{title_snippet} just wrapped up — check the results."
         send_push_to_user(
             db,
             user_id=participant.user_id,
             category="social",
-            title="Challenge complete",
+            title="🏁 Challenge complete",
             body=body,
             event_key=f"challenge-result:{challenge.id}:{participant.user_id}",
             data={

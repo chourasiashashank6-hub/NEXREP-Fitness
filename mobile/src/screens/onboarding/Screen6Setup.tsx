@@ -54,12 +54,9 @@ export default function Screen6Setup({ navigation }: any) {
       step={6}
       title={t("onboarding.screen6.title")}
       subtitle={t("onboarding.screen6.subtitle")}
+      finalStepFooter
       onBack={() => navigation.goBack()}
-      onNext={onFinish}
-      nextLabel={t("onboarding.screen6.saveAndExit")}
-      nextLoading={saving}
-      nextDisabled={saving}
-      onSaveExit={saveAndExit}
+      onSaveExit={onFinish}
       saveLoading={saving}
       saveDisabled={saving}
     >

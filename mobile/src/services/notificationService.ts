@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
+import { getCalendars } from "expo-localization";
 import { Linking, PermissionsAndroid, Platform } from "react-native";
 import { devLog } from "../utils/devLog";
 import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
@@ -11,7 +12,7 @@ import type { MealDayPlan, MealPlanCurrent, WorkoutPlanCurrent } from "../types/
 import { istDateFromWallClock } from "../utils/localDate";
 import { GREEN } from "../theme/colors";
 
-type NotificationCategory = "workout" | "meals" | "macro-checkins" | "logging-nudges" | "motivational-quotes";
+type NotificationCategory = "workout" | "meals" | "macro-checkins" | "logging-nudges" | "motivational-quotes" | "social";
 type PermissionContext = "workout_schedule" | "meal_planner" | "settings";
 type StoredNotificationGroups = Record<string, string[]>;
 
@@ -62,6 +63,12 @@ const CHANNELS: Record<NotificationCategory, Notifications.NotificationChannelIn
     sound: "default",
     lightColor: "#FBBF24",
   },
+  social: {
+    name: i18n.t("notifications.channels.social"),
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: "default",
+    lightColor: "#4A90D9",
+  },
 };
 
 Notifications.setNotificationHandler({
@@ -80,6 +87,24 @@ const androidApiLevel = () => {
 };
 
 const FCM_SETUP_URL = "https://docs.expo.dev/push-notifications/fcm-credentials/";
+
+/** Device IANA timezone for server-side scheduled push alignment. */
+export function getDeviceTimezone(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) return tz;
+  } catch {
+    // fall through
+  }
+  try {
+    const calendars = getCalendars();
+    const tz = calendars[0]?.timeZone;
+    if (tz) return tz;
+  } catch {
+    // fall through
+  }
+  return "UTC";
+}
 
 /** Turn native FCM setup failures into an actionable message for settings / test UI. */
 export function formatExpoPushTokenError(err: unknown): Error {
@@ -200,6 +225,7 @@ export async function registerExpoPushTokenForCurrentDevice(): Promise<string | 
       expo_push_token: token.data,
       platform: Platform.OS === "ios" ? "ios" : "android",
       device_id: Constants.sessionId ?? undefined,
+      timezone: getDeviceTimezone(),
     });
     if (__DEV__) {
       devLog("[Notifications] Push token registered:", token.data.slice(0, 28) + "…");
@@ -326,8 +352,8 @@ export async function scheduleRestEndNotification(
   nextExerciseName: string,
 ): Promise<string | null> {
   return scheduleOne({
-    title: "Rest over 💪",
-    body: `${nextExerciseName} is up — let's go!`,
+    title: i18n.t("notifications.scheduled.restEndTitle"),
+    body: i18n.t("notifications.scheduled.restEndBody", { nextExerciseName }),
     date: restEndsAt,
     category: "workout",
     data: { kind: "rest_end" },

@@ -270,11 +270,12 @@ def react_to_event(db: Session, *, event: ActivityEvent, actor: User, reaction_t
     db.commit()
     db.refresh(reaction)
     if event.user_id != actor.id:
+        reaction_title = "🔥 You got cheered!" if reaction_type == "flame" else "👏 Someone's clapping for you!"
         send_push_to_user(
             db,
             user_id=event.user_id,
             category="social",
-            title="New reaction",
+            title=reaction_title,
             body=_reaction_body(actor, event, reaction_type),
             event_key=f"feed-reaction:{event.id}:{actor.id}:{reaction_type}",
             data={

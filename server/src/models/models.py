@@ -27,6 +27,7 @@ class User(Base):
     subscription_expiry = Column(DateTime(timezone=True), nullable=True)
     razorpay_subscription_id = Column(String(128), nullable=True, index=True)
     preferred_language = Column(String(32), nullable=True)
+    timezone = Column(String(64), nullable=False, default="UTC", server_default="UTC")
     stack_visibility = Column(Boolean, nullable=False, default=True)
     profile_photo_url = Column(String(512), nullable=True)
     pose_calibration = Column(JSONB, nullable=True)
