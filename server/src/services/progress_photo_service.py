@@ -126,3 +126,16 @@ def delete_progress_photo(db: Session, user_id: int, photo_id: int) -> None:
     db.delete(row)
     db.commit()
     remove_progress_photo_file(storage_path)
+
+
+def update_progress_photo_angle(db: Session, user_id: int, photo_id: int, angle: str) -> ProgressPhoto:
+    angle_norm = (angle or "front").strip().lower()
+    if angle_norm not in ALLOWED_ANGLES:
+        raise HTTPException(status_code=400, detail="angle must be front or side")
+    row = db.query(ProgressPhoto).filter(ProgressPhoto.id == photo_id, ProgressPhoto.user_id == user_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Progress photo not found")
+    row.angle = angle_norm
+    db.commit()
+    db.refresh(row)
+    return row

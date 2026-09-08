@@ -203,8 +203,8 @@
     "activityOverview": "ACTIVITY OVERVIEW",
     "workouts": "Workouts",
     "kcalBurned": "kcal burned",
-    "dayStreak": "Day streak",
-    "avgPerWeek": "Avg/week",
+    "nutritionAdherence": "Adherence",
+    "totalMealsLogged": "Meals logged",
     "proTitle": "NexRep PRO",
     "proSubtitle": "Unlock AI tracking & premium coaching",
     "subscriptions": "Subscriptions",
@@ -537,7 +537,13 @@
       "emptyTitle": "No progress photos yet",
       "emptyBody": "Capture your first photo to start a visual timeline. Photos are stored locally by default.",
       "captureCta": "Capture photo",
-      "backedUp": "Backed up"
+      "backedUp": "Backed up",
+      "delete": "Delete",
+      "deleteConfirmTitle": "Delete this photo?",
+      "deleteConfirmBody": "This removes the photo from your device and cloud backup. This can't be undone.",
+      "deleteFailed": "Could not delete this photo.",
+      "angleUpdateFailed": "Could not update the photo angle.",
+      "tapToChangeAngle": "tap to switch"
     },
     "summary": {
       "title": "Transformation summary",

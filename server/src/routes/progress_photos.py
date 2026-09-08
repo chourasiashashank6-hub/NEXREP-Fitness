@@ -14,6 +14,7 @@ from src.services.progress_photo_service import (
     delete_progress_photo,
     list_progress_photos,
     serialize_progress_photo,
+    update_progress_photo_angle,
 )
 from src.utils.auth import get_current_user
 from src.utils.plan_check import require_feature
@@ -26,6 +27,10 @@ class ProgressPhotoUploadRequest(BaseModel):
     mime_type: str = Field(default="image/jpeg")
     taken_at: datetime
     angle: str = Field(default="front", description="front | side")
+
+
+class ProgressPhotoUpdateRequest(BaseModel):
+    angle: str = Field(description="front | side")
 
 
 @router.get("")
@@ -67,3 +72,20 @@ def remove_progress_photo(
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Could not delete progress photo") from exc
     return {"deleted": True, "id": photo_id}
+
+
+@router.patch("/{photo_id}")
+def patch_progress_photo(
+    photo_id: int,
+    body: ProgressPhotoUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    require_feature(current_user, "progress_photos", db)
+    try:
+        row = update_progress_photo_angle(db, current_user.id, photo_id, body.angle)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Could not update progress photo") from exc
+    return {"photo": serialize_progress_photo(row)}

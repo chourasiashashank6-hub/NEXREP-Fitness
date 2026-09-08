@@ -2812,6 +2812,18 @@ def profile(current_user: User = Depends(get_current_user), db: Session = Depend
     return _profile_payload(db, current_user)
 
 
+@app.get("/api/profile/activity-stats")
+def profile_activity_stats(
+    local_date: date | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from src.services.coach_summary_service import get_profile_activity_stats
+
+    anchor = local_date or date.today()
+    return get_profile_activity_stats(db, current_user, anchor)
+
+
 def _dev_tier_toggle_email_set() -> set[str]:
     return {e.strip().lower() for e in settings.DEV_TIER_TOGGLE_EMAILS.split(",") if e.strip()}
 

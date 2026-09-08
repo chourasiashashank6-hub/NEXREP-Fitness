@@ -29,6 +29,15 @@ const ANDROID_13_API = 33;
 const DEFAULT_WORKOUT_TIME = "18:30";
 const DEFAULT_WATER_TIMES = ["09:00", "11:00", "13:00", "15:00", "17:00", "19:00", "21:00"];
 const DEFAULT_MOTIVATION_TIME = "08:00";
+const MEAL_TIME_FALLBACKS: Record<string, string> = {
+  breakfast: "08:00",
+  lunch: "13:00",
+  dinner: "20:00",
+  snack: "16:00",
+  mid_morning_snack: "10:30",
+  afternoon_snack: "15:30",
+  evening_snack: "17:00",
+};
 const BATTERY_TIP_KEY = "nexrep_battery_tip_seen";
 
 const CHANNELS: Record<NotificationCategory, Notifications.NotificationChannelInput> = {
@@ -121,8 +130,26 @@ export function formatExpoPushTokenError(err: unknown): Error {
   return err instanceof Error ? err : new Error(message);
 }
 
+const mealTimeFallback = (mealType: string) => {
+  const key = mealType.trim().toLowerCase().replace(/\s+/g, "_");
+  return MEAL_TIME_FALLBACKS[key] ?? "12:00";
+};
+
 const parseTime = (time: string, fallback = DEFAULT_WORKOUT_TIME) => {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(time.trim()) ?? /^(\d{1,2}):(\d{2})$/.exec(fallback);
+  const trimmed = time.trim();
+  const amPmMatch = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(trimmed);
+  if (amPmMatch) {
+    let hour = Number(amPmMatch[1]);
+    const minute = Number(amPmMatch[2]);
+    const meridiem = amPmMatch[3].toUpperCase();
+    if (meridiem === "PM" && hour < 12) hour += 12;
+    if (meridiem === "AM" && hour === 12) hour = 0;
+    return {
+      hour: Math.min(23, Math.max(0, hour)),
+      minute: Math.min(59, Math.max(0, minute)),
+    };
+  }
+  const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed) ?? /^(\d{1,2}):(\d{2})$/.exec(fallback);
   const hour = Math.min(23, Math.max(0, Number(match?.[1] ?? 18)));
   const minute = Math.min(59, Math.max(0, Number(match?.[2] ?? 30)));
   return { hour, minute };
@@ -420,7 +447,8 @@ export async function rescheduleMealNotifications(plan: MealPlanCurrent | null) 
   const ids: string[] = [];
   for (const day of schedulableDays) {
     for (const meal of day.meals) {
-      const date = dateForPlanDay(plan.month, plan.year, day.day, meal.time);
+      const { hour, minute } = parseTime(meal.time, mealTimeFallback(meal.meal_type));
+      const date = istDateFromWallClock(plan.year, plan.month, day.day, hour, minute);
       const id = await scheduleOne({
         title: i18n.t("notifications.scheduled.mealTitle", { meal: meal.meal_type.replace(/_/g, " ") }),
         body: i18n.t("notifications.scheduled.mealBody", { food: meal.items?.[0]?.food ?? i18n.t("notifications.scheduled.mealFallback") }),

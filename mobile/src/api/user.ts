@@ -58,6 +58,18 @@ export const updatePreferredLanguage = async (preferredLanguage: string | null) 
   return data;
 };
 
+export type ProfileActivityStats = {
+  total_meals_logged: number;
+  nutrition_adherence_pct: number;
+};
+
+export const getProfileActivityStats = async (localDate?: string): Promise<ProfileActivityStats> => {
+  const { data } = await apiClient.get<ProfileActivityStats>("/api/profile/activity-stats", {
+    params: localDate ? { local_date: localDate } : undefined,
+  });
+  return data;
+};
+
 export const putPoseCalibration = async (poseCalibration: Record<string, unknown>) => {
   const { data } = await apiClient.put<{
     ok: boolean;

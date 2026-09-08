@@ -33,3 +33,13 @@ export async function uploadProgressPhotoBackup(payload: {
 export async function deleteBackedUpProgressPhoto(photoId: number): Promise<void> {
   await apiClient.delete(`/api/progress-photos/${photoId}`);
 }
+
+export async function updateBackedUpProgressPhotoAngle(
+  photoId: number,
+  angle: ProgressPhotoAngle,
+): Promise<BackedUpProgressPhoto> {
+  const { data } = await apiClient.patch<{ photo: BackedUpProgressPhoto }>(`/api/progress-photos/${photoId}`, {
+    angle,
+  });
+  return data.photo;
+}

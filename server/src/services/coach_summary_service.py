@@ -230,6 +230,25 @@ def _aggregate_days(days: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def count_total_meals_logged(db: Session, user_id: int) -> int:
+    manual = db.query(func.count(MealEntry.meal_id)).filter(MealEntry.user_id == user_id).scalar() or 0
+    ai = db.query(func.count(AIFoodMealEntry.ai_meal_id)).filter(AIFoodMealEntry.user_id == user_id).scalar() or 0
+    return int(manual) + int(ai)
+
+
+def nutrition_adherence_pct_for_window(db: Session, user: User, anchor: date, window_days: int = 30) -> int:
+    start = anchor - timedelta(days=window_days - 1)
+    day_rows = [day_nutrition_snapshot(db, user, day) for day in _iter_dates(start, anchor)]
+    return int(_aggregate_days(day_rows).get("adherence_pct") or 0)
+
+
+def get_profile_activity_stats(db: Session, user: User, anchor: date) -> dict[str, int]:
+    return {
+        "total_meals_logged": count_total_meals_logged(db, user.id),
+        "nutrition_adherence_pct": nutrition_adherence_pct_for_window(db, user, anchor),
+    }
+
+
 def _weight_in_range(db: Session, user_id: int, start: date, end: date) -> dict[str, Any]:
     rows = (
         db.query(WeightLog)

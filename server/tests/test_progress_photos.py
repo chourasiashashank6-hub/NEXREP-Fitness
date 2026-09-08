@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from src.db.session import SessionLocal
 from src.models.models import User
 from src.models.progress_photos import ProgressPhoto
-from src.services.progress_photo_service import create_progress_photo, delete_progress_photo, list_progress_photos
+from src.services.progress_photo_service import create_progress_photo, delete_progress_photo, list_progress_photos, update_progress_photo_angle
 
 
 @pytest.fixture(scope="module")
@@ -58,3 +58,20 @@ def test_create_list_delete_progress_photo(db: Session):
     delete_progress_photo(db, user_id, row.id)
     items_after = list_progress_photos(db, user_id)
     assert all(item.id != row.id for item in items_after)
+
+
+def test_update_progress_photo_angle(db: Session):
+    user_id = _ensure_user(db, "progress_photo_angle@test.local")
+    db.query(ProgressPhoto).filter(ProgressPhoto.user_id == user_id).delete()
+    db.commit()
+    row = create_progress_photo(
+        db,
+        user_id=user_id,
+        taken_at=datetime(2026, 8, 2, 12, 0, 0, tzinfo=timezone.utc).replace(tzinfo=None),
+        angle="front",
+        image_bytes=_tiny_jpeg(),
+    )
+    updated = update_progress_photo_angle(db, user_id, row.id, "side")
+    assert updated.angle == "side"
+    refreshed = db.query(ProgressPhoto).filter(ProgressPhoto.id == row.id).one()
+    assert refreshed.angle == "side"

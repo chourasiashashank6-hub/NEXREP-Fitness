@@ -25,7 +25,7 @@ import { apiClient, resolveApiBaseUrl } from "../api/client";
 import { getDailyCalorieLog, todayLocal } from "../api/caloriesLog";
 import { fetchOnboardingMe } from "../api/onboarding";
 import { getStrengthProgress, type StrengthProgress } from "../api/strength";
-import { getProfile, removeProfilePhoto, uploadProfilePhoto } from "../api/user";
+import { getProfile, getProfileActivityStats, removeProfilePhoto, uploadProfilePhoto } from "../api/user";
 import { getWorkoutHistory } from "../api/workout";
 import { fetchWeightHistory } from "../api/weight";
 import { ProfileXpCard } from "../components/ProfileXpCard";
@@ -202,8 +202,8 @@ export const ProfileScreen = () => {
   const [stats, setStats] = useState({
     totalWorkoutsDone: 0,
     totalKcalBurned: 0,
-    currentDayStreak: 0,
-    avgSessionsPerWeek: 0,
+    nutritionAdherencePct: 0,
+    totalMealsLogged: 0,
   });
   const lastCoreLoadAt = useRef(0);
   const lastWeightLoadAt = useRef(0);
@@ -297,11 +297,11 @@ export const ProfileScreen = () => {
 
   const load = useCallback(async (force = false) => {
     try {
-      const [profile, onboardingRes, burnRes, historyRes, strengthProgressRes, goalProgressRes] = await Promise.all([
+      const [profile, onboardingRes, burnRes, activityStatsRes, strengthProgressRes, goalProgressRes] = await Promise.all([
         getProfile(),
         fetchOnboardingMe().catch(() => null),
         apiClient.get<{ totalCaloriesBurned: number; sessionCount: number }>("/workout/total-burn").catch(() => ({ data: { totalCaloriesBurned: 0, sessionCount: 0 } })),
-        apiClient.get<{ items: Array<{ date: string }> }>("/workout/history", { params: { hours: 24 * 30 } }).catch(() => ({ data: { items: [] } })),
+        getProfileActivityStats(todayLocal()).catch(() => ({ total_meals_logged: 0, nutrition_adherence_pct: 0 })),
         getStrengthProgress().catch(() => null),
         apiClient.get<{ daily_delta_kcal?: number }>("/api/goal-progress", { params: { local_date: todayLocal() } }).catch(() => ({ data: null })),
       ]);
@@ -319,19 +319,7 @@ export const ProfileScreen = () => {
       const pace = ob?.goal?.pace === "slow" ? 0.25 : ob?.goal?.pace === "aggressive" ? 0.75 : 0.5;
       const registrationIso = typeof profile.createdAt === "string" && profile.createdAt.length >= 10 ? profile.createdAt.slice(0, 10) : "";
 
-      const workoutDates = (historyRes.data.items || []).map((i) => new Date(i.date).toISOString().slice(0, 10));
-      const uniqDates = Array.from(new Set(workoutDates)).sort((a, b) => +new Date(b) - +new Date(a));
-      let streak = 0;
-      for (let i = 0; i < uniqDates.length; i++) {
-        const expected = new Date();
-        expected.setDate(expected.getDate() - i);
-        if (uniqDates[i] === expected.toISOString().slice(0, 10)) streak += 1;
-        else break;
-      }
-
       const sessionCount = Number(burnRes.data.sessionCount || 0);
-      const weeksActive = Math.max(1, 8);
-      const avgSessions = round1(sessionCount / weeksActive);
 
       setFirstName(f || "User");
       setLastName(l || "");
@@ -365,8 +353,8 @@ export const ProfileScreen = () => {
       setStats({
         totalWorkoutsDone: sessionCount,
         totalKcalBurned: Number(burnRes.data.totalCaloriesBurned || 0),
-        currentDayStreak: streak,
-        avgSessionsPerWeek: avgSessions,
+        nutritionAdherencePct: Number(activityStatsRes.nutrition_adherence_pct || 0),
+        totalMealsLogged: Number(activityStatsRes.total_meals_logged || 0),
       });
       const baseFrom = dates15[dates15.length - 1] || dates15[0] || "";
       const defaultTo = dates15[0] || "";
@@ -1173,8 +1161,8 @@ export const ProfileScreen = () => {
         <View style={styles.activityStatsRow}>
           <StatTile value={numFmt(stats.totalWorkoutsDone)} label={t("profile.workouts")} valueColor={BLUE} icon="🏋️" iconBg={BLUE_LIGHT} />
           <StatTile value={numFmt(stats.totalKcalBurned)} label={t("profile.kcalBurned")} valueColor={ORANGE} icon="🔥" iconBg={ORANGE_LIGHT} />
-          <StatTile value={numFmt(stats.currentDayStreak)} label={t("profile.dayStreak")} valueColor={GREEN} icon="⚡" iconBg={GREEN_LIGHT} />
-          <StatTile value={String(stats.avgSessionsPerWeek)} label={t("profile.avgPerWeek")} valueColor={PURPLE} icon="📊" iconBg={PURPLE_LIGHT} isLast />
+          <StatTile value={`${stats.nutritionAdherencePct}%`} label={t("profile.nutritionAdherence")} valueColor={GREEN} icon="🎯" iconBg={GREEN_LIGHT} />
+          <StatTile value={numFmt(stats.totalMealsLogged)} label={t("profile.totalMealsLogged")} valueColor={PURPLE} icon="🍽️" iconBg={PURPLE_LIGHT} isLast />
         </View>
       </View>
 

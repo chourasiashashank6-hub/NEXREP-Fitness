@@ -2,7 +2,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 import { resolveApiBaseUrl } from "../api/client";
 import {
+  deleteBackedUpProgressPhoto,
   listBackedUpProgressPhotos,
+  updateBackedUpProgressPhotoAngle,
   uploadProgressPhotoBackup,
   type BackedUpProgressPhoto,
 } from "../api/progressPhotos";
@@ -116,6 +118,18 @@ export async function deleteLocalProgressPhoto(localId: string): Promise<void> {
   await writeIndex(items.filter((item) => item.id !== localId));
 }
 
+export async function updateLocalProgressPhotoAngle(
+  localId: string,
+  angle: ProgressPhotoAngle,
+): Promise<LocalProgressPhoto | null> {
+  const items = await readIndex();
+  const idx = items.findIndex((item) => item.id === localId);
+  if (idx < 0) return null;
+  items[idx] = { ...items[idx], angle };
+  await writeIndex(items);
+  return items[idx];
+}
+
 export async function readLocalProgressPhotoBase64(localUri: string): Promise<string> {
   return FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
 }
@@ -189,4 +203,25 @@ export async function listMergedProgressPhotos(): Promise<ProgressPhotoListEntry
   }
 
   return merged.sort((a, b) => b.takenAt.localeCompare(a.takenAt));
+}
+
+export async function deleteProgressPhotoEntry(photo: ProgressPhotoListEntry): Promise<void> {
+  if (!photo.id.startsWith("remote_")) {
+    await deleteLocalProgressPhoto(photo.id);
+  }
+  if (photo.serverId != null) {
+    await deleteBackedUpProgressPhoto(photo.serverId);
+  }
+}
+
+export async function updateProgressPhotoEntryAngle(
+  photo: ProgressPhotoListEntry,
+  angle: ProgressPhotoAngle,
+): Promise<void> {
+  if (!photo.id.startsWith("remote_")) {
+    await updateLocalProgressPhotoAngle(photo.id, angle);
+  }
+  if (photo.serverId != null) {
+    await updateBackedUpProgressPhotoAngle(photo.serverId, angle);
+  }
 }

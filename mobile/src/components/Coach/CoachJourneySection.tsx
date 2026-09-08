@@ -89,15 +89,7 @@ export function CoachJourneySection({
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingBox}>
-        <ActivityIndicator size="small" color={accentColor} />
-      </View>
-    );
-  }
-
-  if (!items.length) return null;
+  if (loading || !items.length) return null;
 
   const hasMore = items.length < total;
 
@@ -156,7 +148,6 @@ export function CoachJourneySection({
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: 14 },
-  loadingBox: { paddingVertical: 8, alignItems: "center" },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   sectionLabel: { color: MUTED, fontSize: 10, fontWeight: "900", letterSpacing: 0.8 },
   badge: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
