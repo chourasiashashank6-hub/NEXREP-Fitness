@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import NetInfo from "@react-native-community/netinfo";
 import { Platform } from "react-native";
 import type { MealType } from "../api/caloriesLog";
-import { analyzeFoodImageWithGroq, FoodAnalysisResult, FoodScanLimitDetail } from "../services/foodRecognitionService";
+import { recognizeFoodFromImage, FoodAnalysisResult, FoodScanLimitDetail } from "../services/foodRecognitionService";
 
 export const useFoodRecognition = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -52,7 +52,7 @@ export const useFoodRecognition = () => {
         }
 
         const response = await withTimeout(
-          analyzeFoodImageWithGroq({ base64, mimeType, mealType }),
+          recognizeFoodFromImage({ base64, mimeType, mealType }),
           65000,
           "Image analysis timed out. Please try again.",
         );

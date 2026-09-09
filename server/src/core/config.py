@@ -42,14 +42,9 @@ class Settings(BaseSettings):
         "http://localhost:8000,http://127.0.0.1:8000,"
         "http://localhost:8081,http://127.0.0.1:8081"
     )
-    OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
-    GEMINI_API_KEY_FALLBACK: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-3.6-flash"
     GOOGLE_PLACES_API_KEY: str = ""
-    GROQ_API_KEY: str = ""
-    GROQ_API_KEY_FALLBACK: str = ""
-    GROQ_MODEL: str = "llama-3.3-70b-versatile"
     FEEDBACK_TO_EMAIL: str = "admin@nexrep.in"
     FEEDBACK_SMTP_HOST: str = ""
     FEEDBACK_SMTP_PORT: int = 587
@@ -78,6 +73,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = str(ENV_FILE)
+        extra = "ignore"
 
 
 settings = Settings()

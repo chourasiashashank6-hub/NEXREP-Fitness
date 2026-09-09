@@ -122,7 +122,7 @@ const mapAxiosError = (error: unknown): FoodAnalysisError => {
   return { error: i18n.t("services.food.analyzeFailed") };
 };
 
-export const analyzeFoodImageWithGroq = async ({
+export const recognizeFoodFromImage = async ({
   base64,
   mimeType,
   mealType,

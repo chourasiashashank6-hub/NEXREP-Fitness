@@ -1876,7 +1876,7 @@
         "previousSession": "From previous session",
         "previousInsight": "Previous insight (tap Refresh to update)",
         "apiKeyMissing": "API key missing",
-        "apiKeyMissingBody": "Configure GROQ_API_KEY on the server and restart.",
+        "apiKeyMissingBody": "Configure GEMINI_API_KEY on the server and restart.",
         "noNutritionData": "Abhi koi nutrition data nahi hai.",
         "noNutritionDataBody": "your meals first to get AI insights. log karein",
         "buildingNutritionPlan": "Building your nutrition plan...",

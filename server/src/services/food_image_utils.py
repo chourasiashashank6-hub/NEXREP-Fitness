@@ -8,7 +8,7 @@ import re
 
 DATA_URI_RE = re.compile(r"^data:(image/[\w.+-]+);base64,(.+)$", re.IGNORECASE | re.DOTALL)
 
-# Groq base64 payloads must stay under ~4MB; keep a safety margin.
+# Vision API base64 payloads must stay under ~4MB; keep a safety margin.
 MAX_IMAGE_BYTES = 3_500_000
 MAX_DIMENSION_PX = 960
 

@@ -1866,7 +1866,7 @@
         "previousSession": "De la session précédente",
         "previousInsight": "Insight précédent (appuyez sur Actualiser pour mettre à jour)",
         "apiKeyMissing": "Clé API manquante",
-        "apiKeyMissingBody": "Configurez GROQ_API_KEY sur le serveur et redémarrez.",
+        "apiKeyMissingBody": "Configurez GEMINI_API_KEY sur le serveur et redémarrez.",
         "noNutritionData": "Aucune donnée nutritionnelle pour l'instant",
         "noNutritionDataBody": "Enregistrez d'abord vos repas pour obtenir des informations sur l'IA.",
         "buildingNutritionPlan": "Construire votre plan nutritionnel...",

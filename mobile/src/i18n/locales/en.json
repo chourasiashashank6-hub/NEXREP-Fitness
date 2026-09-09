@@ -2124,7 +2124,7 @@
         "previousInsight": "Previous insight (tap Refresh to update)",
         "staleInsightBanner": "Outdated insight — tap Refresh for today's analysis",
         "apiKeyMissing": "API key missing",
-        "apiKeyMissingBody": "Configure GROQ_API_KEY on the server and restart.",
+        "apiKeyMissingBody": "Configure GEMINI_API_KEY on the server and restart.",
         "noNutritionData": "No nutrition data yet",
         "noNutritionDataBody": "Log your meals first to get AI insights.",
         "buildingNutritionPlan": "Building your nutrition plan...",

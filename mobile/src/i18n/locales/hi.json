@@ -2025,7 +2025,7 @@
         "previousSession": "पिछले सत्र से",
         "previousInsight": "पिछली जानकारी (अपडेट करने के लिए रीफ़्रेश करें टैप करें)",
         "apiKeyMissing": "API कुंजी गायब है",
-        "apiKeyMissingBody": "GROQ_API_KEY को server पर कॉन्फ़िगर करें और पुनरारंभ करें।",
+        "apiKeyMissingBody": "GEMINI_API_KEY को server पर कॉन्फ़िगर करें और पुनरारंभ करें।",
         "noNutritionData": "अभी तक कोई पोषण डेटा नहीं है",
         "noNutritionDataBody": "AI अंतर्दृष्टि प्राप्त करने के लिए पहले अपना भोजन लॉग करें।",
         "buildingNutritionPlan": "अपनी पोषण योजना बनाना...",
