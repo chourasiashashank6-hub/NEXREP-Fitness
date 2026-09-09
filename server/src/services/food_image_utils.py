@@ -10,7 +10,7 @@ DATA_URI_RE = re.compile(r"^data:(image/[\w.+-]+);base64,(.+)$", re.IGNORECASE |
 
 # Groq base64 payloads must stay under ~4MB; keep a safety margin.
 MAX_IMAGE_BYTES = 3_500_000
-MAX_DIMENSION_PX = 1280
+MAX_DIMENSION_PX = 960
 
 
 def _detect_mime(data: bytes) -> str | None:

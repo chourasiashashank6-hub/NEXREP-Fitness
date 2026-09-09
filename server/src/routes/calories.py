@@ -521,8 +521,12 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
     import re
 
     text = re.sub(r"<[^>]*thinking[^>]*>.*?</[^>]+>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
-    if not text.lstrip().startswith("{") and "{" in text:
-        text = text[text.index("{") :]
+    stripped = text.lstrip()
+    if not stripped.startswith("{") and not stripped.startswith("["):
+        if "[" in text and ("{" not in text or text.index("[") < text.index("{")):
+            text = text[text.index("[") :]
+        elif "{" in text:
+            text = text[text.index("{") :]
 
     # Strip common wrappers like ```json ... ``` before deeper parsing.
     if "```" in text:
@@ -533,6 +537,10 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
                 parsed = json.loads(part)
                 if isinstance(parsed, dict):
                     return parsed
+                if isinstance(parsed, list):
+                    for item in parsed:
+                        if isinstance(item, dict):
+                            return item
             except Exception:
                 continue
 
@@ -540,6 +548,10 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
         parsed = json.loads(text)
         if isinstance(parsed, dict):
             return parsed
+        if isinstance(parsed, list):
+            for item in parsed:
+                if isinstance(item, dict):
+                    return item
     except Exception:
         pass
 
@@ -592,8 +604,17 @@ def _normalize_food_analysis_payload(parsed: dict[str, Any]) -> dict[str, Any]:
     food_name = str(parsed.get("foodName") or "").strip()
     if not food_name:
         raise ValueError("Could not detect food from this image.")
-    confidence_raw = str(parsed.get("confidence") or "medium").strip().lower()
-    confidence = confidence_raw if confidence_raw in {"low", "medium", "high"} else "medium"
+    confidence_value = parsed.get("confidence")
+    if isinstance(confidence_value, (int, float)):
+        if confidence_value >= 0.8:
+            confidence = "high"
+        elif confidence_value >= 0.5:
+            confidence = "medium"
+        else:
+            confidence = "low"
+    else:
+        confidence_raw = str(confidence_value or "medium").strip().lower()
+        confidence = confidence_raw if confidence_raw in {"low", "medium", "high"} else "medium"
     serving = str(parsed.get("estimatedServingSize") or "").strip() or "100g"
     return {
         "foodName": food_name,
@@ -607,7 +628,7 @@ def _normalize_food_analysis_payload(parsed: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _groq_food_image_analysis(
+def _groq_food_image_analysis(  # noqa: C901
     base64: str,
     mime_type: str | None,
     *,
@@ -635,70 +656,41 @@ def _groq_food_image_analysis(
     used_model = model_candidates[0]
     used_fallback_key = False
     last_err: str | None = None
+    import time
+
     for key_idx, api_key in enumerate(groq_keys):
         for model_name in model_candidates:
-            try:
-                payload = post_json(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {api_key}",
-                        "Accept": "application/json",
-                        "User-Agent": "fitness-food-analyzer/1.0",
-                    },
-                    payload={
-                        "model": model_name,
-                        "temperature": 0.1,
-                        "max_tokens": 500,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": FOOD_SCAN_USER_MESSAGE},
-                                    {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
-                                ],
-                            },
-                        ],
-                    },
-                    timeout=40,
-                )
-                used_model = model_name
-                used_fallback_key = key_idx > 0
-                break
-            except ExternalHTTPError as e:
-                _log_food_provider_failure(
-                    db=db,
-                    user_id=user_id,
-                    provider="groq",
-                    model=model_name,
-                    meal_slot=meal_slot,
-                )
-                body = e.body or ""
-                lower = body.lower()
-                if e.status_code == 429:
-                    last_err = f"{model_name}: rate limited"
-                    continue
-                if e.status_code in (400, 403, 404) and (
-                    "model_not_found" in lower
-                    or "not found" in lower
-                    or "decommissioned" in lower
-                    or "no longer supported" in lower
-                    or "model_permission_blocked" in lower
-                    or "blocked at the organization" in lower
-                    or "does not have access" in lower
-                ):
-                    last_err = f"{model_name}: unavailable"
-                    continue
-                if e.status_code == 400 and "messages[1].content must be a string" in body:
-                    last_err = f"{model_name}: not vision-capable for this key"
-                    continue
-                if e.status_code == 400 and "invalid image" in lower:
-                    raise RuntimeError("Invalid image data") from e
-                raise RuntimeError(f"Groq HTTP {e.status_code}: {body[:260]}") from e
-            except RuntimeError as e:
-                msg = str(e).lower()
-                if "timed out" in msg or "network error" in msg or "ssl error" in msg:
+            for attempt_idx in range(3):
+                try:
+                    payload = post_json(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={
+                            "Content-Type": "application/json",
+                            "Authorization": f"Bearer {api_key}",
+                            "Accept": "application/json",
+                            "User-Agent": "fitness-food-analyzer/1.0",
+                        },
+                        payload={
+                            "model": model_name,
+                            "temperature": 0.1,
+                            "max_tokens": 500,
+                            "messages": [
+                                {"role": "system", "content": system_prompt},
+                                {
+                                    "role": "user",
+                                    "content": [
+                                        {"type": "text", "text": FOOD_SCAN_USER_MESSAGE},
+                                        {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{base64}"}},
+                                    ],
+                                },
+                            ],
+                        },
+                        timeout=40,
+                    )
+                    used_model = model_name
+                    used_fallback_key = key_idx > 0
+                    break
+                except ExternalHTTPError as e:
                     _log_food_provider_failure(
                         db=db,
                         user_id=user_id,
@@ -706,9 +698,49 @@ def _groq_food_image_analysis(
                         model=model_name,
                         meal_slot=meal_slot,
                     )
-                    last_err = str(e)
-                    continue
-                raise
+                    body = e.body or ""
+                    lower = body.lower()
+                    if e.status_code == 429:
+                        last_err = f"{model_name}: rate limited"
+                        if attempt_idx < 2:
+                            time.sleep(1.5 * (attempt_idx + 1))
+                            continue
+                        break
+                    if e.status_code in (400, 403, 404) and (
+                        "model_not_found" in lower
+                        or "not found" in lower
+                        or "decommissioned" in lower
+                        or "no longer supported" in lower
+                        or "model_permission_blocked" in lower
+                        or "blocked at the organization" in lower
+                        or "does not have access" in lower
+                    ):
+                        last_err = f"{model_name}: unavailable"
+                        break
+                    if e.status_code == 400 and "messages[1].content must be a string" in body:
+                        last_err = f"{model_name}: not vision-capable for this key"
+                        break
+                    if e.status_code == 400 and "invalid image" in lower:
+                        raise RuntimeError("Invalid image data") from e
+                    raise RuntimeError(f"Groq HTTP {e.status_code}: {body[:260]}") from e
+                except RuntimeError as e:
+                    msg = str(e).lower()
+                    if "timed out" in msg or "network error" in msg or "ssl error" in msg:
+                        _log_food_provider_failure(
+                            db=db,
+                            user_id=user_id,
+                            provider="groq",
+                            model=model_name,
+                            meal_slot=meal_slot,
+                        )
+                        last_err = str(e)
+                        if attempt_idx < 2:
+                            time.sleep(1.0)
+                            continue
+                        break
+                    raise
+            if payload is not None:
+                break
         if payload is not None:
             break
 
@@ -751,8 +783,7 @@ def _gemini_food_image_analysis(
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
     model_candidates = [
         "gemini-3.6-flash",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
+        "gemini-3.5-flash-lite",
     ]
     request_payload = {
         "contents": [
@@ -766,14 +797,14 @@ def _gemini_food_image_analysis(
         "generationConfig": {
             "temperature": 0.1,
             "responseMimeType": "application/json",
-            "maxOutputTokens": 400,
+            "maxOutputTokens": 700,
         },
     }
     try:
         payload, model_name, used_fallback_key = gemini_generate_content_models(
             model_candidates,
             request_payload,
-            timeout=40,
+            timeout=60,
         )
     except RuntimeError as e:
         _log_food_provider_failure(
@@ -1705,6 +1736,8 @@ def analyze_food_image(
                     detail="Could not read this photo. Try a JPEG or PNG image under 4MB.",
                 ) from e
             last_error = msg
+        except ExternalHTTPError as e:
+            last_error = f"{e.status_code}: {(e.body or '')[:200]}"
         except Exception as e:
             last_error = str(e).strip() or type(e).__name__
 
