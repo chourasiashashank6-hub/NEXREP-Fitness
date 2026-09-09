@@ -217,7 +217,7 @@ export const analyzeFoodImage = async (
   return withCaloriesRoute("/foods/analyze-image", async (path) => {
     const { data } = await apiClient.post<unknown>(path, payload, {
       signal: opts?.signal,
-      timeout: 40_000,
+      timeout: 70_000,
     });
     return data;
   });

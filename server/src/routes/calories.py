@@ -626,11 +626,8 @@ def _groq_food_image_analysis(
 
     # Use vision-capable models explicitly. settings.GROQ_MODEL can be text-only.
     model_candidates = [
-        # Verified available for this Groq account; accepts image_url content arrays.
+        # Verified vision-capable on Groq; accepts image_url content arrays.
         "qwen/qwen3.6-27b",
-        # Keep legacy candidates as fallback for accounts with Llama vision access.
-        "meta-llama/llama-4-scout-17b-16e-instruct",
-        "meta-llama/llama-4-maverick-17b-128e-instruct",
     ]
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
     system_prompt = FOOD_SCAN_SYSTEM_PROMPT
@@ -1648,21 +1645,40 @@ def analyze_food_image(
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
 
-    def _try_fallbacks() -> dict[str, Any]:
-        try:
-            return _gemini_food_image_analysis(
+    provider_steps: list[tuple[str, Any]] = []
+    if has_gemini_key():
+        provider_steps.append(
+            (
+                "gemini",
+                lambda: _gemini_food_image_analysis(
+                    clean_base64,
+                    image_mime,
+                    user_id=current_user.id,
+                    is_fallback=False,
+                    meal_slot=meal_type,
+                    attempt=attempt,
+                    db=db,
+                ),
+            )
+        )
+    provider_steps.append(
+        (
+            "groq",
+            lambda: _groq_food_image_analysis(
                 clean_base64,
                 image_mime,
                 user_id=current_user.id,
-                is_fallback=True,
                 meal_slot=meal_type,
                 attempt=attempt,
                 db=db,
-            )
-        except Exception as ge:
-            gemini_msg = str(ge)
-            try:
-                return _openai_food_image_analysis(
+            ),
+        )
+    )
+    if (settings.OPENAI_API_KEY or "").strip():
+        provider_steps.append(
+            (
+                "openai",
+                lambda: _openai_food_image_analysis(
                     clean_base64,
                     image_mime,
                     user_id=current_user.id,
@@ -1670,44 +1686,42 @@ def analyze_food_image(
                     attempt=attempt,
                     db=db,
                     is_fallback=True,
-                )
-            except Exception:
-                pass
-            if "429" in gemini_msg or "quota" in gemini_msg.lower():
-                raise HTTPException(
-                    status_code=503,
-                    detail="Food image analysis is temporarily unavailable. Please enter nutrition manually.",
-                ) from ge
-            raise HTTPException(
-                status_code=502,
-                detail="Could not analyze this image right now. Please try again or enter values manually.",
-            ) from ge
-
-    try:
-        return _groq_food_image_analysis(
-            clean_base64,
-            image_mime,
-            user_id=current_user.id,
-            meal_slot=meal_type,
-            attempt=attempt,
-            db=db,
+                ),
+            )
         )
-    except ValueError as e:
-        detail = str(e).strip()
-        lowered = detail.lower()
-        if "no food detected" in lowered or "could not detect food" in lowered:
-            raise HTTPException(status_code=422, detail=detail) from e
-        # Model output formatting issues should not hard-fail; fall through to other providers.
-        return _try_fallbacks()
-    except RuntimeError as e:
-        groq_error = str(e)
-        lowered = groq_error.lower()
-        if "invalid image" in lowered or "image data" in lowered:
-            raise HTTPException(
-                status_code=422,
-                detail="Could not read this photo. Try a JPEG or PNG image under 4MB.",
-            ) from e
-        return _try_fallbacks()
+
+    last_error: str | None = None
+    for _name, run_provider in provider_steps:
+        try:
+            return run_provider()
+        except ValueError as e:
+            detail = str(e).strip()
+            lowered = detail.lower()
+            if "no food detected" in lowered or "could not detect food" in lowered:
+                raise HTTPException(status_code=422, detail=detail) from e
+            last_error = detail
+        except RuntimeError as e:
+            msg = str(e).strip()
+            lowered = msg.lower()
+            if "invalid image" in lowered or "image data" in lowered:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Could not read this photo. Try a JPEG or PNG image under 4MB.",
+                ) from e
+            last_error = msg
+        except Exception as e:
+            last_error = str(e).strip() or type(e).__name__
+
+    lowered = (last_error or "").lower()
+    if "429" in lowered or "quota" in lowered or "rate limit" in lowered:
+        raise HTTPException(
+            status_code=503,
+            detail="Food image analysis is temporarily unavailable. Please enter nutrition manually.",
+        )
+    raise HTTPException(
+        status_code=502,
+        detail="Could not analyze this image right now. Please try again or enter values manually.",
+    )
 
 
 @router.post("/foods/ai-meals")

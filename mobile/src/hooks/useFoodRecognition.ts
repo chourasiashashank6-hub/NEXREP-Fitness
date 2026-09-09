@@ -53,7 +53,7 @@ export const useFoodRecognition = () => {
 
         const response = await withTimeout(
           analyzeFoodImageWithGroq({ base64, mimeType, mealType }),
-          35000,
+          65000,
           "Image analysis timed out. Please try again.",
         );
         if ("error" in response) {

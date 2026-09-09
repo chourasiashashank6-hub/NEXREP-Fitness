@@ -32,7 +32,7 @@ export type FoodScanLimitDetail = {
   resets_at: string;
 };
 
-const REQUEST_TIMEOUT_MS = 40_000;
+const REQUEST_TIMEOUT_MS = 70_000;
 
 const safeNumber = (value: unknown): number => {
   const n = Number(value);
