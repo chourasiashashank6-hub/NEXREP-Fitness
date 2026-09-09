@@ -418,11 +418,24 @@ export const CalorieLog = () => {
 
   const scanUsageLabel = useMemo(() => {
     if (!scanUsage) return null;
-    if (scanUsage.tier === "free") {
-      return t("calorieLog.scanUsageDaily", { remaining: scanUsage.remaining, cap: scanUsage.cap });
+    const throttle = scanUsage.throttle;
+    if (throttle && throttle.remaining <= 0) {
+      const resetTime = formatScanResetAtIST(throttle.resets_at);
+      return resetTime
+        ? t("calorieLog.scanUsageThrottleBlocked", { time: resetTime })
+        : t("calorieLog.scanUsageThrottleBlockedShort");
     }
-    const mealLabel = formatScanMealLabel(scanUsage.meal_type ?? mealType);
-    return t("calorieLog.scanUsageMeal", { remaining: scanUsage.remaining, cap: scanUsage.cap, meal: mealLabel });
+    let quotaLabel: string;
+    if (scanUsage.tier === "free") {
+      quotaLabel = t("calorieLog.scanUsageDaily", { remaining: scanUsage.remaining, cap: scanUsage.cap });
+    } else {
+      const mealLabel = formatScanMealLabel(scanUsage.meal_type ?? mealType);
+      quotaLabel = t("calorieLog.scanUsageMeal", { remaining: scanUsage.remaining, cap: scanUsage.cap, meal: mealLabel });
+    }
+    if (throttle && throttle.remaining < throttle.cap) {
+      return `${quotaLabel} · ${t("calorieLog.scanUsageThrottleHint", { remaining: throttle.remaining, cap: throttle.cap })}`;
+    }
+    return quotaLabel;
   }, [mealType, scanUsage, t]);
 
   const showScanLimitAlert = useCallback(
@@ -432,13 +445,20 @@ export const CalorieLog = () => {
         return;
       }
       const resetTime = formatScanResetAtIST(limit.resets_at);
-      const lines = [t("services.food.scanLimitReached")];
+      const lines =
+        limit.limit_type === "throttle"
+          ? [t("calorieLog.alerts.scanThrottleReached")]
+          : [t("services.food.scanLimitReached")];
       if (resetTime) {
-        lines.push(t("calorieLog.alerts.scanLimitResets", { time: resetTime }));
+        lines.push(
+          limit.limit_type === "throttle"
+            ? t("calorieLog.alerts.scanThrottleResets", { time: resetTime })
+            : t("calorieLog.alerts.scanLimitResets", { time: resetTime }),
+        );
       }
-      if (limit.tier === "free") {
+      if (limit.limit_type !== "throttle" && limit.tier === "free") {
         lines.push(t("calorieLog.alerts.scanLimitUpgradePro"));
-      } else if (limit.tier === "pro") {
+      } else if (limit.limit_type !== "throttle" && limit.tier === "pro") {
         lines.push(t("calorieLog.alerts.scanLimitUpgradeElite"));
       }
       Alert.alert(t("calorieLog.alerts.scanLimitTitle"), lines.join("\n\n"));

@@ -190,6 +190,13 @@ async function withCaloriesRoute<T>(
   throw lastError ?? new Error("Calorie Log API not found on this server.");
 }
 
+export type FoodScanThrottleUsage = {
+  cap: number;
+  used: number;
+  remaining: number;
+  resets_at: string;
+};
+
 export type FoodScanUsage = {
   tier: "free" | "pro" | "elite";
   meals_per_day: number;
@@ -199,6 +206,7 @@ export type FoodScanUsage = {
   remaining: number;
   resets_at: string;
   slots?: Array<{ meal_type: string; cap: number; used: number; remaining: number }> | null;
+  throttle?: FoodScanThrottleUsage | null;
 };
 
 export const getFoodScanUsage = async (mealType?: MealType) => {

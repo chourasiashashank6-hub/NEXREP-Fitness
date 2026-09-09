@@ -194,6 +194,9 @@ def test_build_scan_usage_pro_uses_require_meal_slot_counts():
 def test_enforce_throttle_backstop():
     user = User(id=4, plan_id="elite", email="t@test", password_hash="x", name="x")
     with patch("src.services.food_scan_limits._count_recent_throttle", return_value=8), patch(
+        "src.services.food_scan_limits._throttle_resets_at",
+        return_value=__import__("datetime").datetime(2026, 9, 10, 20, 5, tzinfo=__import__("datetime").timezone.utc),
+    ), patch(
         "src.services.food_scan_limits.meals_per_day_for_user",
         return_value=3,
     ):
@@ -201,3 +204,22 @@ def test_enforce_throttle_backstop():
             enforce_food_scan_limits(db=MagicMock(), user=user, meal_type="Dinner")
     assert exc.value.status_code == 429
     assert exc.value.detail["limit_type"] == "throttle"
+
+
+def test_build_scan_usage_includes_throttle():
+    user = User(id=12, plan_id="elite", email="elite@test", password_hash="x", name="x")
+    db = MagicMock()
+    with patch("src.services.food_scan_limits._count_scans", return_value=0), patch(
+        "src.services.food_scan_limits._count_recent_throttle",
+        return_value=3,
+    ), patch(
+        "src.services.food_scan_limits._throttle_resets_at",
+        return_value=__import__("datetime").datetime(2026, 9, 10, 20, 10, tzinfo=__import__("datetime").timezone.utc),
+    ), patch(
+        "src.services.food_scan_limits.meals_per_day_for_user",
+        return_value=3,
+    ):
+        usage = build_scan_usage(db, user, meal_type="Breakfast")
+    assert usage["throttle"]["used"] == 3
+    assert usage["throttle"]["remaining"] == 5
+    assert usage["remaining"] == 3

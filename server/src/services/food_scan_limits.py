@@ -130,6 +130,36 @@ def _count_recent_throttle(db: Session, user_id: int, now_utc: datetime) -> int:
     return _count_scans(db, user_id, since=since)
 
 
+def _throttle_resets_at(db: Session, user_id: int, now_utc: datetime) -> datetime:
+    """When the oldest scan in the rolling window expires (next allowed attempt)."""
+    since = now_utc - THROTTLE_WINDOW
+    oldest = (
+        db.query(func.min(AiUsageLog.created_at))
+        .filter(
+            AiUsageLog.user_id == user_id,
+            AiUsageLog.feature == FEATURE,
+            AiUsageLog.counts_toward_scan_quota.is_(True),
+            AiUsageLog.created_at >= since,
+        )
+        .scalar()
+    )
+    if oldest is None:
+        return now_utc
+    if oldest.tzinfo is None:
+        oldest = oldest.replace(tzinfo=timezone.utc)
+    return oldest + THROTTLE_WINDOW
+
+
+def _throttle_usage(db: Session, user_id: int, now_utc: datetime) -> dict[str, Any]:
+    used = _count_recent_throttle(db, user_id, now_utc)
+    return {
+        "cap": THROTTLE_CAP,
+        "used": used,
+        "remaining": max(0, THROTTLE_CAP - used),
+        "resets_at": _throttle_resets_at(db, user_id, now_utc).isoformat(),
+    }
+
+
 def build_scan_usage(
     db: Session,
     user: User,
@@ -138,8 +168,10 @@ def build_scan_usage(
 ) -> dict[str, Any]:
     tier = normalize_tier(user.plan_id)
     resets_at = next_midnight_ist()
+    now_utc = datetime.now(timezone.utc)
     day_start, day_end = _window_bounds()
     mpd = meals_per_day_for_user(db, user.id)
+    throttle = _throttle_usage(db, user.id, now_utc)
 
     if tier == "free":
         used = _count_scans(db, user.id, since=day_start, until=day_end)
@@ -153,6 +185,7 @@ def build_scan_usage(
             "remaining": max(0, cap - used),
             "resets_at": resets_at.isoformat(),
             "slots": None,
+            "throttle": throttle,
         }
 
     cap = per_meal_cap(tier)
@@ -187,6 +220,7 @@ def build_scan_usage(
         "remaining": active_row["remaining"] if active_row else cap,
         "resets_at": resets_at.isoformat(),
         "slots": slot_stats,
+        "throttle": throttle,
     }
 
 
@@ -212,7 +246,7 @@ def enforce_food_scan_limits(
                 remaining=0,
                 meal_type=meal_type,
                 meals_per_day=meals_per_day_for_user(db, user.id),
-                resets_at=resets_at,
+                resets_at=_throttle_resets_at(db, user.id, now_utc),
                 limit_type="throttle",
             ).as_dict(),
         )
