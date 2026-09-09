@@ -1,6 +1,5 @@
 import axios from "axios";
-import { apiClient, resolveApiBaseUrl } from "../api/client";
-import type { MealType } from "../api/caloriesLog";
+import { analyzeFoodImage, type MealType } from "../api/caloriesLog";
 import i18n from "../i18n";
 import { normalizeImageBase64Payload } from "../utils/foodImagePayload";
 
@@ -39,20 +38,6 @@ const safeNumber = (value: unknown): number => {
   const n = Number(value);
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.round(n * 10) / 10);
-};
-
-const extractJsonObject = (raw: string): unknown => {
-  const trimmed = raw.trim();
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}");
-    if (start >= 0 && end > start) {
-      return JSON.parse(trimmed.slice(start, end + 1));
-    }
-    throw new Error(i18n.t("services.food.malformedAi"));
-  }
 };
 
 const normalizePayload = (value: unknown): FoodAnalysisResult | FoodAnalysisError => {
@@ -114,6 +99,27 @@ const parseLimitDetail = (detail: unknown): FoodScanLimitDetail | undefined => {
   };
 };
 
+const mapAxiosError = (error: unknown): FoodAnalysisError => {
+  if (axios.isAxiosError(error) && error.response?.status === 429) {
+    const detail = parseLimitDetail(error.response.data?.detail);
+    return {
+      error: i18n.t("services.food.scanLimitReached"),
+      limit: detail,
+    };
+  }
+  const detail = axios.isAxiosError(error) ? error.response?.data?.detail : undefined;
+  if (detail && typeof detail === "object") {
+    const limit = parseLimitDetail(detail);
+    if (limit) {
+      return { error: i18n.t("services.food.scanLimitReached"), limit };
+    }
+  }
+  if (typeof detail === "string" && detail.trim()) {
+    return { error: detail.trim() };
+  }
+  return { error: i18n.t("services.food.analyzeFailed") };
+};
+
 export const analyzeFoodImageWithGroq = async ({
   base64,
   mimeType,
@@ -128,56 +134,20 @@ export const analyzeFoodImageWithGroq = async ({
 
   try {
     const prepared = normalizeImageBase64Payload(base64, mimeType);
-    const payload = {
-      base64: prepared.base64,
-      mime_type: prepared.mimeType,
-      meal_type: mealType,
-    };
-    const origin = resolveApiBaseUrl().replace(/\/+$/, "");
-    const prefixes = ["/api/calories", "/v1/calories"];
-    let responseData: unknown = null;
-    let lastError: unknown = null;
-
-    for (const prefix of prefixes) {
-      try {
-        const { data } = await apiClient.post(`${origin}${prefix}/foods/analyze-image`, payload, { signal: controller.signal });
-        responseData = data;
-        lastError = null;
-        break;
-      } catch (error) {
-        lastError = error;
-        const status = (error as { response?: { status?: number } })?.response?.status;
-        if (status && status !== 404 && status !== 405) {
-          break;
-        }
-      }
-    }
-
-    if (responseData == null) {
-      if (axios.isAxiosError(lastError) && lastError.response?.status === 429) {
-        const detail = parseLimitDetail(lastError.response.data?.detail);
-        return {
-          error: i18n.t("services.food.scanLimitReached"),
-          limit: detail,
-        };
-      }
-      const detail =
-        (lastError as { response?: { data?: { detail?: string | Record<string, unknown> } } })?.response?.data?.detail;
-      if (detail && typeof detail === "object") {
-        const limit = parseLimitDetail(detail);
-        if (limit) {
-          return { error: i18n.t("services.food.scanLimitReached"), limit };
-        }
-      }
-      const message = typeof detail === "string" ? detail : i18n.t("services.food.analyzeFailed");
-      return { error: String(message) };
-    }
+    const responseData = await analyzeFoodImage(
+      {
+        base64: prepared.base64,
+        mime_type: prepared.mimeType,
+        meal_type: mealType,
+      },
+      { signal: controller.signal },
+    );
     return normalizePayload(responseData);
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       return { error: i18n.t("services.food.timeout") };
     }
-    return { error: i18n.t("services.food.analyzeFailed") };
+    return mapAxiosError(error);
   } finally {
     clearTimeout(timer);
   }

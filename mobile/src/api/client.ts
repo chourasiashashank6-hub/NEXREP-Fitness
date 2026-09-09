@@ -2,6 +2,7 @@ import axios, { type InternalAxiosRequestConfig } from "axios";
 import { Platform } from "react-native";
 import { renewJwtFromFirebase, signOutSession } from "../services/authService";
 import { useAuthStore } from "../store/authStore";
+import { useConnectivityStore } from "../store/connectivityStore";
 
 const envApiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "").trim();
 
@@ -99,8 +100,19 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    useConnectivityStore.getState().markServerReachable();
+    return response;
+  },
   async (error) => {
+    if (!error?.response) {
+      const { isOnline, serverWaking } = useConnectivityStore.getState();
+      if (!isOnline) {
+        useConnectivityStore.getState().markServerUnreachable({ waking: false });
+      } else if (!serverWaking) {
+        useConnectivityStore.getState().markServerUnreachable({ waking: false });
+      }
+    }
     const status = error?.response?.status;
     const detail = error?.response?.data?.detail;
     const staleSession = status === 404 && detail === "User not found";

@@ -11,6 +11,7 @@ import { formatApiDetail, notifyUser } from "../utils/notify";
 import { normalizeGoalFocusFields } from "../utils/onboardingFocusMuscles";
 import { validateOnboardingForSave } from "../utils/onboardingValidation";
 import { exitOnboardingFlow } from "../utils/exitOnboardingFlow";
+import { listOnboardingFormChanges } from "../utils/onboardingFormDiff";
 import {
   ONBOARDING_SERVER_UNAVAILABLE_NOTIFY,
   classifyUpsertOnboardingError,
@@ -26,7 +27,7 @@ export type SaveAndExitResult = {
 };
 
 export function useOnboardingSaveAndExit() {
-  const { data } = useOnboardingContext();
+  const { data, getBaseline } = useOnboardingContext();
   const isEditModal = useContext(EditOnboardingModalContext);
   const token = useAuthStore((s) => s.token);
   const language = useLanguageStore((s) => s.explicitLanguage || s.language || s.deviceLanguage);
@@ -43,6 +44,11 @@ export function useOnboardingSaveAndExit() {
     if (validationError) {
       notifyUser(i18n.t("onboardingSave.completeRequired"), validationError);
       return { ok: false, serverSaved: false };
+    }
+
+    if (isEditModal && listOnboardingFormChanges(getBaseline(), data, i18n.t).length === 0) {
+      exitOnboardingFlow(true);
+      return { ok: true, serverSaved: true };
     }
 
     Keyboard.dismiss();

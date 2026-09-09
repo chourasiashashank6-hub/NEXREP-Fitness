@@ -3,6 +3,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "
 import { WebView } from "react-native-webview";
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { devLog } from "../utils/devLog";
+import { cameraUserMessage } from "../utils/cameraUserMessage";
 import i18n from "../i18n";
 import { LiveSessionTracker } from "../services/aiTrainer/liveSessionTracker";
 import { MEDIAPIPE_VERSION, MP_TEXT, buildInjectedConfigScript } from "../services/aiTrainer/mediaPipeHtmlTemplate";
@@ -668,9 +669,9 @@ function MediaPipeGuidanceView({
       })
       .catch((err) => {
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : "Camera guidance server failed to start.";
+        const message = cameraUserMessage(err, "MediaPipe server");
         setServerError(message);
-        onErrorRef.current?.(`Camera guidance failed to start: ${message}`);
+        onErrorRef.current?.(message);
       });
     return () => {
       cancelled = true;
@@ -772,7 +773,9 @@ function MediaPipeGuidanceView({
     canvas.style.transform = mirrorCss;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      onErrorRef.current?.("Unable to initialize drawing context.");
+      const message = cameraUserMessage(new Error("Unable to initialize drawing context."), "MediaPipe web");
+      setServerError(message);
+      onErrorRef.current?.(message);
       return;
     }
 
@@ -1562,13 +1565,10 @@ function MediaPipeGuidanceView({
         onReadyRef.current?.();
         loop();
       } catch (error) {
-        const msg = error instanceof Error ? error.message : "MediaPipe failed to start.";
-        console.error("[MediaPipe web] init failed — no fallback tracking", msg);
-        onErrorRef.current?.(
-          msg.includes("Permission") || msg.includes("NotAllowed")
-            ? "Camera permission denied — enable the webcam and try again."
-            : "Camera tracking unavailable — try again.",
-        );
+        const message = cameraUserMessage(error, "MediaPipe web");
+        console.error("[MediaPipe web] init failed — no fallback tracking", error);
+        setServerError(message);
+        onErrorRef.current?.(message);
       }
     })();
 
@@ -1595,7 +1595,7 @@ function MediaPipeGuidanceView({
   const trainerNoteForWebView = String(matchedRecordForWebView?.trainerChecks?.notes || "").trim();
   const isCardioForWebView = isCardioOrMobilityExercise(matchedRecordForWebView, selectedExerciseName);
 
-  if (Platform.OS === "web") {
+  if (Platform.OS === "web" && !serverError) {
     return <View ref={webHostRef} style={styles.container} />;
   }
 
@@ -1604,7 +1604,7 @@ function MediaPipeGuidanceView({
       <View style={styles.container}>
         <View style={styles.loadingOverlay}>
           <Text style={styles.loadingTitle}>{i18n.t("mediaPipe.serverError")}</Text>
-          <Text style={styles.loadingSubtitle}>{serverError}</Text>
+          <Text style={styles.loadingSubtitle}>{i18n.t("mediaPipe.startFailedBody")}</Text>
           <Pressable
             style={styles.retryButton}
             onPress={() => {
@@ -1683,7 +1683,12 @@ function MediaPipeGuidanceView({
             }
             if (parsed.type === "error") {
               setInitStatus("error");
-              onError?.(String(parsed.message || "MediaPipe failed to start."));
+              const message = cameraUserMessage(
+                new Error(String(parsed.message || "MediaPipe failed to start.")),
+                "MediaPipe WebView",
+              );
+              setServerError(message);
+              onError?.(message);
             }
             if (parsed.type === "cameraFlipped") {
               const facing = parsed.facing;
@@ -1701,13 +1706,18 @@ function MediaPipeGuidanceView({
         }}
         onError={() => {
           setInitStatus("error");
-          onError?.("MediaPipe WebView failed to load.");
+          const message = cameraUserMessage(new Error("MediaPipe WebView failed to load."), "MediaPipe WebView");
+          setServerError(message);
+          onError?.(message);
         }}
         onHttpError={(e) => {
           setInitStatus("error");
-          onError?.(
-            `MediaPipe page failed to load (${e.nativeEvent.statusCode} ${e.nativeEvent.description || ""}).`.trim(),
+          const message = cameraUserMessage(
+            new Error(`HTTP ${e.nativeEvent.statusCode} ${e.nativeEvent.description || ""}`.trim()),
+            "MediaPipe WebView",
           );
+          setServerError(message);
+          onError?.(message);
         }}
       />
       {initStatus === "loading" ? (

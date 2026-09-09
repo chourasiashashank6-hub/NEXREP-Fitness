@@ -1212,6 +1212,54 @@ def _meal_history_sort_value(item: dict[str, Any]) -> datetime:
         return datetime.min
 
 
+def _meal_db_sort_value(meal: MealEntry, meal_date: date) -> datetime:
+    return meal.logged_at or datetime.combine(meal_date, datetime.min.time())
+
+
+def _meal_ai_sort_value(meal: AIFoodMealEntry) -> datetime:
+    return meal.created_at or datetime.combine(meal.log_date, datetime.min.time())
+
+
+def _merge_sorted_meal_history(
+    db_rows: list[tuple[MealEntry, date]],
+    ai_rows: list[AIFoodMealEntry],
+    offset: int,
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Merge two desc-sorted meal queries and return one page without resorting everything."""
+    items: list[dict[str, Any]] = []
+    skipped = 0
+    i = 0
+    j = 0
+
+    while len(items) < limit and (i < len(db_rows) or j < len(ai_rows)):
+        take_db = False
+        if j >= len(ai_rows):
+            take_db = True
+        elif i >= len(db_rows):
+            take_db = False
+        else:
+            take_db = _meal_db_sort_value(db_rows[i][0], db_rows[i][1]) >= _meal_ai_sort_value(ai_rows[j])
+
+        if take_db:
+            meal, meal_date = db_rows[i]
+            serialized = _serialize_meal(meal)
+            serialized["date"] = meal_date.isoformat()
+            i += 1
+        else:
+            meal = ai_rows[j]
+            serialized = _serialize_ai_meal(meal)
+            serialized["date"] = meal.log_date.isoformat()
+            j += 1
+
+        if skipped < offset:
+            skipped += 1
+            continue
+        items.append(serialized)
+
+    return items
+
+
 @router.post("/daily-log")
 def ensure_daily_log(
     payload: DailyLogEnsureRequest | None = None,
@@ -1249,20 +1297,31 @@ def get_daily_log_history(
     total_db = db_meals_query.count()
     total_ai = ai_meals_query.count()
     total_count = total_db + total_ai
-    db_sums = db_meals_query.with_entities(
-        func.coalesce(func.sum(MealEntry.total_calories), 0),
-        func.coalesce(func.sum(MealEntry.total_protein_g), 0),
-        func.coalesce(func.sum(MealEntry.total_carbs_g), 0),
-        func.coalesce(func.sum(MealEntry.total_fat_g), 0),
-        func.coalesce(func.sum(MealEntry.total_fiber_g), 0),
-    ).one()
-    ai_sums = ai_meals_query.with_entities(
-        func.coalesce(func.sum(AIFoodMealEntry.calories), 0),
-        func.coalesce(func.sum(AIFoodMealEntry.protein), 0),
-        func.coalesce(func.sum(AIFoodMealEntry.carbs), 0),
-        func.coalesce(func.sum(AIFoodMealEntry.fat), 0),
-        func.coalesce(func.sum(AIFoodMealEntry.fibre), 0),
-    ).one()
+
+    summary: dict[str, Any] | None = None
+    if offset == 0:
+        db_sums = db_meals_query.with_entities(
+            func.coalesce(func.sum(MealEntry.total_calories), 0),
+            func.coalesce(func.sum(MealEntry.total_protein_g), 0),
+            func.coalesce(func.sum(MealEntry.total_carbs_g), 0),
+            func.coalesce(func.sum(MealEntry.total_fat_g), 0),
+            func.coalesce(func.sum(MealEntry.total_fiber_g), 0),
+        ).one()
+        ai_sums = ai_meals_query.with_entities(
+            func.coalesce(func.sum(AIFoodMealEntry.calories), 0),
+            func.coalesce(func.sum(AIFoodMealEntry.protein), 0),
+            func.coalesce(func.sum(AIFoodMealEntry.carbs), 0),
+            func.coalesce(func.sum(AIFoodMealEntry.fat), 0),
+            func.coalesce(func.sum(AIFoodMealEntry.fibre), 0),
+        ).one()
+        summary = {
+            "totalMealsLogged": total_count,
+            "totalCalories": float(Decimal(str(db_sums[0])) + Decimal(str(ai_sums[0]))),
+            "totalProtein": float(Decimal(str(db_sums[1])) + Decimal(str(ai_sums[1]))),
+            "totalCarbs": float(Decimal(str(db_sums[2])) + Decimal(str(ai_sums[2]))),
+            "totalFat": float(Decimal(str(db_sums[3])) + Decimal(str(ai_sums[3]))),
+            "totalFiber": float(Decimal(str(db_sums[4])) + Decimal(str(ai_sums[4]))),
+        }
 
     fetch_size = offset + limit
     db_rows = (
@@ -1277,17 +1336,7 @@ def get_daily_log_history(
         .limit(fetch_size)
         .all()
     )
-    merged: list[dict[str, Any]] = []
-    for meal, meal_date in db_rows:
-        serialized = _serialize_meal(meal)
-        serialized["date"] = meal_date.isoformat()
-        merged.append(serialized)
-    for meal in ai_rows:
-        serialized = _serialize_ai_meal(meal)
-        serialized["date"] = meal.log_date.isoformat()
-        merged.append(serialized)
-    merged.sort(key=_meal_history_sort_value, reverse=True)
-    items = merged[offset: offset + limit]
+    items = _merge_sorted_meal_history(db_rows, ai_rows, offset, limit)
 
     date_keys = sorted({str(item["date"]) for item in items}, reverse=True)
     day_total_rows = (
@@ -1306,21 +1355,16 @@ def get_daily_log_history(
         for row in day_total_rows
     }
 
-    return {
+    payload: dict[str, Any] = {
         "items": items,
         "dayTotals": day_totals,
         "total": total_count,
         "limit": limit,
         "offset": offset,
-        "summary": {
-            "totalMealsLogged": total_count,
-            "totalCalories": float(Decimal(str(db_sums[0])) + Decimal(str(ai_sums[0]))),
-            "totalProtein": float(Decimal(str(db_sums[1])) + Decimal(str(ai_sums[1]))),
-            "totalCarbs": float(Decimal(str(db_sums[2])) + Decimal(str(ai_sums[2]))),
-            "totalFat": float(Decimal(str(db_sums[3])) + Decimal(str(ai_sums[3]))),
-            "totalFiber": float(Decimal(str(db_sums[4])) + Decimal(str(ai_sums[4]))),
-        },
     }
+    if summary is not None:
+        payload["summary"] = summary
+    return payload
 
 
 @router.get("/daily-log/{log_date}")

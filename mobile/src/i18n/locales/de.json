@@ -184,7 +184,9 @@
       "friendsLeaderboard": "FREUNDE-SAISON-RANGLISTE",
       "viewAll": "Alle anzeigen",
       "leaderboardEmpty": "Logge Workouts und Mahlzeiten, um in der Rangliste aufzusteigen.",
-      "loadFailed": "XP konnte nicht synchronisiert werden — Standardwerte werden angezeigt.",
+      "loadFailed": "XP konnte gerade nicht geladen werden.",
+      "notDeployed": "Fortschritts-XP ist noch nicht verfügbar.",
+      "lastUpdated": "Zuletzt aktualisiert {{time}}",
       "you": "Du"
     },
     "activityOverview": "AKTIVITÄTSÜBERSICHT",
@@ -373,14 +375,6 @@
       "generic": "Etwas ist schief gelaufen."
     },
     "loadErrors": {
-      "timeout": "Zeitüberschreitung bei der Anfrage. Starte den API-Server (Port 8000) und versuch es erneut.",
-      "network": "Netzwerkfehler ({{message}}).\n\nAufgelöste API-Basis: {{base}}\n\n1) API starten: cd server && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload\n2) Öffne in einem Browser {{base}}/health – es sollte {\"status\":\"ok\"} anzeigen.\n3) Expo-Web über WLAN: Standardmäßig verwendet .env 127.0.0.1; Die App ordnet dies jetzt der LAN-IP deines PCs zu, wenn du http://192.168.x.x:8081 öffnen. Wenn es immer noch fehlschlägt, legen du EXPO_PUBLIC_API_URL=http://YOUR_PC_IP:8000 fest und starte Expo neu.\n4) Android-Emulator: Verwende http://10.0.2.2:8000 in .env anstelle von 127.0.0.1.",
-      "noResponse": "keine Antwort",
-      "cannotReach": "Die API kann nicht erreicht werden. Prüfe EXPO_PUBLIC_API_URL und ob der FastAPI-Server ausgeführt wird.",
-      "userNotFound": "deine Session ist veraltet (Datenbank wurde zurückgesetzt oder Konto entfernt). Melde dich ab und erneut an.",
-      "notFound": "Nicht gefunden ({{url}}). Starte die API von server/ neu: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload und tippe dann auf Wiederholen.",
-      "unknownUrl": "unbekannte URL",
-      "serverError": "Serverfehler ({{status}})",
       "fallback": "Kalorienprotokoll konnte nicht geladen werden."
     },
     "loading": "Protokoll wird geladen…",
@@ -514,6 +508,31 @@
       "loadFailed": "Transformations-Zusammenfassung konnte nicht geladen werden.",
       "proGateTitle": "Vergleichs-Zusammenfassung ist Pro",
       "proGateBody": "Upgrade für Gewichts-, Trainings- und Kraft-Deltas in jedem Datumsbereich."
+    }
+  },
+  "offline": {
+    "banner": {
+      "offline": "Du bist offline. Wir aktualisieren, sobald du wieder online bist.",
+      "waking": "Server wird gestartet — das kann bis zu einer Minute dauern.",
+      "serverUnreachable": "Der Server ist gerade nicht erreichbar."
+    },
+    "state": {
+      "loading": "Wird geladen…",
+      "emptyTitle": "Hier ist noch nichts",
+      "lastUpdated": "Zuletzt aktualisiert {{time}}"
+    },
+    "errors": {
+      "offlineTitle": "Du bist offline",
+      "offlineBody": "Wir aktualisieren, sobald du wieder online bist.",
+      "wakingTitle": "Server wird gestartet",
+      "wakingBody": "Beim Cold Start kann das bis zu einer Minute dauern.",
+      "serverTitle": "Laden fehlgeschlagen",
+      "serverBody": "Konnte gerade nicht geladen werden. Versuch es gleich noch einmal.",
+      "genericTitle": "Laden fehlgeschlagen",
+      "generic": "Konnte gerade nicht geladen werden."
+    },
+    "action": {
+      "offlineReason": "Für diese Aktion brauchst du eine Internetverbindung."
     }
   },
   "common": {
@@ -1245,6 +1264,7 @@
     "loadingTracker": "Posen-Tracker wird geladen…",
     "loadingTrackerHint": "Der erste Ladevorgang kann einige Sekunden dauern",
     "serverError": "Kameraführung nicht verfügbar",
+    "startFailedBody": "Kamera-Coaching konnte nicht gestartet werden. Du kannst diesen Satz trotzdem manuell erfassen.",
     "retry": "Erneut versuchen"
   },
   "payment": {

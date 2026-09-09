@@ -393,7 +393,7 @@ export const HomeScreen = () => {
 
       lastLoadAt.current = Date.now();
     } catch {
-      Alert.alert(t("home.alerts.error"), t("home.alerts.loadFailed"));
+      // Inline/offline states handle load failures — no blocking alert.
     }
   }, [token, t, refreshOnboarding]);
 
@@ -487,7 +487,8 @@ export const HomeScreen = () => {
     : null;
   const eatenToday = Number.isFinite(intake) ? Math.round(intake) : 0;
   // Authoritative kcal from calorie_log_targets via daily log API (same as Meal Planner).
-  const dailyGoal = Math.max(1, Math.round(targetKcal || burnPlan?.dailyCalorieTarget || 1800));
+  const dailyGoalRaw = targetKcal > 0 ? targetKcal : burnPlan?.dailyCalorieTarget ?? 0;
+  const dailyGoal = dailyGoalRaw > 0 ? Math.round(dailyGoalRaw) : 0;
   const remainingBurnTarget = Math.max(0, eatenToday - dailyGoal - caloriesBurnedSoFar);
   const netCalorieGap = eatenToday - dailyGoal - caloriesBurnedSoFar;
   const remainingIntakeToGoal = netCalorieGap < 0 ? Math.abs(netCalorieGap) : 0;
@@ -860,7 +861,7 @@ export const HomeScreen = () => {
                         <Ionicons name="restaurant-outline" size={15} color={TEXT_MUTED} />
                         <Text style={styles.metricsRowLabel}>{t("home.toEat")}</Text>
                       </View>
-                      <Text style={styles.metricsRowValue}>{formatNum(dailyGoal)}</Text>
+                      <Text style={styles.metricsRowValue}>{dailyGoal > 0 ? formatNum(dailyGoal) : "—"}</Text>
                     </View>
 
                     <View style={styles.metricsRow}>

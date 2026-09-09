@@ -39,6 +39,8 @@ import {
 } from "../api/caloriesLog";
 import { loadOnboardingWithFallback } from "../api/onboarding";
 import { resolveApiBaseUrl } from "../api/client";
+import { StateView } from "../components/StateView";
+import { toUserMessage } from "../utils/toUserMessage";
 import AllTimeMealHistoryModal from "../components/AllTimeMealHistoryModal";
 import { FoodCameraButton } from "../components/FoodCameraButton";
 import { LogPlannerSegment, type LogPlannerMode } from "../components/LogPlannerSegment";
@@ -325,35 +327,7 @@ function RightPlaceholderInput({
 }
 
 function formatLoadError(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    if (err.code === "ECONNABORTED") {
-      return i18n.t("calorieLog.loadErrors.timeout");
-    }
-    if (!err.response) {
-      const msg = String(err.message || "");
-      if (/Failed to fetch|Network Error|ERR_NETWORK|Load failed/i.test(msg)) {
-        const base = resolveApiBaseUrl();
-        return i18n.t("calorieLog.loadErrors.network", { message: msg || i18n.t("calorieLog.loadErrors.noResponse"), base });
-      }
-      return i18n.t("calorieLog.loadErrors.cannotReach");
-    }
-    if (err.response.status === 404) {
-      const detail = (err.response.data as { detail?: string })?.detail;
-      if (detail === "User not found") {
-        return i18n.t("calorieLog.loadErrors.userNotFound");
-      }
-      const u = String(err.config?.url ?? "");
-      return i18n.t("calorieLog.loadErrors.notFound", { url: u || i18n.t("calorieLog.loadErrors.unknownUrl") });
-    }
-    const data = err.response.data as { detail?: unknown };
-    const d = data?.detail;
-    if (typeof d === "string") return d;
-    if (Array.isArray(d) && d[0] && typeof (d[0] as { msg?: string }).msg === "string") {
-      return (d[0] as { msg: string }).msg;
-    }
-    return err.response.status ? i18n.t("calorieLog.loadErrors.serverError", { status: err.response.status }) : err.message;
-  }
-  return i18n.t("calorieLog.loadErrors.fallback");
+  return toUserMessage(err, "calorieLog.loadErrors.fallback").body;
 }
 
 const NON_VEG_LABELS = new Set(["Chicken breast", "Salmon"]);
@@ -556,8 +530,8 @@ export const CalorieLog = () => {
         await refresh();
       } catch (e) {
         if (!cancelled) {
-          setLoadError(axios.isAxiosError(e) ? formatLoadError(e) : e instanceof Error ? e.message : formatLoadError(e));
-          setDay(null);
+          setLoadError(formatLoadError(e));
+          if (!day) setDay(null);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -908,11 +882,13 @@ export const CalorieLog = () => {
     (log as Record<string, unknown> | undefined)?.target_fiber_g ?? targets?.macros?.fiber_g ?? 0,
   );
   // Daily kcal from calorie_log_targets via daily log API (same as Home + Meal Planner).
-  const dailyGoal = Math.max(1, Math.round(Number(log?.target_calories) || 1800));
+  const dailyGoalRaw = Number(log?.target_calories || 0);
+  const dailyGoal = dailyGoalRaw > 0 ? Math.round(dailyGoalRaw) : null;
   const eatenToday = Number(log?.total_calories) || 0;
-  const remaining = dailyGoal - eatenToday;
-  const remainingColor = remaining > 0 ? GREEN : remaining < 0 ? ORANGE : MUTED;
-  const caloriePct = dailyGoal > 0 ? clamp(eatenToday / dailyGoal, 0, 1) * 100 : 0;
+  const remaining = dailyGoal != null ? dailyGoal - eatenToday : null;
+  const remainingColor =
+    remaining == null ? MUTED : remaining > 0 ? GREEN : remaining < 0 ? ORANGE : MUTED;
+  const caloriePct = dailyGoal != null && dailyGoal > 0 ? clamp(eatenToday / dailyGoal, 0, 1) * 100 : 0;
   const macroSplit = parseMacroSplit(macro_split_label);
   const totalGlasses = Math.round((log?.target_water_l ?? 0) / 0.25);
 
@@ -936,16 +912,14 @@ export const CalorieLog = () => {
           </View>
         ) : !showLogContent || !log || !day ? (
           <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <Text style={styles.errorText}>{loadError ?? t("calorieLog.alerts.generic")}</Text>
-            <Pressable
-              style={styles.retryBtn}
-              onPress={() => {
+            <StateView
+              state="failed"
+              body={loadError ?? t("calorieLog.alerts.generic")}
+              onRetry={() => {
                 invalidateCaloriesRoutePrefix();
                 setReloadToken((n) => n + 1);
               }}
-            >
-              <Text style={styles.retryBtnText}>{t("calorieLog.retry")}</Text>
-            </Pressable>
+            />
           </ScrollView>
         ) : (
       <ScrollView
@@ -961,7 +935,7 @@ export const CalorieLog = () => {
               <Text style={styles.cardLabel}>{t("calorieLog.caloriesToday")}</Text>
               <View style={styles.calorieValueRow}>
                 <Text style={styles.calorieBig}>{fmt1(eatenToday)}</Text>
-                <Text style={styles.calorieTarget}> / {fmt1(dailyGoal)} kcal</Text>
+                <Text style={styles.calorieTarget}> / {dailyGoal != null ? fmt1(dailyGoal) : "—"} kcal</Text>
               </View>
             </View>
             <View style={styles.calorieHeroRight}>

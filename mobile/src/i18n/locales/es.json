@@ -184,7 +184,9 @@
       "friendsLeaderboard": "CLASIFICACIÓN DE TEMPORADA ENTRE AMIGOS",
       "viewAll": "Ver todo",
       "leaderboardEmpty": "Registra entrenamientos y comidas para subir en la tabla.",
-      "loadFailed": "No se pudo sincronizar XP — se muestran valores predeterminados.",
+      "loadFailed": "No se pudo cargar tu XP ahora.",
+      "notDeployed": "El XP de progreso aún no está disponible.",
+      "lastUpdated": "Última actualización {{time}}",
       "you": "Tú"
     },
     "activityOverview": "RESUMEN DE ACTIVIDADES",
@@ -373,14 +375,6 @@
       "generic": "Algo salió mal."
     },
     "loadErrors": {
-      "timeout": "Se agotó el tiempo de espera de la solicitud. Inicie el servidor API (puerto 8000) y vuelva a intentarlo.",
-      "network": "Error de red ({{message}}).\n\nBase API resuelta:{{base}}1) Iniciar API: servidor de CD && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload\n2) En un navegador, abra{{base}}/health; debería mostrar {\"status\":\"ok\"}\n3) Expo web en Wi-Fi: el.env predeterminado usa 127.0.0.1; la aplicación ahora lo asigna a la IP LAN de su PC cuando abrehttp://192.168.x.x:8081.. Si aún falla, configure EXPO_PUBLIC_API_URL=http://YOUR_PC_IP:8000y reinicie Expo.\n4) Emulador de Android: usehttp://10.0.2.2:8000en.env en lugar de 127.0.0.1.",
-      "noResponse": "sin respuesta",
-      "cannotReach": "No se puede acceder a la API. Verifique EXPO_PUBLIC_API_URL y que el servidor FastAPI se esté ejecutando.",
-      "userNotFound": "Su sesión no está actualizada (se restableció la base de datos o se eliminó la cuenta). Cierra sesión y vuelve a iniciar sesión.",
-      "notFound": "No encontrado ({{url}}). Reinicie la API desde server/: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload, luego toque Reintentar.",
-      "unknownUrl": "URL desconocida",
-      "serverError": "Error del servidor ({{status}})",
       "fallback": "No se pudo cargar el registro de calorías."
     },
     "loading": "Cargando registro…",
@@ -514,6 +508,31 @@
       "loadFailed": "No se pudo cargar el resumen de transformación.",
       "proGateTitle": "El resumen comparativo es Pro",
       "proGateBody": "Mejora tu plan para ver deltas de peso, entrenos y fuerza en cualquier rango de fechas."
+    }
+  },
+  "offline": {
+    "banner": {
+      "offline": "Estás sin conexión. Actualizaremos cuando vuelvas.",
+      "waking": "Despertando el servidor — puede tardar hasta un minuto.",
+      "serverUnreachable": "No podemos conectar con el servidor ahora."
+    },
+    "state": {
+      "loading": "Cargando…",
+      "emptyTitle": "Aún no hay nada aquí",
+      "lastUpdated": "Última actualización {{time}}"
+    },
+    "errors": {
+      "offlineTitle": "Estás sin conexión",
+      "offlineBody": "Actualizaremos cuando vuelvas.",
+      "wakingTitle": "Despertando el servidor",
+      "wakingBody": "En un arranque en frío puede tardar hasta un minuto.",
+      "serverTitle": "No se pudo cargar",
+      "serverBody": "No se pudo cargar ahora. Inténtalo de nuevo en un momento.",
+      "genericTitle": "No se pudo cargar",
+      "generic": "No se pudo cargar ahora."
+    },
+    "action": {
+      "offlineReason": "Conéctate a internet para usar esto."
     }
   },
   "common": {
@@ -1245,6 +1264,7 @@
     "loadingTracker": "Cargando el rastreador de postura…",
     "loadingTrackerHint": "La primera carga puede tardar unos segundos",
     "serverError": "Guía de cámara no disponible",
+    "startFailedBody": "No se pudo iniciar el coaching por cámara. Aún puedes registrar esta serie manualmente.",
     "retry": "Reintentar"
   },
   "payment": {

@@ -19,6 +19,7 @@ import { getWorkoutHistory } from "../api/workout";
 import { getProfile } from "../api/user";
 import { fetchWorkoutPlanCurrent, fetchWeeklyWorkoutReview } from "../api/workoutPlanner";
 import { DailyGamePlanCard } from "../components/DailyGamePlanCard";
+import { StateView } from "../components/StateView";
 import { BlurredModalBackdrop } from "../components/BlurredModalBackdrop";
 import { useFeatureAccess } from "../hooks/useFeatureAccess";
 import { runSmartReflowDetection } from "../services/smartReflowRunner";
@@ -61,6 +62,8 @@ export default function GamePlanModalScreen() {
   const canSmartReflow = hasFeatureAccess("smart_reflow");
 
   const [loading, setLoading] = useState(true);
+  const [loadSucceeded, setLoadSucceeded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [calorieDay, setCalorieDay] = useState<CalorieDayPayload | null>(null);
   const [todayWorkoutPlan, setTodayWorkoutPlan] = useState<WorkoutPlanCurrent | null>(null);
   const [todayMealPlan, setTodayMealPlan] = useState<MealDayPlan | null>(null);
@@ -130,6 +133,8 @@ export default function GamePlanModalScreen() {
   const load = useCallback(async () => {
     const cached = getGamePlanCache();
     if (cached) {
+      setLoadSucceeded(true);
+      setLoadFailed(false);
       const sanitizedCachedPlan = sanitizeWorkoutPlanCurrent(cached.todayWorkoutPlan);
       applyCorePayload({
         calorieDay: cached.calorieDay,
@@ -157,12 +162,15 @@ export default function GamePlanModalScreen() {
       setWeightKg(70);
       setWorkoutCatalog([]);
       setWeeklyReviewMessage(null);
+      setLoadSucceeded(false);
+      setLoadFailed(false);
       setLoading(false);
       return;
     }
 
     const apiBase = resolveApiBaseUrl();
     try {
+      setLoadFailed(false);
       const [dayRes, onboardingRes, historyRes, workoutPlanRes, mealPlanRes, weightLatestRes, profileRes] = await Promise.all([
         getDailyCalorieLog(todayLocal()).catch(() => null),
         fetchOnboardingMeShared().catch(() => null),
@@ -209,6 +217,8 @@ export default function GamePlanModalScreen() {
           ? sanitizedWorkoutPlan.today.exercises ?? []
           : [];
       void loadDeferred(todayExercises.map((ex) => ex.name), sanitizedWorkoutPlan);
+      setLoadSucceeded(true);
+      setLoadFailed(false);
     } catch {
       if (!cached) {
         setCalorieDay(null);
@@ -216,6 +226,8 @@ export default function GamePlanModalScreen() {
         setTodayMealPlan(null);
         setWorkoutHistory([]);
         setWeeklyReviewMessage(null);
+        setLoadSucceeded(false);
+        setLoadFailed(true);
       }
     } finally {
       setLoading(false);
@@ -235,7 +247,8 @@ export default function GamePlanModalScreen() {
     [hasWorkoutPlannerAccess, todayWorkoutPlan],
   );
 
-  const dailyGoal = Math.max(1, Math.round(Number(calorieDay?.log?.target_calories) || 1800));
+  const dailyGoalRaw = Number(calorieDay?.log?.target_calories || 0);
+  const dailyGoal = dailyGoalRaw > 0 ? Math.round(dailyGoalRaw) : null;
 
   const todayExercises =
     todayWorkoutPlan?.today && !isHomeRestDayActive({ hasWorkoutPlannerAccess, plan: todayWorkoutPlan })
@@ -273,6 +286,10 @@ export default function GamePlanModalScreen() {
             <View style={styles.loadingBox}>
               <ActivityIndicator size="small" color={MUTED} />
             </View>
+          ) : loadFailed && !loadSucceeded ? (
+            <View style={styles.loadingBox}>
+              <StateView state="failed" onRetry={() => void load()} />
+            </View>
           ) : (
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -281,6 +298,7 @@ export default function GamePlanModalScreen() {
             >
               <DailyGamePlanCard
                 dailyGoal={dailyGoal}
+                loadSucceeded={loadSucceeded}
                 restDayActive={restDayActive}
                 hasWorkoutPlannerAccess={hasWorkoutPlannerAccess}
                 hasMealPlannerAccess={hasMealPlannerAccess}

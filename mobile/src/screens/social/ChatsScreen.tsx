@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { StateView } from "../../components/StateView";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { listConversations, type ChatConversation } from "../../api/messages";
@@ -27,14 +28,16 @@ export default function ChatsScreen() {
   const navigation = useNavigation<any>();
   const [items, setItems] = useState<ChatConversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      setLoadError(null);
       setItems(await listConversations());
       notifySocialUnreadChanged();
     } catch {
-      Alert.alert(t("common.error"), t("social.chats.alerts.loadFailed"));
+      setLoadError(t("social.chats.alerts.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -70,6 +73,8 @@ export default function ChatsScreen() {
       </View>
       {loading ? (
         <ActivityIndicator color={GREEN} style={styles.loader} />
+      ) : loadError ? (
+        <StateView state="failed" body={loadError} onRetry={() => void load()} />
       ) : items.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>{t("social.chats.emptyTitle")}</Text>

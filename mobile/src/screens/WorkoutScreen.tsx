@@ -671,9 +671,8 @@ export const WorkoutScreen = () => {
         },
         { preserveExerciseOptions: Boolean(currentExerciseName) },
       );
-    } catch (error) {
-      const message = axios.isAxiosError(error) ? error.response?.data?.detail || error.message : t("workoutLog.alerts.loadFailed");
-      Alert.alert(t("workoutLog.alerts.error"), String(message));
+    } catch {
+      // Inline state on the log tab handles load failures — no blocking alert.
     }
   };
 

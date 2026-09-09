@@ -3,7 +3,6 @@ import axios from "axios";
 import { ActivityIndicator, AppState, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
-import { resolveApiBaseUrl } from "../api/client";
 import {
   fetchFriendsXpLeaderboard,
   fetchXpSummary,
@@ -11,6 +10,11 @@ import {
   type XpSummary,
 } from "../api/xp";
 import { useXpRefreshStore } from "../store/xpRefreshStore";
+import { useAuthStore } from "../store/authStore";
+import { readScreenCache, writeScreenCache } from "../utils/screenCache";
+import { profileXpCacheKey } from "../utils/screenCacheKeys";
+import { toUserMessage } from "../utils/toUserMessage";
+import { StateView } from "./StateView";
 import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../theme/colors";
 
 const MUTED = "#BBBBBB";
@@ -20,6 +24,11 @@ const TRACK = "#E5E4E0";
 
 const numFmt = (n: number) => Math.round(n).toLocaleString();
 const LEADERBOARD_PREVIEW_COUNT = 3;
+
+type XpCachePayload = {
+  summary: XpSummary;
+  leaderboard: XpLeaderboardRow[];
+};
 
 function LeaderboardRow({ row, youLabel }: { row: XpLeaderboardRow; youLabel: string }) {
   return (
@@ -33,28 +42,32 @@ function LeaderboardRow({ row, youLabel }: { row: XpLeaderboardRow; youLabel: st
   );
 }
 
-const EMPTY_XP_SUMMARY: XpSummary = {
-  total_xp: 0,
-  level: 1,
-  xp_into_level: 0,
-  xp_to_next_level: 150,
-  comeback_sessions_remaining: 0,
-  season: null,
-};
-
 export function ProfileXpCard() {
   const { t } = useTranslation();
+  const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const xpRefreshVersion = useXpRefreshStore((state) => state.version);
-  const [summary, setSummary] = useState<XpSummary>(EMPTY_XP_SUMMARY);
+  const [summary, setSummary] = useState<XpSummary | null>(null);
   const [leaderboard, setLeaderboard] = useState<XpLeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [cacheSavedAt, setCacheSavedAt] = useState<number | null>(null);
   const [leaderboardModalOpen, setLeaderboardModalOpen] = useState(false);
   const lastLoadAt = useRef(0);
-  const apiBase = useMemo(() => resolveApiBaseUrl(), []);
+  const cacheKey = sessionUserId ? profileXpCacheKey(sessionUserId) : null;
+
+  useEffect(() => {
+    if (!cacheKey) return;
+    void readScreenCache<XpCachePayload>(cacheKey).then((hit) => {
+      if (!hit) return;
+      setSummary(hit.data.summary);
+      setLeaderboard(hit.data.leaderboard);
+      setCacheSavedAt(hit.savedAt);
+      setLoading(false);
+    });
+  }, [cacheKey]);
 
   const loadXp = useCallback(async () => {
-    setLoading((prev) => (lastLoadAt.current === 0 ? true : prev));
+    setLoading((prev) => (lastLoadAt.current === 0 && !summary ? true : prev));
     setLoadError(null);
     try {
       const [xp, board] = await Promise.all([
@@ -64,20 +77,22 @@ export function ProfileXpCard() {
       setSummary(xp);
       setLeaderboard(board.items ?? []);
       lastLoadAt.current = Date.now();
-    } catch (error) {
-      if (lastLoadAt.current === 0) {
-        setSummary(EMPTY_XP_SUMMARY);
-        setLeaderboard([]);
+      setCacheSavedAt(Date.now());
+      if (cacheKey) {
+        await writeScreenCache(cacheKey, { summary: xp, leaderboard: board.items ?? [] });
       }
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        setLoadError(t("profile.xp.notDeployed", { base: apiBase }));
-      } else {
-        setLoadError(t("profile.xp.loadFailed", { base: apiBase }));
+    } catch (error) {
+      if (lastLoadAt.current === 0 && !summary) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          setLoadError(t("profile.xp.notDeployed"));
+        } else {
+          setLoadError(toUserMessage(error, "profile.xp.loadFailed").body);
+        }
       }
     } finally {
       setLoading(false);
     }
-  }, [apiBase, t]);
+  }, [cacheKey, summary, t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -98,6 +113,7 @@ export function ProfileXpCard() {
   }, [loadXp]);
 
   const progressPct = useMemo(() => {
+    if (!summary) return 0;
     if (summary.xp_to_next_level == null || summary.xp_to_next_level <= 0) {
       return summary.xp_to_next_level == null ? 100 : 0;
     }
@@ -110,77 +126,94 @@ export function ProfileXpCard() {
   );
   const hasMoreLeaderboard = leaderboard.length > LEADERBOARD_PREVIEW_COUNT;
 
+  if (loading && !summary && !loadError) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.sectionLabel}>{t("profile.xp.title")}</Text>
+        <ActivityIndicator color={GREEN} style={styles.loader} />
+      </View>
+    );
+  }
+
+  if (loadError && !summary) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.sectionLabel}>{t("profile.xp.title")}</Text>
+        <StateView state="failed" body={loadError} onRetry={() => void loadXp()} />
+      </View>
+    );
+  }
+
+  if (!summary) return null;
+
   return (
     <View style={styles.card}>
       <Text style={styles.sectionLabel}>{t("profile.xp.title")}</Text>
+      {cacheSavedAt && loadError ? (
+        <Text style={styles.staleLabel}>
+          {t("profile.xp.lastUpdated", { time: new Date(cacheSavedAt).toLocaleString() })}
+        </Text>
+      ) : null}
 
-      {loading && !loadError ? (
-        <ActivityIndicator color={GREEN} style={styles.loader} />
+      <View style={styles.heroRow}>
+        <View style={styles.levelBadge}>
+          <Text style={styles.levelBadgeLabel}>{t("profile.xp.level")}</Text>
+          <Text style={styles.levelBadgeValue}>{summary.level}</Text>
+        </View>
+        <View style={styles.heroCopy}>
+          <Text style={styles.totalXp}>{t("profile.xp.totalXp", { xp: numFmt(summary.total_xp) })}</Text>
+          {summary.xp_to_next_level != null ? (
+            <Text style={styles.nextLevel}>
+              {t("profile.xp.nextLevel", {
+                current: numFmt(summary.xp_into_level),
+                total: numFmt(summary.xp_to_next_level),
+              })}
+            </Text>
+          ) : (
+            <Text style={styles.nextLevel}>{t("profile.xp.maxLevel")}</Text>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
+      </View>
+
+      {summary.comeback_sessions_remaining > 0 ? (
+        <View style={styles.comebackPill}>
+          <Text style={styles.comebackText}>
+            {t("profile.xp.comebackBonus", { count: summary.comeback_sessions_remaining })}
+          </Text>
+        </View>
+      ) : null}
+
+      {summary.season ? (
+        <View style={styles.seasonRow}>
+          <Text style={styles.seasonName}>{summary.season.name}</Text>
+          <Text style={styles.seasonXp}>{t("profile.xp.seasonXp", { xp: numFmt(summary.season.season_xp) })}</Text>
+        </View>
+      ) : null}
+
+      <Text style={styles.leaderboardTitle}>{t("profile.xp.friendsLeaderboard")}</Text>
+      {leaderboard.length === 0 ? (
+        <Text style={styles.leaderboardEmpty}>{t("profile.xp.leaderboardEmpty")}</Text>
       ) : (
         <>
-          {loadError ? <Text style={styles.loadError}>{loadError}</Text> : null}
-
-          <View style={styles.heroRow}>
-            <View style={styles.levelBadge}>
-              <Text style={styles.levelBadgeLabel}>{t("profile.xp.level")}</Text>
-              <Text style={styles.levelBadgeValue}>{summary.level}</Text>
-            </View>
-            <View style={styles.heroCopy}>
-              <Text style={styles.totalXp}>{t("profile.xp.totalXp", { xp: numFmt(summary.total_xp) })}</Text>
-              {summary.xp_to_next_level != null ? (
-                <Text style={styles.nextLevel}>
-                  {t("profile.xp.nextLevel", {
-                    current: numFmt(summary.xp_into_level),
-                    total: numFmt(summary.xp_to_next_level),
-                  })}
-                </Text>
-              ) : (
-                <Text style={styles.nextLevel}>{t("profile.xp.maxLevel")}</Text>
-              )}
-            </View>
+          <View style={styles.leaderboardList}>
+            {previewLeaderboard.map((row) => (
+              <LeaderboardRow key={row.user_id} row={row} youLabel={t("profile.xp.you")} />
+            ))}
           </View>
-
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
-          </View>
-
-          {summary.comeback_sessions_remaining > 0 ? (
-            <View style={styles.comebackPill}>
-              <Text style={styles.comebackText}>
-                {t("profile.xp.comebackBonus", { count: summary.comeback_sessions_remaining })}
-              </Text>
-            </View>
+          {hasMoreLeaderboard ? (
+            <Pressable
+              accessibilityRole="button"
+              style={styles.viewAllRow}
+              onPress={() => setLeaderboardModalOpen(true)}
+            >
+              <Text style={styles.viewAllText}>{t("profile.xp.viewAll")}</Text>
+              <Text style={styles.viewAllChevron}>›</Text>
+            </Pressable>
           ) : null}
-
-          {summary.season ? (
-            <View style={styles.seasonRow}>
-              <Text style={styles.seasonName}>{summary.season.name}</Text>
-              <Text style={styles.seasonXp}>{t("profile.xp.seasonXp", { xp: numFmt(summary.season.season_xp) })}</Text>
-            </View>
-          ) : null}
-
-          <Text style={styles.leaderboardTitle}>{t("profile.xp.friendsLeaderboard")}</Text>
-          {leaderboard.length === 0 ? (
-            <Text style={styles.leaderboardEmpty}>{t("profile.xp.leaderboardEmpty")}</Text>
-          ) : (
-            <>
-              <View style={styles.leaderboardList}>
-                {previewLeaderboard.map((row) => (
-                  <LeaderboardRow key={row.user_id} row={row} youLabel={t("profile.xp.you")} />
-                ))}
-              </View>
-              {hasMoreLeaderboard ? (
-                <Pressable
-                  accessibilityRole="button"
-                  style={styles.viewAllRow}
-                  onPress={() => setLeaderboardModalOpen(true)}
-                >
-                  <Text style={styles.viewAllText}>{t("profile.xp.viewAll")}</Text>
-                  <Text style={styles.viewAllChevron}>›</Text>
-                </Pressable>
-              ) : null}
-            </>
-          )}
         </>
       )}
 
@@ -217,7 +250,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: BG, borderRadius: 16, padding: 14, marginBottom: 14 },
   sectionLabel: { color: MUTED, fontSize: 11, fontWeight: "900", letterSpacing: 0.8, marginBottom: 12 },
   loader: { marginVertical: 8 },
-  loadError: { color: MUTED, fontSize: 11, fontWeight: "700", marginBottom: 10 },
+  staleLabel: { color: MUTED, fontSize: 11, fontWeight: "600", marginBottom: 10 },
   heroRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
   levelBadge: {
     width: 64,

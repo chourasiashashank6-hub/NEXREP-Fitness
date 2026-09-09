@@ -184,7 +184,9 @@
       "friendsLeaderboard": "CLASSEMENT SAISON ENTRE AMIS",
       "viewAll": "Tout voir",
       "leaderboardEmpty": "Enregistrez entraînements et repas pour monter au classement.",
-      "loadFailed": "XP non synchronisé — valeurs par défaut affichées.",
+      "loadFailed": "Impossible de charger votre XP pour le moment.",
+      "notDeployed": "Le XP de progression n'est pas encore disponible.",
+      "lastUpdated": "Dernière mise à jour {{time}}",
       "you": "Vous"
     },
     "activityOverview": "APERÇU DE L’ACTIVITÉ",
@@ -373,14 +375,6 @@
       "generic": "Quelque chose s'est mal passé."
     },
     "loadErrors": {
-      "timeout": "La demande a expiré. Démarrez le serveur API (port 8000) et réessayez.",
-      "network": "Erreur réseau ({{message}}).\n\nBase API résolue : {{base}}\n\n1) Démarrez API : serveur cd && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload\n2) Dans un navigateur, ouvrez {{base}}/health — devrait afficher {\"status\": \"ok\"}\n3) Expo web sur Wi‑Fi : .env par défaut utilise 127.0.0.1 ; l'application mappe désormais cela à votre PC's LAN IP lorsque vous ouvrez http://192.168.x.x:8081.. Si l'échec persiste, définissez EXPO_PUBLIC_API_URL=http://YOUR_PC_IP:8000 et redémarrez Expo.\n4) Émulateur Android : utilisez http://10.0.2.2:8000 dans .env au lieu de 127.0.0.1.",
-      "noResponse": "pas de réponse",
-      "cannotReach": "Impossible d'atteindre le API. Vérifiez EXPO_PUBLIC_API_URL et que le serveur FastAPI est en cours d'exécution.",
-      "userNotFound": "Votre session est obsolète (la base de données a été réinitialisée ou le compte a été supprimé). Déconnectez-vous et reconnectez-vous.",
-      "notFound": "Introuvable ({{url}}). Redémarrez le API à partir du serveur/ : uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload, puis appuyez sur Réessayer.",
-      "unknownUrl": "inconnu URL",
-      "serverError": "Erreur du serveur ({{status}})",
       "fallback": "Impossible de charger le journal des calories."
     },
     "loading": "Chargement du journal…",
@@ -514,6 +508,31 @@
       "loadFailed": "Impossible de charger le résumé de transformation.",
       "proGateTitle": "Le résumé comparatif est réservé au Pro",
       "proGateBody": "Passez au Pro pour voir les deltas poids, entraînement et force sur n'importe quelle période."
+    }
+  },
+  "offline": {
+    "banner": {
+      "offline": "Vous êtes hors ligne. Nous actualiserons à votre retour.",
+      "waking": "Réveil du serveur — cela peut prendre jusqu'à une minute.",
+      "serverUnreachable": "Impossible de joindre le serveur pour le moment."
+    },
+    "state": {
+      "loading": "Chargement…",
+      "emptyTitle": "Rien ici pour l'instant",
+      "lastUpdated": "Dernière mise à jour {{time}}"
+    },
+    "errors": {
+      "offlineTitle": "Vous êtes hors ligne",
+      "offlineBody": "Nous actualiserons à votre retour.",
+      "wakingTitle": "Réveil du serveur",
+      "wakingBody": "Au démarrage à froid, cela peut prendre jusqu'à une minute.",
+      "serverTitle": "Chargement impossible",
+      "serverBody": "Impossible de charger pour le moment. Réessayez dans un instant.",
+      "genericTitle": "Chargement impossible",
+      "generic": "Impossible de charger pour le moment."
+    },
+    "action": {
+      "offlineReason": "Connectez-vous à Internet pour utiliser ceci."
     }
   },
   "common": {
@@ -1245,6 +1264,7 @@
     "loadingTracker": "Chargement du détecteur de posture…",
     "loadingTrackerHint": "Le premier chargement peut prendre quelques secondes",
     "serverError": "Guidage caméra indisponible",
+    "startFailedBody": "Le coaching caméra n'a pas pu démarrer. Vous pouvez toujours enregistrer cette série manuellement.",
     "retry": "Réessayer"
   },
   "payment": {

@@ -34,8 +34,10 @@ import type { PoseCalibration } from "../../data/aiTrainer/types";
 import {
   acquireMediaPipeServer,
   MEDIAPIPE_CALIBRATION_PAGE,
+  prepareMediaPipeServerRetry,
   releaseMediaPipeServer,
 } from "../../services/aiTrainer/mediaPipeLocalServer";
+import { cameraUserMessage } from "../../utils/cameraUserMessage";
 import {
   CAMERA_ZOOM_MAX,
   CAMERA_ZOOM_MIN,
@@ -113,6 +115,7 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
   const [busy, setBusy] = useState(false);
   const [serverUri, setServerUri] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [serverRetryNonce, setServerRetryNonce] = useState(0);
   const [stepReady, setStepReady] = useState(false);
   const [calProgress, setCalProgress] = useState<CalProgressState>({
     gatePassed: false,
@@ -144,6 +147,7 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
   );
 
   useEffect(() => {
+    if (serverError) return;
     setStepReady(false);
     setCalProgress({ gatePassed: false, phase: "seek_pose" });
     webReadyRef.current = false;
@@ -167,16 +171,16 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
       clearInterval(tick);
       clearTimeout(end);
     };
-  }, [step]);
+  }, [step, serverError]);
 
   useEffect(() => {
-    if (demoActive) return;
+    if (serverError || demoActive) return;
     setCountdownSec(stepMeta.durationSec);
     const tick = setInterval(() => {
       setCountdownSec((s) => Math.max(0, s - 1));
     }, 1000);
     return () => clearInterval(tick);
-  }, [step, demoActive, stepMeta.durationSec]);
+  }, [step, demoActive, stepMeta.durationSec, serverError]);
 
   useEffect(() => {
     if (!webReadyRef.current) return;
@@ -215,14 +219,16 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
       })
       .catch((err) => {
         if (!cancelled) {
-          setServerError(err instanceof Error ? err.message : "Camera server failed to start.");
+          setServerError(cameraUserMessage(err, "Calibration server"));
         }
       });
     return () => {
       cancelled = true;
       releaseMediaPipeServer();
     };
-  }, []);
+    // serverRetryNonce re-runs acquisition after Retry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverRetryNonce]);
 
   const continueToSession = useCallback(() => {
     if (Platform.OS === "web") unlockWebSpeech();
@@ -495,7 +501,17 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
       {serverError ? (
         <View style={styles.centered}>
           <Text style={styles.errorTitle}>{t("mediaPipe.serverError")}</Text>
-          <Text style={styles.errorSub}>{serverError}</Text>
+          <Text style={styles.errorSub}>{t("mediaPipe.startFailedBody")}</Text>
+          <Pressable
+            style={styles.retryBtn}
+            onPress={() => {
+              void prepareMediaPipeServerRetry().finally(() => {
+                setServerRetryNonce((n) => n + 1);
+              });
+            }}
+          >
+            <Text style={styles.retryBtnTxt}>{t("mediaPipe.retry")}</Text>
+          </Pressable>
         </View>
       ) : serverUri ? (
         <WebView
@@ -524,8 +540,9 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
         </View>
       )}
 
-      {demoActive ? <CalibrationPoseDemo step={stepId} secondsLeft={demoSecLeft} /> : null}
+      {!serverError && demoActive ? <CalibrationPoseDemo step={stepId} secondsLeft={demoSecLeft} /> : null}
 
+      {!serverError ? (
       <SafeAreaView style={styles.hud} pointerEvents="box-none" edges={["top", "left", "right", "bottom"]}>
         {/* TOP BAR */}
         <GlassPanel style={styles.topBar}>
@@ -653,6 +670,7 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
           </View>
         </View>
       </SafeAreaView>
+      ) : null}
     </View>
   );
 }
@@ -663,7 +681,15 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24 },
   loadingTxt: { color: AI_C.dim, fontWeight: "600" },
   errorTitle: { color: AI_C.txt, fontSize: 16, fontWeight: "700", textAlign: "center" },
-  errorSub: { color: AI_C.dim, fontSize: 13, textAlign: "center" },
+  errorSub: { color: AI_C.dim, fontSize: 13, textAlign: "center", marginTop: 8 },
+  retryBtn: {
+    marginTop: 20,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: AI_C.mint,
+  },
+  retryBtnTxt: { color: AI_C.bg, fontWeight: "800", fontSize: 15 },
 
   hud: {
     ...StyleSheet.absoluteFillObject,

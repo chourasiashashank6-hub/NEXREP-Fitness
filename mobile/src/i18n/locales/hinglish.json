@@ -184,7 +184,9 @@
       "friendsLeaderboard": "FRIENDS SEASON LEADERBOARD",
       "viewAll": "View all",
       "leaderboardEmpty": "Board par chadhne ke liye workouts aur meals log karo.",
-      "loadFailed": "XP sync nahi hua — server update hone tak defaults dikhenge.",
+      "loadFailed": "Abhi XP load nahi ho paya.",
+      "notDeployed": "Progress XP abhi available nahi hai.",
+      "lastUpdated": "Last updated {{time}}",
       "you": "Aap"
     },
     "activityOverview": "ACTIVITY OVERVIEW",
@@ -373,14 +375,6 @@
       "generic": "Something went wrong."
     },
     "loadErrors": {
-      "timeout": "Request timed out. API server (port 8000) start karein aur dobara try karein.",
-      "network": "Network error ({{message}}).\n\nResolved API base: {{base}}\n\n1) Start API: cd server && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload\n2) In a browser open {{base}}/health — should show {\"status\":\"ok\"}\n3) Expo web on Wi‑Fi: default .env uses 127.0.0.1; the app now maps that to your PC’s LAN IP when you open http://192.168.x.x:8081. If it still fails, set EXPO_PUBLIC_API_URL=http://YOUR_PC_IP:8000 and restart Expo.\n4) Android emulator: use http://10.0.2.2:8000 in .env instead of 127.0.0.1.",
-      "noResponse": "response nahi",
-      "cannotReach": "API reachable nahi hai. EXPO_PUBLIC_API_URL aur FastAPI server running hai ya nahi check karein.",
-      "userNotFound": "Aapka session outdated hai (database reset hua ya account remove hua). Log out karke dobara sign in karein.",
-      "notFound": "Not Found ({{url}}). Restart the API from server/: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload, then tap Retry.",
-      "unknownUrl": "unknown URL",
-      "serverError": "Server error ({{status}})",
       "fallback": "Calorie log load nahi ho paya."
     },
     "loading": "Log load ho raha hai…",
@@ -515,6 +509,31 @@
       "loadFailed": "Transformation summary load nahi ho payi.",
       "proGateTitle": "Comparison summary Pro feature hai",
       "proGateBody": "Kisi bhi date range ke weight, workout aur strength deltas ke liye upgrade karo."
+    }
+  },
+  "offline": {
+    "banner": {
+      "offline": "Aap offline ho. Wapas aane par refresh karenge.",
+      "waking": "Server wake ho raha hai — isme ek minute tak lag sakta hai.",
+      "serverUnreachable": "Abhi server tak nahi pahunch pa rahe."
+    },
+    "state": {
+      "loading": "Load ho raha hai…",
+      "emptyTitle": "Abhi yahan kuch nahi",
+      "lastUpdated": "Last updated {{time}}"
+    },
+    "errors": {
+      "offlineTitle": "Aap offline ho",
+      "offlineBody": "Wapas aane par refresh karenge.",
+      "wakingTitle": "Server wake ho raha hai",
+      "wakingBody": "Cold start par isme ek minute tak lag sakta hai.",
+      "serverTitle": "Load nahi ho paya",
+      "serverBody": "Abhi load nahi ho paya. Thodi der baad try karein.",
+      "genericTitle": "Load nahi ho paya",
+      "generic": "Abhi load nahi ho paya."
+    },
+    "action": {
+      "offlineReason": "Iske liye internet connection chahiye."
     }
   },
   "common": {
@@ -1247,6 +1266,7 @@
     "loadingTracker": "Pose tracker load ho raha hai…",
     "loadingTrackerHint": "First load mein kuch seconds lag sakte hain",
     "serverError": "Camera guidance available nahi hai",
+    "startFailedBody": "Camera coaching start nahi ho payi. Aap ab bhi is set ko manually log kar sakte ho.",
     "retry": "Retry karein"
   },
   "payment": {

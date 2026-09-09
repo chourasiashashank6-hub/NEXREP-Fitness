@@ -243,6 +243,13 @@ export default function AICameraWorkoutScreen() {
   }, [session?.voice_mode, i18nLang]);
 
   useEffect(() => {
+    if (!cameraError) return;
+    sharedAudioCoach.clear();
+    setBannerCue(null);
+    setTtsSpeaking(false);
+  }, [cameraError]);
+
+  useEffect(() => {
     const unsub = sharedAudioCoach.onSpeakingChange((speaking, cueKey, priority) => {
       setTtsSpeaking(speaking);
       if (cueKey && priority) {
@@ -696,7 +703,7 @@ export default function AICameraWorkoutScreen() {
     (update: MediaPipeTrackingUpdate) => {
       const s = useWorkoutSessionStore.getState().session;
       if (!s || s.ai_ui_phase !== "tracking" || s.status !== "active") return;
-      if (sessionPaused) return;
+      if (sessionPaused || cameraError) return;
       const ex = s.exercises[s.current_exercise_index];
       if (!ex) return;
 
@@ -784,7 +791,7 @@ export default function AICameraWorkoutScreen() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sessionPaused, setCurrentRepCount, updateFormTracking, recordRepVerdict, t, ttsSpeaking, livePoseSpec],
+    [sessionPaused, cameraError, setCurrentRepCount, updateFormTracking, recordRepVerdict, t, ttsSpeaking, livePoseSpec],
   );
 
   const handlePauseToggle = useCallback(() => {
@@ -1173,7 +1180,7 @@ export default function AICameraWorkoutScreen() {
     bannerCue?.text ||
     liveCorrection ||
     t("aiTrainer.tracking_ready", { defaultValue: "Tracking locked — start when ready" });
-  const trackingRunning = cameraActive && !sessionPaused && !countingPaused;
+  const trackingRunning = cameraActive && !sessionPaused && !countingPaused && !cameraError;
 
   return (
     <SafeAreaView style={styles.safeDark} edges={["top"]}>

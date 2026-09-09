@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { fetchCoachSummary } from "../api/coachSummary";
 import { todayLocal } from "../api/caloriesLog";
@@ -7,19 +6,15 @@ import type { CoachCadence } from "./useCoachRedesign";
 import type { CoachSummaryResponse } from "../types/coachSummary";
 import { getSessionCache, setSessionCache } from "../utils/sessionDataCache";
 import { useActivityDataRefreshStore } from "../store/activityDataRefreshStore";
+import { useAuthStore } from "../store/authStore";
+import { fetchWithRetry } from "../utils/fetchWithRetry";
+import { readScreenCache, writeScreenCache } from "../utils/screenCache";
+import { coachSummaryCacheKey } from "../utils/screenCacheKeys";
+import { toUserMessage } from "../utils/toUserMessage";
+import { useConnectivityStore } from "../store/connectivityStore";
 
-function coachSummaryCacheKey(domain: "nutrition" | "workout", cadence: string, localDate: string) {
+function sessionCacheKey(domain: "nutrition" | "workout", cadence: string, localDate: string) {
   return `coach-summary:${domain}:${cadence}:${localDate}`;
-}
-
-function formatLoadError(e: unknown, fallback: string): string {
-  if (axios.isAxiosError(e)) {
-    const detail = e.response?.data?.detail;
-    if (typeof detail === "string" && detail.trim()) return detail;
-    if (e.response?.status) return fallback;
-  }
-  if (e instanceof Error && !/network error/i.test(e.message)) return e.message;
-  return fallback;
 }
 
 export function useCoachSummaryLoad(
@@ -29,21 +24,39 @@ export function useCoachSummaryLoad(
   refreshToken = 0,
 ) {
   const { t } = useTranslation();
+  const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const logDate = todayLocal();
-  const cacheKey = coachSummaryCacheKey(domain, cadence, logDate);
-  const cached = getSessionCache<CoachSummaryResponse>(cacheKey);
+  const memKey = sessionCacheKey(domain, cadence, logDate);
+  const diskKey = sessionUserId ? coachSummaryCacheKey(sessionUserId, domain, cadence, logDate) : null;
+  const cached = getSessionCache<CoachSummaryResponse>(memKey);
   const [summary, setSummary] = useState<CoachSummaryResponse | null>(cached);
   const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
+  const [waking, setWaking] = useState(false);
+  const [cacheSavedAt, setCacheSavedAt] = useState<number | null>(null);
   const lastRefreshToken = useRef(refreshToken);
   const requestId = useRef(0);
+  const summaryRef = useRef(summary);
+  summaryRef.current = summary;
   const activityRefreshVersion = useActivityDataRefreshStore((s) => s.version);
   const isActive = activeCadence === cadence;
+
+  useEffect(() => {
+    if (!diskKey || cached) return;
+    void readScreenCache<CoachSummaryResponse>(diskKey).then((hit) => {
+      if (!hit) return;
+      setSessionCache(memKey, hit.data);
+      setSummary(hit.data);
+      setCacheSavedAt(hit.savedAt);
+      setLoading(false);
+      setError(null);
+    });
+  }, [cached, diskKey, memKey]);
 
   const load = useCallback(
     async (opts?: { force?: boolean }) => {
       if (!opts?.force) {
-        const hit = getSessionCache<CoachSummaryResponse>(cacheKey);
+        const hit = getSessionCache<CoachSummaryResponse>(memKey);
         if (hit) {
           setSummary(hit);
           setLoading(false);
@@ -58,19 +71,28 @@ export function useCoachSummaryLoad(
       try {
         setLoading(true);
         setError(null);
-        const data = await fetchCoachSummary({ domain, cadence, localDate: logDate });
+        setWaking(false);
+        const data = await fetchWithRetry(
+          () => fetchCoachSummary({ domain, cadence, localDate: logDate }),
+          { onWaking: () => setWaking(true) },
+        );
         if (id !== requestId.current) return;
-        setSessionCache(cacheKey, data);
+        setSessionCache(memKey, data);
+        if (diskKey) await writeScreenCache(diskKey, data);
         setSummary(data);
+        setCacheSavedAt(Date.now());
+        setWaking(false);
       } catch (e) {
         if (id !== requestId.current) return;
-        setSummary(null);
-        setError(formatLoadError(e, t("coach.summary.loadFailed")));
+        const hadCache = Boolean(summaryRef.current);
+        if (!hadCache) setSummary(null);
+        setError(toUserMessage(e, "coach.summary.loadFailed").body);
+        setWaking(useConnectivityStore.getState().serverWaking);
       } finally {
         if (id === requestId.current) setLoading(false);
       }
     },
-    [cacheKey, cadence, domain, logDate, t],
+    [cadence, diskKey, domain, logDate, memKey],
   );
 
   useEffect(() => {
@@ -89,5 +111,5 @@ export function useCoachSummaryLoad(
     void load({ force: true });
   }, [load]);
 
-  return { summary, loading, error, isActive, retry };
+  return { summary, loading, error, waking, cacheSavedAt, isActive, retry };
 }

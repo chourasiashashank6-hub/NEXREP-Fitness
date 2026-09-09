@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   SectionList,
   StyleSheet,
@@ -11,6 +12,7 @@ import {
 import { BlurredModal } from "./BlurredModal";
 import { getWorkoutHistory, getWorkoutTotalBurn, type WorkoutHistoryItem } from "../api/workout";
 import { useTranslation } from "react-i18next";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { resolveWorkoutLogSource, WORKOUT_LOG_SOURCE_I18N_KEY } from "../utils/workoutLogSource";
 import { GREEN, GREEN_LIGHT, BG, TEXT, WHITE } from "../theme/colors";
 
@@ -88,12 +90,14 @@ const rowSubtitle = (item: WorkoutHistoryItem): string => {
 export default function AllTimeHistoryModal({ visible, onClose }: Props) {
   const { t } = useTranslation();
   const [items, setItems] = useState<WorkoutHistoryItem[]>([]);
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebouncedValue(searchInput, 350);
   const [totalCount, setTotalCount] = useState(0);
   const [totalBurned, setTotalBurned] = useState(0);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const requestIdRef = useRef(0);
 
   const sections = useMemo(() => buildSections(items), [items]);
   const hasMore = items.length < historyTotal;
@@ -101,6 +105,7 @@ export default function AllTimeHistoryModal({ visible, onClose }: Props) {
 
   const loadPage = useCallback(
     async (offset: number, query: string) => {
+      const requestId = ++requestIdRef.current;
       const isFirstPage = offset === 0;
       if (isFirstPage) {
         setLoading(true);
@@ -108,33 +113,41 @@ export default function AllTimeHistoryModal({ visible, onClose }: Props) {
         setLoadingMore(true);
       }
       try {
-        const [historyData, totals] = await Promise.all([
-          getWorkoutHistory({
-            range: "all",
-            limit: PAGE_SIZE,
-            offset,
-            search: query.trim() || undefined,
-          }),
-          isFirstPage ? getWorkoutTotalBurn() : Promise.resolve(null),
-        ]);
+        if (isFirstPage) {
+          void getWorkoutTotalBurn()
+            .then((totals) => {
+              if (requestId !== requestIdRef.current) return;
+              setTotalCount(totals.sessionCount);
+              setTotalBurned(Math.round(Number(totals.totalCaloriesBurned) || 0));
+            })
+            .catch(() => {
+              // Stats are optional — list should still load.
+            });
+        }
+        const historyData = await getWorkoutHistory({
+          range: "all",
+          limit: PAGE_SIZE,
+          offset,
+          search: query.trim() || undefined,
+        });
+        if (requestId !== requestIdRef.current) return;
         setHistoryTotal(historyData.total ?? historyData.items.length);
         setItems((prev) => (isFirstPage ? historyData.items ?? [] : [...prev, ...(historyData.items ?? [])]));
-        if (totals) {
-          setTotalCount(totals.sessionCount);
-          setTotalBurned(Math.round(Number(totals.totalCaloriesBurned) || 0));
-        }
       } finally {
-        setLoading(false);
-        setLoadingMore(false);
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
       }
     },
     [],
   );
 
   useEffect(() => {
-    if (!visible) return;
-    setItems([]);
-    setHistoryTotal(0);
+    if (!visible) {
+      setSearchInput("");
+      return;
+    }
     void loadPage(0, search);
   }, [loadPage, search, visible]);
 
@@ -169,39 +182,49 @@ export default function AllTimeHistoryModal({ visible, onClose }: Props) {
           </View>
 
           <TextInput
-            value={search}
-            onChangeText={setSearch}
+            value={searchInput}
+            onChangeText={setSearchInput}
             placeholder="Search exercise"
             placeholderTextColor={TERTIARY}
             style={styles.searchInput}
             returnKeyType="search"
           />
 
-          {loading ? (
-            <View style={styles.loadingWrap}>
-              <ActivityIndicator color={GREEN} />
-            </View>
-          ) : (
-            <SectionList
-              sections={sections}
-              keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={items.length === 0 ? styles.emptyListContent : styles.listContent}
-              stickySectionHeadersEnabled={false}
-              keyboardShouldPersistTaps="handled"
-              onEndReached={loadMore}
-              onEndReachedThreshold={0.35}
-              ListEmptyComponent={<Text style={styles.emptyText}>No workouts yet</Text>}
-              ListFooterComponent={
-                loadingMore ? (
-                  <ActivityIndicator color={GREEN} style={styles.footerLoader} />
-                ) : showEverything ? (
-                  <Text style={styles.endText}>That's everything so far</Text>
-                ) : null
-              }
-              renderSectionHeader={({ section }) => <Text style={styles.dateHeader}>{section.title}</Text>}
-              renderItem={({ item }) => {
-                const logSource = resolveWorkoutLogSource(item);
-                return (
+          <SectionList
+            style={styles.list}
+            sections={sections}
+            keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={items.length === 0 ? styles.emptyListContent : styles.listContent}
+            stickySectionHeadersEnabled={false}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+            initialNumToRender={12}
+            maxToRenderPerBatch={12}
+            windowSize={9}
+            removeClippedSubviews={Platform.OS === "android"}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.25}
+            refreshing={loading && items.length > 0}
+            ListEmptyComponent={
+              loading ? (
+                <View style={styles.loadingWrap}>
+                  <ActivityIndicator color={GREEN} />
+                </View>
+              ) : (
+                <Text style={styles.emptyText}>No workouts yet</Text>
+              )
+            }
+            ListFooterComponent={
+              loadingMore ? (
+                <ActivityIndicator color={GREEN} style={styles.footerLoader} />
+              ) : showEverything ? (
+                <Text style={styles.endText}>That's everything so far</Text>
+              ) : null
+            }
+            renderSectionHeader={({ section }) => <Text style={styles.dateHeader}>{section.title}</Text>}
+            renderItem={({ item }) => {
+              const logSource = resolveWorkoutLogSource(item);
+              return (
                 <View style={styles.historyRow}>
                   <View style={styles.checkCircle}>
                     <Text style={styles.checkText}>✓</Text>
@@ -217,9 +240,8 @@ export default function AllTimeHistoryModal({ visible, onClose }: Props) {
                   <Text style={styles.kcalText}>{Math.round(Number(item.caloriesBurned) || 0)} kcal</Text>
                 </View>
               );
-              }}
-            />
-          )}
+            }}
+          />
       </View>
     </BlurredModal>
   );
@@ -270,7 +292,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginBottom: 12,
   },
-  loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 40 },
+  list: { flex: 1 },
+  loadingWrap: { alignItems: "center", justifyContent: "center", paddingVertical: 40 },
   listContent: { paddingBottom: 10 },
   emptyListContent: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: 48 },
   dateHeader: { color: MUTED, fontSize: 12, fontWeight: "800", marginTop: 8, marginBottom: 6 },

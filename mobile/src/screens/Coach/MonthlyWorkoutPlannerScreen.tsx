@@ -17,6 +17,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
+import { useCanReachBackend } from "../../hooks/useCanReachBackend";
 import {
   fetchWorkoutPlanCurrent,
   fetchWorkoutPlanDay,
@@ -280,6 +281,7 @@ type Props = {
 
 export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props) {
   const { t } = useTranslation();
+  const { canReach } = useCanReachBackend();
   const { hasFeatureAccess } = useFeatureAccess();
   const hasWorkoutPlannerAccess = hasFeatureAccess("workout_plan_generation");
   const canSmartReflow = hasFeatureAccess("smart_reflow");
@@ -1128,9 +1130,14 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
               <Text style={styles.bullet}>{t("coach.workoutPlannerScreen.level", { level: preview.difficulty })}</Text>
               <Text style={styles.bullet}>{t("coach.workoutPlannerScreen.trainingDays", { count: preview.wpw })}</Text>
               <Text style={styles.bullet}>{t("coach.workoutPlannerScreen.progressiveOverload")}</Text>
-              <Pressable style={styles.genBtn} onPress={() => void startGenerate()}>
+              <Pressable
+                style={[styles.genBtn, !canReach && styles.genBtnDisabled]}
+                onPress={() => void startGenerate()}
+                disabled={!canReach}
+              >
                 <Text style={styles.genBtnText}>{t("coach.workoutPlannerScreen.generateButton")}</Text>
               </Pressable>
+              {!canReach ? <Text style={styles.offlineHint}>{t("offline.action.offlineReason")}</Text> : null}
             </View>
           ) : null}
 
@@ -1421,6 +1428,8 @@ const styles = StyleSheet.create({
   pills: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
   bullet: { color: MUTED, fontSize: 13, marginBottom: 4 },
   genBtn: { marginTop: 16, backgroundColor: ORANGE, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+  genBtnDisabled: { opacity: 0.5 },
+  offlineHint: { color: MUTED, fontSize: 11, fontWeight: "600", marginTop: 8, textAlign: "center" },
   genBtnText: { color: WHITE, fontWeight: "800", fontSize: 14 },
   progressTrack: { height: 8, backgroundColor: TRACK, borderRadius: 99, overflow: "hidden", marginTop: 12 },
   progressFill: { height: 8, backgroundColor: ORANGE },

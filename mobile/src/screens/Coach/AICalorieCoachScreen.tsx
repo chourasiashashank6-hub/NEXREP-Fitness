@@ -21,6 +21,7 @@ import { refreshScopeLabel } from "../../utils/refreshScopeLabel";
 import { SESSION_DATA_STALE_MS } from "../../utils/sessionDataCache";
 import { useActivityDataRefreshStore } from "../../store/activityDataRefreshStore";
 import type { CoachStackParamList } from "./CoachHomeScreen";
+import { CoachStatusDot } from "../../components/CoachStatusDot";
 import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
 const MUTED = "#BBBBBB";
@@ -29,6 +30,7 @@ export default function AICalorieCoachScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<CoachStackParamList>>();
   const { cadence, setCadence, isCadenceLocked, handleYearlyPress } = useCoachCadence();
   const [nutritionData, setNutritionData] = useState<NutritionData | null>(null);
+  const [nutritionLoadState, setNutritionLoadState] = useState<"loading" | "ok" | "failed">("loading");
   const [loading, setLoading] = useState(false);
   const [summaryRefresh, setSummaryRefresh] = useState(0);
   const logDate = todayLocal();
@@ -48,6 +50,7 @@ export default function AICalorieCoachScreen() {
     try {
       if (!nutritionData) setLoading(true);
       const [day, summary] = await Promise.all([ensureDailyCalorieLog(logDate), getSummary()]);
+      setNutritionLoadState("ok");
       setNutritionData({
         goal: "maintain",
         tdee: Number(day.log.target_calories || 0),
@@ -66,6 +69,7 @@ export default function AICalorieCoachScreen() {
       });
       lastNutritionLoadAt.current = Date.now();
     } catch {
+      setNutritionLoadState("failed");
       setNutritionData(null);
     } finally {
       setLoading(false);
@@ -112,7 +116,7 @@ export default function AICalorieCoachScreen() {
             onPress={handleRefresh}
             accessibilityLabel={t("coach.common.refresh")}
           />
-          <View style={styles.onlineDot} />
+          <CoachStatusDot onlineColor={GREEN} />
         </View>
         <CoachCadenceSelector
           value={cadence}
@@ -121,7 +125,7 @@ export default function AICalorieCoachScreen() {
           onYearlyPress={handleYearlyPress}
           isCadenceLocked={isCadenceLocked}
         />
-        {!nutritionData && !loading ? (
+        {nutritionLoadState === "ok" && !nutritionData && !loading ? (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyTitle}>{t("coach.calorie.emptyTitle")}</Text>
             <Text style={styles.emptySub}>{t("coach.calorie.emptySubtitle")}</Text>
@@ -137,7 +141,7 @@ export default function AICalorieCoachScreen() {
             renderSummary={(value) => (
               <>
                 <CalorieCoachSummaryViews cadence={value} activeCadence={cadence} refreshToken={summaryRefresh} />
-                {value === "daily" ? (
+                {value === "daily" && nutritionLoadState === "ok" ? (
                   <ActionPlanCard nutritionData={nutritionData} accentColor="#a78bfa" />
                 ) : null}
                 <CoachJourneySection domain="nutrition" accentColor={GREEN} refreshOnLoad />
@@ -166,7 +170,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: { flex: 1, color: TEXT, fontSize: 16, fontWeight: "900" },
-  onlineDot: { width: 8, height: 8, borderRadius: 99, backgroundColor: GREEN },
   emptyBox: { borderWidth: 1, borderColor: BORDER, backgroundColor: BG, borderRadius: 16, padding: 16, marginBottom: 12 },
   emptyTitle: { color: TEXT, fontSize: 14, fontWeight: "900" },
   emptySub: { color: MUTED, fontSize: 12, marginTop: 4, lineHeight: 18 },

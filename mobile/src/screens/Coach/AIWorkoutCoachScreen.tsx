@@ -17,6 +17,7 @@ import { useRefreshUsageCount } from "../../hooks/useRefreshUsageCount";
 import type { CoachStackParamList } from "./CoachHomeScreen";
 import { coachRefreshUsageKey } from "../../utils/refreshUsageCounter";
 import { refreshScopeLabel } from "../../utils/refreshScopeLabel";
+import { CoachStatusDot } from "../../components/CoachStatusDot";
 
 export default function AIWorkoutCoachScreen() {
   const { t } = useTranslation();
@@ -51,7 +52,7 @@ export default function AIWorkoutCoachScreen() {
             onPress={handleRefresh}
             accessibilityLabel={t("coach.common.refresh")}
           />
-          <View style={styles.onlineDot} />
+          <CoachStatusDot onlineColor={WC_COLORS.GREEN} />
         </View>
         <CoachCadenceSelector
           value={cadence}
@@ -96,5 +97,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerTitle: { flex: 1, color: WC_COLORS.TEXT, fontSize: 16, fontWeight: "800" },
-  onlineDot: { width: 8, height: 8, borderRadius: 99, backgroundColor: WC_COLORS.GREEN },
 });

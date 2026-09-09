@@ -17,6 +17,8 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
+import { StateView } from "../../components/StateView";
+import { useCanReachBackend } from "../../hooks/useCanReachBackend";
 import {
   fetchMealPlanCurrent,
   fetchMealPlanStaleStatus,
@@ -266,6 +268,7 @@ type Props = {
 
 export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDayChanged }: Props) {
   const { t } = useTranslation();
+  const { canReach } = useCanReachBackend();
   const { hasFeatureAccess } = useFeatureAccess();
   const hasMealPlannerAccess = hasFeatureAccess("meal_plan_generation");
   const canUseFastingMeals = hasFeatureAccess("fasting_aware_meals");
@@ -282,6 +285,7 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
   const [dayDetail, setDayDetail] = useState<MealDayPlan | null>(null);
   const [budget, setBudget] = useState<BudgetLevel>("budget");
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [genStep, setGenStep] = useState(0);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -377,6 +381,7 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
       setLoading(true);
     }
     try {
+      setLoadFailed(false);
       const overview = await fetchWeeksOverview();
       if (seq !== loadSeqRef.current) return;
 
@@ -446,6 +451,7 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
       if (seq === loadSeqRef.current) {
         setPlan(null);
         setDayDetail(null);
+        setLoadFailed(true);
       }
     } finally {
       if (seq === loadSeqRef.current) {
@@ -1088,6 +1094,9 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
           </View>
         ) : null}
         <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          {loadFailed && !plan && !generating ? (
+            <StateView state="failed" onRetry={() => void loadPlan()} />
+          ) : null}
           {showWeekGeneratePanel || showMonthlyGeneratePanel ? (
             <View style={styles.panel}>
               <Text style={styles.panelTitle}>
@@ -1112,11 +1121,16 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
               ) : (
                 <Text style={styles.bullet}>{t("coach.mealPlannerScreen.oneWeek")}</Text>
               )}
-              <Pressable style={styles.genBtn} onPress={() => void startGenerate()}>
+              <Pressable
+                style={[styles.genBtn, !canReach && styles.genBtnDisabled]}
+                onPress={() => void startGenerate()}
+                disabled={!canReach}
+              >
                 <Text style={styles.genBtnText}>
                   {plannerMode === "weekly" ? t("coach.mealPlannerScreen.generateWeek") : t("coach.mealPlannerScreen.generateMonth")}
                 </Text>
               </Pressable>
+              {!canReach ? <Text style={styles.offlineHint}>{t("offline.action.offlineReason")}</Text> : null}
             </View>
           ) : null}
 
@@ -1124,9 +1138,14 @@ export default function MonthlyMealPlannerScreen({ embedded = false, onCalorieDa
             <View style={styles.panel}>
               <Text style={styles.panelTitle}>{t("coach.mealPlannerScreen.generateWeekTitle", { week: selectedWeekMeta?.label ?? "" })}</Text>
               <Text style={styles.bullet}>{t("coach.mealPlannerScreen.alerts.couldNotGenerateMonth")}</Text>
-              <Pressable style={styles.genBtn} onPress={() => void startGenerate()}>
+              <Pressable
+                style={[styles.genBtn, !canReach && styles.genBtnDisabled]}
+                onPress={() => void startGenerate()}
+                disabled={!canReach}
+              >
                 <Text style={styles.genBtnText}>{t("coach.mealPlannerScreen.generateWeek")}</Text>
               </Pressable>
+              {!canReach ? <Text style={styles.offlineHint}>{t("offline.action.offlineReason")}</Text> : null}
             </View>
           ) : null}
 
@@ -1660,7 +1679,9 @@ const styles = StyleSheet.create({
   pillTextOn: { color: BLUE },
   bullet: { color: TEXT, fontSize: 12, marginBottom: 5 },
   genBtn: { marginTop: 16, backgroundColor: BLUE, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+  genBtnDisabled: { opacity: 0.5 },
   genBtnText: { color: WHITE, fontWeight: "800", fontSize: 14 },
+  offlineHint: { color: MUTED, fontSize: 11, fontWeight: "600", marginTop: 8, textAlign: "center" },
   progressTrack: { height: 8, backgroundColor: TRACK, borderRadius: 99, overflow: "hidden", marginTop: 12 },
   progressFill: { height: 8, backgroundColor: BLUE },
   progressMeta: { color: MUTED, fontSize: 11, marginTop: 8 },

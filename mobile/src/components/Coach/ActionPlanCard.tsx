@@ -387,11 +387,16 @@ export function ActionPlanCard({ nutritionData }: { nutritionData: NutritionData
     };
   }, [token, nutritionData?.mealsLogged, nutritionData?.caloriesConsumed, nutritionData?.proteinG, nutritionData?.waterMl]);
 
-  const tasks = useMemo(() => buildIntakeDrivenTasks(nutritionData, mealsPerDay), [nutritionData, mealsPerDay]);
+  const tasks = useMemo(
+    () => (nutritionData ? buildIntakeDrivenTasks(nutritionData, mealsPerDay) : []),
+    [nutritionData, mealsPerDay],
+  );
   const streakMeta = useMemo(() => getStreakMeta(streakCount), [streakCount]);
 
   const done = tasks.filter((t) => t.done).length;
   const filtered = useMemo(() => (filter === "all" ? tasks : tasks.filter((t) => t.tag === filter)), [filter, tasks]);
+
+  if (!nutritionData || nutritionData.tdee <= 0) return null;
 
   return (
     <View>

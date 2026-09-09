@@ -196,8 +196,9 @@
       "friendsLeaderboard": "FRIENDS SEASON LEADERBOARD",
       "viewAll": "View all",
       "leaderboardEmpty": "Log workouts and meals to climb the board.",
-      "loadFailed": "Could not load XP from {{base}}. Restart Expo after changing .env.development.",
-      "notDeployed": "XP is not on {{base}} yet (404). Use local API (127.0.0.1:8000) or deploy the server.",
+      "loadFailed": "Could not load your XP right now.",
+      "notDeployed": "Progress XP is not available yet.",
+      "lastUpdated": "Last updated {{time}}",
       "you": "You"
     },
     "activityOverview": "ACTIVITY OVERVIEW",
@@ -403,14 +404,6 @@
       "generic": "Something went wrong."
     },
     "loadErrors": {
-      "timeout": "Request timed out. Start the API server (port 8000) and try again.",
-      "network": "Network error ({{message}}).\n\nResolved API base: {{base}}\n\n1) Start API: cd server && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload\n2) In a browser open {{base}}/health — should show {\"status\":\"ok\"}\n3) Expo web on Wi‑Fi: default .env uses 127.0.0.1; the app now maps that to your PC’s LAN IP when you open http://192.168.x.x:8081. If it still fails, set EXPO_PUBLIC_API_URL=http://YOUR_PC_IP:8000 and restart Expo.\n4) Android emulator: use http://10.0.2.2:8000 in .env instead of 127.0.0.1.",
-      "noResponse": "no response",
-      "cannotReach": "Cannot reach the API. Check EXPO_PUBLIC_API_URL and that the FastAPI server is running.",
-      "userNotFound": "Your session is out of date (database was reset or account removed). Log out and sign in again.",
-      "notFound": "Not Found ({{url}}). Restart the API from server/: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload, then tap Retry.",
-      "unknownUrl": "unknown URL",
-      "serverError": "Server error ({{status}})",
       "fallback": "Could not load calorie log."
     },
     "loading": "Loading log…",
@@ -559,6 +552,31 @@
       "loadFailed": "Could not load transformation summary.",
       "proGateTitle": "Comparison summary is a Pro feature",
       "proGateBody": "Upgrade to see weight, workout, and strength deltas for any date range."
+    }
+  },
+  "offline": {
+    "banner": {
+      "offline": "You're offline. We'll refresh when you're back.",
+      "waking": "Waking things up — this can take up to a minute.",
+      "serverUnreachable": "Can't reach the server right now."
+    },
+    "state": {
+      "loading": "Loading…",
+      "emptyTitle": "Nothing here yet",
+      "lastUpdated": "Last updated {{time}}"
+    },
+    "errors": {
+      "offlineTitle": "You're offline",
+      "offlineBody": "We'll refresh when you're back.",
+      "wakingTitle": "Waking things up",
+      "wakingBody": "This can take up to a minute on a cold start.",
+      "serverTitle": "Couldn't load this",
+      "serverBody": "Couldn't load this right now. Try again in a moment.",
+      "genericTitle": "Couldn't load this",
+      "generic": "Couldn't load this right now."
+    },
+    "action": {
+      "offlineReason": "Connect to the internet to use this."
     }
   },
   "common": {
@@ -1291,6 +1309,7 @@
     "loadingTracker": "Loading pose tracker…",
     "loadingTrackerHint": "First load can take a few seconds while it downloads",
     "serverError": "Camera guidance unavailable",
+    "startFailedBody": "Camera coaching couldn't start. You can still log this set manually.",
     "retry": "Retry"
   },
   "payment": {

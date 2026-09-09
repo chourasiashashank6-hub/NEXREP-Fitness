@@ -20,6 +20,8 @@ import { RootNavigator } from "./src/navigation/RootNavigator";
 import NotificationDeepLinkHandler from "./src/navigation/NotificationDeepLinkHandler";
 import { flushPendingNotificationNavigation, navigationRef } from "./src/navigation/navigationRef";
 import { NotificationPermissionBanner } from "./src/components/NotificationPermissionBanner";
+import { OfflineBanner } from "./src/components/OfflineBanner";
+import { ConnectivityBootstrap } from "./src/components/ConnectivityBootstrap";
 import { AppThemeProvider } from "./src/theme";
 import { useLanguageStore } from "./src/i18n/languageStore";
 import { useAuthStore } from "./src/store/authStore";
@@ -119,8 +121,10 @@ export default function App() {
       <SafeAreaProvider style={styles.root}>
         <AppThemeProvider>
           <I18nBootstrap />
+          <ConnectivityBootstrap />
           <NavigationContainer ref={navigationRef} onReady={flushPendingNotificationNavigation}>
             <StatusBar style="dark" />
+            <OfflineBanner />
             <NotificationPermissionBanner />
             <NotificationDeepLinkHandler />
             <RootNavigator />

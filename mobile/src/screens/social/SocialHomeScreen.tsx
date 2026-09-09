@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { StateView } from "../../components/StateView";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { listFeed, reactToFeedEvent, unreactToFeedEvent, type FeedEvent, type FeedReactionType } from "../../api/feed";
@@ -54,6 +55,7 @@ export default function SocialHomeScreen({ embedded = false }: SocialHomeScreenP
   const [squads, setSquads] = useState<GymSquad[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [squadsLoading, setSquadsLoading] = useState(true);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -71,6 +73,7 @@ export default function SocialHomeScreen({ embedded = false }: SocialHomeScreenP
         setRefreshing(true);
       }
       try {
+        setLoadError(null);
         const [profileData, friendItems, feedPage, squadItems, leaderboardData] = await Promise.all([
           getProfile(),
           getFriends(),
@@ -85,7 +88,7 @@ export default function SocialHomeScreen({ embedded = false }: SocialHomeScreenP
         setLeaderboard(leaderboardData);
         lastLoadAt.current = Date.now();
       } catch {
-        Alert.alert(t("common.error"), t("social.home.alerts.loadFailed"));
+        if (lastLoadAt.current === 0) setLoadError(t("social.home.alerts.loadFailed"));
       } finally {
         setLoading(false);
         setSquadsLoading(false);
@@ -192,6 +195,8 @@ export default function SocialHomeScreen({ embedded = false }: SocialHomeScreenP
 
       {loading ? (
         <ActivityIndicator color={GREEN} style={styles.loader} />
+      ) : loadError && !profile ? (
+        <StateView state="failed" body={loadError} onRetry={() => void load("initial")} />
       ) : (
         <>
           <Text style={styles.feedTitle}>{t("social.home.feedTitle")}</Text>

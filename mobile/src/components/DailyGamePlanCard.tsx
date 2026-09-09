@@ -29,7 +29,8 @@ type WorkoutHistoryRow = {
 };
 
 type Props = {
-  dailyGoal: number;
+  dailyGoal: number | null;
+  loadSucceeded: boolean;
   restDayActive: boolean;
   hasWorkoutPlannerAccess: boolean;
   hasMealPlannerAccess: boolean;
@@ -66,6 +67,7 @@ function ChipRow({ items, emptyText }: { items: string[]; emptyText: string }) {
 
 export function DailyGamePlanCard({
   dailyGoal,
+  loadSucceeded,
   restDayActive,
   hasWorkoutPlannerAccess,
   hasMealPlannerAccess,
@@ -156,9 +158,9 @@ export function DailyGamePlanCard({
   let workoutBody: string;
   if (restDayActive) {
     workoutBody = t("home.restDayNoSession");
-  } else if (hasWorkoutPlannerAccess && !hasGeneratedWorkoutPlan) {
+  } else if (loadSucceeded && hasWorkoutPlannerAccess && !hasGeneratedWorkoutPlan) {
     workoutBody = t("home.gamePlan.noWorkoutPlan");
-  } else if (!exerciseLine) {
+  } else if (loadSucceeded && !exerciseLine) {
     workoutBody = t("home.gamePlan.noWorkoutPlan");
   } else {
     workoutBody = exerciseLine;
@@ -171,7 +173,7 @@ export function DailyGamePlanCard({
 
   const ingredientsEmptyText = hasMealPlanData
     ? t("home.gamePlan.noIngredientsListed")
-    : hasMealPlannerAccess
+    : loadSucceeded && hasMealPlannerAccess
       ? t("home.gamePlan.noMealPlan")
       : t("home.gamePlan.noMealsLoggedFree");
 
@@ -204,7 +206,7 @@ export function DailyGamePlanCard({
         <StatPill
           icon="restaurant-outline"
           label={t("home.toEat")}
-          value={formatNum(dailyGoal)}
+          value={dailyGoal != null ? formatNum(dailyGoal) : "—"}
           accent={GREEN}
         />
       </View>
@@ -255,7 +257,7 @@ export function DailyGamePlanCard({
           </>
         ) : (
           <Text style={styles.prose}>
-            {hasMealPlannerAccess ? t("home.gamePlan.noMealPlan") : t("home.gamePlan.noMealsLoggedFree")}
+            {loadSucceeded && hasMealPlannerAccess ? t("home.gamePlan.noMealPlan") : t("home.gamePlan.noMealsLoggedFree")}
           </Text>
         )}
         <View style={styles.zoneDivider} />

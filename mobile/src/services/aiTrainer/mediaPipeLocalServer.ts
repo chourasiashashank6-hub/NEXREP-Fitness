@@ -8,6 +8,7 @@ import StaticServer, {
   STATES,
 } from "@dr.pogodin/react-native-static-server";
 import {
+  buildStaticMediaPipeHtml,
   MEDIAPIPE_HTML_BUILD_STAMP,
 } from "./mediaPipeHtmlTemplate";
 import { devLog } from "../../utils/devLog";

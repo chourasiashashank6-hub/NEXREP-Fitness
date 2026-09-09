@@ -42,7 +42,9 @@ export const useFoodRecognition = () => {
       try {
         if (Platform.OS !== "web") {
           const state = await withTimeout(NetInfo.fetch(), 4000, "Network check timed out.");
-          if (!state.isConnected || state.isInternetReachable === false) {
+          // Only block when the device reports no link. isInternetReachable is often false/null on
+          // Android even when API calls succeed — let the scan request be the source of truth.
+          if (state.isConnected === false) {
             const message = "No internet connection. Please reconnect and try again.";
             setError(message);
             return { ok: false, error: message };

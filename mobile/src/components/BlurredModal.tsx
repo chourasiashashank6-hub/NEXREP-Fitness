@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Modal, Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { Modal, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurredModalBackdrop } from "./BlurredModalBackdrop";
 
@@ -45,12 +45,11 @@ export function BlurredModal({
               : [styles.centerWrap, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }],
           ]}
         >
-          <Pressable
+          <View
             style={[variant === "bottom" ? styles.bottomSheet : styles.centerSheet, sheetStyle]}
-            onPress={(event) => event.stopPropagation()}
           >
             {children}
-          </Pressable>
+          </View>
         </View>
       </View>
     </Modal>
@@ -62,8 +61,8 @@ const styles = StyleSheet.create({
   bottomWrap: { flex: 1, justifyContent: "flex-end" },
   centerWrap: { flex: 1, justifyContent: "center", paddingHorizontal: 16 },
   bottomSheet: {
+    height: "88%",
     maxHeight: "88%",
-    minHeight: "62%",
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,

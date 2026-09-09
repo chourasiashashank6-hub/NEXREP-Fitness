@@ -121,8 +121,15 @@ export function CameraWorkoutShell({
   const { t } = useTranslation();
   const cleanCount = verdicts.filter((v) => v === "clean").length;
   const flaggedCount = verdicts.filter((v) => v === "flagged").length;
+  const trackerLive = !cameraError && trackingRunning;
   const coachOnLabel =
-    voiceMode === "muted" ? "COACH OFF" : voiceMode === "corrections_only" ? "COACH FIXES" : "COACH ON";
+    !trackerLive
+      ? "COACH OFF"
+      : voiceMode === "muted"
+        ? "COACH OFF"
+        : voiceMode === "corrections_only"
+          ? "COACH FIXES"
+          : "COACH ON";
 
   const trackable = Boolean(poseSpec);
 
@@ -165,12 +172,6 @@ export function CameraWorkoutShell({
         </View>
       )}
 
-      {cameraError ? (
-        <View style={styles.cameraErrorBanner}>
-          <Text style={styles.cameraErrorTxt}>{cameraError}</Text>
-        </View>
-      ) : null}
-
       {overlay}
 
       <View style={styles.hud} pointerEvents="box-none">
@@ -184,7 +185,7 @@ export function CameraWorkoutShell({
 
         <View style={styles.liveTopBar}>
           <GlassPanel style={styles.topGlass}>
-            <View style={[styles.livePulse, !trackingRunning && styles.livePulseIdle]} />
+            <View style={[styles.livePulse, !trackerLive && styles.livePulseIdle]} />
             <View style={styles.topCopy}>
               <Text style={styles.topExName} numberOfLines={1}>
                 {exerciseName}
@@ -196,7 +197,7 @@ export function CameraWorkoutShell({
               ) : null}
             </View>
             <View style={styles.coachOn}>
-              <WaveformBars active={ttsSpeaking} />
+              <WaveformBars active={trackerLive && ttsSpeaking} />
               <Text style={styles.coachOnLbl}>{coachOnLabel}</Text>
             </View>
           </GlassPanel>
@@ -208,13 +209,15 @@ export function CameraWorkoutShell({
         <View style={styles.leftCol} pointerEvents="none">
           <GlassPanel style={styles.repCard}>
             <Text style={styles.repBig}>
-              {repCount}
+              {trackerLive ? repCount : "—"}
               <Text style={styles.repSlash}>/{targetReps}</Text>
             </Text>
             <Text style={styles.cleanLbl}>CLEAN REPS</Text>
-            <Text style={styles.cleanSub}>
-              {cleanCount} perfect · {flaggedCount} flagged
-            </Text>
+            {trackerLive ? (
+              <Text style={styles.cleanSub}>
+                {cleanCount} perfect · {flaggedCount} flagged
+              </Text>
+            ) : null}
           </GlassPanel>
           <GlassPanel style={styles.scoreCard}>
             <Text
@@ -222,7 +225,7 @@ export function CameraWorkoutShell({
                 styles.scoreBig,
                 {
                   color:
-                    liveStatus === "no_body" || !trackable
+                    !trackerLive || liveStatus === "no_body" || !trackable
                       ? AI_C.dim
                       : formScore >= 89
                         ? AI_C.mint
@@ -230,21 +233,24 @@ export function CameraWorkoutShell({
                 },
               ]}
             >
-              {liveStatus === "no_body" || !trackable ? "—" : formScore}
+              {!trackerLive || liveStatus === "no_body" || !trackable ? "—" : formScore}
             </Text>
             <Text style={styles.scoreLbl}>FORM SCORE</Text>
           </GlassPanel>
         </View>
 
-        <View style={styles.depthCol} pointerEvents="none">
-          <DepthRomGauge
-            progress01={liveStatus === "no_body" ? 0 : liveRom01}
-            inZone={liveInZone && orientationOk && liveStatus !== "no_body"}
-            zoneStart01={zoneStart01}
-            zoneEnd01={zoneEnd01}
-          />
-        </View>
+        {trackerLive ? (
+          <View style={styles.depthCol} pointerEvents="none">
+            <DepthRomGauge
+              progress01={liveStatus === "no_body" ? 0 : liveRom01}
+              inZone={liveInZone && orientationOk && liveStatus !== "no_body"}
+              zoneStart01={zoneStart01}
+              zoneEnd01={zoneEnd01}
+            />
+          </View>
+        ) : null}
 
+        {trackerLive ? (
         <View style={styles.dotsRow} pointerEvents="none">
           {verdicts.slice(-12).map((v, i) => (
             <View
@@ -259,7 +265,9 @@ export function CameraWorkoutShell({
             />
           ))}
         </View>
+        ) : null}
 
+        {trackerLive ? (
         <GlassPanel
           style={[
             styles.coachBanner,
@@ -286,6 +294,7 @@ export function CameraWorkoutShell({
           </View>
           <WaveformBars active={ttsSpeaking} color={coachWarn ? AI_C.orange : AI_C.purple} />
         </GlassPanel>
+        ) : null}
 
         {sessionPaused ? (
           <View style={styles.pauseOverlay}>
@@ -299,7 +308,7 @@ export function CameraWorkoutShell({
           </View>
         ) : null}
 
-        {!sessionPaused && !orientationOk && liveStatus !== "no_body" ? (
+        {trackerLive && !sessionPaused && !orientationOk && liveStatus !== "no_body" ? (
           <View style={styles.orientOverlay} pointerEvents="none">
             <Text style={styles.orientTxt}>{coachText}</Text>
           </View>
@@ -312,7 +321,7 @@ export function CameraWorkoutShell({
                 <Text style={styles.ctrlTxt}>{sessionPaused ? "▶ Resume" : "⏸ Pause"}</Text>
               </Pressable>
             ) : null}
-            {onVoiceModeCycle ? (
+            {onVoiceModeCycle && trackerLive ? (
               <Pressable
                 style={[styles.ctrlBtn, voiceMode !== "muted" && styles.ctrlBtnActive]}
                 onPress={onVoiceModeCycle}
@@ -335,7 +344,7 @@ export function CameraWorkoutShell({
                 </Text>
               </Pressable>
             ) : null}
-            {onZoomIn || onZoomOut ? (
+            {trackerLive && (onZoomIn || onZoomOut) ? (
               <View style={styles.zoomGroup}>
                 <Text style={styles.zoomKicker}>
                   {t("aiTrainer.zoom_label", { defaultValue: "Zoom" })}

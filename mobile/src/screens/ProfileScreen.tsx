@@ -392,7 +392,7 @@ export const ProfileScreen = () => {
         setTransformationSummary(null);
       }
     } catch {
-      Alert.alert(t("profile.alerts.error"), t("profile.alerts.loadFailed"));
+      // Profile sections handle their own inline load failures.
     }
   }, [t, canCompareTransformation]);
 

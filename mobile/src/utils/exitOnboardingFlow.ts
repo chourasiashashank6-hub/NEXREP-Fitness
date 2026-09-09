@@ -1,20 +1,12 @@
-import { CommonActions } from "@react-navigation/native";
 import { useAuthStore } from "../store/authStore";
 import { navigationRef } from "../navigation/navigationRef";
 
-/**
- * Edit onboarding is a transparentModal route on the root stack with its own
- * inner step stack. goBack() pops one inner step when not on Screen 1 — use an
- * explicit root navigation to dismiss the whole modal in one shot.
- */
+/** Pop the edit-onboarding transparent modal without remounting Main tabs. */
 export function dismissEditOnboardingModal() {
   if (!navigationRef.isReady()) return;
-  navigationRef.dispatch(
-    CommonActions.navigate({
-      name: "Main",
-      params: { screen: "Profile" },
-    }),
-  );
+  if (navigationRef.canGoBack()) {
+    navigationRef.goBack();
+  }
 }
 
 /** Leave onboarding without decrementing the inner step stack. */

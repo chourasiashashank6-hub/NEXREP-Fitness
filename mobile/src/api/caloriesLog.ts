@@ -210,6 +210,19 @@ export const getFoodScanUsage = async (mealType?: MealType) => {
   });
 };
 
+export const analyzeFoodImage = async (
+  payload: { base64: string; mime_type: string; meal_type?: MealType },
+  opts?: { signal?: AbortSignal },
+) => {
+  return withCaloriesRoute("/foods/analyze-image", async (path) => {
+    const { data } = await apiClient.post<unknown>(path, payload, {
+      signal: opts?.signal,
+      timeout: 40_000,
+    });
+    return data;
+  });
+};
+
 export const todayLocal = () => localDateIso();
 
 export const ensureDailyCalorieLog = async (date?: string) => {

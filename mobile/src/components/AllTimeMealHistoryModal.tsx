@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   SectionList,
   StyleSheet,
@@ -9,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { BlurredModal } from "./BlurredModal";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { GREEN, BG, TEXT, WHITE } from "../theme/colors";
 import {
   getCalorieMealHistory,
@@ -47,14 +49,6 @@ const MEAL_LABELS: Record<MealType, string> = {
 
 const fmt1 = (value: number) => (Math.round((Number(value) || 0) * 10) / 10).toString();
 
-const parseServerDate = (value: unknown): Date | null => {
-  const raw = String(value ?? "").trim();
-  if (!raw) return null;
-  const normalized = /^\d{4}-\d{2}-\d{2}T/.test(raw) && !/(Z|[+-]\d{2}:\d{2})$/.test(raw) ? `${raw}Z` : raw;
-  const parsed = new Date(normalized);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-};
-
 const formatDateHeader = (dateKey: string): string => {
   const [year, month, day] = dateKey.split("-").map(Number);
   const date = new Date(year, month - 1, day);
@@ -86,13 +80,6 @@ const buildSections = (
   }));
 };
 
-const sortMealsNewestFirst = (items: CalorieMealHistoryItem[]) =>
-  [...items].sort((a, b) => {
-    const aTime = parseServerDate(a.logged_at)?.getTime() ?? 0;
-    const bTime = parseServerDate(b.logged_at)?.getTime() ?? 0;
-    return bTime - aTime;
-  });
-
 const mealSubtitle = (item: CalorieMealHistoryItem): string => {
   const category = MEAL_LABELS[item.meal_type] ?? item.meal_type;
   return `${category} · ${fmt1(item.quantity_g)}g · P ${fmt1(item.total_protein_g)} · C ${fmt1(item.total_carbs_g)} · F ${fmt1(item.total_fat_g)} · Fi ${fmt1(item.total_fiber_g || 0)}`;
@@ -104,7 +91,8 @@ const dayTotalLine = (total: CalorieMealDayTotal): string =>
 export default function AllTimeMealHistoryModal({ visible, onClose, refreshToken = 0 }: Props) {
   const [items, setItems] = useState<CalorieMealHistoryItem[]>([]);
   const [dayTotals, setDayTotals] = useState<Record<string, CalorieMealDayTotal>>({});
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebouncedValue(searchInput, 350);
   const [totalMeals, setTotalMeals] = useState(0);
   const [totalKcal, setTotalKcal] = useState(0);
   const [historyTotal, setHistoryTotal] = useState(0);
@@ -133,10 +121,12 @@ export default function AllTimeMealHistoryModal({ visible, onClose, refreshToken
       });
       if (requestId !== requestIdRef.current) return;
       setHistoryTotal(historyData.total ?? historyData.items.length);
-      setItems((prev) => (isFirstPage ? historyData.items ?? [] : sortMealsNewestFirst([...prev, ...(historyData.items ?? [])])));
+      setItems((prev) => (isFirstPage ? historyData.items ?? [] : [...prev, ...(historyData.items ?? [])]));
       setDayTotals((prev) => (isFirstPage ? historyData.dayTotals ?? {} : { ...prev, ...(historyData.dayTotals ?? {}) }));
-      setTotalMeals(historyData.summary?.totalMealsLogged ?? historyData.total ?? 0);
-      setTotalKcal(Math.round(Number(historyData.summary?.totalCalories) || 0));
+      if (isFirstPage) {
+        setTotalMeals(historyData.summary?.totalMealsLogged ?? historyData.total ?? 0);
+        setTotalKcal(Math.round(Number(historyData.summary?.totalCalories) || 0));
+      }
     } finally {
       if (requestId === requestIdRef.current) {
         setLoading(false);
@@ -146,10 +136,10 @@ export default function AllTimeMealHistoryModal({ visible, onClose, refreshToken
   }, []);
 
   useEffect(() => {
-    if (!visible) return;
-    setItems([]);
-    setDayTotals({});
-    setHistoryTotal(0);
+    if (!visible) {
+      setSearchInput("");
+      return;
+    }
     void loadPage(0, search);
   }, [loadPage, refreshToken, search, visible]);
 
@@ -184,59 +174,68 @@ export default function AllTimeMealHistoryModal({ visible, onClose, refreshToken
           </View>
 
           <TextInput
-            value={search}
-            onChangeText={setSearch}
+            value={searchInput}
+            onChangeText={setSearchInput}
             placeholder="Search food"
             placeholderTextColor={TERTIARY}
             style={styles.searchInput}
             returnKeyType="search"
           />
 
-          {loading ? (
-            <View style={styles.loadingWrap}>
-              <ActivityIndicator color={GREEN} />
-            </View>
-          ) : (
-            <SectionList
-              sections={sections}
-              keyExtractor={(item) => `${item.source_type ?? "database"}-${item.meal_id}`}
-              contentContainerStyle={items.length === 0 ? styles.emptyListContent : styles.listContent}
-              stickySectionHeadersEnabled={false}
-              keyboardShouldPersistTaps="handled"
-              onEndReached={loadMore}
-              onEndReachedThreshold={0.35}
-              ListEmptyComponent={<Text style={styles.emptyText}>No meals logged yet</Text>}
-              ListFooterComponent={
-                loadingMore ? (
-                  <ActivityIndicator color={GREEN} style={styles.footerLoader} />
-                ) : showEverything ? (
-                  <Text style={styles.endText}>That's everything so far</Text>
-                ) : null
-              }
-              renderSectionHeader={({ section }) => <Text style={styles.dateHeader}>{section.title}</Text>}
-              renderSectionFooter={({ section }) =>
-                section.total ? (
-                  <View style={styles.dayTotalRow}>
-                    <Text style={styles.dayTotalLabel}>Day total</Text>
-                    <Text style={styles.dayTotalValue}>{dayTotalLine(section.total)}</Text>
-                  </View>
-                ) : null
-              }
-              renderItem={({ item }) => (
-                <View style={styles.mealRow}>
-                  <View style={styles.rowBody}>
-                    <Text style={styles.foodName} numberOfLines={1}>
-                      {item.food_name || "Meal"}
-                    </Text>
-                    <Text style={styles.subtitle} numberOfLines={1}>
-                      {mealSubtitle(item)}
-                    </Text>
-                  </View>
-                  <Text style={styles.kcalText}>{fmt1(item.total_calories)} kcal</Text>
+          <SectionList
+            style={styles.list}
+            sections={sections}
+            keyExtractor={(item) => `${item.source_type ?? "database"}-${item.meal_id}`}
+            contentContainerStyle={items.length === 0 ? styles.emptyListContent : styles.listContent}
+            stickySectionHeadersEnabled={false}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+            initialNumToRender={12}
+            maxToRenderPerBatch={12}
+            windowSize={9}
+            removeClippedSubviews={Platform.OS === "android"}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.25}
+            refreshing={loading && items.length > 0}
+            ListEmptyComponent={
+              loading ? (
+                <View style={styles.loadingWrap}>
+                  <ActivityIndicator color={GREEN} />
                 </View>
-              )}
-            />
-          )}
+              ) : (
+                <Text style={styles.emptyText}>No meals logged yet</Text>
+              )
+            }
+            ListFooterComponent={
+              loadingMore ? (
+                <ActivityIndicator color={GREEN} style={styles.footerLoader} />
+              ) : showEverything ? (
+                <Text style={styles.endText}>That's everything so far</Text>
+              ) : null
+            }
+            renderSectionHeader={({ section }) => <Text style={styles.dateHeader}>{section.title}</Text>}
+            renderSectionFooter={({ section }) =>
+              section.total ? (
+                <View style={styles.dayTotalRow}>
+                  <Text style={styles.dayTotalLabel}>Day total</Text>
+                  <Text style={styles.dayTotalValue}>{dayTotalLine(section.total)}</Text>
+                </View>
+              ) : null
+            }
+            renderItem={({ item }) => (
+              <View style={styles.mealRow}>
+                <View style={styles.rowBody}>
+                  <Text style={styles.foodName} numberOfLines={1}>
+                    {item.food_name || "Meal"}
+                  </Text>
+                  <Text style={styles.subtitle} numberOfLines={1}>
+                    {mealSubtitle(item)}
+                  </Text>
+                </View>
+                <Text style={styles.kcalText}>{fmt1(item.total_calories)} kcal</Text>
+              </View>
+            )}
+          />
       </View>
     </BlurredModal>
   );
@@ -287,7 +286,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginBottom: 12,
   },
-  loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 40 },
+  list: { flex: 1 },
+  loadingWrap: { alignItems: "center", justifyContent: "center", paddingVertical: 40 },
   listContent: { paddingBottom: 10 },
   emptyListContent: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: 48 },
   dateHeader: { color: MUTED, fontSize: 12, fontWeight: "800", marginTop: 8, marginBottom: 6 },

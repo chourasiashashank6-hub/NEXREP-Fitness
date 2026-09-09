@@ -2401,11 +2401,19 @@ def workout_total_burn(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    from sqlalchemy import func
+
+    session_count = (
+        db.query(func.count(Workout.id))
+        .filter(Workout.user_id == current_user.id)
+        .scalar()
+        or 0
+    )
     rows = db.query(Workout).filter(Workout.user_id == current_user.id).all()
     total = 0
     for row in rows:
         total += _estimate_saved_workout_calories(row, current_user.weight or 70, db)
-    return {"totalCaloriesBurned": int(total), "sessionCount": len(rows)}
+    return {"totalCaloriesBurned": int(total), "sessionCount": int(session_count)}
 
 
 @app.post("/workout/coach/insight")

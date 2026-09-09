@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { StateView } from "../../components/StateView";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import {
@@ -46,6 +47,7 @@ export default function ThreadsScreen() {
   const [inviteCount, setInviteCount] = useState(0);
   const [items, setItems] = useState<ThreadListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busyThreadId, setBusyThreadId] = useState<number | null>(null);
   const [stackSheetThread, setStackSheetThread] = useState<GymThread | null>(null);
   const [stackMembers, setStackMembers] = useState<ThreadStackMember[]>([]);
@@ -54,6 +56,7 @@ export default function ThreadsScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      setLoadError(null);
       if (showPast) {
         const pastItems = await listThreads("past");
         setItems(pastItems.map((thread) => ({ ...thread, listKind: "past" as const })));
@@ -80,7 +83,7 @@ export default function ThreadsScreen() {
       ].sort((left, right) => new Date(left.scheduled_time).getTime() - new Date(right.scheduled_time).getTime());
       setItems(merged);
     } catch {
-      Alert.alert(t("common.error"), t("social.threads.alerts.loadFailed"));
+      setLoadError(t("social.threads.alerts.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -207,6 +210,8 @@ export default function ThreadsScreen() {
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={GREEN} />
         </View>
+      ) : loadError ? (
+        <StateView state="failed" body={loadError} onRetry={() => void load()} />
       ) : items.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>
