@@ -843,6 +843,7 @@ export const CalorieLog = () => {
   const runFoodRecognition = async (payload: { base64: string; mimeType?: string }) => {
     try {
       const response = await analyzeImage({ ...payload, mealType });
+      void refreshScanUsage();
       if (!response.ok) {
         if (response.limit) {
           showScanLimitAlert(response.limit);
@@ -852,9 +853,9 @@ export const CalorieLog = () => {
         return;
       }
       applyAnalysisToForm(response.result);
-      void refreshScanUsage();
       showToast(t("calorieLog.alerts.detected", { foodName: response.result.foodName }));
     } catch {
+      void refreshScanUsage();
       showToast(t("calorieLog.alerts.analysisFailed"));
     }
   };

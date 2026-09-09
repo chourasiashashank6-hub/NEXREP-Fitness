@@ -28,7 +28,7 @@ def test_food_scan_attempt_records_quota_once():
     log_mock.assert_called_once_with(db=db, user_id=7, meal_slot="Lunch")
 
 
-def test_failed_scan_quota_row_counts_toward_limit():
+def test_successful_scan_quota_row_counts_toward_limit():
     user = User(id=1, plan_id="free", email="x@test", password_hash="x", name="x")
     with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0), patch(
         "src.services.food_scan_limits._count_scans",

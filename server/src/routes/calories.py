@@ -637,8 +637,6 @@ def _groq_food_image_analysis(
     last_err: str | None = None
     for key_idx, api_key in enumerate(groq_keys):
         for model_name in model_candidates:
-            if attempt is not None and user_id is not None:
-                attempt.record_if_first_provider(db, user_id)
             try:
                 payload = post_json(
                     "https://api.groq.com/openai/v1/chat/completions",
@@ -771,8 +769,6 @@ def _gemini_food_image_analysis(
             "maxOutputTokens": 400,
         },
     }
-    if attempt is not None and user_id is not None:
-        attempt.record_if_first_provider(db, user_id)
     try:
         payload, model_name, used_fallback_key = gemini_generate_content_models(
             model_candidates,
@@ -829,8 +825,6 @@ def _openai_food_image_analysis(
         raise RuntimeError("OPENAI_API_KEY missing on server")
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
     model_name = "gpt-4o-mini"
-    if attempt is not None and user_id is not None:
-        attempt.record_if_first_provider(db, user_id)
     try:
         payload = post_json(
             "https://api.openai.com/v1/chat/completions",
@@ -1693,7 +1687,9 @@ def analyze_food_image(
     last_error: str | None = None
     for _name, run_provider in provider_steps:
         try:
-            return run_provider()
+            result = run_provider()
+            attempt.record_if_first_provider(db, current_user.id)
+            return result
         except ValueError as e:
             detail = str(e).strip()
             lowered = detail.lower()
