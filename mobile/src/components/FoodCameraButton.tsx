@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Alert, Linking, Modal, PermissionsAndroid, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
@@ -77,20 +78,38 @@ export const FoodCameraButton = ({ disabled, onImageSelected, variant = "icon" }
     }
   };
 
+  const deriveBase64FromNativeUri = async (uri?: string): Promise<string | null> => {
+    if (!uri || isWeb) return null;
+    try {
+      return await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+    } catch {
+      return null;
+    }
+  };
+
   const resolveAssetBase64 = async (asset?: ImagePicker.ImagePickerAsset): Promise<string | null> => {
     if (!asset) return null;
     if (asset.base64) return asset.base64;
+    if (!isWeb) {
+      const fromNativeUri = await deriveBase64FromNativeUri(asset.uri);
+      if (fromNativeUri) return fromNativeUri;
+    }
     const webFile = (asset as ImagePicker.ImagePickerAsset & { file?: File }).file;
     return (await deriveBase64FromWebFile(webFile)) || (await deriveBase64FromUri(asset.uri));
   };
 
   const emitPreparedImage = async (base64: string, mimeType?: string) => {
-    const prepared = await prepareFoodImagePayload(base64, mimeType);
-    if (!prepared.base64 || prepared.base64.length < 64) {
-      Alert.alert(t("components.foodCamera.imageError"), t("components.foodCamera.imageReadError"));
-      return;
+    try {
+      const prepared = await prepareFoodImagePayload(base64, mimeType);
+      if (!prepared.base64 || prepared.base64.length < 64) {
+        Alert.alert(t("components.foodCamera.imageError"), t("components.foodCamera.imageReadError"));
+        return;
+      }
+      await onImageSelected(prepared);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("components.foodCamera.imageReadError");
+      Alert.alert(t("components.foodCamera.imageError"), message);
     }
-    await onImageSelected(prepared);
   };
 
   const pickFromCamera = async () => {
@@ -111,7 +130,8 @@ export const FoodCameraButton = ({ disabled, onImageSelected, variant = "icon" }
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
         quality: isWeb ? 0.65 : 0.7,
-        base64: true,
+        // On native, read base64 from the file URI — inline base64 is often omitted on Android.
+        base64: isWeb,
         exif: false,
         cameraType: ImagePicker.CameraType.back,
       });
@@ -153,7 +173,7 @@ export const FoodCameraButton = ({ disabled, onImageSelected, variant = "icon" }
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
         quality: isWeb ? 0.65 : 0.7,
-        base64: true,
+        base64: isWeb,
         exif: false,
       });
       if (result.canceled) return;

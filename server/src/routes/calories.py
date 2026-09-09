@@ -517,6 +517,13 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
     if not text:
         raise ValueError("Malformed JSON response from model")
 
+    # Some vision models (e.g. Qwen on Groq) prepend chain-of-thought blocks.
+    import re
+
+    text = re.sub(r"<[^>]*thinking[^>]*>.*?</[^>]+>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+    if not text.lstrip().startswith("{") and "{" in text:
+        text = text[text.index("{") :]
+
     # Strip common wrappers like ```json ... ``` before deeper parsing.
     if "```" in text:
         text = text.replace("```json", "```").replace("```JSON", "```")
@@ -647,6 +654,7 @@ def _groq_food_image_analysis(
                     payload={
                         "model": model_name,
                         "temperature": 0.1,
+                        "max_tokens": 500,
                         "messages": [
                             {"role": "system", "content": system_prompt},
                             {
@@ -676,17 +684,22 @@ def _groq_food_image_analysis(
                 if e.status_code == 429:
                     last_err = f"{model_name}: rate limited"
                     continue
-                if e.status_code in (400, 404) and (
+                if e.status_code in (400, 403, 404) and (
                     "model_not_found" in lower
                     or "not found" in lower
                     or "decommissioned" in lower
                     or "no longer supported" in lower
+                    or "model_permission_blocked" in lower
+                    or "blocked at the organization" in lower
+                    or "does not have access" in lower
                 ):
                     last_err = f"{model_name}: unavailable"
                     continue
                 if e.status_code == 400 and "messages[1].content must be a string" in body:
                     last_err = f"{model_name}: not vision-capable for this key"
                     continue
+                if e.status_code == 400 and "invalid image" in lower:
+                    raise RuntimeError("Invalid image data") from e
                 raise RuntimeError(f"Groq HTTP {e.status_code}: {body[:260]}") from e
             except RuntimeError as e:
                 msg = str(e).lower()
@@ -742,8 +755,8 @@ def _gemini_food_image_analysis(
         raise RuntimeError("GEMINI_API_KEY missing on server")
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
     model_candidates = [
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-latest",
+        "gemini-3.6-flash",
+        "gemini-2.5-flash",
         "gemini-2.0-flash",
     ]
     request_payload = {

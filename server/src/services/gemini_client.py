@@ -93,8 +93,11 @@ def gemini_generate_content_models(
                 )
                 return result, model_name, key_idx > 0
             except ExternalHTTPError as exc:
+                body_lower = (exc.body or "").lower()
                 if exc.status_code == 404 and (
-                    "not found" in exc.body.lower() or "not supported" in exc.body.lower()
+                    "not found" in body_lower
+                    or "not supported" in body_lower
+                    or "no longer available" in body_lower
                 ):
                     last_err = f"{model_name}: not available"
                     break

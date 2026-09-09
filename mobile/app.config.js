@@ -51,6 +51,8 @@ module.exports = {
       },
       permissions: [
         "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.POST_NOTIFICATIONS",
@@ -83,7 +85,15 @@ module.exports = {
         },
       ],
       "@react-native-community/datetimepicker",
-      "expo-image-picker",
+      [
+        "expo-image-picker",
+        {
+          photosPermission:
+            "NexRep needs photo library access to analyze meal photos.",
+          cameraPermission:
+            "NexRep needs camera access to scan food and track workouts.",
+        },
+      ],
       "expo-font",
       "expo-localization",
       "expo-secure-store",

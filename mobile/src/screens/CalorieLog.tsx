@@ -821,18 +821,22 @@ export const CalorieLog = () => {
   };
 
   const runFoodRecognition = async (payload: { base64: string; mimeType?: string }) => {
-    const response = await analyzeImage({ ...payload, mealType });
-    if (!response.ok) {
-      if (response.limit) {
-        showScanLimitAlert(response.limit);
-      } else {
-        showToast(response.error || t("calorieLog.alerts.analysisFailed"));
+    try {
+      const response = await analyzeImage({ ...payload, mealType });
+      if (!response.ok) {
+        if (response.limit) {
+          showScanLimitAlert(response.limit);
+        } else {
+          showToast(response.error || t("calorieLog.alerts.analysisFailed"));
+        }
+        return;
       }
-      return;
+      applyAnalysisToForm(response.result);
+      void refreshScanUsage();
+      showToast(t("calorieLog.alerts.detected", { foodName: response.result.foodName }));
+    } catch {
+      showToast(t("calorieLog.alerts.analysisFailed"));
     }
-    applyAnalysisToForm(response.result);
-    void refreshScanUsage();
-    showToast(t("calorieLog.alerts.detected", { foodName: response.result.foodName }));
   };
 
   const onDeleteMeal = async (mealId: number, sourceType?: "database" | "camera_ai" | "meal_planner") => {
