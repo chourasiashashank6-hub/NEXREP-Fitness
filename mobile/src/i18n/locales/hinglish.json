@@ -60,6 +60,7 @@
     "logAction": "Log →",
     "toEat": "khana baki",
     "toBurn": "burn karna baki",
+    "burnMinimum": "minimum",
     "eatingOnly": "sirf eating",
     "restDayNoBurn": "Rest day — koi burn target nahi",
     "tdee": "TDEE",
@@ -1730,6 +1731,7 @@
   "coach": {
     "common": {
       "refresh": "Refresh",
+      "refreshPill": "{{scope}} · {{count}} refreshes",
       "today": "Aaj",
       "yesterday": "Kal",
       "daysAgo": "{{count}} days ago",
@@ -1738,18 +1740,75 @@
       "year": "Year"
     },
     "journey": {
-      "sectionTitle": "COACH NE NOTICE KIYA",
+      "sectionTitle": "Coach ne kya spot kiya",
+      "sectionSubtitle": "Kai din ke patterns — sirf ek din ki reading nahi.",
+      "howItWorks": "Yeh kaise kaam karta hai",
+      "howItWorksTitle": "Yeh kaise kaam karta hai",
+      "howItWorksBody": "Coach kai din ke patterns dekhta hai, sirf ek din ke nahi.\n\nPattern rukne par flag apne aap clear ho jata hai — usually log karne ke baad next time screen khologe. Aap khud bhi sorted mark kar sakte ho.\n\nPurane flags rakhe jaate hain taaki dekh sako kya improve hua.",
+      "needsAttention": "Dhyan chahiye",
+      "cleared": "Cleared",
+      "spottedOn": "Spotted {{date}}",
+      "markSorted": "Mark as sorted",
+      "activeCount": "{{count}} active",
+      "showPastFlags": "Past flags dikhao ({{count}})",
+      "hidePastFlags": "Past flags chhupao",
+      "emptyActive": "Abhi kuch flag nahi. Coach kai din ke patterns dekhta hai.",
       "timelineTitle": "AAPKI JOURNEY",
-      "active": "Active",
-      "resolved": "Resolved",
       "loadMore": "Aur load karo",
-      "recommendations": {
-        "proteinGapStreak": "Aap {{days}} din se protein target ({{proteinG}}g vs {{targetProteinG}}g) se neeche ho. Greek yogurt, paneer, eggs ya protein shake add karo.",
-        "adherenceTrend": "Strong week — last {{windowDays}} din mein {{daysOnTarget}} din calories aur protein target pe rahe. Is rhythm ko continue karo.",
-        "volumeSpike": "{{muscle}} set volume is week {{percentIncrease}}% badha ({{currentSets}} vs {{previousSets}} sets). Recovery ke liye thoda ease back karo.",
-        "plateau": "{{exerciseName}} ~{{weeksFlat}} weeks se flat hai (best {{bestWeightKg}} kg). Next session mein chhoti load ya rep progression try karo.",
-        "disengagement": "{{daysSince}} din se koi {{domain}} log nahi. Aaj ek quick log streak restart karta hai.",
-        "generic": "Coach ne aapke recent data mein ek pattern notice kiya."
+      "gotIt": "Samajh gaya",
+      "domains": {
+        "nutrition": "meals",
+        "workout": "workouts"
+      },
+      "events": {
+        "protein_gap_streak": {
+          "activeTitle": "Protein {{days}} din se low hai",
+          "activeBody": "Aap {{days}} din se apne {{target}}g protein target se neeche ho.",
+          "activeAction": "Greek yogurt, paneer, eggs ya shake add karke gap band karo.",
+          "clearedTitle": "Protein {{days}} din low tha",
+          "clearedBody": "Cleared — aap phir se protein target pe ho.",
+          "clearedBodyWithDate": "{{date}} par cleared — aap phir se protein target pe ho."
+        },
+        "adherence_trend": {
+          "activeTitle": "Targets pe strong week",
+          "activeBody": "Last {{windowDays}} din mein {{daysOnTarget}} din calories aur protein targets pe rahe.",
+          "activeAction": "Is rhythm ko continue karo.",
+          "clearedTitle": "Target streak khatam",
+          "clearedBody": "Cleared — targets pe achhi streak thi.",
+          "clearedBodyWithDate": "{{date}} par cleared — targets pe achhi streak thi."
+        },
+        "volume_spike": {
+          "activeTitle": "{{muscle}} volume is week jump kiya",
+          "activeBody": "Set volume last week se {{percentIncrease}}% up hai.",
+          "activeAction": "Recovery ke liye thoda ease back karo.",
+          "clearedTitle": "{{muscle}} volume spike ease ho gaya",
+          "clearedBody": "Cleared — volume steadier level pe aa gaya.",
+          "clearedBodyWithDate": "{{date}} par cleared — volume steadier level pe aa gaya."
+        },
+        "plateau": {
+          "activeTitle": "{{exerciseName}} plateau pe hai",
+          "activeBody": "Lagbhag {{weeksFlat}} weeks se meaningful progress nahi.",
+          "activeAction": "Next session mein chhoti load ya rep progression try karo.",
+          "clearedTitle": "{{exerciseName}} plateau clear",
+          "clearedBody": "Cleared — is lift pe phir se progress ho rahi hai.",
+          "clearedBodyWithDate": "{{date}} par cleared — is lift pe phir se progress ho rahi hai."
+        },
+        "disengagement": {
+          "activeTitle": "{{days}} din se koi {{domain}} log nahi",
+          "activeBody": "Logging coaching accurate rakhti hai aur streak alive rakhti hai.",
+          "activeAction": "Aaj log karke momentum restart karo.",
+          "clearedTitle": "Logging gap clear",
+          "clearedBody": "Cleared — aap phir se log kar rahe ho.",
+          "clearedBodyWithDate": "{{date}} par cleared — aap phir se log kar rahe ho."
+        },
+        "generic": {
+          "activeTitle": "Pattern spotted",
+          "activeBody": "Coach ne aapke recent data mein kuch dekha.",
+          "activeAction": "",
+          "clearedTitle": "Pattern cleared",
+          "clearedBody": "Cleared.",
+          "clearedBodyWithDate": "{{date}} par cleared."
+        }
       }
     },
     "redesign": {
@@ -2271,6 +2330,12 @@
     "summary": {
       "loading": "Building your analysis…",
       "loadFailed": "Could not load coach summary. Tap refresh to try again.",
+      "period": {
+        "daily": "Today",
+        "weekly": "This week",
+        "monthly": "This month",
+        "yearly": "This year"
+      },
       "nutrition": {
         "daily": {
           "heroSubtitle": "Calories · macros · hydration · timing",
@@ -2307,6 +2372,7 @@
           "weightTrend": "Weight trend",
           "start": "Start",
           "momLabel": "Month over month",
+          "momCompareHint": "{{range}} se compare (pichle mahine ke pehle {{days}} din)",
           "momAdherence": "Adherence",
           "momProtein": "Avg protein",
           "momDaysLogged": "Days logged",
@@ -2317,6 +2383,7 @@
           "nextProtein": "Average protein is {{avgProteinG}}g — push +15g daily to accelerate recovery.",
           "pacingDefault": "Target {{target}} kg · log weight weekly to refine pacing",
           "pacing": {
+            "not_enough_data": "Abhi enough data nahi — pace estimate ke liye kam se kam do baar weight log karo",
             "on_pace_now": "Target {{target}} kg · on pace now",
             "on_pace_1w": "Target {{target}} kg · on pace within ~1 week",
             "on_pace_2w": "Target {{target}} kg · on pace within ~2 weeks",
@@ -2481,7 +2548,9 @@
         "muscleGain": "Muscle gain",
         "muscleGainDescription": "Build muscle in a controlled surplus",
         "strength": "Strength",
-        "strengthDescription": "Maximize performance and lifts"
+        "strengthDescription": "Maximize performance and lifts",
+        "maintain": "Maintain",
+        "maintainDescription": "Current weight ke paas raho (~2 kg ke andar)"
       },
       "pace": {
         "slow": "Slow — 0.25 kg/week",

@@ -70,6 +70,9 @@ export type CoachSummaryMonthly = CoachSummaryAggregate & {
     days_logged: number;
     days_logged_delta: number;
     comparable: boolean;
+    comparison_days?: number;
+    prev_period_start?: string;
+    prev_period_end?: string;
   } | null;
 };
 

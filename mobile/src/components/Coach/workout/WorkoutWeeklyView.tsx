@@ -8,6 +8,7 @@ import { WC_COLORS } from "../../../constants/workoutCoach";
 import WeeklyVolumeLoad from "../WeeklyVolumeLoad";
 import { WeeklyProgressBar } from "../WeeklyProgressBar";
 import { CoachPartialPeriodBanner } from "../shared/CoachPartialPeriodBanner";
+import { CoachPeriodRangeLabel } from "../shared/CoachPeriodRangeLabel";
 import { CoachInsightNoteFromKey } from "../shared/CoachInsightNote";
 import { CoachNutritionHero } from "../shared/CoachNutritionHero";
 import { formatSummaryWeekday } from "../../../utils/coachSummaryFormat";
@@ -57,6 +58,12 @@ export function WorkoutWeeklyView({ summary }: Props) {
         subtitle={t("coach.summary.workout.weekly.heroSubtitle")}
         statLeft={{ value: String(weekly.sessions), label: t("coach.summary.workout.weekly.sessions") }}
         statRight={{ value: `${weekly.weekly_percent}%`, label: t("coach.workout.weekly") }}
+      />
+      <CoachPeriodRangeLabel
+        cadence="weekly"
+        startDate={summary.period.start_date}
+        endDate={summary.period.end_date}
+        accentColor={WC_COLORS.PURPLE_MID}
       />
       {partialMessage ? <CoachPartialPeriodBanner message={partialMessage} /> : null}
       <WeeklyProgressBar

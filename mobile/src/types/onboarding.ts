@@ -65,6 +65,7 @@ export type OnboardingData = {
       streak_alerts: boolean;
     };
     region: string;
+    timezone: string;
     preferred_language?: string | null;
   };
 };

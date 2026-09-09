@@ -1,10 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
-import { formatSummaryMonth } from "../../../utils/coachSummaryFormat";
+import { formatSummaryDateRange, formatSummaryMonth } from "../../../utils/coachSummaryFormat";
 import { useTranslation } from "react-i18next";
 import type { CoachSummaryResponse } from "../../../types/coachSummary";
 import { CoachInsightNoteFromKey } from "../shared/CoachInsightNote";
 import { CoachNutritionHero } from "../shared/CoachNutritionHero";
 import { CoachPartialPeriodBanner } from "../shared/CoachPartialPeriodBanner";
+import { CoachPeriodRangeLabel } from "../shared/CoachPeriodRangeLabel";
 import { GREEN, GREEN_LIGHT, TEXT, BORDER, WHITE } from "../../../theme/colors";
 
 const TRACK = "#E5E4E0";
@@ -52,6 +53,11 @@ export function CalorieMonthlyView({ summary }: Props) {
         statLeft={{ value: weightChange, label: t("coach.summary.nutrition.monthly.weightDelta") }}
         statRight={{ value: `${monthly.adherence_pct}%`, label: t("coach.summary.nutrition.monthly.avgAdherence") }}
       />
+      <CoachPeriodRangeLabel
+        cadence="monthly"
+        startDate={summary.period.start_date}
+        endDate={summary.period.end_date}
+      />
       {partialLabel ? <CoachPartialPeriodBanner message={partialLabel} /> : null}
       {emptyMonth ? <CoachPartialPeriodBanner message={emptyMonth} /> : null}
       {pattern ? (
@@ -77,12 +83,14 @@ export function CalorieMonthlyView({ summary }: Props) {
                 <View style={[styles.fill, { width: `${progressPct ?? 0}%` }]} />
               </View>
               <Text style={styles.pacing}>
-                {monthly.pacing_key
-                  ? t(`coach.summary.nutrition.monthly.pacing.${monthly.pacing_key}`, {
-                      target: targetKg,
-                      defaultValue: t("coach.summary.nutrition.monthly.pacingDefault", { target: targetKg }),
-                    })
-                  : t("coach.summary.nutrition.monthly.pacingDefault", { target: targetKg })}
+                {monthly.pacing_key === "not_enough_data"
+                  ? t("coach.summary.nutrition.monthly.pacing.not_enough_data")
+                  : monthly.pacing_key
+                    ? t(`coach.summary.nutrition.monthly.pacing.${monthly.pacing_key}`, {
+                        target: targetKg,
+                        defaultValue: t("coach.summary.nutrition.monthly.pacingDefault", { target: targetKg }),
+                      })
+                    : t("coach.summary.nutrition.monthly.pacingDefault", { target: targetKg })}
               </Text>
             </>
           ) : null}
@@ -91,6 +99,14 @@ export function CalorieMonthlyView({ summary }: Props) {
       {monthly.mom?.comparable ? (
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>{t("coach.summary.nutrition.monthly.momLabel")}</Text>
+          {monthly.mom.prev_period_start && monthly.mom.prev_period_end ? (
+            <Text style={styles.momCompareHint}>
+              {t("coach.summary.nutrition.monthly.momCompareHint", {
+                range: formatSummaryDateRange(monthly.mom.prev_period_start, monthly.mom.prev_period_end),
+                days: monthly.mom.comparison_days ?? 0,
+              })}
+            </Text>
+          ) : null}
           <MomRow
             label={t("coach.summary.nutrition.monthly.momAdherence")}
             prev={`${monthly.mom.adherence_pct}%`}
@@ -142,6 +158,7 @@ const styles = StyleSheet.create({
   partial: { color: MUTED, fontSize: 11, fontWeight: "700", marginBottom: 10, marginTop: -4 },
   card: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 18, padding: 16, marginBottom: 12 },
   sectionLabel: { color: MUTED, fontSize: 10, fontWeight: "900", letterSpacing: 0.8, marginBottom: 12 },
+  momCompareHint: { color: MUTED, fontSize: 10, lineHeight: 15, marginTop: -6, marginBottom: 10 },
   weightRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   weightLabel: { color: MUTED, fontSize: 11, fontWeight: "700" },
   weightValue: { color: TEXT, fontSize: 14, fontWeight: "900" },

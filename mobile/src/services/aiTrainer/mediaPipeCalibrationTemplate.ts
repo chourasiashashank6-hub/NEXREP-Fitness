@@ -320,10 +320,10 @@ const loop=()=>{
     await window.__mpCamStartStream(FACING_MODE);
     if(window.__mpNotifyCamStarted)window.__mpNotifyCamStarted(stream);
     const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm");
-    pose=await PoseLandmarker.createFromOptions(vision,{
-      baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},
-      runningMode:"VIDEO",numPoses:1,minPoseDetectionConfidence:0.35,minPosePresenceConfidence:0.35,minTrackingConfidence:0.35
-    });
+    const modelPath="https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+    const landmarkerOpts={baseOptions:{modelAssetPath:modelPath,delegate:"GPU"},runningMode:"VIDEO",numPoses:1,minPoseDetectionConfidence:0.35,minPosePresenceConfidence:0.35,minTrackingConfidence:0.35};
+    try{pose=await PoseLandmarker.createFromOptions(vision,landmarkerOpts);}
+    catch(_gpu){pose=await PoseLandmarker.createFromOptions(vision,{...landmarkerOpts,baseOptions:{modelAssetPath:modelPath,delegate:"CPU"}});}
     window.__calFinishNow=finish;
     post("ready");loop();
   }catch(e){post("error",{message:e?.message||"Calibration camera failed"});}

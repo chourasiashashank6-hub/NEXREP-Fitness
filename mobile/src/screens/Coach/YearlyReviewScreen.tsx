@@ -9,6 +9,7 @@ import { fetchYearlyCoachSummary, type CoachYearlySummaryResponse } from "../../
 import { ScreenContainer } from "../../components/ScreenContainer";
 import { CoachCadenceLockedPanel } from "../../components/Coach/CoachCadenceLockedPanel";
 import { CoachYearlyHistoryPanel } from "../../components/Coach/CoachYearlyHistoryPanel";
+import { CoachPeriodRangeLabel } from "../../components/Coach/shared/CoachPeriodRangeLabel";
 import { CADENCE_FEATURE, useCoachRedesignEnabled } from "../../hooks/useCoachRedesign";
 import { useCoachHistory } from "../../hooks/useCoachHistory";
 import { useFeatureAccess } from "../../hooks/useFeatureAccess";
@@ -139,6 +140,11 @@ export default function YearlyReviewScreen() {
               <Text style={styles.heroScore}>{summary.yearly.year_score}</Text>
               <Text style={styles.heroSub}>{t("coach.redesign.yearly.recapSubtitle")}</Text>
             </View>
+            <CoachPeriodRangeLabel
+              cadence="yearly"
+              startDate={summary.period.start}
+              endDate={summary.period.end}
+            />
             <View style={styles.grid}>
               <StatTile label={t("coach.redesign.yearly.statDaysLogged")} value={String(summary.yearly.nutrition.days_logged)} />
               <StatTile label={t("coach.redesign.yearly.statAdherence")} value={`${summary.yearly.nutrition.adherence_pct}%`} />

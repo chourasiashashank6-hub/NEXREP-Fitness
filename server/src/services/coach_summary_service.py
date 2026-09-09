@@ -280,9 +280,17 @@ def _onboarding_target_weight_kg(db: Session, user_id: int) -> float | None:
     return _onboarding_target_weight_kg(onboarding)
 
 
-def _goal_pacing(db: Session, user: User, current_kg: float | None, target_kg: float | None) -> str | None:
-    if current_kg is None or target_kg is None:
+def _goal_pacing(db: Session, user: User, weight: dict[str, Any], target_kg: float | None) -> str | None:
+    if target_kg is None:
         return None
+    end_kg = weight.get("end_kg")
+    if end_kg is None:
+        return None
+    if (weight.get("weigh_ins") or 0) < 2:
+        return "not_enough_data"
+    start_kg = weight.get("start_kg")
+    if start_kg is None or abs(float(end_kg) - float(start_kg)) < 0.1:
+        return "not_enough_data"
     ob = db.query(UserOnboarding).filter(UserOnboarding.user_id == user.id).first()
     targets_json = ob.targets_json if ob and isinstance(ob.targets_json, dict) else {}
     timeline = targets_json.get("timeline") if isinstance(targets_json.get("timeline"), dict) else {}
@@ -292,7 +300,7 @@ def _goal_pacing(db: Session, user: User, current_kg: float | None, target_kg: f
         weekly = 0
     if weekly <= 0:
         return None
-    weeks = max(0, round(abs(current_kg - target_kg) / weekly))
+    weeks = max(0, round(abs(float(end_kg) - float(target_kg)) / weekly))
     if weeks == 0:
         return "on_pace_now"
     if weeks <= 4:
@@ -535,7 +543,7 @@ def build_nutrition_summary(db: Session, user: User, cadence: str, local_date: d
         prev_agg = _aggregate_days(prev_days)
         weight = _weight_in_range(db, user.id, month_start, end)
         target_kg = _onboarding_target_weight_kg(db, user.id)
-        pacing = _goal_pacing(db, user, weight.get("end_kg"), target_kg)
+        pacing = _goal_pacing(db, user, weight, target_kg)
         mom = None
         if prev_agg.get("days_logged"):
             mom = {
@@ -546,6 +554,9 @@ def build_nutrition_summary(db: Session, user: User, cadence: str, local_date: d
                 "days_logged": int(prev_agg.get("days_logged") or 0),
                 "days_logged_delta": int(agg.get("days_logged") or 0) - int(prev_agg.get("days_logged") or 0),
                 "comparable": True,
+                "comparison_days": prev_span_days,
+                "prev_period_start": prev_month_start.isoformat(),
+                "prev_period_end": prev_end_cmp.isoformat(),
             }
         payload["monthly"] = {
             **agg,

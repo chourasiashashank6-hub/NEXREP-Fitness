@@ -5,6 +5,7 @@ import type { CoachSummaryResponse } from "../../../types/coachSummary";
 import { CoachInsightNoteFromKey } from "../shared/CoachInsightNote";
 import { CoachNutritionHero } from "../shared/CoachNutritionHero";
 import { CoachPartialPeriodBanner } from "../shared/CoachPartialPeriodBanner";
+import { CoachPeriodRangeLabel } from "../shared/CoachPeriodRangeLabel";
 import { MacroBreakdownSection } from "../shared/MacroBreakdownSection";
 import { GREEN, TEXT, BORDER, WHITE } from "../../../theme/colors";
 
@@ -71,6 +72,11 @@ export function CalorieWeeklyView({ summary }: Props) {
           label: t("coach.summary.nutrition.weekly.daysOnTarget"),
         }}
         statRight={{ value: `${weekly.adherence_pct}%`, label: t("coach.summary.nutrition.weekly.adherence") }}
+      />
+      <CoachPeriodRangeLabel
+        cadence="weekly"
+        startDate={summary.period.start_date}
+        endDate={summary.period.end_date}
       />
       {partialMessage ? <CoachPartialPeriodBanner message={partialMessage} /> : null}
       {whatChanged ? (

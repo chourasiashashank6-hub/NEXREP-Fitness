@@ -2,7 +2,7 @@
  * Wraps the onboarding save flow with a stale-plan confirmation step.
  *
  * Usage:
- *   const { saveWithCheck, modalProps } = useOnboardingStalePlanCheck();
+ *   const { saveWithCheck, modalProps } = useOnboardingStalePlanCheck(step);
  *   // Render <StalePlanModal {...modalProps} /> somewhere in the component tree
  *   // Call saveWithCheck() instead of saveAndExit()
  */
@@ -50,10 +50,13 @@ export type StalePlanModalProps = {
   onDoItLater: () => void;
 };
 
-export function useOnboardingStalePlanCheck(navigation?: { navigate: (screen: string) => void }) {
+export function useOnboardingStalePlanCheck(
+  step: number,
+  navigation?: { navigate: (screen: string) => void },
+) {
   const { data } = useOnboardingContext();
   const isEditModal = useContext(EditOnboardingModalContext);
-  const { saveAndExit, saving } = useOnboardingSaveAndExit();
+  const { saveAndExit, saving, saveError, clearSaveError } = useOnboardingSaveAndExit();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [affectedPlanners, setAffectedPlanners] = useState<PlannerKey[]>([]);
@@ -64,14 +67,18 @@ export function useOnboardingStalePlanCheck(navigation?: { navigate: (screen: st
   const resolveRef = useRef<((action: "regenerate" | "later") => void) | null>(null);
 
   const finishOnboardingSave = async () => {
-    const result = await saveAndExit();
-    if (result.ok && !isEditModal && navigation) {
+    const isComplete = step >= 6;
+    const result = await saveAndExit(
+      isComplete ? { completeFlow: true } : { throughStep: step },
+    );
+    if (result.ok && isComplete && navigation) {
       navigation.navigate("Results");
     }
     return result;
   };
 
   const saveWithCheck = async () => {
+    clearSaveError();
     // Fetch current server-stored onboarding to diff against
     let prev: OnboardingData | null = null;
     try {
@@ -160,7 +167,7 @@ export function useOnboardingStalePlanCheck(navigation?: { navigate: (screen: st
     onDoItLater: handleDoItLater,
   };
 
-  return { saveWithCheck, saving: saving || regenerating, modalProps };
+  return { saveWithCheck, saving: saving || regenerating, saveError, modalProps };
 }
 
 function getMealWorkoutImpact(field: string): { meal: boolean; workout: boolean } {

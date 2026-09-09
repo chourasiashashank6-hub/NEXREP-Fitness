@@ -7,6 +7,7 @@ import { isNutritionDay } from "../../../types/coachSummary";
 import { CoachInsightNoteFromKey } from "../shared/CoachInsightNote";
 import { CoachNutritionHero } from "../shared/CoachNutritionHero";
 import { CoachPartialPeriodBanner } from "../shared/CoachPartialPeriodBanner";
+import { CoachPeriodRangeLabel } from "../shared/CoachPeriodRangeLabel";
 import { MacroBreakdownSection, MacroGapSection } from "../shared/MacroBreakdownSection";
 
 type MacroKey = "protein" | "carbs" | "fat";
@@ -53,6 +54,11 @@ export function CalorieDailyView({ summary }: Props) {
           statLeft={{ value: "0", label: t("coach.calorie.card.eaten") }}
           statRight={{ value: String(Math.round(day.target_calories)), label: t("coach.calorie.card.left") }}
         />
+        <CoachPeriodRangeLabel
+          cadence="daily"
+          startDate={summary.period.start_date}
+          endDate={summary.period.end_date}
+        />
         <CoachPartialPeriodBanner message={t("coach.summary.partial.noMealsToday")} />
         <CoachInsightNoteFromKey
           noteKey="coach.summary.nutrition.daily.focusLogMeals"
@@ -73,6 +79,11 @@ export function CalorieDailyView({ summary }: Props) {
         subtitle={t("coach.summary.nutrition.daily.heroSubtitle")}
         statLeft={{ value: String(Math.round(day.calories)), label: t("coach.calorie.card.eaten") }}
         statRight={{ value: String(Math.round(day.calories_remaining)), label: t("coach.calorie.card.left") }}
+      />
+      <CoachPeriodRangeLabel
+        cadence="daily"
+        startDate={summary.period.start_date}
+        endDate={summary.period.end_date}
       />
       {focus ? (
         <CoachInsightNoteFromKey

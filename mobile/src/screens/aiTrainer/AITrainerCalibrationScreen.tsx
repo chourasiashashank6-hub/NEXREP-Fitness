@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   Image,
   Pressable,
   ScrollView,
@@ -9,7 +10,9 @@ import {
   View,
   Platform,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useCameraPermissions } from "expo-camera";
 import { WebView } from "react-native-webview";
 import type { WebView as WebViewType } from "react-native-webview";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -27,9 +30,11 @@ import {
 } from "../../services/aiTrainer/webviewCameraControls";
 import {
   finalizeCalibration,
+  isCalibrationStepComplete,
   mergeCalibrationStep,
   type CalibrationStepPartial,
 } from "../../utils/calibrationMerge";
+import { shouldIgnoreRapidBackPress } from "../../utils/hardwareBackDebounce";
 import type { PoseCalibration } from "../../data/aiTrainer/types";
 import {
   acquireMediaPipeServer,
@@ -138,6 +143,8 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
   stepRef.current = step;
   const setCalibration = usePoseCalibrationStore((s) => s.setCalibration);
   const skipCalibration = usePoseCalibrationStore((s) => s.skipCalibration);
+  const [permission, requestPermission] = useCameraPermissions();
+  const permissionDenied = permission?.granted === false;
 
   const stepId: CalibrationStepId = STEPS[step]?.id || "tpose";
   const stepMeta = STEPS[step];
@@ -148,11 +155,22 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
 
   useEffect(() => {
     if (serverError) return;
-    setStepReady(false);
-    setCalProgress({ gatePassed: false, phase: "seek_pose" });
     webReadyRef.current = false;
     skipFlipInjectRef.current = true;
     skipZoomInjectRef.current = true;
+
+    const currentStepId = STEPS[step]?.id;
+    if (currentStepId && isCalibrationStepComplete(currentStepId, partialRef.current)) {
+      setStepReady(true);
+      setCalProgress({ gatePassed: true, phase: "complete" });
+      demoActiveRef.current = false;
+      setDemoActive(false);
+      setCountdownSec(STEPS[step]?.durationSec ?? 10);
+      return;
+    }
+
+    setStepReady(false);
+    setCalProgress({ gatePassed: false, phase: "seek_pose" });
     setDemoActive(true);
     demoActiveRef.current = true;
     setDemoSecLeft(DEMO_SEC);
@@ -211,24 +229,38 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
   useEffect(() => {
     if (Platform.OS === "web") return;
     let cancelled = false;
-    setServerUri(null);
-    setServerError(null);
-    acquireMediaPipeServer(MEDIAPIPE_CALIBRATION_PAGE)
-      .then((uri) => {
+
+    (async () => {
+      if (!permission?.granted) {
+        const result = await requestPermission();
+        if (!result?.granted) {
+          if (!cancelled) {
+            setServerUri(null);
+            setServerError(t("workoutLog.cameraPermissionDenied"));
+          }
+          return;
+        }
+      }
+
+      setServerUri(null);
+      setServerError(null);
+      try {
+        const uri = await acquireMediaPipeServer(MEDIAPIPE_CALIBRATION_PAGE);
         if (!cancelled) setServerUri(uri);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!cancelled) {
           setServerError(cameraUserMessage(err, "Calibration server"));
         }
-      });
+      }
+    })();
+
     return () => {
       cancelled = true;
       releaseMediaPipeServer();
     };
     // serverRetryNonce re-runs acquisition after Retry.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serverRetryNonce]);
+  }, [serverRetryNonce, permission?.granted, requestPermission, t]);
 
   const continueToSession = useCallback(() => {
     if (Platform.OS === "web") unlockWebSpeech();
@@ -238,6 +270,26 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
       navigation.goBack();
     }
   }, [navigation, planId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (shouldIgnoreRapidBackPress()) return true;
+        if (summaryCal) {
+          setSummaryCal(null);
+          setStep(STEPS.length - 1);
+          return true;
+        }
+        if (step > 0) {
+          setStep((s) => Math.max(0, s - 1));
+          return true;
+        }
+        navigation.goBack();
+        return true;
+      });
+      return () => sub.remove();
+    }, [navigation, step, summaryCal]),
+  );
 
   const onMessage = useCallback(
     async (event: { nativeEvent: { data: string } }) => {
@@ -262,6 +314,11 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
 
         if (parsed.type === "cameraDiagnostics") {
           logCameraDiagnostics(parsed as CameraDiagnosticsPayload);
+          return;
+        }
+
+        if (parsed.type === "error") {
+          setServerError(cameraUserMessage(new Error(parsed.msg ?? "Calibration camera failed"), "Calibration"));
           return;
         }
 
@@ -500,17 +557,34 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
     <View style={styles.root}>
       {serverError ? (
         <View style={styles.centered}>
-          <Text style={styles.errorTitle}>{t("mediaPipe.serverError")}</Text>
-          <Text style={styles.errorSub}>{t("mediaPipe.startFailedBody")}</Text>
+          <Text style={styles.errorTitle}>
+            {permissionDenied ? t("workoutLog.cameraPermissionDenied") : t("mediaPipe.serverError")}
+          </Text>
+          <Text style={styles.errorSub}>
+            {permissionDenied ? t("workoutLog.cameraFailed") : t("mediaPipe.startFailedBody")}
+          </Text>
           <Pressable
             style={styles.retryBtn}
             onPress={() => {
+              if (permissionDenied) {
+                void requestPermission().then((result) => {
+                  if (result?.granted) {
+                    setServerError(null);
+                    setServerRetryNonce((n) => n + 1);
+                  }
+                });
+                return;
+              }
               void prepareMediaPipeServerRetry().finally(() => {
                 setServerRetryNonce((n) => n + 1);
               });
             }}
           >
-            <Text style={styles.retryBtnTxt}>{t("mediaPipe.retry")}</Text>
+            <Text style={styles.retryBtnTxt}>
+              {permissionDenied
+                ? t("workoutLog.allowCamera", { defaultValue: "Allow camera" })
+                : t("mediaPipe.retry")}
+            </Text>
           </Pressable>
         </View>
       ) : serverUri ? (
@@ -528,8 +602,22 @@ export default function AITrainerCalibrationScreen({ navigation, route }: Props)
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
           mediaCapturePermissionGrantType="grant"
+          domStorageEnabled
           javaScriptEnabled
           onMessage={onMessage}
+          onError={() => {
+            setServerError(
+              cameraUserMessage(new Error("Calibration WebView failed to load."), "Calibration WebView"),
+            );
+          }}
+          onHttpError={(e) => {
+            setServerError(
+              cameraUserMessage(
+                new Error(`HTTP ${e.nativeEvent.statusCode} ${e.nativeEvent.description || ""}`.trim()),
+                "Calibration WebView",
+              ),
+            );
+          }}
         />
       ) : (
         <View style={styles.centered}>

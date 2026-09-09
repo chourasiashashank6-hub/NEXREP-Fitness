@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTranslation } from "react-i18next";
-import { ensureDailyCalorieLog, todayLocal } from "../../api/caloriesLog";
+import { loadOrCreateDailyCalorieLog, todayLocal } from "../../api/caloriesLog";
 import { getSummary } from "../../api/dashboard";
 import { ActionPlanCard } from "../../components/Coach/ActionPlanCard";
 import { CoachJourneySection } from "../../components/Coach/CoachJourneySection";
@@ -49,7 +49,7 @@ export default function AICalorieCoachScreen() {
     }
     try {
       if (!nutritionData) setLoading(true);
-      const [day, summary] = await Promise.all([ensureDailyCalorieLog(logDate), getSummary()]);
+      const [day, summary] = await Promise.all([loadOrCreateDailyCalorieLog(logDate), getSummary()]);
       setNutritionLoadState("ok");
       setNutritionData({
         goal: "maintain",
@@ -107,8 +107,12 @@ export default function AICalorieCoachScreen() {
           </Pressable>
           <Text style={styles.title}>{t("coach.calorie.title")}</Text>
           <RefreshCountPill
-            scopeLabel={refreshScopeLabel(cadence, t)}
+            scopeLabel={t("coach.common.refreshPill", {
+              scope: refreshScopeLabel(cadence, t),
+              count: refreshUsageCount,
+            })}
             count={refreshUsageCount}
+            hideCount
             accentColor={GREEN}
             accentLightBg={GREEN_LIGHT}
             loading={loading}

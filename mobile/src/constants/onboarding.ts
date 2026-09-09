@@ -75,6 +75,7 @@ export const DEFAULT_ONBOARDING_DATA: OnboardingData = {
       streak_alerts: true,
     },
     region: "IN",
+    timezone: "UTC",
     preferred_language: null,
   },
 };

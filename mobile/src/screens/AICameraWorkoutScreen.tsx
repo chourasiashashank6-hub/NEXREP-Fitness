@@ -59,6 +59,7 @@ import {
   calcExerciseEstimateKcal,
 } from "../utils/sessionCalories";
 import { resolveMetForExercise } from "../utils/exerciseMetLookup";
+import { shouldIgnoreRapidBackPress } from "../utils/hardwareBackDebounce";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { notifyUser } from "../utils/notify";
@@ -328,7 +329,12 @@ export default function AICameraWorkoutScreen() {
         }
 
         if (!permission?.granted) {
-          await requestPermission();
+          const result = await requestPermission();
+          if (!result?.granted) {
+            bootstrapped.current = false;
+            setCameraError(t("workoutLog.cameraPermissionDenied"));
+            return;
+          }
         }
       } catch {
         notifyUser("Error", "Could not load today's workout plan.");
@@ -337,7 +343,7 @@ export default function AICameraWorkoutScreen() {
         setLoading(false);
       }
     })();
-  }, [navigation, planId, startSession, permission?.granted, requestPermission]);
+  }, [navigation, planId, startSession, permission?.granted, requestPermission, t]);
 
   const currentExercise = session?.exercises[session.current_exercise_index];
   const trackingConfig = useMemo(
@@ -480,6 +486,7 @@ export default function AICameraWorkoutScreen() {
       }
 
       const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (shouldIgnoreRapidBackPress()) return true;
         if (blockLeave) {
           setShowEndSheet(true);
           return true;
@@ -876,6 +883,32 @@ export default function AICameraWorkoutScreen() {
     setShowEndSheet(false);
     navigation.popToTop();
   };
+
+  if (!loading && !session && cameraError) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loadingWrap}>
+          <Text style={styles.cameraErrorTxt}>{cameraError}</Text>
+          <Pressable
+            style={styles.primaryBtn}
+            onPress={async () => {
+              const result = await requestPermission();
+              if (result?.granted) {
+                setCameraError(null);
+                bootstrapped.current = false;
+                setLoading(true);
+              }
+            }}
+          >
+            <Text style={styles.primaryBtnTxt}>{t("workoutLog.allowCamera", { defaultValue: "Allow camera" })}</Text>
+          </Pressable>
+          <Pressable onPress={() => navigation.goBack()}>
+            <Text style={styles.loadingTxt}>{t("common.back")}</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (loading || !session || !currentExercise) {
     return (

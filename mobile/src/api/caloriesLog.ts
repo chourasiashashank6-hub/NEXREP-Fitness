@@ -239,6 +239,23 @@ export const getDailyCalorieLog = async (date: string = todayLocal()) => {
   });
 };
 
+const ensuredDailyLogDates = new Set<string>();
+
+/** Read today's log; create it at most once per app session if missing (not on every focus). */
+export const loadOrCreateDailyCalorieLog = async (date: string = todayLocal()) => {
+  try {
+    return await getDailyCalorieLog(date);
+  } catch (e: unknown) {
+    const status = axios.isAxiosError(e) ? e.response?.status : undefined;
+    if (status !== 404) throw e;
+    if (ensuredDailyLogDates.has(date)) {
+      return await getDailyCalorieLog(date);
+    }
+    ensuredDailyLogDates.add(date);
+    return await ensureDailyCalorieLog(date);
+  }
+};
+
 export interface CalorieStreakResponse {
   days: Array<{ date: string; total_calories: number }>;
   start_date: string;

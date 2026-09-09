@@ -30,8 +30,13 @@ export function toggleGoalFocusMuscle(goal: GoalSlice, muscle: string): Pick<Goa
     return goalPatchFromFocusMuscles([]);
   }
   const m = muscle as FocusMuscle;
-  const next = current.includes(m) ? current.filter((x) => x !== m) : [...current, m];
-  return goalPatchFromFocusMuscles(next);
+  if (current.includes(m)) {
+    return goalPatchFromFocusMuscles(current.filter((x) => x !== m));
+  }
+  if (current.length >= 3) {
+    return goalPatchFromFocusMuscles(current);
+  }
+  return goalPatchFromFocusMuscles([...current, m]);
 }
 
 export function isGoalFocusMuscleSelected(goal: GoalSlice, muscle: string): boolean {

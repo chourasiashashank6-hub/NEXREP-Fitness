@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useContext, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { Keyboard } from "react-native";
 import { upsertOnboardingMe } from "../api/onboarding";
 import { updateProfile } from "../api/user";
@@ -9,9 +9,10 @@ import { useAuthStore } from "../store/authStore";
 import { saveOnboardingData, saveTargets } from "../storage/onboarding";
 import { formatApiDetail, notifyUser } from "../utils/notify";
 import { normalizeGoalFocusFields } from "../utils/onboardingFocusMuscles";
-import { validateOnboardingForSave } from "../utils/onboardingValidation";
+import { validateOnboardingForSave, validateOnboardingPartialSave } from "../utils/onboardingValidation";
 import { exitOnboardingFlow } from "../utils/exitOnboardingFlow";
 import { listOnboardingFormChanges } from "../utils/onboardingFormDiff";
+import { toUserMessage } from "../utils/toUserMessage";
 import {
   ONBOARDING_SERVER_UNAVAILABLE_NOTIFY,
   classifyUpsertOnboardingError,
@@ -26,6 +27,13 @@ export type SaveAndExitResult = {
   serverSaved: boolean;
 };
 
+export type SaveAndExitOptions = {
+  /** Validate screens 1…N only (progressive save). Omit for full completion (screen 6). */
+  throughStep?: number;
+  /** True on final step — stay in flow for Results instead of exiting immediately. */
+  completeFlow?: boolean;
+};
+
 export function useOnboardingSaveAndExit() {
   const { data, getBaseline } = useOnboardingContext();
   const isEditModal = useContext(EditOnboardingModalContext);
@@ -33,15 +41,27 @@ export function useOnboardingSaveAndExit() {
   const language = useLanguageStore((s) => s.explicitLanguage || s.language || s.deviceLanguage);
   const syncExplicitLanguage = useLanguageStore((s) => s.syncExplicitLanguage);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
 
-  const saveAndExit = async (): Promise<SaveAndExitResult> => {
-    if (!token) {
-      notifyUser(i18n.t("onboardingSave.session"), i18n.t("onboardingSave.signInAgain"));
+  const saveAndExit = async (options?: SaveAndExitOptions): Promise<SaveAndExitResult> => {
+    if (inFlightRef.current) {
       return { ok: false, serverSaved: false };
     }
 
-    const validationError = validateOnboardingForSave(data);
+    if (!token) {
+      const msg = i18n.t("onboardingSave.signInAgain");
+      setSaveError(msg);
+      notifyUser(i18n.t("onboardingSave.session"), msg);
+      return { ok: false, serverSaved: false };
+    }
+
+    const validationError =
+      options?.throughStep != null
+        ? validateOnboardingPartialSave(data, options.throughStep)
+        : validateOnboardingForSave(data);
     if (validationError) {
+      setSaveError(validationError);
       notifyUser(i18n.t("onboardingSave.completeRequired"), validationError);
       return { ok: false, serverSaved: false };
     }
@@ -52,12 +72,15 @@ export function useOnboardingSaveAndExit() {
     }
 
     Keyboard.dismiss();
+    setSaveError(null);
+    inFlightRef.current = true;
     setSaving(true);
     let serverSaved = true;
     try {
       const mapGoalTypeToTag = (goalType: typeof data.goal.type) => {
         if (goalType === "muscle_gain") return "Muscle Gain";
         if (goalType === "strength") return "Strength";
+        if (goalType === "maintain") return "Maintain";
         return "Fat Loss";
       };
       const mapDifficultyToProfile = (difficulty: typeof data.goal.difficulty) => {
@@ -81,20 +104,23 @@ export function useOnboardingSaveAndExit() {
         if (action.type === "rethrow") throw e;
         if (action.type === "abort") {
           const detailText = axios.isAxiosError(e) ? formatApiDetail(e.response?.data?.detail) : "";
-          notifyUser(i18n.t("onboardingSave.sessionExpired"), detailText || i18n.t("onboardingSave.signInRetry"));
+          const msg = detailText || i18n.t("onboardingSave.signInRetry");
+          setSaveError(msg);
+          notifyUser(i18n.t("onboardingSave.sessionExpired"), msg);
           return { ok: false, serverSaved: false };
         }
         if (action.type === "fatal_abort") {
           const detailText = axios.isAxiosError(e) ? formatApiDetail(e.response?.data?.detail) : "";
           const status = axios.isAxiosError(e) ? e.response?.status : undefined;
-          if (status === 422) {
-            notifyUser(i18n.t("onboardingSave.saveFailed"), detailText || i18n.t("onboardingSave.serverRejected"));
-          } else {
-            notifyUser(
-              i18n.t("onboardingSave.saveFailed"),
-              detailText || (axios.isAxiosError(e) ? e.message : "") || i18n.t("onboardingSave.serverError", { status: status ?? "?" }),
-            );
-          }
+          const msg =
+            detailText ||
+            (axios.isAxiosError(e) ? e.message : "") ||
+            i18n.t("onboardingSave.serverError", { status: status ?? "?" });
+          setSaveError(status === 422 ? detailText || i18n.t("onboardingSave.serverRejected") : msg);
+          notifyUser(
+            i18n.t("onboardingSave.saveFailed"),
+            status === 422 ? detailText || i18n.t("onboardingSave.serverRejected") : msg,
+          );
           return { ok: false, serverSaved: false };
         }
         serverSaved = false;
@@ -131,18 +157,22 @@ export function useOnboardingSaveAndExit() {
       await saveOnboardingData(token, onboardingPayload);
       await saveTargets(token, targets);
       void syncExplicitLanguage();
-      if (isEditModal) {
-        exitOnboardingFlow(true);
+      if (!options?.completeFlow) {
+        exitOnboardingFlow(isEditModal);
       }
       return { ok: true, serverSaved };
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "";
-      notifyUser(i18n.t("onboardingSave.saveFailed"), msg || i18n.t("onboardingSave.genericFailed"));
+      const { body } = toUserMessage(e, "onboardingSave.genericFailed");
+      setSaveError(body);
+      notifyUser(i18n.t("onboardingSave.saveFailed"), body);
       return { ok: false, serverSaved: false };
     } finally {
+      inFlightRef.current = false;
       setSaving(false);
     }
   };
 
-  return { saving, saveAndExit };
+  const clearSaveError = () => setSaveError(null);
+
+  return { saving, saveError, clearSaveError, saveAndExit };
 }

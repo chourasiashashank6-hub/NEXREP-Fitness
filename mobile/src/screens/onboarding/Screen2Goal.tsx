@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { BodyTypeSelectionModal } from "../../components/BodyTypeSelectionModal";
@@ -10,7 +10,8 @@ import { BODY_DATA } from "../../data/bodyTypeData";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { StalePlanModal } from "../../components/StalePlanModal";
 import { useOnboardingStalePlanCheck } from "../../hooks/useOnboardingStalePlanCheck";
-import { DIFFICULTY_OPTIONS, GOAL_OPTIONS, GOAL_PACE_OPTIONS, getImperialWeightOptions, getMetricWeightOptions } from "../../utils/onboardingOptions";
+import { DIFFICULTY_OPTIONS, GOAL_OPTIONS, buildGoalPaceOptions, getImperialWeightOptions, getMetricWeightOptions } from "../../utils/onboardingOptions";
+import { getPaceClampInfo, issuesToFieldErrors, reconcileOnboarding, validateScreen2 } from "../../utils/onboardingValidator";
 import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
 const ORANGE = "#D85A30";
@@ -32,8 +33,9 @@ const SUGGESTED_STRENGTH_LIFTS = [
 
 export default function Screen2Goal({ navigation }: any) {
   const { t } = useTranslation();
-  const { data, updateGoal, isHydrating } = useOnboardingContext();
-  const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
+  const { data, updateGoal, hydrate, isHydrating } = useOnboardingContext();
+  const [reconcileNote, setReconcileNote] = useState("");
+  const { saveWithCheck: saveAndExit, saving, saveError, modalProps } = useOnboardingStalePlanCheck(2);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCustomLift, setShowCustomLift] = useState(false);
   const [customLiftName, setCustomLiftName] = useState("");
@@ -53,7 +55,11 @@ export default function Screen2Goal({ navigation }: any) {
   }, [isHydrating]);
 
   const isPaceNeeded = data.goal.type === "fat_loss" || data.goal.type === "muscle_gain";
+  const isMaintainGoal = data.goal.type === "maintain";
   const isStrengthGoal = data.goal.type === "strength";
+  const unitLabel = data.personal.unit_system === "metric" ? "kg" : "lbs";
+  const paceOptions = useMemo(() => buildGoalPaceOptions(data, t), [data, t]);
+  const paceClampInfo = useMemo(() => getPaceClampInfo(data), [data]);
   const options = data.personal.unit_system === "metric" ? getMetricWeightOptions() : getImperialWeightOptions();
   const currentWeight = data.personal.unit_system === "metric" ? data.personal.weight_kg : data.personal.weight_lb;
   const targetWeight = data.personal.unit_system === "metric" ? data.goal.target_weight_kg : data.goal.target_weight_lb;
@@ -67,29 +73,8 @@ export default function Screen2Goal({ navigation }: any) {
     BODY_DATA[btGender]?.goal.find((x) => x.id === bodyType?.goal_body_id)?.label ?? "";
   const hasBodyType = Boolean(bodyType?.current_body_id && bodyType?.goal_body_id);
 
-  const collectErrors = () => {
-    const next: Record<string, string> = {};
-    if (!data.goal.type) next.goal = t("onboarding.screen2.errors.goalRequired");
-    if (!data.goal.difficulty) next.difficulty = t("onboarding.screen2.errors.difficultyRequired");
-    if (isPaceNeeded && !data.goal.pace) next.pace = t("onboarding.screen2.errors.paceRequired");
-    if (isPaceNeeded && !targetWeight) next.target = t("onboarding.screen2.errors.targetRequired");
-    if (isStrengthGoal && targetLifts.some((lift) => !lift.target_weight_kg || lift.target_weight_kg <= 0)) {
-      next.target_lifts = t("onboarding.screen2.errors.targetLiftsRequired");
-    }
-    if (isPaceNeeded && targetWeight && currentWeight) {
-      if (targetWeight < currentWeight && data.goal.type !== "fat_loss") {
-        next.goal = t("onboarding.screen2.errors.goalMustBeFatLoss");
-      } else if (targetWeight > currentWeight && data.goal.type !== "muscle_gain") {
-        next.goal = t("onboarding.screen2.errors.goalMustBeMuscleGain");
-      } else if (targetWeight === currentWeight) {
-        next.target = t("onboarding.screen2.errors.targetMustDiffer");
-      }
-    }
-    return next;
-  };
-
   const applyValidation = () => {
-    const next = collectErrors();
+    const next = issuesToFieldErrors(t, validateScreen2(data));
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -105,11 +90,23 @@ export default function Screen2Goal({ navigation }: any) {
   };
 
   const setGoalType = (type: string) => {
-    updateGoal({
-      type: type as any,
-      target_lifts: type === "strength" ? targetLifts.slice(0, 3) : [],
-    });
+    const merged = {
+      ...data,
+      goal: {
+        ...data.goal,
+        type: type as any,
+        pace: type === "fat_loss" || type === "muscle_gain" ? data.goal.pace : null,
+        target_lifts: type === "strength" ? targetLifts.slice(0, 3) : [],
+      },
+    };
+    const { data: reconciled, notices } = reconcileOnboarding(merged, "goal");
+    hydrate(reconciled);
     setErrors({});
+    if (notices.length) {
+      setReconcileNote(t("onboarding.reconcile.goalChanged"));
+    } else {
+      setReconcileNote("");
+    }
   };
 
   const addTargetLift = (exerciseName: string, exerciseId?: number | null) => {
@@ -146,6 +143,7 @@ export default function Screen2Goal({ navigation }: any) {
       onSaveExit={handleSaveExit}
       saveLoading={saving}
       saveDisabled={saving}
+      saveError={saveError}
     >
       <RequiredLabelRow>
         <Text style={styles.labelInline}>{t("onboarding.screen2.primaryGoal")}</Text>
@@ -169,12 +167,22 @@ export default function Screen2Goal({ navigation }: any) {
             <Text style={styles.labelInline}>{t("onboarding.screen2.goalPace")}</Text>
             <RequiredBadge />
           </RequiredLabelRow>
-          <BottomSheetPicker label={t("onboarding.screen2.goalPace")} value={data.goal.pace} options={GOAL_PACE_OPTIONS} onChange={(v) => { updateGoal({ pace: v as any }); clearError("pace"); }} placeholder={t("onboarding.screen2.goalPacePlaceholder")} error={errors.pace} />
+          <BottomSheetPicker label={t("onboarding.screen2.goalPace")} value={data.goal.pace} options={paceOptions} onChange={(v) => { updateGoal({ pace: v as any }); clearError("pace"); }} placeholder={t("onboarding.screen2.goalPacePlaceholder")} error={errors.pace} />
+          {paceClampInfo?.clamped ? (
+            <Text style={styles.warn}>
+              {t("onboarding.screen2.paceClamped", {
+                floor: paceClampInfo.floorKcal,
+                pace: paceClampInfo.fastestSafePace ?? "moderate",
+              })}
+            </Text>
+          ) : null}
 
           <View style={styles.targetWeightLabelWrap}>
             <RequiredLabelRow>
               <Text style={styles.labelInline}>
-                {data.goal.type === "fat_loss" ? t("onboarding.screen2.targetWeightLess", { currentWeight }) : t("onboarding.screen2.targetWeightMore", { currentWeight })}
+                {data.goal.type === "fat_loss"
+                  ? t("onboarding.screen2.targetWeightLess", { currentWeight, unit: unitLabel })
+                  : t("onboarding.screen2.targetWeightMore", { currentWeight, unit: unitLabel })}
               </Text>
               <RequiredBadge />
             </RequiredLabelRow>
@@ -187,6 +195,24 @@ export default function Screen2Goal({ navigation }: any) {
               data.personal.unit_system === "metric" ? updateGoal({ target_weight_kg: Number(v) }) : updateGoal({ target_weight_lb: Number(v) });
               clearError("target");
               clearError("goal");
+            }}
+            placeholder={t("onboarding.screen2.targetWeightPlaceholder")}
+            error={errors.target}
+          />
+        </View>
+      ) : null}
+
+      {isMaintainGoal ? (
+        <View style={styles.block}>
+          <Text style={styles.label}>{t("onboarding.screen2.targetWeightOptional")}</Text>
+          <Text style={styles.helperText}>{t("onboarding.screen2.maintainTargetHelper", { maxGap: 2, unit: unitLabel })}</Text>
+          <BottomSheetPicker
+            label={t("onboarding.screen2.targetWeight")}
+            value={targetWeight}
+            options={options}
+            onChange={(v) => {
+              data.personal.unit_system === "metric" ? updateGoal({ target_weight_kg: Number(v) }) : updateGoal({ target_weight_lb: Number(v) });
+              clearError("target");
             }}
             placeholder={t("onboarding.screen2.targetWeightPlaceholder")}
             error={errors.target}
@@ -285,6 +311,8 @@ export default function Screen2Goal({ navigation }: any) {
         ) : null}
       </View>
 
+      {reconcileNote ? <Text style={styles.warn}>{reconcileNote}</Text> : null}
+
       <BodyTypeSelectionModal visible={showBodyTypeModal} onClose={() => setShowBodyTypeModal(false)} />
     </OnboardingLayout>
   <StalePlanModal {...modalProps} />
@@ -298,6 +326,7 @@ const styles = StyleSheet.create({
   targetWeightLabelWrap: { marginTop: 12 },
   block: { marginTop: 12 },
   error: { marginTop: 4, fontSize: 12, color: ORANGE },
+  warn: { marginTop: 6, fontSize: 12, lineHeight: 17, color: ORANGE },
   helperText: { color: MUTED, fontSize: 13, marginBottom: 10, lineHeight: 18 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   liftChip: {

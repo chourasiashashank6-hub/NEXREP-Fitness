@@ -4,6 +4,7 @@ import type { CoachSummaryResponse } from "../../../types/coachSummary";
 import { isWorkoutSummary } from "../../../types/coachSummary";
 import { WC_COLORS } from "../../../constants/workoutCoach";
 import { CoachPartialPeriodBanner } from "../shared/CoachPartialPeriodBanner";
+import { CoachPeriodRangeLabel } from "../shared/CoachPeriodRangeLabel";
 import { CoachInsightNoteFromKey } from "../shared/CoachInsightNote";
 import { CoachNutritionHero } from "../shared/CoachNutritionHero";
 import { formatSummaryMonth } from "../../../utils/coachSummaryFormat";
@@ -39,6 +40,12 @@ export function WorkoutMonthlyView({ summary }: Props) {
         subtitle={t(monthly.hero_label_key)}
         statLeft={{ value: String(monthly.sessions), label: t("coach.summary.workout.monthly.sessions") }}
         statRight={{ value: String(monthly.total_sets), label: t("coach.summary.workout.monthly.totalSets") }}
+      />
+      <CoachPeriodRangeLabel
+        cadence="monthly"
+        startDate={summary.period.start_date}
+        endDate={summary.period.end_date}
+        accentColor={WC_COLORS.PURPLE_MID}
       />
       {partialLabel ? <CoachPartialPeriodBanner message={partialLabel} /> : null}
       {emptyMonth ? <CoachPartialPeriodBanner message={emptyMonth} /> : null}

@@ -7,12 +7,8 @@ import { ToggleRow } from "../../components/ToggleRow";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { StalePlanModal } from "../../components/StalePlanModal";
 import { useOnboardingStalePlanCheck } from "../../hooks/useOnboardingStalePlanCheck";
-import {
-  getActivityLevel,
-  getTdeeMultiplier,
-  WORKOUTS_PER_WEEK_MAX,
-  WORKOUTS_PER_WEEK_MIN,
-} from "../../constants/onboarding";
+import { getActivityLevel, getTdeeMultiplier, WORKOUTS_PER_WEEK_MAX } from "../../constants/onboarding";
+import { issuesToFieldErrors, validateScreen3, validationMessage, workoutsMinForGoal } from "../../utils/onboardingValidator";
 import {
   focusMusclesHint,
   FOCUS_MUSCLE_UI_OPTIONS,
@@ -35,7 +31,7 @@ const LEVEL_COPY: Record<ActivityLevel, string> = {
   sedentary: "A good starting point - we'll help you build a routine.",
   lightly_active: "Nice and steady - small consistent steps.",
   moderately_active: "Great pace for steady progress.",
-  very_active: "Strong training rhythm - this fuels real results.",
+  very_active: "Strong training rhythm — this fuels real results.",
   extremely_active: "Elite-level commitment - we'll fuel you to match.",
 };
 
@@ -48,7 +44,7 @@ function workoutsLabel(count: number, t: (key: string, opts?: object) => string)
 export default function Screen3Activity({ navigation }: any) {
   const { t } = useTranslation();
   const { data, updateActivity, updateGoal, updateAppSetup, isHydrating } = useOnboardingContext();
-  const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
+  const { saveWithCheck: saveAndExit, saving, saveError, modalProps } = useOnboardingStalePlanCheck(3);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -56,7 +52,8 @@ export default function Screen3Activity({ navigation }: any) {
   }, [isHydrating]);
 
   const selectedFocus = getGoalFocusMuscles(data.goal);
-  const workoutsCount = data.activity.workouts_per_week ?? 0;
+  const workoutsMin = workoutsMinForGoal(data.goal.type);
+  const workoutsCount = data.activity.workouts_per_week ?? workoutsMin;
   const selectedEquipment: EquipmentAccess = data.activity.equipment_access ?? "full_gym";
   const previewLevel = getActivityLevel(workoutsCount);
 
@@ -79,7 +76,7 @@ export default function Screen3Activity({ navigation }: any) {
   }, [data.activity.workouts_per_week]);
 
   const setWorkoutsCount = (next: number) => {
-    const clamped = Math.max(WORKOUTS_PER_WEEK_MIN, Math.min(WORKOUTS_PER_WEEK_MAX, next));
+    const clamped = Math.max(workoutsMin, Math.min(WORKOUTS_PER_WEEK_MAX, next));
     updateActivity({
       workouts_per_week: clamped,
       level: getActivityLevel(clamped),
@@ -89,14 +86,21 @@ export default function Screen3Activity({ navigation }: any) {
   };
 
   const onNext = () => {
-    const next: Record<string, string> = {};
-    if (data.activity.workouts_per_week === null || data.activity.workouts_per_week < 1) {
-      next.workouts = t("onboarding.screen3.errors.workoutsRequired");
-    }
+    const next = issuesToFieldErrors(t, validateScreen3(data));
     setErrors(next);
     if (Object.keys(next).length) return;
     navigation.navigate("Screen4Diet");
   };
+
+  const workoutsFloorHint =
+    workoutsCount === workoutsMin
+      ? validationMessage(t, {
+          valid: false,
+          field: "workouts",
+          code: "workouts.atMin",
+          params: { min: workoutsMin, goal: data.goal.type ?? "" },
+        })
+      : "";
 
   return (
     <>
@@ -109,6 +113,7 @@ export default function Screen3Activity({ navigation }: any) {
         onSaveExit={saveAndExit}
         saveLoading={saving}
         saveDisabled={saving}
+        saveError={saveError}
       >
         <RequiredLabelRow>
           <Text style={styles.labelInline}>{t("onboarding.screen3.workoutsPerWeek")}</Text>
@@ -117,9 +122,9 @@ export default function Screen3Activity({ navigation }: any) {
 
         <View style={styles.stepperRow}>
           <Pressable
-            style={[styles.stepperBtn, workoutsCount <= WORKOUTS_PER_WEEK_MIN && styles.stepperBtnDisabled]}
+            style={[styles.stepperBtn, workoutsCount <= workoutsMin && styles.stepperBtnDisabled]}
             onPress={() => setWorkoutsCount(workoutsCount - 1)}
-            disabled={workoutsCount <= WORKOUTS_PER_WEEK_MIN}
+            disabled={workoutsCount <= workoutsMin}
           >
             <Text style={styles.stepperBtnText}>−</Text>
           </Pressable>
@@ -135,6 +140,7 @@ export default function Screen3Activity({ navigation }: any) {
           </Pressable>
         </View>
         {errors.workouts ? <Text style={styles.error}>{errors.workouts}</Text> : null}
+        {workoutsFloorHint ? <Text style={styles.hint}>{workoutsFloorHint}</Text> : null}
 
         <View style={styles.block}>
           <RequiredLabelRow>

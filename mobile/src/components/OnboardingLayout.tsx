@@ -1,6 +1,7 @@
-import { PropsWithChildren, ReactNode } from "react";
+import { PropsWithChildren, ReactNode, useCallback } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -12,8 +13,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
+import { UnsavedOnboardingModal } from "./UnsavedOnboardingModal";
+import { useOnboardingCancel } from "../hooks/useOnboardingCancel";
 import { useOnboardingContext } from "../hooks/OnboardingContext";
+import { shouldIgnoreRapidBackPress } from "../utils/hardwareBackDebounce";
 import { logicalRow, textAlignStart } from "../utils/rtl";
 import { SCREEN_SAFE_AREA_EDGES } from "../utils/safeAreaEdges";
 import { GREEN, GREEN_LIGHT, TEXT, BORDER, WHITE } from "../theme/colors";
@@ -38,6 +43,7 @@ export const OnboardingLayout = ({
   saveExitLabel,
   saveLoading,
   saveDisabled,
+  saveError,
   finalStepFooter,
   children,
 }: PropsWithChildren<{
@@ -55,11 +61,37 @@ export const OnboardingLayout = ({
   saveExitLabel?: string;
   saveLoading?: boolean;
   saveDisabled?: boolean;
+  saveError?: string | null;
   /** Step 6 only: Back + primary Save & exit (full completion), no counter or Next. */
   finalStepFooter?: boolean;
 }>) => {
   const { t } = useTranslation();
   const { isHydrating } = useOnboardingContext();
+  const {
+    requestCancel,
+    discardAndExit,
+    keepEditing,
+    modalVisible: cancelModalVisible,
+    changes: cancelChanges,
+  } = useOnboardingCancel();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android") return;
+
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (shouldIgnoreRapidBackPress()) return true;
+        if (step <= 1 || hideBack) {
+          requestCancel();
+          return true;
+        }
+        onBack?.();
+        return true;
+      });
+
+      return () => sub.remove();
+    }, [hideBack, onBack, requestCancel, step]),
+  );
 
   const handleNext = () => {
     if (!onNext) return;
@@ -86,6 +118,13 @@ export const OnboardingLayout = ({
   const nextText = nextLabel ?? t("common.next");
 
   return (
+    <>
+    <UnsavedOnboardingModal
+      visible={cancelModalVisible}
+      changes={cancelChanges}
+      onDiscard={discardAndExit}
+      onKeepEditing={keepEditing}
+    />
     <SafeAreaView style={styles.safe} edges={SCREEN_SAFE_AREA_EDGES}>
       <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={styles.topPad}>
@@ -119,6 +158,11 @@ export const OnboardingLayout = ({
 
         <View style={styles.footer}>
           {extraFooter}
+          {saveError ? (
+            <Text style={styles.saveError} accessibilityRole="alert">
+              {saveError}
+            </Text>
+          ) : null}
           {finalStepFooter ? (
             <View style={styles.finalNavRow}>
               <View style={styles.navSide}>
@@ -204,6 +248,7 @@ export const OnboardingLayout = ({
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </>
   );
 };
 
@@ -314,5 +359,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "600",
     paddingHorizontal: 4,
+  },
+  saveError: {
+    color: "#C0392B",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+    lineHeight: 18,
   },
 });

@@ -60,6 +60,7 @@
     "logAction": "Loggen →",
     "toEat": "zu essen",
     "toBurn": "brennen",
+    "burnMinimum": "Minimum",
     "eatingOnly": "nur Essen",
     "restDayNoBurn": "Ruhetag — kein Verbrennungsziel",
     "tdee": "TDEE",
@@ -1720,6 +1721,7 @@
   "coach": {
     "common": {
       "refresh": "Aktualisieren",
+      "refreshPill": "{{scope}} · {{count}} Aktualisierungen",
       "today": "Heute",
       "yesterday": "Gestern",
       "daysAgo": "{{count}} vor Tagen",
@@ -1728,18 +1730,75 @@
       "year": "Jahr"
     },
     "journey": {
-      "sectionTitle": "COACH HAT BEMERKT",
+      "sectionTitle": "Was der Coach bemerkt hat",
+      "sectionSubtitle": "Muster über mehrere Tage — keine Einzeltageswerte.",
+      "howItWorks": "So funktioniert's",
+      "howItWorksTitle": "So funktioniert's",
+      "howItWorksBody": "Der Coach sucht Muster über mehrere Tage, nicht über einen einzelnen Tag.\n\nEine Markierung verschwindet von selbst, wenn das Muster endet — meist beim nächsten Öffnen dieses Bildschirms nach dem Loggen. Du kannst sie auch selbst als erledigt markieren.\n\nVergangene Markierungen bleiben erhalten, damit du siehst, was sich verbessert hat.",
+      "needsAttention": "Beachten",
+      "cleared": "Erledigt",
+      "spottedOn": "Bemerkt am {{date}}",
+      "markSorted": "Als erledigt markieren",
+      "activeCount": "{{count}} aktiv",
+      "showPastFlags": "Vergangene Markierungen anzeigen ({{count}})",
+      "hidePastFlags": "Vergangene Markierungen ausblenden",
+      "emptyActive": "Aktuell nichts zu melden. Der Coach sucht Muster über mehrere Tage.",
       "timelineTitle": "DEINE REISE",
-      "active": "Aktiv",
-      "resolved": "Erledigt",
       "loadMore": "Mehr laden",
-      "recommendations": {
-        "proteinGapStreak": "Du liegst seit {{days}} Tagen unter deinem Proteinziel ({{proteinG}}g vs {{targetProteinG}}g). Füge griechischen Joghurt, Paneer, Eier oder einen Proteinshake hinzu.",
-        "adherenceTrend": "Starke Woche — {{daysOnTarget}} der letzten {{windowDays}} Tage trafen Kalorien- und Proteinziele. Behalte dieses Tempo bei.",
-        "volumeSpike": "{{muscle}} Satzvolumen stieg diese Woche um {{percentIncrease}}% ({{currentSets}} vs {{previousSets}} Sätze). Erwäge etwas zurückzufahren für die Erholung.",
-        "plateau": "{{exerciseName}} ist seit ~{{weeksFlat}} Wochen flach (bestes {{bestWeightKg}} kg). Probiere eine kleine Steigerung von Gewicht oder Wiederholungen.",
-        "disengagement": "Kein {{domain}} seit {{daysSince}} Tagen geloggt. Ein schneller Log heute startet deine Serie neu.",
-        "generic": "Der Coach hat ein Muster in deinen jüngsten Daten bemerkt."
+      "gotIt": "Verstanden",
+      "domains": {
+        "nutrition": "Mahlzeiten",
+        "workout": "Workouts"
+      },
+      "events": {
+        "protein_gap_streak": {
+          "activeTitle": "Protein seit {{days}} Tagen zu niedrig",
+          "activeBody": "Du liegst seit {{days}} Tagen unter deinem Proteinziel von {{target}}g.",
+          "activeAction": "Füge griechischen Joghurt, Paneer, Eier oder einen Shake hinzu, um die Lücke zu schließen.",
+          "clearedTitle": "Protein war {{days}} Tage zu niedrig",
+          "clearedBody": "Erledigt — du hast dein Proteinziel wieder erreicht.",
+          "clearedBodyWithDate": "Erledigt am {{date}} — du hast dein Proteinziel wieder erreicht."
+        },
+        "adherence_trend": {
+          "activeTitle": "Starke Woche bei den Zielen",
+          "activeBody": "{{daysOnTarget}} der letzten {{windowDays}} Tage trafen Kalorien- und Proteinziele.",
+          "activeAction": "Behalte dieses Tempo bei.",
+          "clearedTitle": "Zielserie beendet",
+          "clearedBody": "Erledigt — du hattest eine gute Serie bei den Zielen.",
+          "clearedBodyWithDate": "Erledigt am {{date}} — du hattest eine gute Serie bei den Zielen."
+        },
+        "volume_spike": {
+          "activeTitle": "{{muscle}}-Volumen stieg diese Woche",
+          "activeBody": "Das Satzvolumen ist um {{percentIncrease}}% gegenüber letzter Woche gestiegen.",
+          "activeAction": "Erwäge etwas zurückzufahren, um die Erholung zu managen.",
+          "clearedTitle": "{{muscle}}-Volumenspitze beruhigt",
+          "clearedBody": "Erledigt — das Volumen ist auf ein stabileres Niveau zurückgekehrt.",
+          "clearedBodyWithDate": "Erledigt am {{date}} — das Volumen ist auf ein stabileres Niveau zurückgekehrt."
+        },
+        "plateau": {
+          "activeTitle": "{{exerciseName}} stagniert",
+          "activeBody": "Seit etwa {{weeksFlat}} Wochen keine nennenswerte Fortschritte.",
+          "activeAction": "Probiere eine kleine Steigerung von Gewicht oder Wiederholungen in der nächsten Session.",
+          "clearedTitle": "{{exerciseName}}-Stagnation beendet",
+          "clearedBody": "Erledigt — du machst bei dieser Übung wieder Fortschritte.",
+          "clearedBodyWithDate": "Erledigt am {{date}} — du machst bei dieser Übung wieder Fortschritte."
+        },
+        "disengagement": {
+          "activeTitle": "Kein {{domain}} seit {{days}} Tagen geloggt",
+          "activeBody": "Loggen hält das Coaching genau und deine Serie am Leben.",
+          "activeAction": "Logge heute, um den Schwung wieder aufzunehmen.",
+          "clearedTitle": "Loggingspause beendet",
+          "clearedBody": "Erledigt — du loggst wieder.",
+          "clearedBodyWithDate": "Erledigt am {{date}} — du loggst wieder."
+        },
+        "generic": {
+          "activeTitle": "Muster bemerkt",
+          "activeBody": "Der Coach hat etwas in deinen jüngsten Daten bemerkt.",
+          "activeAction": "",
+          "clearedTitle": "Muster erledigt",
+          "clearedBody": "Erledigt.",
+          "clearedBodyWithDate": "Erledigt am {{date}}."
+        }
       }
     },
     "redesign": {
@@ -2255,6 +2314,12 @@
     "summary": {
       "loading": "Building your analysis…",
       "loadFailed": "Could not load coach summary. Tap refresh to try again.",
+      "period": {
+        "daily": "Heute",
+        "weekly": "Diese Woche",
+        "monthly": "Dieser Monat",
+        "yearly": "Dieses Jahr"
+      },
       "nutrition": {
         "daily": {
           "heroSubtitle": "Calories · macros · hydration · timing",
@@ -2290,7 +2355,8 @@
           "patternAdherenceUp": "Adherence improved {{delta}} points month over month — keep the same meal rhythm.",
           "weightTrend": "Weight trend",
           "start": "Start",
-          "momLabel": "Month over month",
+          "momLabel": "Monat zu Monat",
+          "momCompareHint": "Verglichen mit {{range}} (erste {{days}} Tage des Vormonats)",
           "momAdherence": "Adherence",
           "momProtein": "Avg protein",
           "momDaysLogged": "Days logged",
@@ -2301,6 +2367,7 @@
           "nextProtein": "Average protein is {{avgProteinG}}g — push +15g daily to accelerate recovery.",
           "pacingDefault": "Target {{target}} kg · log weight weekly to refine pacing",
           "pacing": {
+            "not_enough_data": "Noch nicht genug Daten — logge dein Gewicht mindestens zweimal, um das Tempo zu schätzen",
             "on_pace_now": "Target {{target}} kg · on pace now",
             "on_pace_1w": "Target {{target}} kg · on pace within ~1 week",
             "on_pace_2w": "Target {{target}} kg · on pace within ~2 weeks",
@@ -2465,7 +2532,9 @@
         "muscleGain": "Muskelaufbau",
         "muscleGainDescription": "Bauen du Muskeln im kontrollierten Überschuss auf",
         "strength": "Kraft",
-        "strengthDescription": "Maximieren du Leistung und Auftrieb"
+        "strengthDescription": "Maximieren du Leistung und Auftrieb",
+        "maintain": "Halten",
+        "maintainDescription": "Nahe am aktuellen Gewicht bleiben (innerhalb ~2 kg)"
       },
       "pace": {
         "slow": "Langsam – 0,25 kg/Woche",

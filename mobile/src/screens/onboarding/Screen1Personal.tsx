@@ -7,6 +7,7 @@ import { StalePlanModal } from "../../components/StalePlanModal";
 import { useOnboardingContext } from "../../hooks/OnboardingContext";
 import { useOnboardingStalePlanCheck } from "../../hooks/useOnboardingStalePlanCheck";
 import { AGE_OPTIONS, getImperialHeightOptions, getImperialWeightOptions, getMetricHeightOptions, getMetricWeightOptions, SEX_OPTIONS } from "../../utils/onboardingOptions";
+import { issuesToFieldErrors, reconcileOnboarding, validateScreen1 } from "../../utils/onboardingValidator";
 import { cmToIn, inToCm, kgToLb, lbToKg, roundToNearest } from "../../utils/units";
 import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
@@ -23,8 +24,9 @@ const SCREEN_BG = WHITE;
 
 export default function Screen1Personal({ navigation }: any) {
   const { t } = useTranslation();
-  const { data, updatePersonal, isHydrating } = useOnboardingContext();
-  const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
+  const { data, hydrate, isHydrating } = useOnboardingContext();
+  const [reconcileNote, setReconcileNote] = useState<string>("");
+  const { saveWithCheck: saveAndExit, saving, saveError, modalProps } = useOnboardingStalePlanCheck(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const clearError = (key: string) => {
@@ -49,31 +51,32 @@ export default function Screen1Personal({ navigation }: any) {
     [data.personal.unit_system],
   );
 
+  const applyPersonal = (updates: Partial<typeof data.personal>) => {
+    const merged = { ...data, personal: { ...data.personal, ...updates } };
+    const { data: reconciled, notices } = reconcileOnboarding(merged, "personal");
+    hydrate(reconciled);
+    if (notices.length) {
+      setReconcileNote(t("onboarding.reconcile.personalChanged"));
+    } else {
+      setReconcileNote("");
+    }
+  };
+
   const handleUnitSwitch = (unit: "metric" | "imperial") => {
     if (unit === data.personal.unit_system) return;
     if (unit === "imperial") {
       const convertedIn = data.personal.height_cm ? Math.min(98, Math.max(39, Math.round(cmToIn(data.personal.height_cm)))) : null;
       const convertedLb = data.personal.weight_kg ? Math.min(660, Math.max(66, roundToNearest(kgToLb(data.personal.weight_kg), 1))) : null;
-      updatePersonal({ unit_system: "imperial", height_in: convertedIn, weight_lb: convertedLb, height_cm: null, weight_kg: null });
+      applyPersonal({ unit_system: "imperial", height_in: convertedIn, weight_lb: convertedLb, height_cm: null, weight_kg: null });
       return;
     }
     const convertedCm = data.personal.height_in ? Math.min(250, Math.max(100, Math.round(inToCm(data.personal.height_in)))) : null;
     const convertedKg = data.personal.weight_lb ? Math.min(300, Math.max(30, roundToNearest(lbToKg(data.personal.weight_lb), 0.5))) : null;
-    updatePersonal({ unit_system: "metric", height_cm: convertedCm, weight_kg: convertedKg, height_in: null, weight_lb: null });
+    applyPersonal({ unit_system: "metric", height_cm: convertedCm, weight_kg: convertedKg, height_in: null, weight_lb: null });
   };
 
   const validate = () => {
-    const next: Record<string, string> = {};
-    if (!data.personal.name.trim()) next.name = t("onboarding.screen1.errors.nameRequired");
-    if (!data.personal.age) next.age = t("onboarding.screen1.errors.ageRequired");
-    if (!data.personal.sex) next.sex = t("onboarding.screen1.errors.sexRequired");
-    if (data.personal.unit_system === "metric") {
-      if (!data.personal.height_cm) next.height = t("onboarding.screen1.errors.heightRequired");
-      if (!data.personal.weight_kg) next.weight = t("onboarding.screen1.errors.weightRequired");
-    } else {
-      if (!data.personal.height_in) next.height = t("onboarding.screen1.errors.heightRequired");
-      if (!data.personal.weight_lb) next.weight = t("onboarding.screen1.errors.weightRequired");
-    }
+    const next = issuesToFieldErrors(t, validateScreen1(data));
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     navigation.navigate("Screen2Goal");
@@ -93,12 +96,13 @@ export default function Screen1Personal({ navigation }: any) {
       onSaveExit={saveAndExit}
       saveLoading={saving}
       saveDisabled={saving}
+      saveError={saveError}
     >
       <FieldCard title={t("onboarding.screen1.fullName")} badge={t("common.required")} type={t("onboarding.fieldTypes.textInput")} required description={t("onboarding.screen1.fullNameDescription")} error={errors.name}>
         <TextInput
           value={data.personal.name}
           onChangeText={(v) => {
-            updatePersonal({ name: v });
+            applyPersonal({ name: v });
             if (v.trim()) clearError("name");
           }}
           autoCapitalize="words"
@@ -125,7 +129,7 @@ export default function Screen1Personal({ navigation }: any) {
           value={data.personal.age}
           options={AGE_OPTIONS}
           onChange={(v) => {
-            updatePersonal({ age: Number(v) });
+            applyPersonal({ age: Number(v) });
             clearError("age");
           }}
           placeholder={t("onboarding.screen1.agePlaceholder")}
@@ -133,7 +137,7 @@ export default function Screen1Personal({ navigation }: any) {
       </FieldCard>
 
       <FieldCard title={t("onboarding.screen1.biologicalSex")} badge={t("common.required")} type={t("onboarding.fieldTypes.dropdownPicker")} required description={t("onboarding.screen1.biologicalSexDescription")} error={errors.sex}>
-        <BottomSheetPicker label={t("onboarding.screen1.biologicalSex")} value={data.personal.sex} options={SEX_OPTIONS} onChange={(v) => { updatePersonal({ sex: v as any }); clearError("sex"); }} placeholder={t("common.select")} />
+        <BottomSheetPicker label={t("onboarding.screen1.biologicalSex")} value={data.personal.sex} options={SEX_OPTIONS} onChange={(v) => { applyPersonal({ sex: v as any }); clearError("sex"); }} placeholder={t("common.select")} />
       </FieldCard>
 
       <FieldCard title={t("onboarding.screen1.height")} badge={t("common.required")} type={t("onboarding.fieldTypes.dropdownPicker")} required error={errors.height}>
@@ -142,7 +146,7 @@ export default function Screen1Personal({ navigation }: any) {
           value={selectedHeight}
           options={heightOptions}
           onChange={(v) => {
-            data.personal.unit_system === "metric" ? updatePersonal({ height_cm: Number(v) }) : updatePersonal({ height_in: Number(v) });
+            applyPersonal(data.personal.unit_system === "metric" ? { height_cm: Number(v) } : { height_in: Number(v) });
             clearError("height");
           }}
           placeholder={t("onboarding.screen1.heightPlaceholder")}
@@ -155,12 +159,13 @@ export default function Screen1Personal({ navigation }: any) {
           value={selectedWeight}
           options={weightOptions}
           onChange={(v) => {
-            data.personal.unit_system === "metric" ? updatePersonal({ weight_kg: Number(v) }) : updatePersonal({ weight_lb: Number(v) });
+            applyPersonal(data.personal.unit_system === "metric" ? { weight_kg: Number(v) } : { weight_lb: Number(v) });
             clearError("weight");
           }}
           placeholder={t("onboarding.screen1.weightPlaceholder")}
         />
       </FieldCard>
+      {reconcileNote ? <Text style={styles.reconcileNote}>{reconcileNote}</Text> : null}
     </OnboardingLayout>
     <StalePlanModal {...modalProps} />
     </>
@@ -201,4 +206,5 @@ const styles = StyleSheet.create({
   segActive: { backgroundColor: GREEN },
   segText: { color: MUTED, fontSize: 13, fontWeight: "800" },
   segTextActive: { color: WHITE, fontWeight: "900" },
+  reconcileNote: { color: ORANGE, fontSize: 12, lineHeight: 18, marginBottom: 8 },
 });

@@ -39,6 +39,7 @@ import { useAppTheme } from "../theme";
 import { textAlignStart } from "../utils/rtl";
 import { navigationRef } from "./navigationRef";
 import { confirmUser } from "../utils/notify";
+import { useAndroidRootBackHandler } from "../hooks/useAndroidRootBackHandler";
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -70,6 +71,7 @@ function ProfileTabInitials({ initials, color }: { initials: string; color: stri
 
 const MainTabs = ({ initialRouteName = "Home" }: { initialRouteName?: "Home" | "Profile" }) => {
   const { t } = useTranslation();
+  useAndroidRootBackHandler();
   const setReturnToProfileAfterOnboarding = useAuthStore((s) => s.setReturnToProfileAfterOnboarding);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const explicitLanguage = useLanguageStore((s) => s.explicitLanguage);

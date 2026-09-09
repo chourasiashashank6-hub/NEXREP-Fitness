@@ -14,12 +14,13 @@ import {
   isMealsPerDayDisabled,
 } from "../../utils/mealsPerDayConstraints";
 import { ALLERGY_OPTIONS, DIET_TYPE_OPTIONS, MEALS_PER_DAY_OPTIONS } from "../../utils/onboardingOptions";
+import { issuesToFieldErrors, validateScreen4 } from "../../utils/onboardingValidator";
 import { TEXT } from "../../theme/colors";
 
 export default function Screen4Diet({ navigation }: any) {
   const { t } = useTranslation();
   const { data, updateDietary } = useOnboardingContext();
-  const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
+  const { saveWithCheck: saveAndExit, saving, saveError, modalProps } = useOnboardingStalePlanCheck(4);
   const [dietError, setDietError] = useState<string>("");
 
   const estimatedDailyCalories = useMemo(() => getEstimatedDailyCalories(data), [data]);
@@ -39,11 +40,10 @@ export default function Screen4Diet({ navigation }: any) {
   }, [estimatedDailyCalories, data.dietary.meals_per_day, updateDietary]);
 
   const validateAndNext = () => {
-    if (!String(data.dietary.diet_type || "").trim()) {
-      setDietError(t("onboarding.screen4.errors.dietTypeRequired"));
-      return;
-    }
-    setDietError("");
+    const issues = validateScreen4(data);
+    const errors = issuesToFieldErrors(t, issues);
+    setDietError(errors.diet_type ?? "");
+    if (issues.length) return;
     navigation.navigate("Screen5BodyComp");
   };
 
@@ -58,6 +58,7 @@ export default function Screen4Diet({ navigation }: any) {
       onSaveExit={saveAndExit}
       saveLoading={saving}
       saveDisabled={saving}
+      saveError={saveError}
     >
       <RequiredLabelRow>
         <Text style={styles.labelInline}>{t("onboarding.screen4.dietType")}</Text>

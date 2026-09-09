@@ -692,17 +692,17 @@ export function buildStaticMediaPipeHtml(): string {
           if(window.__mpNotifyCamStarted)window.__mpNotifyCamStarted(stream);
           const vision=await FilesetResolver.forVisionTasks(
             "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm");
-          poseLandmarker=await PoseLandmarker.createFromOptions(vision,{
-            baseOptions:{
-              modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-              delegate:"GPU"
-            },
+          const modelPath="https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+          const landmarkerOpts={
+            baseOptions:{modelAssetPath:modelPath,delegate:"GPU"},
             runningMode:"VIDEO",numPoses:1,
             minPoseDetectionConfidence:0.35,
             minPosePresenceConfidence:0.35,
             minTrackingConfidence:0.35,
             outputSegmentationMasks:false
-          });
+          };
+          try{poseLandmarker=await PoseLandmarker.createFromOptions(vision,landmarkerOpts);}
+          catch(_gpu){poseLandmarker=await PoseLandmarker.createFromOptions(vision,{...landmarkerOpts,baseOptions:{modelAssetPath:modelPath,delegate:"CPU"}});}
           post("ready");detectLoop();
         }catch(err){
           const msg=err?.message??"MediaPipe failed to start";

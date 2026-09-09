@@ -65,7 +65,6 @@
     "burnBestResults": "for best results",
     "burnChipCardio": "warm-up",
     "burnChipWorkout": "workout",
-    "burnMinSuffix": "/ min {{min}}",
     "burnActivityCardio": "today's warm-up",
     "burnActivityWorkout": "today's workout session",
     "burnCaptionOne": "{{total}} = {{activity}}",
@@ -172,6 +171,7 @@
     "goalReachedPill": "🏁 Goal reached!",
     "start": "Start",
     "target": "Target",
+    "targetNotSet": "Not set · Set target",
     "current": "Current",
     "updatedToday": "✓ Updated today",
     "daysAgo": "{{count}}d ago",
@@ -1801,6 +1801,7 @@
   "coach": {
     "common": {
       "refresh": "Refresh",
+      "refreshPill": "{{scope}} · {{count}} refreshes",
       "today": "Today",
       "yesterday": "Yesterday",
       "daysAgo": "{{count}} days ago",
@@ -1809,19 +1810,75 @@
       "year": "Year"
     },
     "journey": {
-      "sectionTitle": "COACH NOTICED",
+      "sectionTitle": "What the coach spotted",
+      "sectionSubtitle": "Patterns across several days — not single-day readings.",
+      "howItWorks": "How this works",
+      "howItWorksTitle": "How this works",
+      "howItWorksBody": "The coach looks for patterns across several days, not single days.\n\nA flag clears on its own once the pattern stops — usually the next time you open this screen after logging. You can also mark one as sorted yourself.\n\nPast flags are kept so you can see what's improved.",
+      "needsAttention": "Needs attention",
+      "cleared": "Cleared",
+      "spottedOn": "Spotted {{date}}",
+      "markSorted": "Mark as sorted",
+      "activeCount": "{{count}} active",
+      "showPastFlags": "Show past flags ({{count}})",
+      "hidePastFlags": "Hide past flags",
+      "emptyActive": "Nothing to flag right now. The coach looks for patterns across several days.",
       "timelineTitle": "YOUR JOURNEY",
-      "active": "Active",
-      "resolved": "Resolved",
       "loadMore": "Load more",
-      "dismiss": "Mark resolved",
-      "recommendations": {
-        "proteinGapStreak": "You've been under your protein target ({{proteinG}}g vs {{targetProteinG}}g) for {{days}} days. Add Greek yogurt, paneer, eggs, or a protein shake to close the gap.",
-        "adherenceTrend": "Strong week — {{daysOnTarget}} of the last {{windowDays}} days hit calorie and protein targets. Keep this rhythm going.",
-        "volumeSpike": "{{muscle}} set volume jumped {{percentIncrease}}% this week ({{currentSets}} vs {{previousSets}} sets). Consider easing back slightly to manage recovery.",
-        "plateau": "{{exerciseName}} has been flat for ~{{weeksFlat}} weeks (best {{bestWeightKg}} kg). Try a small load or rep progression next session.",
-        "disengagement": "No {{domain}} logged in {{daysSince}} days. A quick log today restarts your streak and keeps coaching accurate.",
-        "generic": "Coach noticed a pattern in your recent data."
+      "gotIt": "Got it",
+      "domains": {
+        "nutrition": "meals",
+        "workout": "workouts"
+      },
+      "events": {
+        "protein_gap_streak": {
+          "activeTitle": "Protein has been low for {{days}} days",
+          "activeBody": "You've been under your {{target}}g protein target {{days}} days in a row.",
+          "activeAction": "Add Greek yogurt, paneer, eggs, or a shake to close the gap.",
+          "clearedTitle": "Protein was low for {{days}} days",
+          "clearedBody": "Cleared — you hit your protein target again.",
+          "clearedBodyWithDate": "Cleared on {{date}} — you hit your protein target again."
+        },
+        "adherence_trend": {
+          "activeTitle": "Strong week on targets",
+          "activeBody": "{{daysOnTarget}} of the last {{windowDays}} days hit calorie and protein targets.",
+          "activeAction": "Keep this rhythm going.",
+          "clearedTitle": "Target streak ended",
+          "clearedBody": "Cleared — you had a strong run on targets.",
+          "clearedBodyWithDate": "Cleared on {{date}} — you had a strong run on targets."
+        },
+        "volume_spike": {
+          "activeTitle": "{{muscle}} volume jumped this week",
+          "activeBody": "Set volume is up {{percentIncrease}}% compared to last week.",
+          "activeAction": "Consider easing back slightly to manage recovery.",
+          "clearedTitle": "{{muscle}} volume spike eased",
+          "clearedBody": "Cleared — volume returned to a steadier level.",
+          "clearedBodyWithDate": "Cleared on {{date}} — volume returned to a steadier level."
+        },
+        "plateau": {
+          "activeTitle": "{{exerciseName}} has plateaued",
+          "activeBody": "No meaningful progress for about {{weeksFlat}} weeks.",
+          "activeAction": "Try a small load or rep progression next session.",
+          "clearedTitle": "{{exerciseName}} plateau cleared",
+          "clearedBody": "Cleared — you're moving again on this lift.",
+          "clearedBodyWithDate": "Cleared on {{date}} — you're moving again on this lift."
+        },
+        "disengagement": {
+          "activeTitle": "No {{domain}} logged in {{days}} days",
+          "activeBody": "Logging keeps coaching accurate and your streak alive.",
+          "activeAction": "Log today to restart momentum.",
+          "clearedTitle": "Logging gap cleared",
+          "clearedBody": "Cleared — you're logging again.",
+          "clearedBodyWithDate": "Cleared on {{date}} — you're logging again."
+        },
+        "generic": {
+          "activeTitle": "Pattern spotted",
+          "activeBody": "The coach noticed something in your recent data.",
+          "activeAction": "",
+          "clearedTitle": "Pattern cleared",
+          "clearedBody": "Cleared.",
+          "clearedBodyWithDate": "Cleared on {{date}}."
+        }
       }
     },
     "redesign": {
@@ -1884,6 +1941,12 @@
     "summary": {
       "loading": "Building your analysis…",
       "loadFailed": "Could not load coach summary. Tap refresh to try again.",
+      "period": {
+        "daily": "Today",
+        "weekly": "This week",
+        "monthly": "This month",
+        "yearly": "This year"
+      },
       "partial": {
         "noMealsToday": "No meals logged today — log food to unlock macro coaching.",
         "noDaysLoggedWeek": "No days logged this week yet.",
@@ -1941,6 +2004,7 @@
           "weightTrend": "Weight trend",
           "start": "Start",
           "momLabel": "Month over month",
+          "momCompareHint": "Compared to {{range}} (first {{days}} days of last month)",
           "momAdherence": "Adherence",
           "momProtein": "Avg protein",
           "momDaysLogged": "Days logged",
@@ -1951,6 +2015,7 @@
           "nextProtein": "Average protein is {{avgProteinG}}g — push +15g daily to accelerate recovery.",
           "pacingDefault": "Target {{target}} kg · log weight weekly to refine pacing",
           "pacing": {
+            "not_enough_data": "Not enough data yet — log weight at least twice to estimate pace",
             "on_pace_now": "Target {{target}} kg · on pace now",
             "on_pace_1w": "Target {{target}} kg · on pace within ~1 week",
             "on_pace_2w": "Target {{target}} kg · on pace within ~2 weeks",
@@ -2610,7 +2675,46 @@
       "targetWeight": "Please select target weight on Screen 2.",
       "activity": "Please select activity level on Screen 3.",
       "workoutsPerWeek": "Please select workouts per week on Screen 3.",
-      "dietType": "Please select diet type on Screen 4."
+      "dietType": "Please select diet type on Screen 4.",
+      "name.required": "Enter your name.",
+      "name.length": "Name must be {{min}}–{{max}} characters.",
+      "name.letterRequired": "Name must include at least one letter.",
+      "name.digitsOnly": "Name cannot be only numbers.",
+      "age.min": "You must be at least {{min}} to use NexRep.",
+      "sex.required": "Select biological sex.",
+      "height.rangeCm": "Height must be between {{min}} and {{max}} cm.",
+      "height.rangeIn": "Height must be between 3'3\" and 8'2\".",
+      "weight.rangeKg": "Weight must be between {{min}} and {{max}} kg.",
+      "goal.required": "Select a goal.",
+      "difficulty.required": "Select your training experience.",
+      "difficulty.advancedLowWorkouts": "Advanced with 1–2 workouts a week is tough to recover from — consider Intermediate.",
+      "pace.required": "Select a goal pace.",
+      "pace.notAllowed": "This pace is not available for your current weight.",
+      "pace.exceedsBodyweightCap": "Above {{cap}} kg/week at {{current}} kg — too fast to be safe.",
+      "pace.clearedInvalid": "Goal pace was cleared because it no longer fits your weight.",
+      "pace.notApplicable": "Pace does not apply to this goal.",
+      "target.required": "Select a target weight.",
+      "target.fatLossAboveCurrent": "Your target is above your current weight. Lower it, or switch to Muscle gain.",
+      "target.muscleGainBelowCurrent": "Your target is below your current weight. Raise it, or switch to Fat loss.",
+      "target.gapTooSmall": "Target must be at least {{minGap}} kg from your current weight.",
+      "target.bmiFloor": "Target is below a safe BMI — choose at least {{floorKg}} kg.",
+      "target.bmiHighWarn": "Target BMI is {{bmi}} — higher than typical. Tap again to confirm.",
+      "target.maintainGap": "For Maintain, target must be within {{maxGap}} kg of current weight.",
+      "target.clearedOnGoalChange": "Target weight was cleared — pick one that matches your new goal.",
+      "workouts.belowMin": "At least {{min}} workouts per week for this goal.",
+      "workouts.atMin": "Minimum {{min}} sessions per week for {{goal}}.",
+      "workouts.raisedToMin": "Workouts raised to {{min}} per week for your goal.",
+      "workouts.recoveryWarn": "{{count}} sessions is a lot — watch recovery.",
+      "equipment.strengthBodyweightWarn": "Strength goals are harder without weights — consider dumbbells or a gym if you can.",
+      "muscleFocus.max": "Pick up to {{max}} muscle groups, or choose Balanced.",
+      "muscleFocus.lowWorkoutsWarn": "With 2 sessions a week, extra volume on multiple groups won't fit well.",
+      "problemAreas.max": "Pick up to {{max}} areas so your plan stays focused.",
+      "dietType.required": "Select a diet type.",
+      "targetLifts.required": "Enter a target weight for each lift."
+    },
+    "reconcile": {
+      "personalChanged": "Some later answers were updated to match your new details.",
+      "goalChanged": "Goal changed — check target weight, pace, and workouts below."
     },
     "focusMuscles": {
       "balancedHint": "Balanced — all muscle groups will be trained equally",
@@ -2630,7 +2734,9 @@
         "muscleGain": "Muscle gain",
         "muscleGainDescription": "Build muscle in a controlled surplus",
         "strength": "Strength",
-        "strengthDescription": "Maximize performance and lifts"
+        "strengthDescription": "Maximize performance and lifts",
+        "maintain": "Maintain",
+        "maintainDescription": "Stay near your current weight (within ~2 kg)"
       },
       "pace": {
         "slow": "Slow — 0.25 kg/week",
@@ -2743,8 +2849,11 @@
       "difficulty": "Difficulty",
       "goalPace": "Goal pace",
       "goalPacePlaceholder": "Select pace",
-      "targetWeightLess": "Target weight — must be less than {{currentWeight}}",
-      "targetWeightMore": "Target weight — must be more than {{currentWeight}}",
+      "targetWeightLess": "Target weight — must be less than {{currentWeight}} {{unit}}",
+      "targetWeightMore": "Target weight — must be more than {{currentWeight}} {{unit}}",
+      "targetWeightOptional": "Target weight (optional)",
+      "maintainTargetHelper": "Stay within {{maxGap}} {{unit}} of current weight, or leave blank.",
+      "paceClamped": "This pace would drop calories below a safe floor ({{floor}} kcal). Try {{pace}} instead.",
       "targetWeight": "Target weight",
       "targetWeightPlaceholder": "Select target weight",
       "keyLifts": "Key lifts",
@@ -2848,7 +2957,9 @@
       "streakAlerts": "⚡ Streak alerts",
       "streakAlertsSub": "Don't break your streak",
       "regionLanguage": "Region / language",
-      "regionPlaceholder": "India (auto-detected)"
+      "regionPlaceholder": "India (auto-detected)",
+      "timezone": "Timezone",
+      "timezonePlaceholder": "Select timezone"
     },
     "results": {
       "loading": "Loading your plan…",

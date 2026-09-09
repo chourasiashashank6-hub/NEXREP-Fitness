@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import { useTranslation } from "react-i18next";
 import { BottomSheetPicker } from "../../components/BottomSheetPicker";
@@ -12,7 +12,8 @@ import {
   rescheduleMotivationalQuoteReminder,
   rescheduleWaterReminders,
 } from "../../services/notificationService";
-import { REGION_OPTIONS, REMINDER_TIME_OPTIONS, WATER_GOAL_OPTIONS } from "../../utils/onboardingOptions";
+import { getDeviceTimezone } from "../../services/notificationService";
+import { getTimezoneOptions, REGION_OPTIONS, REMINDER_TIME_OPTIONS, WATER_GOAL_OPTIONS } from "../../utils/onboardingOptions";
 import { GREEN, GREEN_LIGHT, BG, TEXT, BORDER, WHITE } from "../../theme/colors";
 
 const ORANGE = "#D85A30";
@@ -29,8 +30,15 @@ const SCREEN_BG = WHITE;
 export default function Screen6Setup({ navigation }: any) {
   const { t } = useTranslation();
   const { data, updateAppSetup } = useOnboardingContext();
-  const { saveWithCheck: saveAndExit, saving: _saving, modalProps } = useOnboardingStalePlanCheck(navigation);
+  const { saveWithCheck: saveAndExit, saving: _saving, saveError, modalProps } = useOnboardingStalePlanCheck(6, navigation);
   const [saving, setSaving] = useState(false);
+  const timezoneOptions = useMemo(() => getTimezoneOptions(getDeviceTimezone()), []);
+
+  useEffect(() => {
+    if (!data.app_setup.timezone || data.app_setup.timezone === "UTC") {
+      updateAppSetup({ timezone: getDeviceTimezone() });
+    }
+  }, [data.app_setup.timezone, updateAppSetup]);
 
   const onFinish = async () => {
     setSaving(true);
@@ -59,6 +67,7 @@ export default function Screen6Setup({ navigation }: any) {
       onSaveExit={onFinish}
       saveLoading={saving}
       saveDisabled={saving}
+      saveError={saveError}
     >
       <ToggleRow
         label={t("onboarding.screen6.dailyWeighIn")}
@@ -103,6 +112,15 @@ export default function Screen6Setup({ navigation }: any) {
       />
       <ToggleRow label={t("onboarding.screen6.weeklySummary")} subLabel={t("onboarding.screen6.weeklySummarySub")} value={data.app_setup.notifications.weekly_summary} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, weekly_summary: v } })} />
       <ToggleRow label={t("onboarding.screen6.streakAlerts")} subLabel={t("onboarding.screen6.streakAlertsSub")} value={data.app_setup.notifications.streak_alerts} onChange={(v) => updateAppSetup({ notifications: { ...data.app_setup.notifications, streak_alerts: v } })} />
+
+      <Text style={styles.section}>{t("onboarding.screen6.timezone")}</Text>
+      <BottomSheetPicker
+        label={t("onboarding.screen6.timezone")}
+        value={data.app_setup.timezone}
+        options={timezoneOptions}
+        onChange={(v) => updateAppSetup({ timezone: String(v) })}
+        placeholder={t("onboarding.screen6.timezonePlaceholder")}
+      />
 
       <Text style={styles.section}>{t("onboarding.screen6.regionLanguage")}</Text>
       <BottomSheetPicker label={t("onboarding.screen6.regionLanguage")} value={data.app_setup.region} options={REGION_OPTIONS} onChange={(v) => updateAppSetup({ region: String(v) })} placeholder={t("onboarding.screen6.regionPlaceholder")} />

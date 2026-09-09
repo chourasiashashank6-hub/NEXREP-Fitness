@@ -60,6 +60,7 @@
     "logAction": "लॉग →",
     "toEat": "खाने के लिए",
     "toBurn": "जलाना",
+    "burnMinimum": "न्यूनतम",
     "eatingOnly": "केवल खाना",
     "restDayNoBurn": "रेस्ट डे — कोई बर्न टारगेट नहीं",
     "tdee": "TDEE",
@@ -1720,6 +1721,7 @@
   "coach": {
     "common": {
       "refresh": "ताज़ा करें",
+      "refreshPill": "{{scope}} · {{count}} रिफ्रेश",
       "today": "आज",
       "yesterday": "कल",
       "daysAgo": "{{count}} दिन पहले",
@@ -1728,18 +1730,75 @@
       "year": "वर्ष"
     },
     "journey": {
-      "sectionTitle": "कोच ने नोटिस किया",
+      "sectionTitle": "कोच ने क्या देखा",
+      "sectionSubtitle": "कई दिनों के पैटर्न — सिर्फ एक दिन की रीडिंग नहीं।",
+      "howItWorks": "यह कैसे काम करता है",
+      "howItWorksTitle": "यह कैसे काम करता है",
+      "howItWorksBody": "कोच कई दिनों के पैटर्न देखता है, सिर्फ एक दिन के नहीं।\n\nजब पैटर्न रुक जाता है तो फ्लैग अपने आप साफ हो जाता है — आमतौर पर लॉग करने के बाद अगली बार इस स्क्रीन खोलने पर। आप खुद भी इसे sorted मार्क कर सकते हैं।\n\nपुराने फ्लैग रखे जाते हैं ताकि आप देख सकें क्या बेहतर हुआ।",
+      "needsAttention": "ध्यान दें",
+      "cleared": "साफ",
+      "spottedOn": "{{date}} पर देखा गया",
+      "markSorted": "Sorted मार्क करें",
+      "activeCount": "{{count}} सक्रिय",
+      "showPastFlags": "पुराने फ्लैग दिखाएं ({{count}})",
+      "hidePastFlags": "पुराने फ्लैग छिपाएं",
+      "emptyActive": "अभी कुछ फ्लैग नहीं है। कोच कई दिनों के पैटर्न देखता है।",
       "timelineTitle": "आपकी यात्रा",
-      "active": "सक्रिय",
-      "resolved": "हल",
       "loadMore": "और लोड करें",
-      "recommendations": {
-        "proteinGapStreak": "आप {{days}} दिनों से प्रोटीन लक्ष्य ({{proteinG}}g बनाम {{targetProteinG}}g) से कम हैं। ग्रीक योगर्ट, पनीर, अंडे या प्रोटीन शेक जोड़ें।",
-        "adherenceTrend": "मजबूत सप्ताह — पिछले {{windowDays}} दिनों में {{daysOnTarget}} दिन कैलोरी और प्रोटीन लक्ष्य पर रहे। इस लय को बनाए रखें।",
-        "volumeSpike": "{{muscle}} सेट वॉल्यूम इस सप्ताह {{percentIncrease}}% बढ़ा ({{currentSets}} बनाम {{previousSets}} सेट)। रिकवरी के लिए थोड़ा आराम करें।",
-        "plateau": "{{exerciseName}} ~{{weeksFlat}} सप्ताह से स्थिर है (सर्वश्रेष्ठ {{bestWeightKg}} kg)। अगले सत्र में छोटी प्रगति आज़माएं।",
-        "disengagement": "{{daysSince}} दिनों से कोई {{domain}} लॉग नहीं। आज एक त्वरित लॉग आपकी स्ट्रीक फिर से शुरू करता है।",
-        "generic": "कोच ने आपके हाल के डेटा में एक पैटर्न देखा।"
+      "gotIt": "समझ गया",
+      "domains": {
+        "nutrition": "भोजन",
+        "workout": "वर्कआउट"
+      },
+      "events": {
+        "protein_gap_streak": {
+          "activeTitle": "प्रोटीन {{days}} दिनों से कम है",
+          "activeBody": "आप {{days}} दिनों से अपने {{target}}g प्रोटीन लक्ष्य से नीचे हैं।",
+          "activeAction": "ग्रीक योगर्ट, पनीर, अंडे या शेक जोड़कर गैप भरें।",
+          "clearedTitle": "प्रोटीन {{days}} दिनों तक कम था",
+          "clearedBody": "साफ — आप फिर से प्रोटीन लक्ष्य पर हैं।",
+          "clearedBodyWithDate": "{{date}} पर साफ — आप फिर से प्रोटीन लक्ष्य पर हैं।"
+        },
+        "adherence_trend": {
+          "activeTitle": "लक्ष्यों पर मजबूत सप्ताह",
+          "activeBody": "पिछले {{windowDays}} दिनों में {{daysOnTarget}} दिन कैलोरी और प्रोटीन लक्ष्य पर रहे।",
+          "activeAction": "इस लय को बनाए रखें।",
+          "clearedTitle": "लक्ष्य स्ट्रीक समाप्त",
+          "clearedBody": "साफ — लक्ष्यों पर अच्छी लगातारी थी।",
+          "clearedBodyWithDate": "{{date}} पर साफ — लक्ष्यों पर अच्छी लगातारी थी।"
+        },
+        "volume_spike": {
+          "activeTitle": "{{muscle}} वॉल्यूम इस सप्ताह बढ़ा",
+          "activeBody": "सेट वॉल्यूम पिछले सप्ताह की तुलना में {{percentIncrease}}% बढ़ा।",
+          "activeAction": "रिकवरी के लिए थोड़ा आराम करें।",
+          "clearedTitle": "{{muscle}} वॉल्यूम स्पाइक शांत हुआ",
+          "clearedBody": "साफ — वॉल्यूम फिर से स्थिर स्तर पर है।",
+          "clearedBodyWithDate": "{{date}} पर साफ — वॉल्यूम फिर से स्थिर स्तर पर है।"
+        },
+        "plateau": {
+          "activeTitle": "{{exerciseName}} पर प्लेटो",
+          "activeBody": "लगभग {{weeksFlat}} सप्ताह से कोई सार्थक प्रगति नहीं।",
+          "activeAction": "अगले सत्र में छोटी लोड या रेप प्रगति आज़माएं।",
+          "clearedTitle": "{{exerciseName}} प्लेटो साफ",
+          "clearedBody": "साफ — इस लिफ्ट पर फिर से प्रगति हो रही है।",
+          "clearedBodyWithDate": "{{date}} पर साफ — इस लिफ्ट पर फिर से प्रगति हो रही है।"
+        },
+        "disengagement": {
+          "activeTitle": "{{days}} दिनों से कोई {{domain}} लॉग नहीं",
+          "activeBody": "लॉगिंग कोचिंग सटीक और आपकी स्ट्रीक जीवित रखती है।",
+          "activeAction": "आज लॉग करके गति फिर शुरू करें।",
+          "clearedTitle": "लॉगिंग गैप साफ",
+          "clearedBody": "साफ — आप फिर से लॉग कर रहे हैं।",
+          "clearedBodyWithDate": "{{date}} पर साफ — आप फिर से लॉग कर रहे हैं।"
+        },
+        "generic": {
+          "activeTitle": "पैटर्न देखा गया",
+          "activeBody": "कोच ने आपके हाल के डेटा में कुछ देखा।",
+          "activeAction": "",
+          "clearedTitle": "पैटर्न साफ",
+          "clearedBody": "साफ।",
+          "clearedBodyWithDate": "{{date}} पर साफ।"
+        }
       }
     },
     "redesign": {
@@ -1789,6 +1848,12 @@
     "summary": {
       "loading": "विश्लेषण तैयार हो रहा है…",
       "loadFailed": "कोच सारांश लोड नहीं हो सका। पुनः प्रयास के लिए रीफ़्रेश टैप करें।",
+      "period": {
+        "daily": "आज",
+        "weekly": "इस सप्ताह",
+        "monthly": "इस महीने",
+        "yearly": "इस वर्ष"
+      },
       "nutrition": {
         "daily": {
           "heroSubtitle": "कैलोरी · मैक्रो · हाइड्रेशन · समय",
@@ -1825,6 +1890,7 @@
           "weightTrend": "वजन रुझान",
           "start": "शुरू",
           "momLabel": "महीने की तुलना",
+          "momCompareHint": "{{range}} की तुलना (पिछले महीने के पहले {{days}} दिन)",
           "momAdherence": "अनुपालन",
           "momProtein": "औसत प्रोटीन",
           "momDaysLogged": "लॉग किए दिन",
@@ -1835,6 +1901,7 @@
           "nextProtein": "औसत प्रोटीन {{avgProteinG}}g है — रिकवरी के लिए रोज +15g लक्ष्य रखें।",
           "pacingDefault": "लक्ष्य {{target}} kg · सटीक गति के लिए हफ्ते में वजन लॉग करें",
           "pacing": {
+            "not_enough_data": "अभी पर्याप्त डेटा नहीं — गति अनुमान के लिए कम से कम दो बार वजन लॉग करें",
             "on_pace_now": "लक्ष्य {{target}} kg · अभी सही गति पर",
             "on_pace_1w": "लक्ष्य {{target}} kg · ~1 सप्ताह में",
             "on_pace_2w": "लक्ष्य {{target}} kg · ~2 सप्ताह में",
@@ -2465,7 +2532,9 @@
         "muscleGain": "मांसपेशियों का लाभ",
         "muscleGainDescription": "नियंत्रित अधिशेष में मांसपेशियों का निर्माण करें",
         "strength": "ताकत",
-        "strengthDescription": "प्रदर्शन और लिफ्टों को अधिकतम करें"
+        "strengthDescription": "प्रदर्शन और लिफ्टों को अधिकतम करें",
+        "maintain": "बनाए रखें",
+        "maintainDescription": "वर्तमान वजन के पास रहें (~2 kg के भीतर)"
       },
       "pace": {
         "slow": "धीमा - 0.25 kg/सप्ताह",

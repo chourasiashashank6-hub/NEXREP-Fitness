@@ -43,6 +43,23 @@ export function calibrationNeedsRecalibration(cal: PoseCalibration | null | unde
   return false;
 }
 
+/** True when a calibration step already has captured data in the session accumulator. */
+export function isCalibrationStepComplete(
+  step: CalibrationStepId,
+  partial: CalibrationStepPartial,
+): boolean {
+  if (step === "tpose") {
+    return partial.torsoLen != null && partial.shoulderWidth != null;
+  }
+  if (step === "squats") {
+    return partial.squatDepthDeg != null || partial.mobility?.depthTargetDeg != null;
+  }
+  if (step === "turn") {
+    return partial.confidenceByAngle != null && Object.keys(partial.confidenceByAngle).length > 0;
+  }
+  return false;
+}
+
 /** Merge one calibration step into the running accumulator without cross-step contamination. */
 export function mergeCalibrationStep(
   acc: CalibrationStepPartial,

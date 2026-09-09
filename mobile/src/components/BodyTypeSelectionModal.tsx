@@ -90,6 +90,7 @@ export function BodyTypeSelectionModal({ visible, onClose }: Props) {
   const [selCurrent, setSelCurrent] = useState<string>(saved?.current_body_id ?? "");
   const [selGoal, setSelGoal] = useState<string>(saved?.goal_body_id ?? initGoalId);
   const [chips, setChips] = useState<string[]>(saved?.problem_areas ?? []);
+  const [areasCapNote, setAreasCapNote] = useState("");
 
   useEffect(() => {
     if (visible) {
@@ -113,8 +114,20 @@ export function BodyTypeSelectionModal({ visible, onClose }: Props) {
     setStep(1);
   };
 
-  const toggleChip = (c: string) =>
-    setChips((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]));
+  const toggleChip = (c: string) => {
+    setChips((p) => {
+      if (p.includes(c)) {
+        setAreasCapNote("");
+        return p.filter((x) => x !== c);
+      }
+      if (p.length >= 4) {
+        setAreasCapNote("Pick up to 4 areas so your plan stays focused.");
+        return p;
+      }
+      setAreasCapNote("");
+      return [...p, c];
+    });
+  };
 
   const curLabel = bodyData.current.find((x) => x.id === selCurrent)?.label ?? "";
   const goalLabel = bodyData.goal.find((x) => x.id === selGoal)?.label ?? "";
@@ -262,6 +275,7 @@ export function BodyTypeSelectionModal({ visible, onClose }: Props) {
                   </TouchableOpacity>
                 ))}
               </View>
+              {areasCapNote ? <Text style={ms.capNote}>{areasCapNote}</Text> : null}
               <View style={ms.summary}>
                 <Text style={ms.summaryTitle}>YOUR TRANSFORMATION</Text>
                 <View style={ms.journey}>
@@ -368,6 +382,7 @@ const ms = StyleSheet.create({
   chipOn: { backgroundColor: GREEN, borderColor: GREEN },
   chipTxt: { fontSize: 12, color: "#374151", fontWeight: "500" },
   chipTxtOn: { color: "#fff" },
+  capNote: { marginTop: 8, fontSize: 12, color: "#D85A30", lineHeight: 17 },
   summary: { backgroundColor: "#F0FDF9", borderRadius: 8, padding: 12, marginTop: 12 },
   summaryTitle: { fontSize: 10, color: "#9CA3AF", fontWeight: "700", letterSpacing: 0.5, marginBottom: 6 },
   summaryAreas: { fontSize: 11, color: "#6B7280", marginTop: 6 },

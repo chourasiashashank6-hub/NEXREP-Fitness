@@ -900,7 +900,7 @@ export const HomeScreen = () => {
                           <View style={styles.metricsBurnRight}>
                             <Text style={styles.metricsBurnValue}>{formatNum(bestResultsBurnTarget)}</Text>
                             <Text style={styles.metricsBurnMin}>
-                              {t("home.burnMinSuffix", { min: formatNum(minBurnTarget) })}
+                              / {formatNum(minBurnTarget)} {t("home.burnMinimum")}
                             </Text>
                             {plannedBurnActivities.length > 0 ? (
                               <Ionicons

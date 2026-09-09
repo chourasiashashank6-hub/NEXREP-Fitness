@@ -45,8 +45,12 @@ export default function AIWorkoutCoachScreen() {
           </Pressable>
           <Text style={styles.headerTitle}>{t("coach.workout.title")}</Text>
           <RefreshCountPill
-            scopeLabel={refreshScopeLabel(cadence, t)}
+            scopeLabel={t("coach.common.refreshPill", {
+              scope: refreshScopeLabel(cadence, t),
+              count: refreshUsageCount,
+            })}
             count={refreshUsageCount}
+            hideCount
             accentColor={WC_COLORS.PURPLE_MID}
             accentLightBg={WC_COLORS.PURPLE_LIGHT}
             onPress={handleRefresh}

@@ -10,6 +10,7 @@ import CoachingTips from "../CoachingTips";
 import MuscleRecoveryMap from "../MuscleRecoveryMap";
 import { RecoveryTipCard } from "../RecoveryTipCard";
 import { CoachPartialPeriodBanner } from "../shared/CoachPartialPeriodBanner";
+import { CoachPeriodRangeLabel } from "../shared/CoachPeriodRangeLabel";
 import { CoachInsightNoteFromKey } from "../shared/CoachInsightNote";
 import { CoachNutritionHero } from "../shared/CoachNutritionHero";
 
@@ -72,6 +73,12 @@ export function WorkoutDailyView({ summary }: Props) {
         subtitle={t("coach.summary.workout.daily.heroSubtitle")}
         statLeft={{ value: String(day.completed_sets_week), label: t("coach.workout.setsDone") }}
         statRight={{ value: `${day.weekly_percent}%`, label: t("coach.workout.weekly") }}
+      />
+      <CoachPeriodRangeLabel
+        cadence="daily"
+        startDate={summary.period.start_date}
+        endDate={summary.period.end_date}
+        accentColor={WC_COLORS.PURPLE_MID}
       />
       {!hasHistory ? <CoachPartialPeriodBanner message={t("coach.summary.partial.noWorkoutsYet")} /> : null}
       {insight ? (

@@ -184,7 +184,7 @@ export const ProfileScreen = () => {
   const [memberSince, setMemberSince] = useState("");
   const [difficulty, setDifficulty] = useState("Intermediate");
   const [profileWeightKg, setProfileWeightKg] = useState(70);
-  const [targetWeightKg, setTargetWeightKg] = useState(65);
+  const [targetWeightKg, setTargetWeightKg] = useState<number | null>(null);
   const [startWeightKg, setStartWeightKg] = useState(70);
   const [goalType, setGoalType] = useState<OnboardingGoalType>("maintain");
   const [goalTag, setGoalTag] = useState<GoalTag>("Fat Loss");
@@ -314,7 +314,8 @@ export const ProfileScreen = () => {
       const targetWeightLb = ob?.goal?.target_weight_lb;
       const personalWithLegacyStart = ob?.personal as
         | ({ weight_kg?: number | null; start_weight_kg?: number | null } | undefined);
-      const targetKg = Number(ob?.goal?.target_weight_kg ?? (targetWeightLb != null ? targetWeightLb / 2.20462 : undefined) ?? profile.weight ?? 0);
+      const rawTargetKg = ob?.goal?.target_weight_kg ?? (targetWeightLb != null ? targetWeightLb / 2.20462 : null);
+      const targetKg = rawTargetKg != null && Number.isFinite(Number(rawTargetKg)) ? Number(rawTargetKg) : null;
       const startKg = Number(personalWithLegacyStart?.start_weight_kg ?? ob?.personal?.weight_kg ?? profile.weight ?? 0);
       const pace = ob?.goal?.pace === "slow" ? 0.25 : ob?.goal?.pace === "aggressive" ? 0.75 : 0.5;
       const registrationIso = typeof profile.createdAt === "string" && profile.createdAt.length >= 10 ? profile.createdAt.slice(0, 10) : "";
@@ -328,7 +329,7 @@ export const ProfileScreen = () => {
       setPlanId(String(profile.plan_id || "free"));
       setDifficulty(profile.difficulty || "Intermediate");
       setProfileWeightKg(Number(profile.weight || 0));
-      setTargetWeightKg(round1(targetKg));
+      setTargetWeightKg(targetKg != null ? round1(targetKg) : null);
       setStartWeightKg(round1(startKg));
       const rawGoalType = String(ob?.goal?.type || "").toLowerCase();
       const mappedGoalType: OnboardingGoalType =
@@ -661,6 +662,7 @@ export const ProfileScreen = () => {
   const displayCurrentWeight = latestWeightLog?.has_logs ? latestWeightLog.weight_kg : profileWeightKg;
 
   const progressPct = useMemo(() => {
+    if (targetWeightKg == null) return 0;
     const totalChange = targetWeightKg - startWeightKg;
     const actualChange = displayCurrentWeight - startWeightKg;
     if (totalChange === 0) return 0;
@@ -668,7 +670,7 @@ export const ProfileScreen = () => {
     return Math.max(0, Math.min(100, Math.round(pct)));
   }, [displayCurrentWeight, startWeightKg, targetWeightKg]);
 
-  const kgToGo = Math.abs(targetWeightKg - displayCurrentWeight).toFixed(1);
+  const kgToGo = targetWeightKg != null ? Math.abs(targetWeightKg - displayCurrentWeight).toFixed(1) : "—";
   const kgAchieved = Math.abs(displayCurrentWeight - startWeightKg).toFixed(1);
 
   const progressBarColor =
@@ -1079,7 +1081,13 @@ export const ProfileScreen = () => {
               </View>
               <View style={styles.weightPoint}>
                 <Text style={styles.weightPointLabel}>{t("profile.target")}</Text>
-                <Text style={styles.weightTargetValue}>{round1(targetWeightKg)}</Text>
+                {targetWeightKg != null ? (
+                  <Text style={styles.weightTargetValue}>{round1(targetWeightKg)}</Text>
+                ) : (
+                  <Pressable onPress={() => navigationRef.navigate("EditOnboardingModal")} hitSlop={8}>
+                    <Text style={styles.weightTargetUnset}>{t("profile.targetNotSet")}</Text>
+                  </Pressable>
+                )}
               </View>
             </View>
             <View style={styles.weightTilesRow}>
@@ -1505,6 +1513,7 @@ const styles = StyleSheet.create({
   weightPointLabel: { color: MUTED, fontSize: 10, fontWeight: "800" },
   weightStartValue: { color: ORANGE, fontSize: 20, fontWeight: "900" },
   weightTargetValue: { color: GREEN, fontSize: 20, fontWeight: "900" },
+  weightTargetUnset: { color: ORANGE, fontSize: 13, fontWeight: "800", textDecorationLine: "underline" },
   weightGradientTrack: { flex: 1, height: 8, borderRadius: 99, overflow: "hidden", flexDirection: "row" },
   weightGradientOrange: { flex: 1, backgroundColor: ORANGE },
   weightGradientGold: { flex: 1, backgroundColor: "#FFB800" },

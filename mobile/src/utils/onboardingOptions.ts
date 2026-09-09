@@ -1,4 +1,8 @@
 import i18n from "../i18n";
+import type { OnboardingData } from "../types/onboarding";
+import { validationMessage } from "./onboardingValidator/messages";
+import { getPaceOptionStates } from "./onboardingValidator/pace";
+import type { ValidationIssue } from "./onboardingValidator/types";
 
 export type PickerOption<T = string | number | null> = {
   value: T;
@@ -6,8 +10,8 @@ export type PickerOption<T = string | number | null> = {
   description?: string;
 };
 
-export const AGE_OPTIONS: PickerOption<number>[] = Array.from({ length: 88 }, (_, i) => {
-  const n = i + 13;
+export const AGE_OPTIONS: PickerOption<number>[] = Array.from({ length: 83 }, (_, i) => {
+  const n = i + 18;
   return { value: n, label: i18n.t("onboarding.options.years", { count: n }) };
 });
 
@@ -21,6 +25,7 @@ export const GOAL_OPTIONS: PickerOption<string>[] = [
   { value: "fat_loss", label: i18n.t("onboarding.options.goals.fatLoss"), description: i18n.t("onboarding.options.goals.fatLossDescription") },
   { value: "muscle_gain", label: i18n.t("onboarding.options.goals.muscleGain"), description: i18n.t("onboarding.options.goals.muscleGainDescription") },
   { value: "strength", label: i18n.t("onboarding.options.goals.strength"), description: i18n.t("onboarding.options.goals.strengthDescription") },
+  { value: "maintain", label: i18n.t("onboarding.options.goals.maintain"), description: i18n.t("onboarding.options.goals.maintainDescription") },
 ];
 
 export const GOAL_PACE_OPTIONS: PickerOption<string>[] = [
@@ -28,6 +33,28 @@ export const GOAL_PACE_OPTIONS: PickerOption<string>[] = [
   { value: "moderate", label: i18n.t("onboarding.options.pace.moderate") },
   { value: "aggressive", label: i18n.t("onboarding.options.pace.aggressive") },
 ];
+
+export function buildGoalPaceOptions(
+  data: OnboardingData,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): PickerOption<string>[] {
+  const states = getPaceOptionStates(data);
+  return GOAL_PACE_OPTIONS.map((option) => {
+    const state = states.find((s) => s.pace === option.value);
+    if (!state || !state.disabled) return option;
+    const issue: ValidationIssue = {
+      valid: false,
+      field: "pace",
+      code: state.code ?? "pace.notAllowed",
+      params: state.params,
+    };
+    return {
+      ...option,
+      disabled: true,
+      caption: validationMessage(t, issue),
+    };
+  });
+}
 
 /** @deprecated use FOCUS_MUSCLE_UI_OPTIONS from onboardingFocusMuscles.ts */
 export const FOCUS_MUSCLE_OPTIONS: PickerOption<string | null>[] = [
@@ -116,6 +143,26 @@ export const WATER_GOAL_OPTIONS: PickerOption<number | null>[] = [
   { value: 4.5, label: "4.5 L" },
   { value: 5.0, label: "5.0 L" },
 ];
+
+const COMMON_TIMEZONES = [
+  "UTC",
+  "Asia/Kolkata",
+  "Asia/Dubai",
+  "Asia/Singapore",
+  "Europe/London",
+  "Europe/Berlin",
+  "Europe/Paris",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "Australia/Sydney",
+];
+
+export function getTimezoneOptions(deviceTimezone: string): PickerOption<string>[] {
+  const merged = Array.from(new Set([deviceTimezone, ...COMMON_TIMEZONES].filter(Boolean)));
+  return merged.map((tz) => ({ value: tz, label: tz }));
+}
 
 export const REGION_OPTIONS: PickerOption<string>[] = [
   { value: "IN", label: i18n.t("onboarding.options.regions.india") },

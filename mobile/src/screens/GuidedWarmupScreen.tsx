@@ -9,7 +9,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { shouldIgnoreRapidBackPress } from "../utils/hardwareBackDebounce";
 import { useTranslation } from "react-i18next";
 import { postSessionComplete } from "../api/workoutSessions";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -217,17 +218,20 @@ export default function GuidedWarmupScreen() {
     setPendingConfirm({ kind: "skip", kcal: estimateCurrentPhaseKcalSoFar(session) });
   }, [pendingConfirm, session]);
 
-  useEffect(() => {
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      if (pendingConfirm) {
-        dismissConfirm();
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (shouldIgnoreRapidBackPress()) return true;
+        if (pendingConfirm) {
+          dismissConfirm();
+          return true;
+        }
+        handleEnd();
         return true;
-      }
-      handleEnd();
-      return true;
-    });
-    return () => sub.remove();
-  }, [dismissConfirm, handleEnd, pendingConfirm]);
+      });
+      return () => sub.remove();
+    }, [dismissConfirm, handleEnd, pendingConfirm]),
+  );
 
   const handleComplete = () => {
     clearSession();

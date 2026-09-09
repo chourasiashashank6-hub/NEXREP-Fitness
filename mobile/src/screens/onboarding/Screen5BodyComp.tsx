@@ -22,7 +22,7 @@ const SCREEN_BG = WHITE;
 export default function Screen5BodyComp({ navigation }: any) {
   const { t } = useTranslation();
   const { data, updatePersonal } = useOnboardingContext();
-  const { saveWithCheck: saveAndExit, saving, modalProps } = useOnboardingStalePlanCheck();
+  const { saveWithCheck: saveAndExit, saving, saveError, modalProps } = useOnboardingStalePlanCheck(5);
 
   return (
     <>
@@ -35,6 +35,7 @@ export default function Screen5BodyComp({ navigation }: any) {
       onSaveExit={saveAndExit}
       saveLoading={saving}
       saveDisabled={saving}
+      saveError={saveError}
       extraFooter={
         <Pressable onPress={() => navigation.navigate("Screen6Setup")}>
           <Text style={styles.skip}>{t("onboarding.screen5.skip")}</Text>

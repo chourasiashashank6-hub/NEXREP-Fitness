@@ -1785,9 +1785,11 @@ def _onboarding_target_weight_kg(onboarding: dict[str, Any] | None) -> float | N
     try:
         if goal.get("target_weight_kg") is not None:
             return float(goal["target_weight_kg"])
+        if goal.get("target_weight_lb") is not None:
+            return float(goal["target_weight_lb"]) * 0.45359237
     except (TypeError, ValueError):
         return None
-    return _onboarding_weight_kg(onboarding)
+    return None
 
 
 def _weeks_to_goal(
