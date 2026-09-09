@@ -98,42 +98,42 @@ def test_enforce_free_allows_under_cap():
         enforce_food_scan_limits(db=MagicMock(), user=user, meal_type=None)
 
 
-def test_enforce_pro_without_meal_type_uses_legacy_daily_cap():
-    """STOPGAP: old APKs omit meal_type — flat daily cap (Pro=2), not 422."""
+def test_enforce_pro_without_meal_type_infers_meal_slot():
     user = User(id=2, plan_id="pro", email="y@test", password_hash="x", name="x")
-    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0), patch(
-        "src.services.food_scan_limits._count_scans",
-        return_value=1,
+    with patch("src.services.food_scan_limits._count_scans", return_value=1), patch(
+        "src.services.food_scan_limits.resolve_meal_type",
+        return_value="Lunch",
     ):
         enforce_food_scan_limits(db=MagicMock(), user=user, meal_type=None)
 
 
-def test_enforce_pro_without_meal_type_blocks_at_legacy_daily_cap():
+def test_enforce_pro_without_meal_type_blocks_at_inferred_meal_slot():
     user = User(id=2, plan_id="pro", email="y@test", password_hash="x", name="x")
-    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0), patch(
-        "src.services.food_scan_limits._count_scans",
-        return_value=2,
+    with patch("src.services.food_scan_limits._count_scans", return_value=2), patch(
+        "src.services.food_scan_limits.resolve_meal_type",
+        return_value="Lunch",
     ), patch("src.services.food_scan_limits.meals_per_day_for_user", return_value=3):
         with pytest.raises(HTTPException) as exc:
             enforce_food_scan_limits(db=MagicMock(), user=user, meal_type=None)
     assert exc.value.status_code == 429
     detail = exc.value.detail
-    assert detail["limit_type"] == "daily"
+    assert detail["limit_type"] == "meal_slot"
     assert detail["tier"] == "pro"
     assert detail["cap"] == 2
-    assert detail["meal_type"] is None
+    assert detail["meal_type"] == "Lunch"
 
 
-def test_enforce_elite_without_meal_type_blocks_at_legacy_daily_cap():
+def test_enforce_elite_without_meal_type_blocks_at_inferred_meal_slot():
     user = User(id=5, plan_id="elite", email="e@test", password_hash="x", name="x")
-    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=0), patch(
-        "src.services.food_scan_limits._count_scans",
-        return_value=3,
+    with patch("src.services.food_scan_limits._count_scans", return_value=3), patch(
+        "src.services.food_scan_limits.resolve_meal_type",
+        return_value="Breakfast",
     ), patch("src.services.food_scan_limits.meals_per_day_for_user", return_value=3):
         with pytest.raises(HTTPException) as exc:
             enforce_food_scan_limits(db=MagicMock(), user=user, meal_type="")
     assert exc.value.status_code == 429
     assert exc.value.detail["cap"] == 3
+    assert exc.value.detail["meal_type"] == "Breakfast"
 
 
 def test_enforce_pro_blocks_third_scan_in_meal_slot():
@@ -191,8 +191,8 @@ def test_build_scan_usage_pro_uses_require_meal_slot_counts():
     assert len(usage["slots"]) == 3
 
 
-def test_enforce_throttle_backstop():
-    user = User(id=4, plan_id="elite", email="t@test", password_hash="x", name="x")
+def test_enforce_throttle_backstop_free_only():
+    user = User(id=4, plan_id="free", email="t@test", password_hash="x", name="x")
     with patch("src.services.food_scan_limits._count_recent_throttle", return_value=8), patch(
         "src.services.food_scan_limits._throttle_resets_at",
         return_value=__import__("datetime").datetime(2026, 9, 10, 20, 5, tzinfo=__import__("datetime").timezone.utc),
@@ -223,3 +223,30 @@ def test_build_scan_usage_includes_throttle():
     assert usage["throttle"]["used"] == 3
     assert usage["throttle"]["remaining"] == 5
     assert usage["remaining"] == 3
+
+
+def test_build_scan_usage_free_reflects_throttle_remaining():
+    user = User(id=13, plan_id="free", email="free2@test", password_hash="x", name="x")
+    db = MagicMock()
+    with patch("src.services.food_scan_limits._count_scans", return_value=0), patch(
+        "src.services.food_scan_limits._count_recent_throttle",
+        return_value=8,
+    ), patch(
+        "src.services.food_scan_limits._throttle_resets_at",
+        return_value=__import__("datetime").datetime(2026, 9, 10, 20, 10, tzinfo=__import__("datetime").timezone.utc),
+    ), patch(
+        "src.services.food_scan_limits.meals_per_day_for_user",
+        return_value=3,
+    ):
+        usage = build_scan_usage(db, user)
+    assert usage["remaining"] == 0
+    assert usage["throttle"]["remaining"] == 0
+
+
+def test_enforce_elite_skips_throttle_backstop():
+    user = User(id=14, plan_id="elite", email="elite3@test", password_hash="x", name="x")
+    with patch("src.services.food_scan_limits._count_recent_throttle", return_value=99), patch(
+        "src.services.food_scan_limits._count_scans",
+        return_value=0,
+    ), patch("src.services.food_scan_limits.resolve_meal_type", return_value="Breakfast"):
+        enforce_food_scan_limits(db=MagicMock(), user=user, meal_type="Breakfast")

@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from src.models.admin_models import AiUsageLog
 from src.models.models import User, UserOnboarding
 from src.services.meal_planner_service import _meal_slots_for_count
-from src.utils.app_time import ist_day_window, next_midnight_ist
+from src.utils.app_time import infer_meal_type_ist, ist_day_window, next_midnight_ist
 
 FEATURE = "food_photo_analysis"
 THROTTLE_WINDOW = timedelta(minutes=5)
@@ -93,6 +93,7 @@ def _count_scans(
     until: datetime | None = None,
     meal_slot: str | None = None,
     require_meal_slot: bool = False,
+    only_null_meal_slot: bool = False,
 ) -> int:
     q = db.query(func.count(AiUsageLog.id)).filter(
         AiUsageLog.user_id == user_id,
@@ -106,7 +107,14 @@ def _count_scans(
         q = q.filter(AiUsageLog.meal_slot == meal_slot)
     if require_meal_slot:
         q = q.filter(AiUsageLog.meal_slot.isnot(None))
+    if only_null_meal_slot:
+        q = q.filter(AiUsageLog.meal_slot.is_(None))
     return int(q.scalar() or 0)
+
+
+def resolve_meal_type(meal_type: str | None) -> str:
+    cleaned = (meal_type or "").strip()
+    return cleaned or infer_meal_type_ist()
 
 
 @dataclass
@@ -176,13 +184,15 @@ def build_scan_usage(
     if tier == "free":
         used = _count_scans(db, user.id, since=day_start, until=day_end)
         cap = FREE_DAILY_CAP
+        remaining = max(0, cap - used)
+        remaining = min(remaining, throttle["remaining"])  # free tier only
         return {
             "tier": tier,
             "meals_per_day": mpd,
             "meal_type": None,
             "cap": cap,
             "used": used,
-            "remaining": max(0, cap - used),
+            "remaining": remaining,
             "resets_at": resets_at.isoformat(),
             "slots": None,
             "throttle": throttle,
@@ -211,13 +221,14 @@ def build_scan_usage(
 
     active = meal_type if meal_type in slots else (meal_type or slots[0] if slots else None)
     active_row = next((s for s in slot_stats if s["meal_type"] == active), slot_stats[0] if slot_stats else None)
+    slot_remaining = active_row["remaining"] if active_row else cap
     return {
         "tier": tier,
         "meals_per_day": mpd,
         "meal_type": active_row["meal_type"] if active_row else active,
         "cap": active_row["cap"] if active_row else cap,
         "used": active_row["used"] if active_row else 0,
-        "remaining": active_row["remaining"] if active_row else cap,
+        "remaining": slot_remaining,
         "resets_at": resets_at.isoformat(),
         "slots": slot_stats,
         "throttle": throttle,
@@ -235,21 +246,24 @@ def enforce_food_scan_limits(
     now_utc = datetime.now(timezone.utc)
     day_start, day_end = _window_bounds()
 
-    throttle_used = _count_recent_throttle(db, user.id, now_utc)
-    if throttle_used >= THROTTLE_CAP:
-        raise HTTPException(
-            status_code=429,
-            detail=ScanLimitState(
-                tier=tier,
-                cap=THROTTLE_CAP,
-                used=throttle_used,
-                remaining=0,
-                meal_type=meal_type,
-                meals_per_day=meals_per_day_for_user(db, user.id),
-                resets_at=_throttle_resets_at(db, user.id, now_utc),
-                limit_type="throttle",
-            ).as_dict(),
-        )
+    meal_type = resolve_meal_type(meal_type)
+
+    if tier == "free":
+        throttle_used = _count_recent_throttle(db, user.id, now_utc)
+        if throttle_used >= THROTTLE_CAP:
+            raise HTTPException(
+                status_code=429,
+                detail=ScanLimitState(
+                    tier=tier,
+                    cap=THROTTLE_CAP,
+                    used=throttle_used,
+                    remaining=0,
+                    meal_type=meal_type,
+                    meals_per_day=meals_per_day_for_user(db, user.id),
+                    resets_at=_throttle_resets_at(db, user.id, now_utc),
+                    limit_type="throttle",
+                ).as_dict(),
+            )
 
     if tier == "free":
         used = _count_scans(db, user.id, since=day_start, until=day_end)
@@ -270,27 +284,7 @@ def enforce_food_scan_limits(
             )
         return
 
-    # STOPGAP: old APKs omit meal_type — unified daily bucket, not per-slot (see LEGACY_NO_MEAL_TYPE_DAILY_CAP).
-    if not meal_type or not str(meal_type).strip():
-        cap = LEGACY_NO_MEAL_TYPE_DAILY_CAP[tier]
-        used = _count_scans(db, user.id, since=day_start, until=day_end)
-        if used >= cap:
-            raise HTTPException(
-                status_code=429,
-                detail=ScanLimitState(
-                    tier=tier,
-                    cap=cap,
-                    used=used,
-                    remaining=0,
-                    meal_type=None,
-                    meals_per_day=meals_per_day_for_user(db, user.id),
-                    resets_at=resets_at,
-                    limit_type="daily",
-                ).as_dict(),
-            )
-        return
-
-    meal_slot = str(meal_type).strip()
+    meal_slot = meal_type
     cap = per_meal_cap(tier)
     used = _count_scans(
         db,

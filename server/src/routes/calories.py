@@ -28,7 +28,7 @@ from src.services.activity_feed_service import calculate_user_streak, emit_strea
 from src.services.xp_service import award_xp_for_meal_log, reevaluate_xp_after_meal_change
 from src.services.food_catalog_service import lookup_food_scaled, search_foods
 from src.services.food_image_utils import prepare_food_image_for_vision
-from src.services.food_scan_limits import FoodScanAttempt, build_scan_usage, enforce_food_scan_limits
+from src.services.food_scan_limits import FoodScanAttempt, build_scan_usage, enforce_food_scan_limits, resolve_meal_type
 from src.services.language_service import normalize_language_tag
 from src.services.ai_logger import log_gemini_call, log_groq_call, log_openai_call, log_provider_failure
 from src.services.gemini_client import gemini_generate_content_models, has_gemini_key
@@ -1631,7 +1631,7 @@ def analyze_food_image(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    meal_type = payload.meal_type
+    meal_type = resolve_meal_type(payload.meal_type)
     enforce_food_scan_limits(db, current_user, meal_type=meal_type)
     attempt = FoodScanAttempt(meal_type)
     try:

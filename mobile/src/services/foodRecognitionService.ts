@@ -102,10 +102,12 @@ const parseLimitDetail = (detail: unknown): FoodScanLimitDetail | undefined => {
 const mapAxiosError = (error: unknown): FoodAnalysisError => {
   if (axios.isAxiosError(error) && error.response?.status === 429) {
     const detail = parseLimitDetail(error.response.data?.detail);
-    return {
-      error: i18n.t("services.food.scanLimitReached"),
-      limit: detail,
-    };
+    if (detail) {
+      return {
+        error: i18n.t("services.food.scanLimitReached"),
+        limit: detail,
+      };
+    }
   }
   const detail = axios.isAxiosError(error) ? error.response?.data?.detail : undefined;
   if (detail && typeof detail === "object") {

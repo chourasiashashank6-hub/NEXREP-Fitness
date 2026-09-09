@@ -26,3 +26,19 @@ def ist_day_window(now: datetime | None = None) -> tuple[datetime, datetime]:
 def next_midnight_ist(now: datetime | None = None) -> datetime:
     _, end = ist_day_window(now)
     return end
+
+
+def infer_meal_type_ist(now: datetime | None = None) -> str:
+    """Match mobile CalorieLog mealTypeFromLocalTime (IST wall clock)."""
+    h = (now or now_ist()).hour
+    if 5 <= h < 10:
+        return "Breakfast"
+    if 10 <= h < 12:
+        return "Snack"
+    if 12 <= h < 15:
+        return "Lunch"
+    if 15 <= h < 18:
+        return "Snack"
+    if 18 <= h < 22:
+        return "Dinner"
+    return "Snack"
