@@ -66,7 +66,9 @@ export function CoachCadencePager({
           key={value}
           style={styles.pageScroll}
           nestedScrollEnabled
+          directionalLockEnabled
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.pageContent}
         >
           {renderPage(value)}

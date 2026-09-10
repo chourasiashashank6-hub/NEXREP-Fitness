@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
 import Svg, { Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import type { MacroStatusValue } from "../../../types/coachSummary";
@@ -115,18 +116,27 @@ export function MacroGapSection({ gaps, values, targets, foodChips }: GapProps) 
         return (
           <View key={key} style={styles.gapCard}>
             <View style={[styles.gapStrip, { backgroundColor: meta.light }]}>
-              <Text style={[styles.gapTitle, { color: meta.color }]}>{t("coach.calorie.card.macroGap", { macro: t(meta.labelKey) })}</Text>
+              <Text style={[styles.gapTitle, { color: meta.color }]}>
+                {t("coach.calorie.card.macroGap", { macro: t(meta.labelKey) })}
+              </Text>
               <View style={[styles.gapBadge, { backgroundColor: meta.color }]}>
                 <Text style={styles.gapBadgeText}>{gap}g</Text>
               </View>
             </View>
-            <View style={styles.chips}>
+            <GestureScrollView
+              horizontal
+              nestedScrollEnabled
+              directionalLockEnabled
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipsScrollContent}
+              style={styles.chipsScroll}
+            >
               {foodChips[key].map((food) => (
                 <View key={food} style={styles.chip}>
                   <Text style={styles.chipText}>{food}</Text>
                 </View>
               ))}
-            </View>
+            </GestureScrollView>
           </View>
         );
       })}
@@ -148,14 +158,36 @@ const styles = StyleSheet.create({
   gapSection: { marginBottom: 12 },
   successCard: { backgroundColor: GREEN_LIGHT, borderRadius: 14, padding: 14, marginBottom: 12 },
   successText: { color: GREEN, fontSize: 12, fontWeight: "800", textAlign: "center" },
-  gapCard: { backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, borderRadius: 14, overflow: "hidden", marginBottom: 8 },
-  gapStrip: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12 },
-  gapTitle: { fontSize: 13, fontWeight: "900", flex: 1 },
-  gapBadge: { borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  gapCard: {
+    backgroundColor: WHITE,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  gapStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  gapTitle: { fontSize: 14, fontWeight: "900", flex: 1 },
+  gapBadge: { borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5, minWidth: 44, alignItems: "center" },
   gapBadgeText: { color: WHITE, fontSize: 11, fontWeight: "900" },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, padding: 12, paddingTop: 0 },
-  chip: { backgroundColor: BG, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 },
-  chipText: { color: TEXT, fontSize: 10, fontWeight: "700" },
+  chipsScroll: { flexGrow: 0 },
+  chipsScrollContent: { flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 12 },
+  chip: {
+    backgroundColor: BG,
+    borderRadius: 99,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  chipText: { color: TEXT, fontSize: 11, fontWeight: "700" },
 });
 
 export { MACRO_META };

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { fetchHealthTips, type HealthTipItem } from "../../api/coachHealthTips";
@@ -269,12 +270,14 @@ function TaskItem({ task }: { task: Task }) {
 
 function DietTipsSection({ tips }: { tips: DietTip[] }) {
   const { t } = useTranslation();
+  const { width: screenWidth } = useWindowDimensions();
+  const tipCardWidth = Math.min(260, Math.max(200, Math.round(screenWidth * 0.72)));
   if (!tips.length) return null;
 
   return (
     <View style={styles.tipsSection}>
       <View style={styles.tipsHeaderRow}>
-        <View>
+        <View style={styles.tipsHeaderText}>
           <Text style={styles.tipsTitle}>{t("coach.actionPlan.healthTips")}</Text>
           <Text style={styles.tipsSubtitle}>{t("coach.actionPlan.tipsSubtitle")}</Text>
         </View>
@@ -282,9 +285,17 @@ function DietTipsSection({ tips }: { tips: DietTip[] }) {
           <Text style={styles.gutBadgeText}>{t("coach.actionPlan.gutHealth")}</Text>
         </View>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tipsScrollContent}>
+      <GestureScrollView
+        horizontal
+        nestedScrollEnabled
+        directionalLockEnabled
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.tipsScrollContent, { paddingRight: 16 }]}
+        style={styles.tipsScroll}
+      >
         {tips.map((tip) => (
-          <View key={tip.id ?? tip.title} style={styles.tipCard}>
+          <View key={tip.id ?? tip.title} style={[styles.tipCard, { width: tipCardWidth }]}>
             <View style={styles.tipHeader}>
               <View style={[styles.tipIconTile, { backgroundColor: tip.iconBg }]}>
                 <Text style={styles.tipEmoji}>{tip.emoji}</Text>
@@ -297,7 +308,7 @@ function DietTipsSection({ tips }: { tips: DietTip[] }) {
             <Text style={styles.tipBody}>{tip.body}</Text>
           </View>
         ))}
-      </ScrollView>
+      </GestureScrollView>
       <View style={styles.actionDivider}>
         <View style={styles.dividerLine} />
         <Text style={styles.dividerText}>{t("coach.actionPlan.todaysActionPlan")}</Text>
@@ -432,13 +443,15 @@ export function ActionPlanCard({ nutritionData }: { nutritionData: NutritionData
 
 const styles = StyleSheet.create({
   tipsSection: { marginBottom: 12 },
-  tipsHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  tipsHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, gap: 8 },
+  tipsHeaderText: { flex: 1, minWidth: 0 },
   tipsTitle: { color: MUTED, fontSize: 10, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.4 },
   tipsSubtitle: { color: MUTED, fontSize: 11, marginTop: 3 },
-  gutBadge: { backgroundColor: GREEN_LIGHT, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 9 },
+  gutBadge: { backgroundColor: GREEN_LIGHT, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 9, flexShrink: 0 },
   gutBadgeText: { color: GREEN, fontSize: 10, fontWeight: "900" },
-  tipsScrollContent: { paddingBottom: 4, gap: 10 },
-  tipCard: { width: 160, backgroundColor: WHITE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 14, gap: 8 },
+  tipsScroll: { flexGrow: 0 },
+  tipsScrollContent: { paddingBottom: 4, gap: 10, paddingRight: 4 },
+  tipCard: { backgroundColor: WHITE, borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 14, gap: 8 },
   tipHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   tipIconTile: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   tipEmoji: { fontSize: 18 },
