@@ -77,6 +77,48 @@ export function findPlannerWorkoutLog(
   });
 }
 
+/** Same-day log for a planned exercise — any source (planner, session, manual). */
+export function findExerciseLogForPlannerDay(
+  items: WorkoutHistoryMatchItem[],
+  exercise: Pick<WorkoutExercise, "name">,
+  dayKey: string,
+): WorkoutHistoryMatchItem | undefined {
+  const targetName = (exercise.name || "").trim().toLowerCase();
+  const matches = items.filter((item) => {
+    if (toLocalDateKey(item.date) !== dayKey) return false;
+    return (item.exerciseName || "").trim().toLowerCase() === targetName;
+  });
+  if (!matches.length) return undefined;
+  return matches.find(isPlannerLoggedWorkout) ?? matches[0];
+}
+
+export type PlannerExerciseLogState = {
+  logId: number;
+  /** True when logged outside the planner checkbox (session, manual, warm-up). */
+  locked: boolean;
+  notes?: string | null;
+  exerciseName?: string;
+};
+
+export function buildPlannerExerciseLogMap(
+  items: WorkoutHistoryMatchItem[],
+  exercises: Pick<WorkoutExercise, "name">[],
+  dayKey: string,
+): Record<string, PlannerExerciseLogState> {
+  const next: Record<string, PlannerExerciseLogState> = {};
+  exercises.forEach((ex, i) => {
+    const match = findExerciseLogForPlannerDay(items, ex, dayKey);
+    if (match?.id == null) return;
+    next[exerciseLogKey(ex, i)] = {
+      logId: match.id,
+      locked: !isPlannerLoggedWorkout(match),
+      notes: match.notes,
+      exerciseName: match.exerciseName,
+    };
+  });
+  return next;
+}
+
 export function buildLoggedExerciseIdMap(
   items: WorkoutHistoryMatchItem[],
   exercises: Pick<WorkoutExercise, "name">[],
@@ -137,6 +179,25 @@ export function mergeLoggedExerciseIdMap(
   for (const [key, entry] of Object.entries(optimistic)) {
     if (now - entry.at < OPTIMISTIC_GRACE_MS) {
       merged[key] = entry.id;
+    }
+  }
+  return merged;
+}
+
+/** Keep very recent optimistic planner-checkbox state across a history refetch race. */
+export function mergePlannerExerciseLogMap(
+  fetched: Record<string, PlannerExerciseLogState>,
+  optimistic: Record<string, { id: number; at: number }>,
+  now = Date.now(),
+): Record<string, PlannerExerciseLogState> {
+  const merged = { ...fetched };
+  for (const [key, entry] of Object.entries(optimistic)) {
+    if (now - entry.at < OPTIMISTIC_GRACE_MS) {
+      merged[key] = {
+        logId: entry.id,
+        locked: false,
+        notes: "source=workout_planner",
+      };
     }
   }
   return merged;

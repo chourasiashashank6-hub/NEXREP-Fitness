@@ -47,6 +47,7 @@ import {
   type VoiceMode,
 } from "../services/aiTrainer/audioCoach";
 import { scheduleRestEndNotification } from "../services/notificationService";
+import { bumpActivityDataRefresh } from "../store/activityDataRefreshStore";
 import { useTranslation } from "react-i18next";
 import {
   type SessionExercise,
@@ -588,6 +589,7 @@ export default function AICameraWorkoutScreen() {
     if (payload) {
       try {
         serverResult = await postSessionComplete(payload);
+        bumpActivityDataRefresh();
       } catch {
         // client totals fallback
       }
@@ -875,6 +877,7 @@ export default function AICameraWorkoutScreen() {
     if (payload) {
       try {
         await postSessionComplete(payload);
+        bumpActivityDataRefresh();
       } catch {
         // best-effort
       }

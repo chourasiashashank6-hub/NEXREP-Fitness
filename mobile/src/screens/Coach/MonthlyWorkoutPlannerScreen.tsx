@@ -62,15 +62,24 @@ import {
 } from "../../utils/reflowAcknowledgment";
 import { plannerDayNeedsSanitization, sanitizePlannerDayDetail } from "../../utils/sanitizePlannerDay";
 import {
-  buildLoggedExerciseIdMap,
+  buildPlannerExerciseLogMap,
   estimatePlannerTimeTaken,
   exerciseLogKey,
-  mergeLoggedExerciseIdMap,
+  mergePlannerExerciseLogMap,
   hasAnyPlannerLogForDay,
   parsePlannerReps,
+  type PlannerExerciseLogState,
 } from "../../utils/workoutPlannerLog";
-import { findGuidedWarmupLogForDay } from "../../utils/workoutLogSource";
+import {
+  findGuidedWarmupLogForDay,
+  resolveWorkoutLogSource,
+  WORKOUT_LOG_SOURCE_I18N_KEY,
+} from "../../utils/workoutLogSource";
 import { fullDayLabel, getNextMonthResetLabel, isPastPlanDay, localDateIso, monthYearLabel } from "../../utils/localDate";
+import {
+  markDailyReflowPipelineRun,
+  wasDailyReflowPipelineRunToday,
+} from "../../utils/reflowDailyRun";
 import { navigationRef } from "../../navigation/navigationRef";
 import { unlockWebSpeech } from "../../services/aiTrainer/audioCoach";
 import { useGuidedWarmupStore } from "../../store/guidedWarmupStore";
@@ -312,7 +321,7 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const [isRegeneratingMonthPlan, setIsRegeneratingMonthPlan] = useState(false);
   const [staleFields, setStaleFields] = useState<string[]>([]);
   const [isRegeneratingStale, setIsRegeneratingStale] = useState(false);
-  const [loggedExerciseIds, setLoggedExerciseIds] = useState<Record<string, number>>({});
+  const [exerciseLogStates, setExerciseLogStates] = useState<Record<string, PlannerExerciseLogState>>({});
   const [loggingExerciseKey, setLoggingExerciseKey] = useState<string | null>(null);
   const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const activityRefreshVersion = useActivityDataRefreshStore((s) => s.version);
@@ -466,7 +475,8 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
 
   const loadPlan = useCallback(async (opts?: { silent?: boolean }) => {
     const seq = ++loadSeqRef.current;
-    if (!opts?.silent && !initialLoadDoneRef.current) {
+    const isRefocus = initialLoadDoneRef.current;
+    if (!opts?.silent && !isRefocus) {
       setLoading(true);
     }
     try {
@@ -474,7 +484,12 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       if (seq !== loadSeqRef.current) return;
       applyPlan(current);
       let skipReflowDetection = false;
-      if (current && canSmartReflow) {
+      const shouldRunDailyPipeline =
+        current != null &&
+        canSmartReflow &&
+        !(await wasDailyReflowPipelineRunToday(current.plan_id));
+      // Repair + Smart Reflow once per IST calendar day on first Workout Planner open.
+      if (current && canSmartReflow && shouldRunDailyPipeline) {
         try {
           const repair = await repairSmartReflow(current.plan_id);
           if (repair.repaired_days.length > 0) {
@@ -495,17 +510,15 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
         loadDaySeqRef.current += 1;
         await syncDayDetailForPlan(current, selectedDayRef.current);
       }
-      if (current && canSmartReflow && !skipReflowDetection) {
-        void runSmartReflowDetection(current).then(async (result) => {
-          if (seq !== loadSeqRef.current) return;
-          if (result.status === "full_month_reset") {
-            applyPlan(null);
-            setDayDetail(null);
-            return;
-          }
-          if (result.status === "tier3_prompt") {
-            const alreadyAcknowledged = await isTier3PromptAcknowledged(result.stateId);
-            if (alreadyAcknowledged) return;
+      if (current && canSmartReflow && shouldRunDailyPipeline && !skipReflowDetection) {
+        const result = await runSmartReflowDetection(current, { skipRepair: true });
+        if (seq !== loadSeqRef.current) return;
+        if (result.status === "full_month_reset") {
+          applyPlan(null);
+          setDayDetail(null);
+        } else if (result.status === "tier3_prompt") {
+          const alreadyAcknowledged = await isTier3PromptAcknowledged(result.stateId);
+          if (!alreadyAcknowledged) {
             Alert.alert(
               t("coach.reflow.tier3Title"),
               t("coach.reflow.tier3Message"),
@@ -546,26 +559,27 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                 },
               ],
             );
-            return;
           }
-          if (result.status === "applied" && result.moves.length > 0) {
-            const dayToShow = selectedDayRef.current;
-            loadDaySeqRef.current += 1;
-            applyPlan(result.plan, { preserveSelectedDay: true });
-            await syncDayDetailForPlan(result.plan, dayToShow);
-            const adaptationId = buildReflowAdaptationId(result.plan.plan_id, result.moves);
-            const alreadyAcknowledged = await isReflowAdaptationAcknowledged(adaptationId);
-            if (!alreadyAcknowledged) {
-              notifyReflowApplied(
-                t("coach.reflow.appliedTitle"),
-                formatReflowAppliedBody(result.moves, t),
-                () => {
-                  void acknowledgeReflowAdaptation(adaptationId);
-                },
-              );
-            }
+        } else if (result.status === "applied" && result.moves.length > 0) {
+          const dayToShow = selectedDayRef.current;
+          loadDaySeqRef.current += 1;
+          applyPlan(result.plan, { preserveSelectedDay: true });
+          await syncDayDetailForPlan(result.plan, dayToShow);
+          const adaptationId = buildReflowAdaptationId(result.plan.plan_id, result.moves);
+          const alreadyAcknowledged = await isReflowAdaptationAcknowledged(adaptationId);
+          if (!alreadyAcknowledged) {
+            notifyReflowApplied(
+              t("coach.reflow.appliedTitle"),
+              formatReflowAppliedBody(result.moves, t),
+              () => {
+                void acknowledgeReflowAdaptation(adaptationId);
+              },
+            );
           }
-        });
+        }
+      }
+      if (current && canSmartReflow && shouldRunDailyPipeline) {
+        await markDailyReflowPipelineRun(current.plan_id);
       }
     } catch (e: unknown) {
       if (seq !== loadSeqRef.current) return;
@@ -678,13 +692,13 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   }, [plan]);
 
   const syncLoggedExercises = useCallback((items: WorkoutHistoryItem[], exercises: WorkoutExercise[], dayKey: string) => {
-    const fetched = buildLoggedExerciseIdMap(items, exercises, dayKey);
-    setLoggedExerciseIds(mergeLoggedExerciseIdMap(fetched, optimisticLogEntriesRef.current));
+    const fetched = buildPlannerExerciseLogMap(items, exercises, dayKey);
+    setExerciseLogStates(mergePlannerExerciseLogMap(fetched, optimisticLogEntriesRef.current));
   }, []);
 
   const refreshPlannerDayLogs = useCallback(async () => {
     if (!dayDetail || isWorkoutRestDay(dayDetail) || !dayDetail.exercises?.length) {
-      setLoggedExerciseIds({});
+      setExerciseLogStates({});
       setGuidedWarmupLogged(false);
       setHasAnyPlannerLog(false);
       setLogExerciseRefreshError(null);
@@ -696,13 +710,11 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       const historyItems = items ?? [];
       setGuidedWarmupLogged(Boolean(findGuidedWarmupLogForDay(historyItems, selectedLogDateKey)));
       setHasAnyPlannerLog(hasAnyPlannerLogForDay(historyItems, dayDetail.exercises, selectedLogDateKey));
-      if (canLogExercises) {
-        syncLoggedExercises(historyItems, dayDetail.exercises, selectedLogDateKey);
-      }
+      syncLoggedExercises(historyItems, dayDetail.exercises, selectedLogDateKey);
     } catch {
       setLogExerciseRefreshError(t("coach.workoutPlannerScreen.logRefreshFailed"));
     }
-  }, [canLogExercises, dayDetail, selectedLogDateKey, syncLoggedExercises, t]);
+  }, [dayDetail, selectedLogDateKey, syncLoggedExercises, t]);
 
   useEffect(() => {
     void refreshPlannerDayLogs();
@@ -722,12 +734,22 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
   const handleToggleLogExercise = async (exercise: WorkoutExercise, index: number) => {
     if (!canLogExercises) return;
     const key = exerciseLogKey(exercise, index);
-    const existingId = loggedExerciseIds[key];
+    const existing = exerciseLogStates[key];
+    if (existing?.locked) {
+      const source = resolveWorkoutLogSource(existing);
+      notifyUser(
+        t("coach.workoutPlannerScreen.alerts.lockedExternalLogTitle"),
+        t("coach.workoutPlannerScreen.alerts.lockedExternalLogBody", {
+          source: t(WORKOUT_LOG_SOURCE_I18N_KEY[source]),
+        }),
+      );
+      return;
+    }
     setLoggingExerciseKey(key);
     try {
-      if (existingId) {
-        await deleteWorkout(existingId);
-        setLoggedExerciseIds((prev) => {
+      if (existing) {
+        await deleteWorkout(existing.logId);
+        setExerciseLogStates((prev) => {
           const next = { ...prev };
           delete next[key];
           return next;
@@ -763,7 +785,10 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
       const savedId = Number(saved?.id);
       if (Number.isFinite(savedId) && savedId > 0) {
         optimisticLogEntriesRef.current[key] = { id: savedId, at: Date.now() };
-        setLoggedExerciseIds((prev) => ({ ...prev, [key]: savedId }));
+        setExerciseLogStates((prev) => ({
+          ...prev,
+          [key]: { logId: savedId, locked: false, notes: "source=workout_planner" },
+        }));
         setHasAnyPlannerLog(true);
       } else {
         await refreshPlannerDayLogs();
@@ -1264,7 +1289,12 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                       {dayDetail.exercises.map((ex, i) => {
                         const tag = MUSCLE_TAG[ex.muscle] ?? defaultMuscleTag;
                         const logKey = exerciseLogKey(ex, i);
-                        const isLogged = Boolean(loggedExerciseIds[logKey]);
+                        const logState = exerciseLogStates[logKey];
+                        const isLogged = Boolean(logState);
+                        const isLocked = Boolean(logState?.locked);
+                        const logSource = logState
+                          ? resolveWorkoutLogSource(logState)
+                          : null;
                         const isLogging = loggingExerciseKey === logKey;
                         const reflowSourceDay = (ex as ReflowTaggedExercise).reflow_source_day;
                         const showReflowBadge = typeof reflowSourceDay === "number" && reflowSourceDay > 0;
@@ -1294,9 +1324,19 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                                       </View>
                                     ) : null}
                                     {isLogged ? (
-                                      <View style={styles.loggedBadge}>
-                                        <Text style={styles.loggedBadgeText}>{t("coach.workoutPlannerScreen.loggedBadge")}</Text>
-                                      </View>
+                                      isLocked && logSource ? (
+                                        <View style={styles.sourceBadge}>
+                                          <Text style={styles.sourceBadgeText}>
+                                            {t(WORKOUT_LOG_SOURCE_I18N_KEY[logSource])}
+                                          </Text>
+                                        </View>
+                                      ) : (
+                                        <View style={styles.loggedBadge}>
+                                          <Text style={styles.loggedBadgeText}>
+                                            {t("coach.workoutPlannerScreen.loggedBadge")}
+                                          </Text>
+                                        </View>
+                                      )
                                     ) : null}
                                   </View>
                                   <Text style={styles.exercisePrescription}>
@@ -1325,23 +1365,36 @@ export default function MonthlyWorkoutPlannerScreen({ embedded = false }: Props)
                                 </View>
                                 <View style={styles.exerciseActions}>
                                   {canLogExercises ? (
-                                    <Pressable
-                                      style={[styles.logButton, isLogged ? styles.logButtonLogged : styles.logButtonIdle]}
-                                      onPress={() => void handleToggleLogExercise(ex, i)}
-                                      disabled={isLogging}
-                                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                      accessibilityLabel={
-                                        isLogged
-                                          ? t("coach.workoutPlannerScreen.unlogExercise")
-                                          : t("coach.workoutPlannerScreen.logExercise")
-                                      }
-                                    >
-                                      {isLogging ? (
-                                        <ActivityIndicator size="small" color={isLogged ? WHITE : GREEN} />
-                                      ) : (
-                                        <Ionicons name="checkmark" size={16} color={isLogged ? WHITE : GREEN} />
-                                      )}
-                                    </Pressable>
+                                    isLocked ? (
+                                      <View
+                                        style={[styles.logButton, styles.logButtonLogged, styles.logButtonLocked]}
+                                        accessibilityLabel={t("coach.workoutPlannerScreen.lockedExercise")}
+                                      >
+                                        <Ionicons name="lock-closed" size={14} color={WHITE} />
+                                      </View>
+                                    ) : (
+                                      <Pressable
+                                        style={[styles.logButton, isLogged ? styles.logButtonLogged : styles.logButtonIdle]}
+                                        onPress={() => void handleToggleLogExercise(ex, i)}
+                                        disabled={isLogging}
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        accessibilityLabel={
+                                          isLogged
+                                            ? t("coach.workoutPlannerScreen.unlogExercise")
+                                            : t("coach.workoutPlannerScreen.logExercise")
+                                        }
+                                      >
+                                        {isLogging ? (
+                                          <ActivityIndicator size="small" color={isLogged ? WHITE : GREEN} />
+                                        ) : (
+                                          <Ionicons name="checkmark" size={16} color={isLogged ? WHITE : GREEN} />
+                                        )}
+                                      </Pressable>
+                                    )
+                                  ) : isLogged ? (
+                                    <View style={[styles.logButton, styles.logButtonLogged]}>
+                                      <Ionicons name="checkmark" size={16} color={WHITE} />
+                                    </View>
                                   ) : null}
                                   {canSwapExercises && exerciseSwapsRemaining > 0 ? (
                                     <Pressable
@@ -1474,6 +1527,9 @@ const styles = StyleSheet.create({
   exName: { color: TEXT, fontSize: 14, fontWeight: "800" },
   loggedBadge: { backgroundColor: GREEN, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   loggedBadgeText: { color: WHITE, fontSize: 10, fontWeight: "800" },
+  sourceBadge: { backgroundColor: PURPLE_LIGHT, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: PURPLE_MID },
+  sourceBadgeText: { color: PURPLE_MID, fontSize: 10, fontWeight: "800" },
+  logButtonLocked: { opacity: 0.92 },
   reflowBadge: { backgroundColor: PURPLE_LIGHT, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: PURPLE_MID },
   reflowBadgeText: { color: PURPLE_MID, fontSize: 10, fontWeight: "800" },
   exercisePrescription: { color: ORANGE, fontSize: 12, fontWeight: "800", marginBottom: 4 },

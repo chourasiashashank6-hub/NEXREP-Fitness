@@ -43,6 +43,7 @@ import { shouldIgnoreRapidBackPress } from "../utils/hardwareBackDebounce";
 import { resolveBurnTargetWeightKg } from "../utils/resolveBurnTargetWeightKg";
 import { formatWorkoutSplitName } from "../utils/workoutPlanDisplay";
 import { notifyUser } from "../utils/notify";
+import { bumpActivityDataRefresh } from "../store/activityDataRefreshStore";
 import { GREEN, TEXT } from "../theme/colors";
 
 const GREEN_LIGHT = "#E1F5EE";
@@ -323,6 +324,7 @@ export default function ActiveWorkoutScreen() {
       if (payload) {
         try {
           serverResult = await postSessionComplete(payload);
+          bumpActivityDataRefresh();
         } catch {
           // still show completion with client totals
         }
@@ -384,6 +386,7 @@ export default function ActiveWorkoutScreen() {
     if (payload) {
       try {
         await postSessionComplete(payload);
+        bumpActivityDataRefresh();
       } catch {
         // best-effort
       }

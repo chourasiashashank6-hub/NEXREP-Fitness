@@ -2469,6 +2469,7 @@
       "targetMuscle": "Target muscle: {{muscle}}",
       "replaceConfirm": "Replace Exercise",
       "loggedBadge": "Logged",
+      "lockedExercise": "Logged from another source — remove via Session history",
       "logExercise": "Log this exercise to Workout Log",
       "unlogExercise": "Remove from Workout Log",
       "alerts": {
@@ -2485,6 +2486,8 @@
         "logExerciseFailed": "Could not update Workout Log. Try again.",
         "swapLockedTitle": "Exercise already logged",
         "swapLockedBody": "Can't swap an exercise you've already logged — remove the log first.",
+        "lockedExternalLogTitle": "Can't remove here",
+        "lockedExternalLogBody": "This was logged from {{source}}. Delete it from Session history on the Workout Log tab.",
         "stillLoading": "Workout plan is still loading. Try again in a moment.",
         "notAvailable": "Not available",
         "notUnlocked": "This day's workout is not unlocked yet.",

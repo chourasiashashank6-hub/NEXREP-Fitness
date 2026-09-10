@@ -62,13 +62,13 @@ def test_repair_strips_reflow_exercises_already_logged():
     stripped = _strip_completed_reflow_exercises(
         exercises,
         logged_names={"close grip bench press"},
-        other_day_names=set(),
+        exercise_days_elsewhere={},
     )
     assert len(stripped) == 1
     assert stripped[0]["name"] == "Bench Press"
 
 
-def test_repair_strips_reflow_exercises_on_other_plan_day():
+def test_repair_keeps_reflow_exercises_on_source_day():
     from src.services.plan_reflow_service import _strip_completed_reflow_exercises
 
     exercises = [
@@ -77,7 +77,22 @@ def test_repair_strips_reflow_exercises_on_other_plan_day():
     stripped = _strip_completed_reflow_exercises(
         exercises,
         logged_names=set(),
-        other_day_names={"incline dumbbell press"},
+        exercise_days_elsewhere={"incline dumbbell press": {1}},
+    )
+    assert len(stripped) == 1
+    assert stripped[0]["name"] == "Incline Dumbbell Press"
+
+
+def test_repair_strips_reflow_exercises_duplicated_off_source_day():
+    from src.services.plan_reflow_service import _strip_completed_reflow_exercises
+
+    exercises = [
+        {"name": "Incline Dumbbell Press", "muscle": "Chest", "sets": 4, "reflow_source_day": 1},
+    ]
+    stripped = _strip_completed_reflow_exercises(
+        exercises,
+        logged_names=set(),
+        exercise_days_elsewhere={"incline dumbbell press": {1, 3}},
     )
     assert stripped == []
 

@@ -290,19 +290,37 @@ def _exercise_names_on_plan_except_day(plan: MonthlyWorkoutPlan, exclude_day: in
     return names
 
 
+def _exercise_name_days_on_plan_except_day(
+    plan: MonthlyWorkoutPlan, exclude_day: int
+) -> dict[str, set[int]]:
+    """Map exercise name -> plan days (other than exclude_day) where it appears."""
+    by_name: dict[str, set[int]] = {}
+    for entry in plan.entries:
+        if entry.is_rest_day or entry.day == exclude_day:
+            continue
+        for name in _exercise_names(_normalize_exercises(safe_json_loads(entry.exercises_json))):
+            by_name.setdefault(name, set()).add(entry.day)
+    return by_name
+
+
 def _strip_completed_reflow_exercises(
     exercises: list[dict[str, Any]],
     *,
     logged_names: set[str],
-    other_day_names: set[str],
+    exercise_days_elsewhere: dict[str, set[int]],
 ) -> list[dict[str, Any]]:
-    """Drop reflow-tagged exercises already completed or present on another plan day."""
+    """Drop reflow-tagged exercises already planner-logged or duplicated off-source."""
     kept: list[dict[str, Any]] = []
     for exercise in exercises:
         name = (str(exercise.get("name") or "")).strip().lower()
         source_day = exercise.get("reflow_source_day")
-        if source_day and name and (name in logged_names or name in other_day_names):
-            continue
+        if source_day and name:
+            if name in logged_names:
+                continue
+            other_days = exercise_days_elsewhere.get(name, set())
+            # Reflow copies stay on the missed source day — only strip true off-source duplicates.
+            if other_days - {int(source_day)}:
+                continue
         kept.append(exercise)
     return kept
 
@@ -312,15 +330,15 @@ def _repair_day_exercises(
     entry: DailyWorkoutPlanEntry,
     *,
     logged_names: set[str] | None = None,
-    other_day_names: set[str] | None = None,
+    exercise_days_elsewhere: dict[str, set[int]] | None = None,
 ) -> list[dict[str, Any]]:
     """Keep valid Smart Reflow writes; fix duplicates, over-cap, and incompatible reflow only."""
     normalized = _normalize_exercises(exercises)
-    if logged_names is not None and other_day_names is not None:
+    if logged_names is not None and exercise_days_elsewhere is not None:
         normalized = _strip_completed_reflow_exercises(
             normalized,
             logged_names=logged_names,
-            other_day_names=other_day_names,
+            exercise_days_elsewhere=exercise_days_elsewhere,
         )
     repaired = _dedupe_exercises_by_name(normalized)
     repaired = [
@@ -476,12 +494,12 @@ def repair_smart_reflow_plan(
         exercises = _normalize_exercises(safe_json_loads(entry.exercises_json))
         if not exercises:
             continue
-        other_day_names = _exercise_names_on_plan_except_day(plan, entry.day)
+        exercise_days_elsewhere = _exercise_name_days_on_plan_except_day(plan, entry.day)
         kept = _repair_day_exercises(
             exercises,
             entry,
             logged_names=logged_names,
-            other_day_names=other_day_names,
+            exercise_days_elsewhere=exercise_days_elsewhere,
         )
         if kept == exercises and not _day_needs_repair(exercises, entry):
             continue

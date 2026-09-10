@@ -13,6 +13,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { shouldIgnoreRapidBackPress } from "../utils/hardwareBackDebounce";
 import { useTranslation } from "react-i18next";
 import { postSessionComplete } from "../api/workoutSessions";
+import { bumpActivityDataRefresh } from "../store/activityDataRefreshStore";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { speakPlainCue, unlockWebSpeech } from "../services/aiTrainer/audioCoach";
 import {
@@ -112,6 +113,7 @@ export default function GuidedWarmupScreen() {
       if (payload) {
         try {
           await postSessionComplete(payload);
+          bumpActivityDataRefresh();
         } catch {
           // best-effort — client totals still shown
         }

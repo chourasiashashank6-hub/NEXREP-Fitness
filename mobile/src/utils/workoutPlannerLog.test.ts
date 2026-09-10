@@ -4,11 +4,14 @@
  */
 import {
   buildLoggedExerciseIdMap,
+  buildPlannerExerciseLogMap,
   estimatePlannerTimeTaken,
   exerciseLogKey,
+  findExerciseLogForPlannerDay,
   findPlannerWorkoutLog,
   isPlannerLoggedWorkout,
   mergeLoggedExerciseIdMap,
+  mergePlannerExerciseLogMap,
   hasAnyPlannerLogForDay,
   allPlannerExercisesLogged,
   collectLoggedPlannerExerciseNames,
@@ -101,5 +104,46 @@ assert(
 const loggedNames = collectLoggedPlannerExerciseNames(history);
 assert(loggedNames.has("barbell bench press"), "collects planner-logged exercise names");
 assert(!loggedNames.has("back squat"), "manual logs are excluded from reflow completion set");
+
+const activeSessionLog = {
+  id: 104,
+  exerciseName: "Arnold Press",
+  notes: "active_session_partial:abc123",
+  date: "2026-07-27T14:00:00Z",
+};
+const sessionHistory = [...history, activeSessionLog];
+const arnold = { name: "Arnold Press" };
+
+assert(
+  findExerciseLogForPlannerDay(sessionHistory, arnold, today)?.id === 104,
+  "active session log fills planner exercise slot",
+);
+
+const sessionMap = buildPlannerExerciseLogMap(sessionHistory, [arnold], today);
+assert(sessionMap["n:0:arnold press"]?.logId === 104, "session log maps to exercise key");
+assert(sessionMap["n:0:arnold press"]?.locked === true, "session log is locked on planner");
+
+const plannerWins = buildPlannerExerciseLogMap(
+  [
+    activeSessionLog,
+    {
+      id: 105,
+      exerciseName: "Arnold Press",
+      notes: "source=workout_planner; body_part=Shoulders",
+      date: "2026-07-27T15:00:00Z",
+    },
+  ],
+  [arnold],
+  today,
+);
+assert(plannerWins["n:0:arnold press"]?.logId === 105, "planner log preferred over session");
+assert(plannerWins["n:0:arnold press"]?.locked === false, "planner log is not locked");
+
+const fetchedMap = buildPlannerExerciseLogMap(sessionHistory, [arnold], today);
+const optimisticMap = mergePlannerExerciseLogMap(fetchedMap, {
+  "n:0:arnold press": { id: 999, at: Date.now() },
+});
+assert(optimisticMap["n:0:arnold press"]?.logId === 999, "optimistic planner log wins briefly");
+assert(optimisticMap["n:0:arnold press"]?.locked === false, "optimistic planner log is unlocked");
 
 console.log("workoutPlannerLog.test.ts: all assertions passed");

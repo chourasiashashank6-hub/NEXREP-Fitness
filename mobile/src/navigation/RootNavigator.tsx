@@ -10,6 +10,7 @@ import { useLanguageStore } from "../i18n/languageStore";
 import { useAuthStore } from "../store/authStore";
 import { subscribeToAuthChanges, signOutSession } from "../services/authService";
 import { useWorkoutSessionStore } from "../store/workoutSessionStore";
+import { bumpActivityDataRefresh } from "../store/activityDataRefreshStore";
 import { AuthScreen } from "../screens/AuthScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { WorkoutScreen } from "../screens/WorkoutScreen";
@@ -249,7 +250,9 @@ export const RootNavigator = () => {
 
       if (ageMs >= 3 * 60 * 60 * 1000) {
         abandonSession();
-        postSessionComplete(payload).catch(() => undefined);
+        postSessionComplete(payload)
+          .then(() => bumpActivityDataRefresh())
+          .catch(() => undefined);
         clearSession();
         return;
       }
@@ -266,7 +269,9 @@ export const RootNavigator = () => {
         }
       } else {
         abandonSession();
-        postSessionComplete(payload).catch(() => undefined);
+        postSessionComplete(payload)
+          .then(() => bumpActivityDataRefresh())
+          .catch(() => undefined);
         clearSession();
       }
     };
