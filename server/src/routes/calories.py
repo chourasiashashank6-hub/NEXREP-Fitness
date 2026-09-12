@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 import json
+import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,6 +11,7 @@ from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from src.db.session import get_db
+from src.core.config import settings
 from src.core.http_client import ExternalHTTPError
 from src.models.models import User, UserOnboarding
 from src.models.nutrition_calories import AIFoodMealEntry, DailyNutritionLog, MealEntry, WaterIntakeLog
@@ -491,14 +493,50 @@ def build_calorie_coach_insight(day_payload: dict[str, Any]) -> dict[str, Any]:
     return base
 
 
+def _repair_json_text(text: str) -> str:
+    cleaned = text.strip().lstrip("\ufeff")
+    cleaned = cleaned.replace("\u201c", '"').replace("\u201d", '"')
+    cleaned = cleaned.replace("\u2018", "'").replace("\u2019", "'")
+    return re.sub(r",(\s*[}\]])", r"\1", cleaned)
+
+
+def _json_dict_from_parsed(parsed: Any) -> dict[str, Any] | None:
+    if isinstance(parsed, dict):
+        return parsed
+    if isinstance(parsed, list):
+        for item in parsed:
+            if isinstance(item, dict):
+                return item
+    return None
+
+
+def _try_parse_json_dict(text: str) -> dict[str, Any] | None:
+    for candidate in (text, _repair_json_text(text)):
+        try:
+            return _json_dict_from_parsed(json.loads(candidate))
+        except Exception:
+            pass
+
+    decoder = json.JSONDecoder()
+    for idx, ch in enumerate(text):
+        if ch not in "{[":
+            continue
+        try:
+            parsed, _end = decoder.raw_decode(text[idx:])
+        except json.JSONDecodeError:
+            continue
+        found = _json_dict_from_parsed(parsed)
+        if found is not None:
+            return found
+    return None
+
+
 def _extract_json_object(raw: str) -> dict[str, Any]:
     text = (raw or "").strip()
     if not text:
         raise ValueError("Malformed JSON response from model")
 
-    # Some vision models (e.g. Qwen on Groq) prepend chain-of-thought blocks.
-    import re
-
+    # Some vision models prepend chain-of-thought blocks.
     text = re.sub(r"<[^>]*thinking[^>]*>.*?</[^>]+>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
     stripped = text.lstrip()
     if not stripped.startswith("{") and not stripped.startswith("["):
@@ -512,31 +550,15 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
         text = text.replace("```json", "```").replace("```JSON", "```")
         parts = [part.strip() for part in text.split("```") if part.strip()]
         for part in parts:
-            try:
-                parsed = json.loads(part)
-                if isinstance(parsed, dict):
-                    return parsed
-                if isinstance(parsed, list):
-                    for item in parsed:
-                        if isinstance(item, dict):
-                            return item
-            except Exception:
-                continue
+            found = _try_parse_json_dict(part)
+            if found is not None:
+                return found
 
-    try:
-        parsed = json.loads(text)
-        if isinstance(parsed, dict):
-            return parsed
-        if isinstance(parsed, list):
-            for item in parsed:
-                if isinstance(item, dict):
-                    return item
-    except Exception:
-        pass
+    found = _try_parse_json_dict(text)
+    if found is not None:
+        return found
 
-    # Fallback: scan all balanced JSON objects and return the first valid one.
-    #   { ... }\n\nExtra notes...
-    # or chain-of-thought text before a final JSON block.
+    # Fallback: scan balanced JSON objects (handles prose before/after the payload).
     for start in [i for i, ch in enumerate(text) if ch == "{"]:
         depth = 0
         in_string = False
@@ -560,14 +582,40 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
                 depth -= 1
                 if depth == 0:
                     candidate = text[start : i + 1]
-                    try:
-                        parsed = json.loads(candidate)
-                    except Exception:
-                        break
-                    if isinstance(parsed, dict):
-                        return parsed
+                    found = _try_parse_json_dict(candidate)
+                    if found is not None:
+                        return found
                     break
     raise ValueError("Malformed JSON response from model")
+
+
+def _food_scan_model_candidates() -> list[str]:
+    models: list[str] = []
+    primary = (settings.GEMINI_MODEL or "").strip()
+    if primary:
+        models.append(primary)
+    for fallback in (
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+    ):
+        if fallback not in models:
+            models.append(fallback)
+    return models or ["gemini-2.0-flash"]
+
+
+def _extract_gemini_response_text(payload: dict[str, Any]) -> str:
+    chunks: list[str] = []
+    for candidate in payload.get("candidates") or []:
+        if not isinstance(candidate, dict):
+            continue
+        for part in candidate.get("content", {}).get("parts") or []:
+            if not isinstance(part, dict):
+                continue
+            text = part.get("text")
+            if isinstance(text, str) and text.strip():
+                chunks.append(text.strip())
+    return "\n".join(chunks).strip()
 
 
 def _to_safe_float(v: Any) -> float:
@@ -577,13 +625,27 @@ def _to_safe_float(v: Any) -> float:
         return 0.0
 
 
+def _first_present(parsed: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if key not in parsed:
+            continue
+        value = parsed.get(key)
+        if value is None:
+            continue
+        if isinstance(value, str) and not value.strip():
+            continue
+        return value
+    return None
+
+
 def _normalize_food_analysis_payload(parsed: dict[str, Any]) -> dict[str, Any]:
-    if isinstance(parsed.get("error"), str) and parsed["error"].strip():
-        raise ValueError(parsed["error"].strip())
-    food_name = str(parsed.get("foodName") or "").strip()
+    error_value = _first_present(parsed, "error")
+    if isinstance(error_value, str) and error_value.strip():
+        raise ValueError(error_value.strip())
+    food_name = str(_first_present(parsed, "foodName", "food_name", "name", "meal_name") or "").strip()
     if not food_name:
         raise ValueError("Could not detect food from this image.")
-    confidence_value = parsed.get("confidence")
+    confidence_value = _first_present(parsed, "confidence")
     if isinstance(confidence_value, (int, float)):
         if confidence_value >= 0.8:
             confidence = "high"
@@ -594,15 +656,18 @@ def _normalize_food_analysis_payload(parsed: dict[str, Any]) -> dict[str, Any]:
     else:
         confidence_raw = str(confidence_value or "medium").strip().lower()
         confidence = confidence_raw if confidence_raw in {"low", "medium", "high"} else "medium"
-    serving = str(parsed.get("estimatedServingSize") or "").strip() or "100g"
+    serving = str(
+        _first_present(parsed, "estimatedServingSize", "estimated_serving_size", "serving_size", "serving")
+        or ""
+    ).strip() or "100g"
     return {
         "foodName": food_name,
         "estimatedServingSize": serving,
-        "calories": _to_safe_float(parsed.get("calories")),
-        "protein": _to_safe_float(parsed.get("protein")),
-        "carbs": _to_safe_float(parsed.get("carbs")),
-        "fats": _to_safe_float(parsed.get("fats")),
-        "fibre": _to_safe_float(parsed.get("fibre")),
+        "calories": _to_safe_float(_first_present(parsed, "calories", "kcal", "total_calories")),
+        "protein": _to_safe_float(_first_present(parsed, "protein", "protein_g", "total_protein")),
+        "carbs": _to_safe_float(_first_present(parsed, "carbs", "carbohydrates", "total_carbs")),
+        "fats": _to_safe_float(_first_present(parsed, "fats", "fat", "total_fat")),
+        "fibre": _to_safe_float(_first_present(parsed, "fibre", "fiber", "total_fibre", "total_fiber")),
         "confidence": confidence,
     }
 
@@ -619,10 +684,7 @@ def _gemini_food_image_analysis(
     if not has_gemini_key():
         raise RuntimeError("GEMINI_API_KEY missing on server")
     image_mime = (mime_type or "image/jpeg").strip() or "image/jpeg"
-    model_candidates = [
-        "gemini-3.6-flash",
-        "gemini-3.5-flash-lite",
-    ]
+    model_candidates = _food_scan_model_candidates()
     request_payload = {
         "contents": [
             {
@@ -635,7 +697,7 @@ def _gemini_food_image_analysis(
         "generationConfig": {
             "temperature": 0.1,
             "responseMimeType": "application/json",
-            "maxOutputTokens": 700,
+            "maxOutputTokens": 1024,
         },
     }
     try:
@@ -666,12 +728,7 @@ def _gemini_food_image_analysis(
         )
     except Exception:
         pass
-    raw = (
-        (payload.get("candidates") or [{}])[0]
-        .get("content", {})
-        .get("parts", [{}])[0]
-        .get("text", "")
-    )
+    raw = _extract_gemini_response_text(payload)
     if not raw:
         raise RuntimeError("Gemini returned empty content")
     parsed = _extract_json_object(raw)
